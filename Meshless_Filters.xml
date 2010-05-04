@@ -1,0 +1,15 @@
+<ParaViewFilters>
+  <Category name="Meshless" menu_label="&amp;Meshless">
+    <Filter name="RegularGridSampler" />
+    <Filter name="SPHProbeFilter" />
+    <Filter name="SPHProbeFilterPoint" />
+    <Filter name="SPHProbeFilterLine" />
+    <Filter name="SPHProbeFilterGrid" />
+    <Filter name="TemporalParticleInterpolator" />
+    <Filter name="ParticleBoxTreeRepresentation" />
+    <Filter name="CenterOfMass" />
+    <Filter name="MomentsOfInertia" />
+    <Filter name="H5PartWriter" />
+    <Filter name="H5PartWriter2" />
+  </Category>
+</ParaViewFilters>

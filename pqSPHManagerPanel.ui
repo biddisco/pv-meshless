@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SPHManagerPanel</class>
+ <widget class="QDockWidget" name="SPHManagerPanel">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>355</width>
+    <height>477</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>SPHManagerPanel</string>
+  </property>
+  <widget class="QWidget" name="dockWidgetContents">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QScrollArea" name="scrollArea">
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>337</width>
+         <height>437</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <layout class="QHBoxLayout" name="_4">
+          <item>
+           <widget class="QLabel" name="label_12">
+            <property name="text">
+             <string>Point Based Interpolation Method</string>
+            </property>
+            <property name="scaledContents">
+             <bool>false</bool>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="InterpolationMethod">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <item>
+             <property name="text">
+              <string>SPH Kernel</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Shepard Method</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QStackedWidget" name="methodstack">
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="page_3">
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+             <layout class="QHBoxLayout" name="_5">
+              <item>
+               <widget class="QLabel" name="label_3">
+                <property name="text">
+                 <string>Kernel type</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="KernelType">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>Guassian</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Quadratic</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Spline-3rd-Order</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Spline-5th-Order</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Cusp</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Box</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="_6">
+              <item>
+               <widget class="QLabel" name="label_7">
+                <property name="text">
+                 <string>Kernel dimension</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="KernelDimension">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="currentIndex">
+                 <number>1</number>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>2</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>3</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="_7">
+              <item>
+               <widget class="QLabel" name="label_8">
+                <property name="text">
+                 <string>H Coefficient (LengthRatio)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="HCoefficient">
+                <property name="text">
+                 <string>1.5</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="_8">
+              <item>
+               <widget class="QLabel" name="label_10">
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+                <property name="text">
+                 <string>Default Density</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="DefaultDensity">
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+                <property name="text">
+                 <string>1000</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="_9">
+              <item>
+               <widget class="QLabel" name="label_6">
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+                <property name="text">
+                 <string>Default particle (cube) side length</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="DefaultParticleSideLength">
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+                <property name="text">
+                 <string>0.183333</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="_10">
+              <item>
+               <widget class="QLabel" name="label_15">
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+                <property name="text">
+                 <string>Volume array (per particle)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="VolumeScalars">
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="_11">
+              <item>
+               <widget class="QLabel" name="label_16">
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+                <property name="text">
+                 <string>h array (per particle)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="HScalars">
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="_12">
+              <item>
+               <widget class="QLabel" name="label_9">
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+                <property name="text">
+                 <string>Density array (per particle)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="DensityScalars">
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="_13">
+              <item>
+               <widget class="QLabel" name="label_11">
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+                <property name="text">
+                 <string>Mass array (per particle)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="MassScalars">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="toolTip">
+                 <string>If a volume array is present, it supercedes the mass/density settings which would otherwisebe used to generate the w (m/rho) component of the kernel summation.
+If Mass/Density arrays are present - the per particle values are used and finally if no arrays are present, the default particle size/density values are used.</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_4">
+           <layout class="QVBoxLayout" name="_14">
+            <item>
+             <widget class="QRadioButton" name="limit1">
+              <property name="text">
+               <string>Use Maximum Neighbours</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="_15">
+              <item>
+               <widget class="QLabel" name="label_13">
+                <property name="text">
+                 <string>Max Neighbours</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="MaximumNeighbours"/>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="limit2">
+              <property name="text">
+               <string>Limit Neighbour Radius</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="_16">
+              <item>
+               <widget class="QLabel" name="label_14">
+                <property name="text">
+                 <string>Max Radius</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="MaximumRadius">
+                <property name="text">
+                 <string>0.183333</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer>
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>61</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

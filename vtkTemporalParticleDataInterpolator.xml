@@ -1,0 +1,131 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- Filters                                                          -->
+  <!-- ================================================================ -->
+  <ProxyGroup name="filters">
+
+    <!-- ================================================================ -->
+    <!-- TemporalParticleInterpolator                                     -->
+    <!-- ================================================================ -->
+  
+    <SourceProxy name="TemporalParticleInterpolator" 
+                 class="vtkTemporalParticleDataInterpolator"
+                 label="Temporal Interpolator (Particles)">
+      <Documentation short_help="Interpolate between time steps."
+                     long_help="Interpolate between time steps.">
+        A temporal interpolator that works with particle data where the particle Id does not correspond to the index in the points list
+      </Documentation>
+
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type" composite_data_supported="1">
+          <DataType value="vtkDataObject"/>
+        </DataTypeDomain>
+        <InputArrayDomain name="p_array" number_of_components="1">
+          <RequiredProperties>
+            <Property name="SelectInputScalars"
+                      function="FieldDataSelection"/>
+          </RequiredProperties>
+        </InputArrayDomain>
+        <InputArrayDomain name="v_array" number_of_components="3">
+          <RequiredProperties>
+            <Property name="SelectInputVectors"
+                      function="FieldDataSelection"/>
+          </RequiredProperties>
+        </InputArrayDomain>
+      </InputProperty>
+
+      <DoubleVectorProperty
+         name="DiscreteTimeStepInterval"
+         command="SetDiscreteTimeStepInterval"
+         number_of_elements="1"
+         default_values="0.0" >
+        <DoubleRangeDomain name="range"/>
+        <Documentation>
+          If Discrete Time Step Interval is set to 0, then the Temporal Interpolator will provide a continuous region of time on its output.  If set to anything else, then the output will define a finite set of time points on its output, each spaced by the Discrete Time Step Interval.  The output will have (time range)/(discrete time step interval) time steps.  (Note that the time range is defined by the time range of the data of the input filter, which may be different from other pipeline objects or the range defined in the animation inspector.)  This is a useful option to use if you have a dataset with one missing time step and wish to 'file-in' the missing data with an interpolated value from the steps on either side.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+          name="ResampleFactor"
+          command="SetResampleFactor"
+          number_of_elements="1"
+          default_values="0" >
+        <Documentation>
+          If ResampleFactor is non zero (positive), each input time step interval will be subdivided by the resample factor producing N times as many output steps
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty 
+         name="TimestepValues"
+         information_only="1">
+        <TimeStepsInformationHelper/>
+      </DoubleVectorProperty>
+
+     <DoubleVectorProperty name="TimeRange"
+        information_only="1">
+       <TimeRangeInformationHelper/>
+     </DoubleVectorProperty>
+
+      <StringVectorProperty
+        name="ParticleIdArray"
+        command="SetParticleIdArray"
+        number_of_elements="1"
+        animateable="0"
+        default_values="ParticleId"
+        label="Particle Id Array">
+        <ArrayListDomain name="array_list"
+                         attribute_type="Scalars"
+                         input_domain_name="p_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This (mandatory) property indicates the name of the particle ID array.
+        </Documentation>
+      </StringVectorProperty>
+
+      <IntVectorProperty
+        name="PolynomialInterpolation"
+        command="SetPolynomialInterpolation"
+        number_of_elements="1"
+        animateable="0"
+        default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Use Polynomial Interpolation to interpolate positions, using constraints on the derivatives of the 
+          positions given by the velocity array provided.
+        </Documentation>
+      </IntVectorProperty>
+
+      <StringVectorProperty
+        name="VelocityArray"
+        command="SetVelocityArray"
+        number_of_elements="1"
+        animateable="0"
+        default_values="Velocity"
+        label="Velocity">
+        <ArrayListDomain name="array_list"
+                         attribute_type="Vectors"
+                         input_domain_name="v_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This (mandatory) property indicates the name of the Velocity array.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- End TemporalParticleInterpolator -->
+    </SourceProxy>
+      
+  </ProxyGroup>
+  
+</ServerManagerConfiguration>
+

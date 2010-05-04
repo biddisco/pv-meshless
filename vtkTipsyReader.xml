@@ -1,0 +1,72 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="sources">
+    <SourceProxy name="TipsyReader"
+					 class="vtkTipsyReader">
+
+      <StringVectorProperty
+        name="MarkFileName"
+        command="SetMarkFileName"
+        number_of_elements="1">
+        <FileListDomain name="files"/>
+        <Documentation>
+          If set, only particles specified in the marked file are read in.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!--named Aaa as currently ParaView decides which file is the
+		      main data file by that file with the name which is alphabetically
+		      first -->
+
+      <StringVectorProperty
+        name="AaaFileName"
+        command="SetFileName"
+        number_of_elements="1">
+        <FileListDomain name="files"/>
+        <Documentation>
+          Reads in points from a tipsy binary file.
+        </Documentation>
+      </StringVectorProperty>
+
+      <IntVectorProperty name="DistributeDataOn"
+        command="SetDistributeDataOn"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          This option is only relevant when running in parallel on multiple processors. If checked, after tipsy file is read in, data is redistributed across processors to maximize spatial locality. This step takes additional time, and can instead be run manually by executing the D3 filter, some filters require this or D3 to be run, due to optimal performance under spatial locality or requirement of ghost cells
+        </Documentation>
+      </IntVectorProperty>
+
+      <StringVectorProperty
+         name="PointArrayInfo"
+         information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Point"/>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+         name="PointArrayStatus"
+         command="SetPointArrayStatus"
+         number_of_elements="0"
+         repeat_command="1"
+         number_of_elements_per_command="2"
+         element_types="2 0"
+         information_property="PointArrayInfo"
+         label="Point Arrays">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="PointArrayInfo" function="ArrayList"/>
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property lists which point-centered arrays to read.
+        </Documentation>
+      </StringVectorProperty>
+
+      <Hints>
+        <Property name="MarkFileName" show="1"/>
+      </Hints>
+
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>
+

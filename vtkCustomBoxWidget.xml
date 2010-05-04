@@ -1,0 +1,21 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- CustomBoxWidget                                                  -->
+  <!-- Proxy for the C++ vtkCustomBoxWidget class                       -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="3d_widgets">
+
+    <Proxy name="CustomBoxWidget"
+           class="vtkCustomBoxWidget"
+           base_proxygroup="3d_widgets"
+           base_proxyname="WidgetBase">
+      <Documentation>
+        Proxy for vtkCustomBoxWidget.
+      </Documentation>
+    </Proxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

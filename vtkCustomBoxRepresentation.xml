@@ -1,0 +1,196 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- CustomBoxRepresentation                                          -->
+  <!-- Proxy for the C++ vtkCustomBoxRepresentation class               -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="props">
+
+    <CustomBoxRepresentationProxy name="CustomBoxRepresentation" 
+                                  class="vtkCustomBoxRepresentation">
+      <Documentation>
+        Proxy for CustomBoxWidget. Don't confuse this with the
+        vtkSMRepresentation proxy for the custom box widget 
+        (which is the CustomBoxWidgetRepresentation).
+      </Documentation>
+
+      <IntVectorProperty
+        name="Visibility"
+        command="SetVisibility"
+        number_of_elements="1"
+        default_values="1"
+        animateable="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+        name="PlaceWidget"
+        command="PlaceWidget"
+        number_of_elements="6"
+        argument_is_array="1"
+        default_values="none">
+        <DoubleRangeDomain name="range"/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+        name="PlaceFactor"
+        command="SetPlaceFactor"
+        number_of_elements="1"
+        default_values="1.0">
+        <DoubleRangeDomain name="range" min="0.01" />
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+         name="PlaneMode"
+         command="SetPlaneMode"
+         number_of_elements="1"
+         default_values="0">
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
+
+      <Property name="OrientX"
+                command="OrientX">
+      </Property>
+      <Property name="OrientY"
+                command="OrientY">
+      </Property>
+      <Property name="OrientZ"
+                command="OrientZ">
+      </Property>
+
+      <DoubleVectorProperty
+         name="SetOBB"
+         command="SetOBB"
+         number_of_elements="12"
+         argument_is_array="1"
+         default_values="0 0 0 1 0 0 0 1 0 0 0 1">
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="OriginInfo"
+         command="GetOrigin"
+         number_of_elements="3"
+         default_values="0 0 0"
+         information_only="1">
+        <SimpleDoubleInformationHelper/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point1Info"
+         command="GetPoint1"
+         number_of_elements="3"
+         default_values="1 0 0"
+         information_only="1">
+        <SimpleDoubleInformationHelper/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point2Info"
+         command="GetPoint2"
+         number_of_elements="3"
+         information_only="1"
+         default_values="0 1 0">
+        <SimpleDoubleInformationHelper/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point3Info"
+         command="GetPoint3"
+         number_of_elements="3"
+         information_only="1"
+         default_values="0 0 1">
+        <SimpleDoubleInformationHelper/>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+         name="Resolution"
+         command="SetResolution"
+         number_of_elements="3"
+         default_values="32 32 32" >
+        <IntRangeDomain name="range" min="1" />
+      </IntVectorProperty>
+
+      <ProxyProperty name="Renderer" command="SetRenderer">
+        <ProxyGroupDomain name="groups">
+          <Group name="renderers"/>
+        </ProxyGroupDomain>
+      </ProxyProperty>
+
+      <SubProxy>
+        <Proxy name="Transform"
+          proxygroup="transforms" proxyname="Transform2">
+        </Proxy>
+        <ExposedProperties>
+          <Property name="Position" />
+          <Property name="PositionInfo" />
+          <Property name="Rotation" />
+          <Property name="RotationInfo" />
+          <Property name="Scale" />
+          <Property name="ScaleInfo" />
+        </ExposedProperties>
+      </SubProxy>
+
+      <!-- End of BoxRepresentation -->
+    </CustomBoxRepresentationProxy>
+    
+  </ProxyGroup>
+
+  <!-- ================================================================ -->
+  <!-- CustomBoxWidgetRepresentation                                    -->
+  <!-- This is a 'representation' proxy which holds a                   -->
+  <!-- CustomBoxRepresentation and a CustomBoxWidget                    -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="representations">
+
+    <NewWidgetRepresentationProxy name="CustomBoxWidgetRepresentation">
+    <Documentation>
+      Representation proxy for the the custom box widget. This includes the
+      widget/representation proxies for the custom box 3D widget.
+    </Documentation>
+
+    <SubProxy>
+      <Proxy name="Prop"
+             proxygroup="props" 
+             proxyname="CustomBoxRepresentation">
+      </Proxy>      
+      <ExposedProperties>
+        <Property name="PlaceFactor" />
+        <Property name="PlaceWidget" />
+        <Property name="Visibility" />
+        <Property name="Position" />
+        <Property name="PositionInfo" />
+        <Property name="Rotation" />
+        <Property name="RotationInfo" />
+        <Property name="Scale" />
+        <Property name="ScaleInfo" />
+        <Property name="OriginInfo"/>
+        <Property name="Point1Info"/>
+        <Property name="Point2Info"/>
+        <Property name="Point3Info"/>
+        <Property name="PlaneMode" />
+        <Property name="OrientX" />
+        <Property name="OrientY" />
+        <Property name="OrientZ" />
+        <Property name="SetOBB" />
+        <Property name="Resolution" />
+      </ExposedProperties>
+    </SubProxy>
+
+    <SubProxy>
+      <Proxy name="Widget"
+             proxygroup="3d_widgets" 
+             proxyname="CustomBoxWidget">
+      </Proxy>
+      <ExposedProperties>
+        <Property name="Enabled" />
+      </ExposedProperties>
+    </SubProxy>
+
+    <!-- End of CustomBoxWidgetRepresentation -->
+  </NewWidgetRepresentationProxy>
+    
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

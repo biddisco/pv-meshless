@@ -1,0 +1,42 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- ExtractDataOverTime                                               -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="filters">
+  
+    <SourceProxy name="ExtractDataOverTime" 
+                 class="vtkExtractDataOverTime"
+                 label="Extract Data Over Time">
+      <Documentation
+        short_help="Extracts a single point over time and then plots it."
+        long_help="Extracts  a single point over time and then plots it." >
+      </Documentation>
+
+      <InputProperty name="Input"
+          command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          The input from which the selection is extracted.
+        </Documentation>
+      </InputProperty>
+
+      <Hints>
+        <!-- View can be used to specify the preferred view for the proxy -->
+        <View type="XYPlotView" />
+        <!-- Temporary hint to allow the output of this filter to be plotted -->
+        <Plotable />
+      </Hints>
+      <!-- End of ExtractDataOverTime -->
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

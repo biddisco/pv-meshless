@@ -1,0 +1,4 @@
+<ParaViewSources>
+    <Source name="RegularGridSource" />
+</ParaViewSources>
+

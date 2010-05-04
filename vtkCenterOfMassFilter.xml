@@ -1,0 +1,59 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+
+    <SourceProxy name="CenterOfMass" 
+                 class="vtkCenterOfMassFilter" 
+                 label="Center Of Mass">
+      <Documentation
+         long_help="Finds the center of mass of all particles. Fully parallel."
+         short_help="Finds center of mass.">
+      </Documentation>
+
+      <InputProperty
+         name="Input"
+         command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <InputArrayDomain name="input_array">
+          <RequiredProperties>
+            <Property name="SelectInputArray"
+                      function="FieldDataSelection"/>
+          </RequiredProperties>
+        </InputArrayDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPointSet"/>
+        </DataTypeDomain>
+      </InputProperty>
+
+      <StringVectorProperty
+          name="SelectInputArray"
+          command="SetInputArrayToProcess"
+          number_of_elements="5"
+          element_types="0 0 0 0 2"
+          animateable="0">
+        <ArrayListDomain name="array_list"
+                         attribute_type="Scalars">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <FieldDataDomain name="field_list">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </FieldDataDomain>
+        <Documentation>
+          This property indicates which scalar array contains the mass of the particles.
+        </Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <Visibility replace_input="0" />
+      </Hints>
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>
+

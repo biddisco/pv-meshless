@@ -1,0 +1,12 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- SPHManager                                                       -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="meshless_helpers">
+    <Proxy name="SPHManager" class="vtkSPHManager">
+    </Proxy>
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

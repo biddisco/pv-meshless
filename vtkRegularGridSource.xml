@@ -1,0 +1,336 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- RegularGridSource                                                -->
+  <!-- Source version                                                   -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="sources">
+
+    <SourceProxy name="RegularGridSource"
+                 class="vtkRegularGridSource"
+                 label="RegularGridSource">
+      <Documentation
+         long_help="This filter Generates a grid of points inside a volume"
+         short_help="Generate volume points">
+      </Documentation>
+
+      <InputProperty
+         name="Input"
+         command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array" optional="1"/>
+      </InputProperty>
+
+      <DoubleVectorProperty
+         name="Origin"
+         command="SetOrigin"
+         number_of_elements="3"
+         animateable="1"
+         information_property="OriginInfo"
+         default_values="0.0 0.0 0.0" >
+        <DoubleRangeDomain name="range" />
+        <Documentation>
+          origin of box if no input supplied
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="OriginInfo"
+         command="GetOrigin"
+         information_only="1">
+        <SimpleDoubleInformationHelper/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Normal"
+         command="GetNormal"
+         number_of_elements="3"
+         default_values="0.0 0.0 1.0"
+         information_only="1">
+        <Documentation>
+          You can Get the normal, but not set it
+        </Documentation>
+        <SimpleDoubleInformationHelper/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point1"
+         command="SetPoint1"
+         number_of_elements="3"
+         animateable="1"
+         information_property="Point1Info"
+         default_values="1.0 0.0 0.0" >
+        <DoubleRangeDomain name="range" />
+        <Documentation>
+          X axis of box if no input supplied
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point1Info"
+         command="GetPoint1"
+         information_only="1">
+        <SimpleDoubleInformationHelper/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point2"
+         command="SetPoint2"
+         number_of_elements="3"
+         animateable="1"
+         information_property="Point2Info"
+         default_values="0.0 1.0 0.0" >
+        <DoubleRangeDomain name="range" />
+        <Documentation>
+          Y axis of box if no input supplied
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point2Info"
+         command="GetPoint2"
+         information_only="1">
+        <SimpleDoubleInformationHelper/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point3"
+         command="SetPoint3"
+         number_of_elements="3"
+         animateable="1"
+         information_property="Point3Info"
+         default_values="0.0 0.0 1.0" >
+        <DoubleRangeDomain name="range" />
+        <Documentation>
+          Z axis of box if no input supplied
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point3Info"
+         command="GetPoint3"
+         information_only="1">
+        <SimpleDoubleInformationHelper/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Spacing"
+         command="SetSpacing"
+         number_of_elements="3"
+         animateable="1"
+         default_values="0.0 0.0 0.0" >
+        <Documentation>
+          When the spacing along an axis is Zero, the Resolution will be used to compute the spacing.
+          If the spacing is non zero, it will override the Resolution setting.
+          Note that when Resolution is used, the points will exactly fit in the box, when spacing is used, there may be small gaps at the edges.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+         name="Resolution"
+         command="SetResolution"
+         number_of_elements="3"
+         animateable="1"
+         default_values="32 32 32" >
+        <Documentation>
+          When the spacing along an axis is Zero, the Resolution will be used to compute the spacing.
+          If the spacing is non zero, it will override the Resolution setting.
+          Note that when Resolution is used, the points will exactly fit in the box, when spacing is used, there may be small gaps at the edges.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="GenerateConnectedCells"
+         command="SetGenerateConnectedCells"
+         number_of_elements="1"
+         default_values="1" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          When set, plane mode produces a plane, and box mode a Structured Grid.
+          When unset, the output is a polydata object consisting solely of vertices.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="UseAutoPlacement"
+         command="SetUseAutoPlacement"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          The source can take the input bounds from widget controlled points,
+          or from the bounds of input data. We want to use a widget so set to 0.
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+         name="Delta"
+         command="SetDelta"
+         number_of_elements="1"
+         animateable="1"
+         default_values="0.0005" >
+        <Documentation>
+          Add some increment to each axis when defining the box
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <Property name="ComputeOBB"
+                command="ComputeOBB">
+      </Property>
+
+      <Hints>
+        <Property name="UseAutoPlacement" show="0"/>
+        <!-- We must remap Origin (of widget) to Centre (of plane) -->
+        <PropertyGroup type="RegularGridSource" label="Widget">
+          <Property function="OriginInfo" name="Origin" />
+          <Property function="Resolution" name="Resolution" />
+        </PropertyGroup>
+      </Hints>
+
+      <!-- End RegularGridSource -->
+    </SourceProxy>
+
+  </ProxyGroup>
+
+  <!-- ================================================================ -->
+  <!-- RegularGridSampler                                               -->
+  <!-- Filter version of RegularGridSource                              -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="filters">
+
+    <SourceProxy name="RegularGridSampler"
+                 class="vtkRegularGridSource"
+                 label="Regular Grid Sample Generator"
+                 base_proxygroup="sources"
+                 base_proxyname="RegularGridSource">
+      <Documentation
+       long_help="The same as RegularGridSource, but with an input to use for bounds initialization"
+       short_help="Generate sample points">
+      </Documentation>
+
+      <Property name="ComputeOBB"
+                command="ComputeOBB">
+      </Property>
+
+      <Hints>
+        <Visibility replace_input="0" />
+        <!-- We must remap Origin (of widget) to Centre (of plane) -->
+        <PropertyGroup type="RegularGridSource" label="Widget">
+          <Property function="OriginInfo" name="Origin" />
+          <Property function="Resolution" name="Resolution" />
+        </PropertyGroup>
+      </Hints>
+
+      <!-- End RegularGridSampler -->
+    </SourceProxy>
+
+  </ProxyGroup>
+
+  <!-- ================================================================ -->
+  <!-- RegularGridSource                                                -->
+  <!-- Widget version                                                   -->
+  <!-- ================================================================ -->
+  
+  <ProxyGroup name="extended_sources">
+
+    <SourceProxy name="RegularGridSource" 
+                 class="vtkRegularGridSource" 
+                 label="Grid Source">
+      <DoubleVectorProperty
+         name="Origin"
+         command="SetOrigin"
+         number_of_elements="3"
+         animateable="1"
+         default_values="-0.5 -0.5 -0.5" >
+        <BoundsDomain name="range" mode="normal" default_mode="min" >
+          <RequiredProperties>
+            <Property name="DummyInput" function="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point1"
+         command="SetPoint1"
+         number_of_elements="3"
+         animateable="1"
+         default_values="0.5 -0.5 -0.5" >
+         <BoundsDomain name="range" mode="normal" default_mode="min" >
+           <RequiredProperties>
+             <Property name="DummyInput" function="Input" />
+           </RequiredProperties>
+         </BoundsDomain>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point2"
+         command="SetPoint2"
+         number_of_elements="3"
+         animateable="1"
+         default_values="-0.5 0.5 -0.5" >
+         <BoundsDomain name="range" mode="normal" default_mode="max" >
+           <RequiredProperties>
+             <Property name="DummyInput" function="Input" />
+           </RequiredProperties>
+         </BoundsDomain>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point3"
+         command="SetPoint3"
+         number_of_elements="3"
+         animateable="1"
+         default_values="-0.5 -0.5 0.5" >
+        <BoundsDomain name="range" mode="normal" default_mode="max" >
+          <RequiredProperties>
+            <Property name="DummyInput" function="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+         name="Resolution"
+         command="SetResolution"
+         number_of_elements="3"
+         default_values="32 32 32" >
+        <IntRangeDomain name="range" min="1" />
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="GenerateConnectedCells"
+         command="SetGenerateConnectedCells"
+         number_of_elements="1"
+         default_values="1" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          When set, plane mode produces a plane, and box mode a Structured Grid.
+          When unset, the output is a polydata object consisting solely of vertices.
+        </Documentation>
+      </IntVectorProperty>
+
+      <InputProperty name="DummyInput" is_internal="1">
+        <!-- Used when this source is added to a proxy list domain. -->
+      </InputProperty>
+
+      <Hints>
+        <PropertyGroup type="RegularGridSource" >
+          <Property function="Resolution" name="Resolution" />
+        </PropertyGroup>
+
+        <ProxyList>
+          <Link name="DummyInput" with_property="Input" />
+        </ProxyList>
+      </Hints>
+      <!-- End GridSource -->
+    </SourceProxy>
+ 
+  </ProxyGroup>
+</ServerManagerConfiguration>

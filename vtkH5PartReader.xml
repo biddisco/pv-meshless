@@ -1,0 +1,189 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- Sources                                                          -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="writers">
+    <Proxy name="H5PartWriter2" class="vtkH5PartWriter">
+      <StringVectorProperty
+        name="FileName"
+        command="SetFileName"
+        number_of_elements="1">
+        <Documentation>
+          The name of the file to be written.
+        </Documentation>
+      </StringVectorProperty>
+    </Proxy>
+  </ProxyGroup>
+
+  <ProxyGroup name="filters">
+    <SourceProxy
+     name="H5PartWriter"
+     class="vtkH5PartWriter">
+
+      <InputProperty
+         name="Input"
+         command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPointSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          This property specifies the input to the writer.
+        </Documentation>
+      </InputProperty>
+      
+      <StringVectorProperty
+        name="FileName"
+        command="SetFileName"
+        number_of_elements="1">
+<!--        <FileListDomain name="files"/> -->
+      </StringVectorProperty>
+      
+      <Hints>
+        <ReaderFactory extensions="h5part"
+            file_description="HDF5 particle files" />
+      </Hints>
+    </SourceProxy>
+
+    </ProxyGroup>
+
+  <!-- ================================================================ -->
+  <!-- Sources                                                          -->
+  <!-- ================================================================ -->
+  
+  <ProxyGroup name="sources">
+
+    <!-- ============================================================= -->
+    <!-- H5Part                                                        -->
+    <!-- ============================================================= -->
+    <SourceProxy 
+     name="H5Part" 
+     class="vtkH5PartReader">
+      <Documentation>
+        Reader for H5Part (HDF5) particle files.
+      </Documentation>
+
+      <StringVectorProperty
+       name="FileName"
+       command="SetFileName"
+       number_of_elements="1">
+       <FileListDomain name="files"/>
+     </StringVectorProperty>
+
+     <IntVectorProperty
+        name="GenerateVertexCells"
+        command="SetGenerateVertexCells"
+        number_of_elements="1"
+        default_values="1" >
+       <BooleanDomain name="bool"/>
+     </IntVectorProperty>
+
+      <IntVectorProperty
+         name="MaskOutOfTimeRangeOutput"
+         command="SetMaskOutOfTimeRangeOutput"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+        name="TimestepValues"
+        information_only="1">
+       <TimeStepsInformationHelper/>
+     </DoubleVectorProperty>
+
+      <StringVectorProperty
+         name="Xarray"
+         command="SetXarray"
+         default_values="Coords_0"
+         default_regex_delimiter=","
+         default_regex=".*oords_0,.*[Xx]$"
+         number_of_elements="1">
+        <Documentation>
+          This property lists which point array to use for coordinates.
+        </Documentation>
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="PointArrayInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+         name="Yarray"
+         command="SetYarray"
+         default_values="Coords_1"
+         default_regex_delimiter=","
+         default_regex=".*oords_1,.*[Yy]$"
+         number_of_elements="1">
+        <Documentation>
+          This property lists which point array to use for coordinates.
+        </Documentation>
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="PointArrayInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+         name="Zarray"
+         command="SetZarray"
+         default_values="Coords_2"
+         default_regex_delimiter=","
+         default_regex=".*oords_2,.*[Zz]$"
+         number_of_elements="1">
+        <Documentation>
+          This property lists which point array to use for coordinates.
+        </Documentation>
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="PointArrayInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+      </StringVectorProperty>
+
+     <StringVectorProperty
+        name="PointArrayInfo"
+        information_only="1">
+       <ArraySelectionInformationHelper attribute_name="Point"/>
+     </StringVectorProperty>
+
+     <StringVectorProperty
+        name="PointArrayStatus"
+        command="SetPointArrayStatus"
+        number_of_elements="0"
+        repeat_command="1"
+        number_of_elements_per_command="2"
+        element_types="2 0"
+        information_property="PointArrayInfo"
+        label="Point Arrays">
+       <ArraySelectionDomain name="array_list">
+         <RequiredProperties>
+           <Property name="PointArrayInfo" function="ArrayList"/>
+         </RequiredProperties>
+       </ArraySelectionDomain>
+       <Documentation>
+         This property lists which point-centered arrays to read.
+       </Documentation>
+     </StringVectorProperty>
+
+   </SourceProxy>
+
+    <!-- ============================================================= -->
+    <!-- H5SPH                                                         -->
+    <!-- ============================================================= -->
+    <SourceProxy
+      name="H5SPH"
+      class="vtkH5SPHReader"
+      base_proxygroup="sources"
+      base_proxyname="H5Part">
+    </SourceProxy>
+    
+  </ProxyGroup>
+</ServerManagerConfiguration>
