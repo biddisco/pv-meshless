@@ -83,7 +83,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ParticleDistribute.h"
 #include "tipsylib/ftipsy.hpp" // functions take tipsy particle objects
 
-class VTK_EXPORT TipsyParticleDistribute : public ParticleDistribute {
+class TipsyParticleDistribute : public ParticleDistribute {
 public:
    TipsyParticleDistribute();
   ~TipsyParticleDistribute();
