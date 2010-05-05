@@ -11,6 +11,7 @@ ENDIF(COMMAND CMAKE_POLICY)
 #--------------------------------------------------
 FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
+SET(BUILD_SHARED_LIBS ${PARAVIEW_BUILD_SHARED_LIBS})
 
 #--------------------------------------------------
 # Find and Use vtkCSCSCommon
@@ -202,7 +203,7 @@ ADD_PARAVIEW_PLUGIN(
 )
 
 TARGET_LINK_LIBRARIES(pvmeshless_plugin 
-  vtkWidgets 
+  vtkWidgets
   H5Part 
   TipsyLib 
   Cosmo2
