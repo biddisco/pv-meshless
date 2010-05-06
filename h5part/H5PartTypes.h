@@ -18,8 +18,7 @@ typedef h5part_int64_t (*h5part_error_handler)( const char*, const h5part_int64_
 __attribute__ ((format (printf, 3, 4)))
 #endif
  ;
-
-#ifndef MPI_INCLUDED
+#if !defined(MPI_INCLUDED) && !defined(MPI_BOTTOM)
 typedef unsigned long		MPI_Comm;
 #endif
 
