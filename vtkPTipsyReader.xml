@@ -19,7 +19,7 @@
         command="SetRL"
         label="rL (physical box side length)"
         number_of_elements="1"
-        default_values="90.140846" >
+        default_values="1" >
      <DoubleRangeDomain name="range" min="0" />
        <Documentation>
        The box side length used to wrap particles around if they exceed rL (or less than 0) in any dimension.
@@ -31,7 +31,7 @@
         command="SetOverlap"
         label="overlap (shared point/ghost cell gap distance)"
         number_of_elements="1"
-        default_values="5" >
+        default_values="0.1" >
      <DoubleRangeDomain name="range" min="0" />
        <Documentation>
        The space in rL units to extend processor particle ownership for ghost particles/cells.  Needed for correct halo calculation when halos cross processor boundaries in parallel computation.
