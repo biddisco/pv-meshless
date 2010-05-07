@@ -89,6 +89,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 
+const int  MAX_TIPSY_READ = 1000000;
+const bool ENFORCE_TIPSY_MAX_READ = true;
+
 /////////////////////////////////////////////////////////////////////////
 //
 // Particle data space is partitioned for the number of processors
@@ -155,10 +158,11 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
   // Calculates the max number of files per processor and max number of
   // particles per file so that buffering can be done
   // For round robin sharing determine where to send and receive buffers from
-  partitionInputFiles();
+  this->partitionInputFiles();
 
   // Compute the total number of particles in the problem
   // Compute the maximum number of particles in any one file to set buffer size
+  // The tipsy file is opened in here
   this->findFileParticleCount();
 
   // MPI buffer size might limit the number of particles read from a file
@@ -167,8 +171,8 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
   // Every processor must send that number of chunks even if its own file
   // does not have that much information
 
-  if (ENFORCE_MAX_READ == true && this->maxParticles > MAX_READ) {
-    this->maxRead = MAX_READ;
+  if (ENFORCE_TIPSY_MAX_READ == true && this->maxParticles > MAX_TIPSY_READ) {
+    this->maxRead = MAX_TIPSY_READ;
     this->maxReadsPerFile = (this->maxParticles / this->maxRead) + 1;
   } else {
     this->maxRead = this->maxParticles;
@@ -180,7 +184,7 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
   // Number of particles is the first integer in the buffer
   int bufferSize = (1 * sizeof(int)) +          // number of particles
                    (this->maxRead *
-                   ((COSMO_FLOAT * sizeof(POSVEL_T)) + (COSMO_INT * sizeof(ID_T))));
+                   ((TIPSY_SIZE * sizeof(POSVEL_T)) + (COSMO_INT * sizeof(ID_T))));
 
   Message* message1 = new Message(bufferSize);
   Message* message2 = new Message(bufferSize);
@@ -191,10 +195,10 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
   POSVEL_T *vBlock = 0;
   ID_T* iBlock = 0;
 
-  // CUSTOM format reads one particle at a time
+  // CUSTOM/TIPSY format reads one particle at a time
   if (this->inputType == CUSTOM) {
-    fBlock = new POSVEL_T[COSMO_FLOAT];
-    iBlock = new ID_T[COSMO_INT];
+    fBlock = new POSVEL_T[TIPSY_SIZE];
+    iBlock = new ID_T[TIPSY_INT];
   }
 
   // Reserve particle storage to minimize reallocation
@@ -204,7 +208,7 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
   reserveSize /= this->processorsPerFile;
 
   if(reserveQ) {
-#ifndef USE_VTK_COSMO
+#ifndef DEBUG_MESSAGES
     cout << "readParticlesRoundRobin reserving vectors" << endl;
 #endif
     this->xx->reserve(reserveSize);
@@ -233,7 +237,7 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
     int remainingParticles = 0;
 
     if ((int)this->inFiles.size() > file) {
-#ifndef USE_VTK_COSMO
+#ifndef DEBUG_MESSAGES
       cout << "Rank " << this->myProc << " open file " << inFiles[file]
            << " with " << this->fileParticles[file] << " particles" << endl;
 #endif
@@ -247,7 +251,7 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
       remainingParticles = this->fileParticles[file];
 
     } else {
-#ifndef USE_VTK_COSMO
+#ifndef DEBUG_MESSAGES
       cout << "Rank " << this->myProc << " no file to open " << endl;
 #endif
     }
@@ -260,16 +264,11 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
 
       // Processor has a file to read and share via round robin with others
       if (file < (int)this->inFiles.size()) {
-        if (this->inputType == CUSTOM) {
-	        ifTipsy tipsyInfile;
-          tipsyInfile.open(this->inFiles[0].c_str(),"standard");
-          if (tipsyInfile.is_open()) 
-		        {
-            readFromTipsyFile(&tipsyInfile, firstParticle, numberOfParticles,
-                             fBlock, iBlock, message1);
-          }
+        if (tipsyInfile.is_open()) {
+          readFromTipsyFile(&tipsyInfile, firstParticle, numberOfParticles,
+             fBlock, iBlock, message1);
         }
-        firstParticle += numberOfParticles;
+        firstParticle      += numberOfParticles;
         remainingParticles -= numberOfParticles;
         if (remainingParticles <= 0)
           numberOfParticles = 0;
@@ -304,6 +303,8 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
   delete message1;
   delete message2;
 
+  tipsyInfile.close();
+
   // Count the particles across processors
   long totalAliveParticles = 0;
 #ifdef USE_SERIAL_COSMO
@@ -314,11 +315,9 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
                 1, MPI_LONG, MPI_SUM, Partition::getComm());
 #endif
 
-#ifndef USE_VTK_COSMO
-#ifdef DEBUG
+#ifndef DEBUG_MESSAGES
   cout << "Rank " << setw(3) << this->myProc 
        << " #alive = " << this->numberOfAliveParticles << endl;
-#endif
  
   if (this->myProc == MASTER) {
     cout << "TotalAliveParticles " << totalAliveParticles << endl;
@@ -328,7 +327,7 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
 
 /////////////////////////////////////////////////////////////////////////
 //
-// Using the base name of the data, go to the subdirectory and determine
+// There is only one file with tipsy, so 
 // how many input files there are.  Parcel those files between all the
 // processors which will be responsible for actually reading 0 or more.
 //
@@ -342,23 +341,20 @@ void TipsyParticleDistribute::partitionInputFiles()
   // If there are 1 or more files per processor set the
   // buffering up with a full round robin between all processors
   if (this->numberOfFiles >= this->numProc) {
-
     // Number of round robin sends to share all the files
     this->processorsPerFile = 1;
     this->numberOfFileSends = this->numProc - 1;
-    this->maxFileSends = this->numberOfFileSends;
+    this->maxFileSends      = this->numberOfFileSends;
 
-    // Which files does this processor read
-    for (int i = 0; i < this->numberOfFiles; i++)
-      if ((i % this->numProc) == this->myProc)
-//        this->inFiles.push_back(files[i]);
-        this->inFiles.push_back(this->baseFile);
+    // All processors are reading the same file
+    this->inFiles.push_back(this->baseFile);
 
     // Where is the file sent, and where is it received
     if (this->myProc == this->numProc - 1)
       this->nextProc = 0;
     else
       this->nextProc = this->myProc + 1;
+
     if (this->myProc == 0)
       this->prevProc = this->numProc - 1;
     else
@@ -370,27 +366,26 @@ void TipsyParticleDistribute::partitionInputFiles()
   // of files does not divide evenly into the number of processors the last
   // round robin loop will be bigger and some processors will contribute
   // buffers of 0 size to send
-
   else {
-
     // Assign the round robin circle (last circle is bigger than others)
-    this->processorsPerFile = this->numProc / this->numberOfFiles;
+    this->processorsPerFile       = this->numProc / this->numberOfFiles;
     int numberOfRoundRobinCircles = this->processorsPerFile;
-    int myCircle = this->myProc / this->numberOfFiles;
-    int extraProcessors = this->numProc - 
-            (numberOfRoundRobinCircles * this->numberOfFiles);
-    if (myCircle == numberOfRoundRobinCircles)
-      myCircle--;
-
+    int myCircle                  = this->myProc / this->numberOfFiles;
+    int extraProcessors           = this->numProc - (numberOfRoundRobinCircles*this->numberOfFiles);
+    if (myCircle == numberOfRoundRobinCircles) { 
+      myCircle--; 
+    }
+    //
     int firstInCircle = myCircle * this->numberOfFiles;
-    int lastInCircle = firstInCircle + this->numberOfFiles - 1;
-    if (myCircle == (numberOfRoundRobinCircles - 1))
-      lastInCircle += extraProcessors;
-
+    int lastInCircle  = firstInCircle + this->numberOfFiles - 1;
+    if (myCircle == (numberOfRoundRobinCircles - 1)) { 
+      lastInCircle += extraProcessors; 
+    }
+    //
     // How big is the round robin circle this processor is in
     // What is the biggest round robin circle (needed because of MPI_Barrier)
     this->numberOfFileSends = lastInCircle - firstInCircle;
-    this->maxFileSends = this->numberOfFiles + extraProcessors;
+    this->maxFileSends      = this->numberOfFiles + extraProcessors;
 
     // Which file does this processor read
     int index = this->myProc % this->numberOfFiles;
@@ -412,53 +407,50 @@ void TipsyParticleDistribute::partitionInputFiles()
 
 /////////////////////////////////////////////////////////////////////////
 //
-// Open each input file belonging to this processor and find the number
-// of particles for setting buffer sizes
+// Open the tipsy file and find how many particles there are in total
+// and how many this process is reading.
+// @TODO : this could be done on just one process since we all read the same file
 //
 /////////////////////////////////////////////////////////////////////////
 
 void TipsyParticleDistribute::findFileParticleCount()
 {
   // Compute the total number of particles in the problem
-  // Compute the maximum number of particles in any one file to set buffer size
-  long numberOfParticles = 0;
+  // Compute the maximum number of particles read on any one process to set buffer size
+  long numberOfParticles    = 0;
   long maxNumberOfParticles = 0;
-  int numberOfMyFiles = (int)this->inFiles.size();
+  int  numberOfMyFiles      = 1;
 
-  // Each processor counts the particles in its own files
-  for (int i = 0; i < numberOfMyFiles; i++) {
+  // Open the tipsy standard file and abort if there is an error.
+  this->tipsyInfile.open(this->inFiles[0].c_str(),"standard");
+  if (!this->tipsyInfile.is_open()) 
+    {
+    //	vtkErrorMacro("Error opening file " << this->FileName);
+    }
 
-    // Open the tipsy standard file and abort if there is an error.
-    ifTipsy tipsyInfile;
-    tipsyInfile.open(this->inFiles[i].c_str(),"standard");
-    if (!tipsyInfile.is_open()) 
-	    {
-//	      vtkErrorMacro("Error opening file " << this->FileName);
-      }
+  // Reading in the header
+  tipsyInfile >> this->tipsyHeader;
 
-    // Initializing for reading  
-    TipsyHeader  tipsyHeader; 
-    // Reading in the header
-    tipsyInfile >> tipsyHeader;
+  unsigned long pieceSize  = floor(this->tipsyHeader.h_nBodies*1.0/this->numProc);
+  unsigned long beginIndex = this->myProc*pieceSize;
+  unsigned long endIndex   = (myProc == this->numProc - 1) ? (this->tipsyHeader.h_nBodies-1) : (this->myProc+1)*(pieceSize-1);
 
-    unsigned long pieceSize = floor(tipsyHeader.h_nBodies*1./numProc);
-    unsigned long beginIndex = myProc*pieceSize;
-    unsigned long endIndex = (myProc == numProc - 1) ? \
- 	    tipsyHeader.h_nBodies : (myProc+1)*pieceSize;
+  cout << "Rank " << this->myProc << " opened " << this->inFiles[0].c_str() 
+    << " total : " << this->tipsyHeader.h_nBodies << " particles" << endl;
+  cout << "Rank " << this->myProc << " will read " << beginIndex << " to " << endIndex << endl;
 
-    int numberOfRecords = endIndex-beginIndex;
-    this->fileParticles.push_back(numberOfRecords);
+  int numberOfRecords = 1 + endIndex - beginIndex;
+  this->fileParticles.push_back(numberOfRecords);
 
-    numberOfParticles += numberOfRecords;
-    if (maxNumberOfParticles < numberOfRecords)
-      maxNumberOfParticles = numberOfRecords;
-
-  }
+  numberOfParticles += this->tipsyHeader.h_nBodies;
+  if (maxNumberOfParticles < numberOfRecords)
+    maxNumberOfParticles = numberOfRecords;
 
   // If multiple processors read the same file, just do the reduce on one set
+  // and make sure we count the totals only once
   if (this->processorsPerFile > 1) {
     if (this->myProc >= this->numberOfFiles) {
-      numberOfParticles = 0;
+      numberOfParticles    = 0;
       maxNumberOfParticles = 0;
     }
   }
@@ -490,13 +482,11 @@ void TipsyParticleDistribute::findFileParticleCount()
                 1, MPI_INT, MPI_MAX, Partition::getComm());
 #endif
 
-#ifndef USE_VTK_COSMO
-#ifdef DEBUG
+#ifndef DEBUG_MESSAGES
   if (this->myProc == MASTER) {
     cout << "Total particle count: " << this->totalParticles << endl;
     cout << "Max particle count:   " << this->maxParticles << endl;
   }
-#endif
 #endif
 }
 
@@ -546,13 +536,7 @@ void TipsyParticleDistribute::readFromTipsyFile(
 {
   // Store number of particles used in first position
   message->putValue(&numberOfParticles);
-  if (numberOfParticles == 0)
-    return;
-
-  // Initializing for reading  
-  TipsyHeader  tipsyHeader; 
-  // Reading in the header
-  *tipsyInfile >> tipsyHeader;
+  if (numberOfParticles == 0) return;
 
   // Store each particle location, velocity, mass and tag (as float) in buffer
   int changeCount = 0;
@@ -563,7 +547,7 @@ void TipsyParticleDistribute::readFromTipsyFile(
     TipsyGasParticle  g;
     TipsyDarkParticle d;
     TipsyStarParticle s;
-	  tipsypos::section_type particleSection=SeekToIndex(p, tipsyHeader, *tipsyInfile);
+	  tipsypos::section_type particleSection=SeekToIndex(p, this->tipsyHeader, *tipsyInfile);
     static bool error_reported = false;
 	  switch(particleSection)
 		  {
@@ -612,10 +596,8 @@ void TipsyParticleDistribute::readFromTipsyFile(
         fBlock[i] += this->boxSize/2.0;
       }
       if (fBlock[i] >= this->boxSize) {
-#ifndef USE_VTK_COSMO
-#ifdef DEBUG
+#ifndef DEBUG_MESSAGES
         cout << "Location at " << i << " changed from " << fBlock[i] << endl;
-#endif
 #endif
         fBlock[i] -= this->boxSize;
         changeCount++;
@@ -636,7 +618,7 @@ void TipsyParticleDistribute::readFromTipsyFile(
     message->putValue(&iBlock[0]);
   }
 
-#ifndef USE_VTK_COSMO
+#ifndef DEBUG_MESSAGES
   cout << "Rank " << this->myProc << " wrapped around " << changeCount
        << " particles" << endl;
 #endif
@@ -668,7 +650,7 @@ void TipsyParticleDistribute::readParticlesOneToOne(int reserveQ)
   int reserveSize = (int) (this->maxParticles * DEAD_FACTOR);
   
   if(reserveQ) {
-#ifndef USE_VTK_COSMO
+#ifndef DEBUG_MESSAGES
     cout << "readParticlesOneToOne reserving vectors" << endl;
 #endif
     this->xx->reserve(reserveSize);

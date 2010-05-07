@@ -83,6 +83,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ParticleDistribute.h"
 #include "tipsylib/ftipsy.hpp" // functions take tipsy particle objects
 
+const int TIPSY_SIZE = 7;    // {x,y,z} location and {u,v,w} velocity plus {m} mass
+const int TIPSY_INT  = 1;    // Particle id
+
 class TipsyParticleDistribute : public ParticleDistribute {
 public:
    TipsyParticleDistribute();
@@ -114,6 +117,10 @@ public:
 
   // When set, the bounding box is recentred from the origin to {0.5,0.5,0.5}
   int RecentreBoundingBox;
+
+  // The tipsy file object that will be read
+  ifTipsy      tipsyInfile;
+  TipsyHeader  tipsyHeader; 
 
 private:
 
