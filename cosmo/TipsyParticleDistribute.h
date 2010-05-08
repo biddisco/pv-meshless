@@ -121,6 +121,9 @@ public:
   // The tipsy file object that will be read
   ifTipsy      tipsyInfile;
   TipsyHeader  tipsyHeader; 
+  unsigned long LocalStartIndex;
+  unsigned long LocalEndIndex;
+  unsigned long LocalCount;
 
 private:
 
