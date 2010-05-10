@@ -494,8 +494,7 @@ void TipsyParticleDistribute::readFromTipsyFile(
       if (this->RecentreBoundingBox) {
         fBlock[i] += this->boxSize/2.0;
       }
-      fBlock[i] = (rand()%20)/20.0;
-
+//      fBlock[i] = (rand()%20)/20.0;
 
       if (fBlock[i] >= this->boxSize) {
 #ifndef DEBUG_MESSAGES
