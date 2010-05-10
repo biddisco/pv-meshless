@@ -446,7 +446,7 @@ void TipsyParticleDistribute::readFromTipsyFile(
     TipsyGasParticle  g;
     TipsyDarkParticle d;
     TipsyStarParticle s;
-	  tipsypos::section_type particleSection=SeekToIndex(p, this->tipsyHeader, *tipsyInfile);
+	  tipsypos::section_type particleSection=SeekToIndex(firstParticle+p, this->tipsyHeader, *tipsyInfile);
     static bool error_reported = false;
 	  switch(particleSection)
 		  {
