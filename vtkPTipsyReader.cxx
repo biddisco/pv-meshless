@@ -183,6 +183,7 @@ int vtkPTipsyReader::RequestData(
   ParticleExchange exchange;
 
   // Initialize classes for reading, exchanging and calculating
+  distribute.RecentreBoundingBox = this->RecentreBoundingBox;
   distribute.setParameters(this->FileName, this->RL, "CUSTOM");
   exchange.setParameters(this->RL, this->Overlap);
 
