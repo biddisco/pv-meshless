@@ -166,7 +166,8 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
   this->findFileParticleCount();
 
   if (!tipsyInfile.is_open()) {
-    cout << " Error in file open" << endl;
+    cout << " Error in file open" << std::endl;
+    cout.flush();
   }
 
   // MPI buffer size might limit the number of particles read from a file
@@ -179,8 +180,9 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
     this->maxRead = MAX_TIPSY_READ;
     this->maxReadsPerFile = (this->LocalCount / this->maxRead) + 1;
     cout << "Rank " << this->myProc << " maxReadsPerFile " << this->maxReadsPerFile << endl;
+    cout.flush();
   } else {
-    this->maxRead = this->LocalCount;
+    this->maxRead = this->maxParticles;
     this->maxReadsPerFile = 1;
   }
 
@@ -213,6 +215,7 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
   if(1 || reserveQ) {
 #ifndef DEBUG_MESSAGES
     cout << "readParticlesRoundRobin reserving vectors " << reserveSize << endl;
+    cout.flush();
 #endif
     this->xx->reserve(reserveSize);
     this->yy->reserve(reserveSize);
@@ -240,6 +243,7 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
 #ifndef DEBUG_MESSAGES
   cout << "Rank " << this->myProc << " open file " << inFiles[0]
        << " with " << this->fileParticles[0] << " particles" << endl;
+    cout.flush();
 #endif
 
   // Number of particles read at one time depends on MPI buffer size
@@ -292,9 +296,11 @@ void TipsyParticleDistribute::readParticlesRoundRobin(int reserveQ)
 #ifndef DEBUG_MESSAGES
   cout << "Rank " << setw(3) << this->myProc 
        << " #alive = " << this->numberOfAliveParticles << endl;
+    cout.flush();
  
   if (this->myProc == MASTER) {
     cout << "TotalAliveParticles " << totalAliveParticles << endl;
+    cout.flush();
   }
 #endif
 }
@@ -351,6 +357,7 @@ void TipsyParticleDistribute::findFileParticleCount()
   if (!this->tipsyInfile.is_open()) 
     {
     cout << "Error opening file " << this->baseFile.c_str() << endl;
+    cout.flush();
     return;
     }
 
@@ -361,13 +368,22 @@ void TipsyParticleDistribute::findFileParticleCount()
   this->LocalStartIndex    = this->myProc*pieceSize;
   this->LocalEndIndex      = (myProc == this->numProc - 1) ? (this->tipsyHeader.h_nBodies-1) : (this->myProc+1)*pieceSize-1;
   this->LocalCount         = 1 + this->LocalEndIndex - this->LocalStartIndex;
-  this->maxParticles       = this->tipsyHeader.h_nBodies;
   this->fileParticles.push_back(this->LocalCount);
   this->maxFiles = 1;
+
+#ifdef USE_SERIAL_COSMO
+  this->maxParticles = maxNumberOfParticles;
+#else
+  MPI_Allreduce((void*) &this->LocalCount,
+                (void*) &this->maxParticles,
+                1, MPI_LONG, MPI_MAX, Partition::getComm());
+#endif
 
   cout << "Rank " << this->myProc << " opened " << this->inFiles[0].c_str() 
     << " total : " << this->tipsyHeader.h_nBodies << " particles" << endl;
   cout << "Rank " << this->myProc << " will read " << this->LocalStartIndex << " to " << this->LocalEndIndex << endl;
+  cout << "Rank " << this->myProc << " maxParticles " << this->maxParticles << endl;
+  cout.flush();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -415,6 +431,7 @@ void TipsyParticleDistribute::readFromTipsyFile(
 {
   cout << "Rank " << this->myProc << " reading particles from " << firstParticle << "  to " <<
        firstParticle + numberOfParticles-1 << " " << endl;
+    cout.flush();
 
   // Store number of particles used in first position
   message->putValue(&numberOfParticles);
@@ -477,9 +494,13 @@ void TipsyParticleDistribute::readFromTipsyFile(
       if (this->RecentreBoundingBox) {
         fBlock[i] += this->boxSize/2.0;
       }
+      fBlock[i] = (rand()%20)/20.0;
+
+
       if (fBlock[i] >= this->boxSize) {
 #ifndef DEBUG_MESSAGES
         cout << "Location at " << i << " changed from " << fBlock[i] << endl;
+    cout.flush();
 #endif
         fBlock[i] -= this->boxSize;
         changeCount++;
@@ -503,6 +524,7 @@ void TipsyParticleDistribute::readFromTipsyFile(
 #ifndef DEBUG_MESSAGES
   cout << "Rank " << this->myProc << " wrapped around " << changeCount
        << " particles" << endl;
+    cout.flush();
 #endif
 }
 
@@ -534,6 +556,7 @@ void TipsyParticleDistribute::readParticlesOneToOne(int reserveQ)
   if(reserveQ) {
 #ifndef DEBUG_MESSAGES
     cout << "readParticlesOneToOne reserving vectors" << endl;
+    cout.flush();
 #endif
     this->xx->reserve(reserveSize);
     this->yy->reserve(reserveSize);
