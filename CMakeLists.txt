@@ -42,6 +42,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tipsylib)
 #------------------------------------------------------
 IF (VTK_USE_PARALLEL AND VTK_USE_MPI)
   ADD_DEFINITIONS(-DPARALLEL_IO)
+ELSE (VTK_USE_PARALLEL AND VTK_USE_MPI)
+  ADD_DEFINITIONS(-DUSE_SERIAL_COSMO)
 ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 
 #--------------------------------------------------
