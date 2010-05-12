@@ -372,7 +372,7 @@ void TipsyParticleDistribute::findFileParticleCount()
   this->maxFiles = 1;
 
 #ifdef USE_SERIAL_COSMO
-  this->maxParticles = maxNumberOfParticles;
+  this->maxParticles = this->LocalCount;
 #else
   MPI_Allreduce((void*) &this->LocalCount,
                 (void*) &this->maxParticles,
