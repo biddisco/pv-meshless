@@ -9,9 +9,23 @@ ENDIF(COMMAND CMAKE_POLICY)
 #--------------------------------------------------
 # Find and Use ParaView
 #--------------------------------------------------
-FIND_PACKAGE(ParaView REQUIRED)
-INCLUDE(${PARAVIEW_USE_FILE})
-SET(BUILD_SHARED_LIBS ${PARAVIEW_BUILD_SHARED_LIBS})
+IF(NOT PARAVIEW_LOADED)
+  FIND_PACKAGE(ParaView REQUIRED)
+  INCLUDE(${PARAVIEW_USE_FILE})
+  SET(PARAVIEW_LOADED 1)
+ELSE(NOT PARAVIEW_LOADED)
+  IF (PARAVIEW_BUILD_QT_GUI)
+    INCLUDE(${QT_USE_FILE})
+  ENDIF (PARAVIEW_BUILD_QT_GUI)
+  INCLUDE_DIRECTORIES(
+    ${PARAVIEW_INCLUDE_DIRS}
+    ${ParaView_SOURCE_DIR}/VTK/Geovis
+    ${PARAVIEW_GUI_INCLUDE_DIRS}
+    ${PARAVIEW_KWSYS_INCLUDE_DIRS}
+    ${VTK_INCLUDE_DIR}
+    ${MPI_INCLUDE_PATH}
+  )
+ENDIF(NOT PARAVIEW_LOADED)
 
 #--------------------------------------------------
 # Find and Use vtkCSCSCommon
