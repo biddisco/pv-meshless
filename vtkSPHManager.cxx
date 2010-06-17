@@ -1,70 +1,111 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
-  Module                  : vtkSPHManager.h
-  Revision of last commit : $Rev: 1584 $
-  Author of last commit   : $Author: soumagne $
-  Date of last commit     : $Date:: 2010-02-26 18:09:23 +0100 #$
+  Project                 : vtkCSCSMeshless
+  Module                  : vtkSPHManager.cxx
+
+  Authors:
+     John Biddiscombe     Jerome Soumagne
+     biddisco@cscs.ch     soumagne@cscs.ch
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
-  You may use modify and and distribute this code freely providing 
-  1) This copyright notice appears on all copies of source code 
+  You may use modify and and distribute this code freely providing
+  1) This copyright notice appears on all copies of source code
   2) An acknowledgment appears with any substantial usage of the code
-  3) If this code is contributed to any other open source project, it 
-  must not be reformatted such that the indentation, bracketing or 
-  overall style is modified significantly. 
+  3) If this code is contributed to any other open source project, it
+  must not be reformatted such that the indentation, bracketing or
+  overall style is modified significantly.
 
   This software is distributed WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
+// .NAME vtkSPHProbeFilter2 - SPH Convenience Manager Class
+// .SECTION Description
 #include "vtkSPHManager.h"
 //
 #include "vtkObjectFactory.h"
-//
-#include <vtksys/SystemTools.hxx>
-#include <vtksys/RegularExpression.hxx>
-#include <vtkstd/vector>
-//
 #include "vtkSmartPointer.h"
-
+//
+#include "KernelGaussian.h"
+#include "KernelQuadratic.h"
+#include "KernelSpline3rdOrder.h"
+#include "KernelSpline5thOrder.h"
+//
 //----------------------------------------------------------------------------
-// #ifdef JB_DEBUG__
 //----------------------------------------------------------------------------
-#ifdef NO_WIN32
-  #define OUTPUTTEXT(a) vtkOutputWindowDisplayText(a);
-#else
-  #define OUTPUTTEXT(a) std::cout << (a) << std::endl;
-#endif
-
-#undef vtkDebugMacro
-#define vtkDebugMacro(a)  \
-  { \
-    vtkOStreamWrapper::EndlType endl; \
-    vtkOStreamWrapper::UseEndl(endl); \
-    vtkOStrStreamWrapper vtkmsg; \
-    vtkmsg a << endl; \
-    OUTPUTTEXT(vtkmsg.str()); \
-    vtkmsg.rdbuf()->freeze(0); \
+extern vtkObject* vtkInstantiatorvtkSPHManagerNew(); 
+vtkSPHManager *vtkSPHManager::SPHManagerSingleton = NULL;
+//----------------------------------------------------------------------------
+#undef ErrorMacro
+#define ErrorMacro(x)                                           \
+   {                                                            \
+   if (vtkObject::GetGlobalWarningDisplay())                    \
+     {                                                          \
+     vtkOStreamWrapper::EndlType endl;                          \
+     vtkOStreamWrapper::UseEndl(endl);                          \
+     vtkOStrStreamWrapper vtkmsg;                               \
+     vtkmsg << "ERROR: In " __FILE__ ", line " << __LINE__      \
+            << "\n" x << "\n\n";                                \
+     vtkOutputWindowDisplayErrorText(vtkmsg.str());             \
+     vtkmsg.rdbuf()->freeze(0); vtkObject::BreakOnError();      \
+     }                                                          \
+   }
+//----------------------------------------------------------------------------
+vtkSPHManager *vtkSPHManager::New() 
+{
+  if (vtkSPHManager::SPHManagerSingleton) {
+    // increase the reference count
+    vtkSPHManager::SPHManagerSingleton->Register(NULL);
+    return vtkSPHManager::SPHManagerSingleton;
+  }
+  //
+  vtkSPHManager *temp = new vtkSPHManager();
+  if (temp!=vtkSPHManager::SPHManagerSingleton) {
+    ErrorMacro(<<"A serious (probably thread related error) has occured in vtkSPHManager singleton creation")
+  }
+  return vtkSPHManager::SPHManagerSingleton;
+}
+//----------------------------------------------------------------------------
+vtkObject *vtkInstantiatorvtkSPHManagerNew()
+{
+  return vtkSPHManager::New();
+}
+//----------------------------------------------------------------------------
+// Singleton creation, not really thread-safe, but unlikely to ever be tested
+vtkSPHManager::vtkSPHManager()
+{
+  if (vtkSPHManager::SPHManagerSingleton==NULL) {
+    vtkSPHManager::SPHManagerSingleton = this;
   }
 
-#undef vtkErrorMacro
-#define vtkErrorMacro(a) vtkDebugMacro(a)
-// #endif
-//----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkSPHManager, "$Revision: 1584 $");
-vtkStandardNewMacro(vtkSPHManager);
-//----------------------------------------------------------------------------
-vtkSPHManager::vtkSPHManager() 
-{
+  // switch shepard/sph
+  this->InterpolationMethod = POINT_INTERPOLATION_KERNEL;
+
+  // Shepard Mode
+  this->LimitSearchByNeighbourCount = 1;
+  this->MaximumNeighbours           = 128;
+  this->MaximumRadius               = 0.1;
+
+  // SPH Mode
+  this->KernelType          = SPH_KERNEL_SPLINE_3RD;
+  this->KernelDimension     = 3;
+  this->HScalarsRegex       = NULL;
+  this->VolumeScalarsRegex  = NULL;
+  this->MassScalarsRegex    = NULL;
+  this->DensityScalarsRegex = NULL;
+
+  // SPH Variables
+  this->DefaultParticleSideLength = 0.18333;
+  this->DefaultDensity            = 1000.0;
+  this->HCoefficient              = 1.5; 
 }
 //----------------------------------------------------------------------------
 vtkSPHManager::~vtkSPHManager()
-{ 
-}
-//----------------------------------------------------------------------------
-void vtkSPHManager::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os,indent);
+  this->SetHScalarsRegex(NULL);
+  this->SetVolumeScalarsRegex(NULL);
+  this->SetMassScalarsRegex(NULL);
+  this->SetDensityScalarsRegex(NULL);
+  vtkSPHManager::SPHManagerSingleton=NULL;
 }
 //----------------------------------------------------------------------------
