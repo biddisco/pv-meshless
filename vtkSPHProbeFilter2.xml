@@ -1,0 +1,280 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- Filters                                                          -->
+  <!-- ================================================================ -->
+  <ProxyGroup name="filters">
+
+    <!-- ================================================================ -->
+    <!-- Probe filter main interface - dummy base proxy                   -->
+    <!-- ================================================================ -->
+    <SourceProxy
+      name="SPHProbeFilterBase"
+      class="vtkSPHProbeFilter2">
+      <Documentation
+         short_help="Probe a dataset with an arbitrary probe geometry">
+      </Documentation>
+
+<!--
+      <SubProxy>
+        <Proxy name="SPHManager"
+               proxygroup="meshless_helpers"
+               proxyname="SPHManager">
+        <ExposedProperties>
+          <Property name="InterpolationMethod" />
+          <Property name="KernelType" />
+          <Property name="KernelDimension" />
+          <Property name="HCoefficient" />
+          <Property name="DefaultParticleSideLength" />
+          <Property name="DefaultDensity" />
+          <Property name="VolumeScalarsRegex" />
+          <Property name="HScalarsRegex" />
+          <Property name="MassScalarsRegex" />
+          <Property name="DensityScalarsRegex"/>
+          <Property name="LimitSearchByNeighbourCount"/>
+          <Property name="MaximumNeighbours"/>
+          <Property name="MaximumRadius"/>
+        </ExposedProperties>
+        </Proxy>
+      </SubProxy>
+-->
+
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+          <DataType value="vtkCompositeDataSet"/>
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array"/>
+        <Documentation>
+          This property specifies the dataset from which to obtain probe values.
+        </Documentation>
+      </InputProperty>
+
+      <StringVectorProperty
+        name="VolumeScalars"
+        command="SetVolumeScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="Volume"
+        default_regex_delimiter=","
+        default_regex="^[Vv][Oo][Ll][Uu][Mm][Ee]$,.*[Vv][Oo][Ll]"
+        label="Volume Scalar Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle volumes if present
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="HScalars"
+        command="SetHScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="H"
+        default_regex_delimiter=","
+        default_regex="^[Hh]$,.*[Ss][Mm][Oo][Oo][Tt][Hh],.*[Hh]$"
+        label="H (smoothing length) Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle smoothing lengths if present
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="MassScalars"
+        command="SetMassScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="Mass"
+        default_regex_delimiter=","
+        default_regex="^[Mm][Aa][Ss][Ss]$,.*[Mm][Aa][Ss][Ss],.*[Mm]$"
+        label="Mass Scalar Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle masses if present
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="DensityScalars"
+        command="SetDensityScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="Density"
+        default_regex_delimiter=","
+        default_regex="^[Dd][Ee][Nn][Ss][Ii][Tt][Yy]$,^[Rr][Hh][Oo]$,.*[Dd][Ee][Nn][Ss][Ii][Tt][Yy],.*_[Rr][Hh][Oo],.*[Rr][Hh][Oo]"
+        label="Density Scalar Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle densities if present
+        </Documentation>
+      </StringVectorProperty>
+
+    </SourceProxy>
+
+    <!-- ================================================================ -->
+    <!-- Probe filter wrapped with dataset input                          -->
+    <!-- ================================================================ -->
+    <SourceProxy name="SPHProbeFilter"
+                 class="vtkSPHProbeFilter2"
+                 label="Probe Custom Input"
+                 base_proxygroup="filters"
+                 base_proxyname="SPHProbeFilterBase">
+      <Documentation
+        long_help="Probe meshless data using geometry of another dataset"
+        short_help="Sample data using geometry of another dataset">
+      </Documentation>
+
+      <InputProperty
+        name="Probe"
+        command="SetProbeConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+          <DataType value="vtkCompositeDataSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          This property specifies the dataset whose geometry will be used in determining positions to probe.
+        </Documentation>
+      </InputProperty>
+    </SourceProxy>
+
+    <!-- ================================================================ -->
+    <!-- Probe filter wrapped in GUI point widget                         -->
+    <!-- ================================================================ -->
+    <SourceProxy name="SPHProbeFilterPoint"
+                 class="vtkSPHProbeFilter2"
+                 label="Probe GUI Point"
+                 base_proxygroup="filters"
+                 base_proxyname="SPHProbeFilterBase">
+      <Documentation
+        long_help="Sample data attributes at the points in a point cloud."
+        short_help="Sample data values at the points in a point cloud.">
+      </Documentation>
+
+      <InputProperty
+         name="Probe"
+         command="SetProbeConnection"
+         label="Probe Type">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="extended_sources" name="FixedRadiusPointSource" />
+        </ProxyListDomain>
+        <Documentation>
+          This property specifies the dataset whose geometry will be
+          used in determining positions to probe.
+        </Documentation>
+      </InputProperty>
+    </SourceProxy>
+
+    <!-- ================================================================ -->
+    <!-- Probe filter wrapped in GUI line widget                          -->
+    <!-- ================================================================ -->
+    <SourceProxy name="SPHProbeFilterLine"
+                 class="vtkSPHProbeFilter2"
+                 label="Probe GUI Line"
+                 base_proxygroup="filters"
+                 base_proxyname="SPHProbeFilterBase">
+      <Documentation
+        long_help="Sample data attributes along a line"
+        short_help="Sample data attributes along a line">
+      </Documentation>
+
+      <InputProperty
+         name="Probe"
+         command="SetProbeConnection"
+         label="Probe Type">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="extended_sources" name="HighResLineSource" />
+        </ProxyListDomain>
+        <Documentation>
+          This property specifies the dataset whose geometry will be used in determining positions to probe.
+        </Documentation>
+      </InputProperty>
+
+      <Hints>
+        <Visibility replace_input="0" />
+        <!-- View can be used to specify the preferred view for the proxy -->
+        <View type="XYChartView" />
+        <Plotable />
+      </Hints>
+    </SourceProxy>
+
+    <!-- ================================================================ -->
+    <!-- Probe filter wrapped in GUI box/plane widget                     -->
+    <!-- ================================================================ -->
+    <SourceProxy name="SPHProbeFilterGrid"
+                 class="vtkSPHProbeFilter2"
+                 label="Probe GUI Box-Plane"
+                 base_proxygroup="filters"
+                 base_proxyname="SPHProbeFilterBase">
+      <Documentation
+        long_help="Sample data attributes on a plane"
+        short_help="Sample data attributes on a plane">
+      </Documentation>
+
+      <InputProperty
+         name="Probe"
+         command="SetProbeConnection"
+         label="Probe Type">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="extended_sources" name="RegularGridSource" />
+        </ProxyListDomain>
+        <Documentation>
+          This property specifies the dataset whose geometry will be used in determining positions to probe.
+        </Documentation>
+      </InputProperty>
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

@@ -95,6 +95,7 @@ IF(PARAVIEW_BUILD_QT_GUI)
     MESHLESS_UI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.ui
+#    ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.ui
   )
 
   #--------------------------------------------------
@@ -104,6 +105,7 @@ IF(PARAVIEW_BUILD_QT_GUI)
     MESHLESS_MOC_SRCS 
       ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.h
       ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.h
   )
   
   #--------------------------------------------------
@@ -120,13 +122,27 @@ IF(PARAVIEW_BUILD_QT_GUI)
   )
 
   #--------------------------------------------------
+  # invoke macro that adds our SPH manager panel
+  #--------------------------------------------------
+  ADD_PARAVIEW_OBJECT_PANEL(
+    MESHLESS_IFACE_O
+    MESHLESS_IFACE_SRCS_O
+    CLASS_NAME 
+      pqSPHManagerPanel
+    XML_NAME 
+     "SPHManager"
+    XML_GROUP 
+     meshless_helpers
+  )
+
+  #--------------------------------------------------
   # invoke macro that adds our SPH manager dock window
   #--------------------------------------------------
   ADD_PARAVIEW_DOCK_WINDOW(
     MESHLESS_IFACE_D
     MESHLESS_IFACE_SRCS_D
     CLASS_NAME 
-      pqSPHManagerPanel 
+      pqSPHManagerDockWindow 
     DOCK_AREA 
       Left Right Top Bottom
   )
@@ -166,11 +182,11 @@ ADD_PARAVIEW_PLUGIN(
   REQUIRED_PLUGINS CSCSCommon_plugin
 
   SERVER_MANAGER_XML 
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkRegularGridSource.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxWidget.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxRepresentation.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter2.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTipsyReader.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.xml
@@ -184,7 +200,9 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxWidget.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxRepresentation.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMCustomBoxRepresentationProxy.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMSPHManagerProxy.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter2.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTree.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.cxx
@@ -197,14 +215,17 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.cxx
   SERVER_SOURCES
     ${KernelFiles_SRCS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/AstroVizHelpers.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/AstroVizHelpers.cxx  
   GUI_INTERFACES 
     ${MESHLESS_IFACE_W}
+    ${MESHLESS_IFACE_O}
     ${MESHLESS_IFACE_D}
   GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.cxx
     ${MESHLESS_IFACE_SRCS_W}
+    ${MESHLESS_IFACE_SRCS_O}
     ${MESHLESS_IFACE_SRCS_D}
     ${MESHLESS_MOC_SRCS}
     ${MESHLESS_UI_SOURCES}
@@ -212,6 +233,7 @@ ADD_PARAVIEW_PLUGIN(
     # none for now  
   GUI_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.ui
+#    ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Sources.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Filters.xml

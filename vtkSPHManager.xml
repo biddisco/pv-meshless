@@ -5,8 +5,143 @@
   <!-- ================================================================ -->
 
   <ProxyGroup name="meshless_helpers">
-    <Proxy name="SPHManager" class="vtkSPHManager">
-    </Proxy>
-  </ProxyGroup>
 
+    <!-- 
+    <SPHManagerProxy name="SPHManagerProxy" class="vtkSMSPHManagerProxy">
+    </SPHManagerProxy>
+    -->
+
+    <SPHManagerProxy name="SPHManager" class="vtkSPHManager">
+      <IntVectorProperty
+        name="InterpolationMethod"
+        command="SetInterpolationMethod"
+        number_of_elements="1"
+        default_values="0">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="SPH Kernel" />
+          <Entry value="1" text="Shepard" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="KernelType"
+        command="SetKernelType"
+        number_of_elements="1"
+        default_values="2">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="Gaussian" />
+          <Entry value="1" text="Quadratic" />
+          <Entry value="2" text="Spline-3rd-Order" />
+          <Entry value="3" text="Spline-5th-Order" />
+          <Entry value="4" text="Cusp" />
+          <Entry value="5" text="Box" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="KernelDimension"
+        command="SetKernelDimension"
+        number_of_elements="1"
+        default_values="3">
+        <EnumerationDomain name="enum">
+          <Entry value="2" text="2D" />
+          <Entry value="3" text="3D" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+         name="HCoefficient"
+         command="SetHCoefficient"
+         number_of_elements="1"
+         animateable="0"
+         default_values="1.5" >
+        <Documentation>
+          The Kernel Cutoff can be derived from HCoefficient*ParticleCubeSideLength
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+        name="DefaultParticleSideLength"
+        command="SetDefaultParticleSideLength"
+        label="Default Particle (cube) Side Length"
+        number_of_elements="1"
+        animateable="0"
+        default_values="0.18333333333333333" >
+        <Documentation>
+          The particle volume is the cube of this parameter.
+          Particle mass can be computed from this using the density.
+          For a Variable h simulation, density/mass or volume arrays per particle are necessary.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+        name="DefaultDensity"
+        command="SetDefaultDensity"
+        number_of_elements="1"
+        animateable="0"
+        default_values="1000" >
+      </DoubleVectorProperty>
+
+      <StringVectorProperty
+        name="VolumeScalarsRegex"
+        command="SetVolumeScalarsRegex"
+        number_of_elements="1"
+        animateable="0"
+        default_values="^[Vv][Oo][Ll][Uu][Mm][Ee]$,.*[Vv][Oo][Ll]"
+        label="Volume Scalar Regex">
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="HScalarsRegex"
+        command="SetHScalarsRegex"
+        number_of_elements="1"
+        animateable="0"
+        default_values="^[Hh]$,.*[Ss][Mm][Oo][Oo][Tt][Hh],.*[Hh]$"
+        label="H (smoothing length) Regex">
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="MassScalarsRegex"
+        command="SetMassScalarsRegex"
+        number_of_elements="1"
+        animateable="0"
+        default_values="^[Mm][Aa][Ss][Ss]$,.*[Mm][Aa][Ss][Ss],.*[Mm]$"
+        label="Mass Scalar Regex">
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="DensityScalarsRegex"
+        command="SetDensityScalarsRegex"
+        number_of_elements="1"
+        animateable="0"
+        default_values="^[Dd][Ee][Nn][Ss][Ii][Tt][Yy]$,^[Rr][Hh][Oo]$,.*[Dd][Ee][Nn][Ss][Ii][Tt][Yy],.*_[Rr][Hh][Oo],.*[Rr][Hh][Oo]"
+        label="Density Scalar Regex">
+      </StringVectorProperty>
+
+      <IntVectorProperty
+        name="LimitSearchByNeighbourCount"
+        command="SetLimitSearchByNeighbourCount"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="MaximumNeighbours"
+        command="SetMaximumNeighbours"
+        number_of_elements="1"
+        default_values="128">
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+         name="MaximumRadius"
+         command="SetMaximumRadius"
+         number_of_elements="1"
+         animateable="0"
+         default_values="0.001" >
+      </DoubleVectorProperty>
+
+    </SPHManagerProxy>
+
+  </ProxyGroup>
 </ServerManagerConfiguration>

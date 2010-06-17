@@ -1,49 +1,26 @@
 #ifndef _pqSPHManagerPanel_h
 #define _pqSPHManagerPanel_h
 
-#include <QDockWidget>
+#include "pqProxy.h"
+#include "pqNamedObjectPanel.h"
 
-#include <vtkSmartPointer.h>
-
-class QCheckBox;
-class QComboBox;
-class QPushButton;
-class pqServer;
-class pqView;
-class QTreeWidgetItem;
-class QProgressDialog;
-class QButtonGroup;
-
-class vtkSMSourceProxy;
-class vtkSMRepresentationProxy;
-
-class pqSPHManagerPanel : public QDockWidget
+class pqSPHManagerPanel : public pqNamedObjectPanel 
 {
   Q_OBJECT
 
 public:
   /// constructor
-  pqSPHManagerPanel(QWidget* p = NULL);
+  pqSPHManagerPanel(pqProxy* proxy, QWidget* p);
  ~pqSPHManagerPanel();
-
-  bool ProxyReady();
-  bool SPHReady();
-
-signals:
-
-public slots:
-  void onServerAdded(pqServer *server);
-  void onActiveServerChanged(pqServer *server);
-  void StartRemovingServer(pqServer *server);
 
   void LoadSettings();
   void SaveSettings();
 
 private slots:
+  void onPointMethodChanged(int mode);
+  void onLimitChanged(bool checked);
 
 protected:
-  /// populate widgets with properties from the server manager
-  virtual void LinkServerManagerProperties();
 
   class pqUI;
   pqUI* UI;
