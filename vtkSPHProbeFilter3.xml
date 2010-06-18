@@ -1,0 +1,218 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- Filters                                                          -->
+  <!-- ================================================================ -->
+  <ProxyGroup name="filters">
+
+    <!-- ================================================================ -->
+    <!-- Probe filter main interface - dummy base proxy                   -->
+    <!-- ================================================================ -->
+    <SourceProxy
+      name="SPHProbeFilterWidget"
+      class="vtkSPHProbeFilter3">
+      <Documentation
+         short_help="SPH Widget Probe">
+      </Documentation>
+
+     <ProxyProperty name="CutFunction" command="SetCutFunction"
+        label="Slice Type">
+           <ProxyGroupDomain name="groups">
+              <Group name="implicit_functions"/>
+           </ProxyGroupDomain>
+           <ProxyListDomain name="proxy_list">
+              <Proxy group="implicit_functions" name="Plane" />
+              <Proxy group="implicit_functions" name="Box" />
+              <Proxy group="implicit_functions" name="Sphere" />
+           </ProxyListDomain>
+           <Documentation>
+             This property sets the parameters of the slice function.
+           </Documentation>
+     </ProxyProperty>
+
+<!--
+      <SubProxy>
+        <Proxy name="SPHManager"
+               proxygroup="meshless_helpers"
+               proxyname="SPHManager">
+        <ExposedProperties>
+          <Property name="InterpolationMethod" />
+          <Property name="KernelType" />
+          <Property name="KernelDimension" />
+          <Property name="HCoefficient" />
+          <Property name="DefaultParticleSideLength" />
+          <Property name="DefaultDensity" />
+          <Property name="VolumeScalarsRegex" />
+          <Property name="HScalarsRegex" />
+          <Property name="MassScalarsRegex" />
+          <Property name="DensityScalarsRegex"/>
+          <Property name="LimitSearchByNeighbourCount"/>
+          <Property name="MaximumNeighbours"/>
+          <Property name="MaximumRadius"/>
+        </ExposedProperties>
+        </Proxy>
+      </SubProxy>
+-->
+
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+          <DataType value="vtkCompositeDataSet"/>
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array"/>
+        <Documentation>
+          This property specifies the dataset from which to obtain probe values.
+        </Documentation>
+      </InputProperty>
+
+      <StringVectorProperty
+        name="VolumeScalars"
+        command="SetVolumeScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="Volume"
+        default_regex_delimiter=","
+        default_regex="^[Vv][Oo][Ll][Uu][Mm][Ee]$,.*[Vv][Oo][Ll]"
+        label="Volume Scalar Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle volumes if present
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="HScalars"
+        command="SetHScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="H"
+        default_regex_delimiter=","
+        default_regex="^[Hh]$,.*[Ss][Mm][Oo][Oo][Tt][Hh],.*[Hh]$"
+        label="H (smoothing length) Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle smoothing lengths if present
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="MassScalars"
+        command="SetMassScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="Mass"
+        default_regex_delimiter=","
+        default_regex="^[Mm][Aa][Ss][Ss]$,.*[Mm][Aa][Ss][Ss],.*[Mm]$"
+        label="Mass Scalar Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle masses if present
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="DensityScalars"
+        command="SetDensityScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="Density"
+        default_regex_delimiter=","
+        default_regex="^[Dd][Ee][Nn][Ss][Ii][Tt][Yy]$,^[Rr][Hh][Oo]$,.*[Dd][Ee][Nn][Ss][Ii][Tt][Yy],.*_[Rr][Hh][Oo],.*[Rr][Hh][Oo]"
+        label="Density Scalar Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle densities if present
+        </Documentation>
+      </StringVectorProperty>
+
+      <IntVectorProperty
+         name="Resolution"
+         command="SetResolution"
+         number_of_elements="3"
+         animateable="1"
+         default_values="32 32 32" >
+        <Documentation>
+          When the spacing along an axis is Zero, the Resolution will be used to compute the spacing.
+          If the spacing is non zero, it will override the Resolution setting.
+          Note that when Resolution is used, the points will exactly fit in the box, when spacing is used, there may be small gaps at the edges.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="GenerateConnectedCells"
+         command="SetGenerateConnectedCells"
+         number_of_elements="1"
+         default_values="1" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          When set, plane mode produces a plane, and box mode a Structured Grid.
+          When unset, the output is a polydata object consisting solely of vertices.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="UseKernelDistanceForSampling"
+         command="SetUseKernelDistanceForSampling"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If UseKernelDistanceForSampling is enabled, the sample distance
+          will be taken from Kernel->MaxCutoffRadius/2
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+         name="KernelDistanceMultiplier"
+         command="SetKernelDistanceMultiplier"
+         number_of_elements="1"
+         default_values="1.0" >
+        <Documentation>
+          To reduce the sample spacing, when UseKernelDistanceForSampling is
+          enabled - increase the Multiplier by some amount
+        </Documentation>
+      </DoubleVectorProperty>
+
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

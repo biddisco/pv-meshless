@@ -187,6 +187,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxRepresentation.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter2.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTipsyReader.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.xml
@@ -203,6 +204,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMSPHManagerProxy.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter2.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTree.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.cxx
@@ -213,6 +215,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.cxx
   SERVER_SOURCES
     ${KernelFiles_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/AstroVizHelpers.cxx  
