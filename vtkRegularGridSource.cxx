@@ -203,7 +203,6 @@ int vtkRegularGridSource::ComputeInformation(
   vtkInformationVector *vtkNotUsed(outputVector))
 {
   vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
-//  vtkInformation *outInfo = outputVector->GetInformationObject(0);
   
   vtkDataSet *inData = inInfo ? vtkDataSet::SafeDownCast
     (inInfo->Get(vtkDataObject::DATA_OBJECT())) : NULL;
@@ -238,6 +237,8 @@ int vtkRegularGridSource::ComputeInformation(
     }
   }
   //
+  // Define sampling box...
+  //
   double o2[3] = {0.0, 0.0, 0.0};
   for (int i=0; i<3; i++) {
     if (this->Resolution[i]>1) {
@@ -249,10 +250,17 @@ int vtkRegularGridSource::ComputeInformation(
     }
     else{
       this->spacing[i] = this->Spacing[i];
-      this->scaling[i] = this->Spacing[i]/lengths[i];
+      if (lengths[i]>0.0) {
+        this->scaling[i] = this->Spacing[i]/lengths[i];
+      }
+      else {
+        this->scaling[i] = 0.0;
+      }
     }
-    this->Dimension[i] = vtkMath::Round(1.0/this->scaling[i] + 0.5);
-    if (this->spacing[i]<1E-8) {
+    if (this->scaling[i]>0.0 && this->spacing[i]>1E-8) {
+      this->Dimension[i] = vtkMath::Round(1.0/this->scaling[i] + 0.5);
+    }
+    else {
       this->Dimension[i] = 1;
     }
   }
