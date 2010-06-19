@@ -36,6 +36,8 @@
 #include "vtkBox.h"
 #include "vtkImageData.h"
 #include "vtkCutter.h"
+#include "vtkTransform.h"
+#include "vtkHomogeneousTransform.h"
 //
 vtkCxxRevisionMacro(vtkSamplingGridGenerator, "$Revision: 1.4 $");
 vtkStandardNewMacro(vtkSamplingGridGenerator);
@@ -116,20 +118,34 @@ int vtkSamplingGridGenerator::ComputeInformation(
     // Get origin, p1, p2 from implicit box
     vtkBox *iBox = vtkBox::SafeDownCast(cf);
     iBox->GetBounds(bounds);
-    //
+    inData->GetBounds(bounds);
     vtkBoundingBox box(bounds);
-    box.Inflate(this->Delta);
-    box.GetLengths(lengths);
-    box.GetBounds(bounds);
+//    box.Inflate(this->Delta);
+    vtkAbstractTransform *trans = iBox->GetTransform();
+    vtkAbstractTransform *itrans = trans->GetInverse();
+
     this->origin[0] = bounds[0];
     this->origin[1] = bounds[2];
     this->origin[2] = bounds[4];
-    axesvectors[0][0] = axesvectors[1][0] = axesvectors[2][0] = 0.0;
-    axesvectors[0][1] = axesvectors[1][1] = axesvectors[2][1] = 0.0;
-    axesvectors[0][2] = axesvectors[1][2] = axesvectors[2][2] = 0.0;
-    axesvectors[0][0] += lengths[0];
-    axesvectors[1][1] += lengths[1];
-    axesvectors[2][2] += lengths[2];
+    double p0[3] = { bounds[1], bounds[2], bounds[4]};
+    double p1[3] = { bounds[0], bounds[3], bounds[4]};
+    double p2[3] = { bounds[0], bounds[2], bounds[5]};
+    vtkMath::Subtract(p0, this->origin, axesvectors[0]); 
+    vtkMath::Subtract(p1, this->origin, axesvectors[1]); 
+    vtkMath::Subtract(p2, this->origin, axesvectors[2]); 
+//    double p0[3] = { 1,0,0};
+//    double p1[3] = { 0,1,0};
+//    double p2[3] = { 0,0,1};
+    //
+    itrans->TransformPoint(this->origin,this->origin);
+    itrans->TransformVectorAtPoint(p0,axesvectors[0],axesvectors[0]);
+    itrans->TransformVectorAtPoint(p1,axesvectors[1],axesvectors[1]);
+    itrans->TransformVectorAtPoint(p2,axesvectors[2],axesvectors[2]);
+    lengths[0] = vtkMath::Norm(axesvectors[0]);
+    lengths[1] = vtkMath::Norm(axesvectors[1]);
+    lengths[2] = vtkMath::Norm(axesvectors[2]);
+//    trans->TransformPoint(lengths,lengths);
+    //
   }
   //
   // Define sampling box...
