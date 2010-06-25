@@ -73,3 +73,7 @@ IF(BUILD_SHARED_LIBS AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_I
   SET_TARGET_PROPERTIES( H5Part PROPERTIES COMPILE_FLAGS -fPIC)  
 ENDIF(BUILD_SHARED_LIBS AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
 
+#--------------------------------------------------------
+# Add H5Part conversion tools
+#--------------------------------------------------------
+ADD_SUBDIRECTORY(tools)
