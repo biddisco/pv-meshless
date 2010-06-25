@@ -91,6 +91,7 @@ IF(COSMO_COMPATIBLE)
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTipsyReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.cxx
   )
+  SET(TIPSY_LIB TipsyLib Cosmo2)
 ENDIF (COSMO_COMPATIBLE)
 
 
@@ -263,8 +264,7 @@ ADD_PARAVIEW_PLUGIN(
 TARGET_LINK_LIBRARIES(pvmeshless_plugin 
   vtkWidgets
   H5Part 
-  TipsyLib 
-  Cosmo2
+  ${TIPSY_LIB}
   CSCSCommon_plugin
 )
 
