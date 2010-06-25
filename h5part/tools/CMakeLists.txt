@@ -1,0 +1,85 @@
+PROJECT(H5PartTools)
+
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
+
+#--------------------------------------------------------
+# Setup include paths
+#--------------------------------------------------------
+INCLUDE_DIRECTORIES(
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/..
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${CSCS_COMMON_INCLUDE_DIRS}
+)
+ 
+SET(TOOL_VTK_LIBS
+  CSCSCommon_plugin 
+  pvmeshless_plugin
+  vtkPVFilters
+  vtkWidgets
+  vtkHybrid
+  vtkRendering
+  vtkGraphics
+  vtkImaging
+  vtkIO
+  vtkFiltering
+  vtkCommon
+  vtkzlib
+  vtksys
+)
+
+IF(VTK_USE_MPI)
+  SET(TOOL_VTK_LIBS ${TOOL_VTK_LIBS} ${MPI_EXTRA_LIBRARY} ${MPI_LIBRARY} )
+ENDIF(VTK_USE_MPI)
+
+#-----------------------------------------------
+# Create vtk conversion utilities
+#-----------------------------------------------
+ADD_EXECUTABLE( 
+  VTM2H5Part 
+  VTM2H5Part.cpp
+)
+
+TARGET_LINK_LIBRARIES(
+  VTM2H5Part
+  ${TOOL_VTK_LIBS}
+)
+
+#-----------------------------------------------
+# Create Ensight conversion utility
+#-----------------------------------------------
+ADD_EXECUTABLE( 
+  Ensight2H5Part 
+  Ensight2H5Part.cpp 
+)
+
+TARGET_LINK_LIBRARIES(
+  Ensight2H5Part 
+  ${TOOL_VTK_LIBS}
+)
+
+#-----------------------------------------------
+# Create ASCII conversion utility
+#-----------------------------------------------
+ADD_EXECUTABLE( 
+  Ascii2H5Part 
+  vtkASCIIParticleReader.cpp
+  Ascii2H5Part.cpp 
+)
+
+TARGET_LINK_LIBRARIES(
+  Ascii2H5Part
+  ${TOOL_VTK_LIBS}
+)
+
+SET(TOOL_CFG_FILES
+  ASCII2H5Part.ecn.cfg
+  ASCII2H5Part.edf.cfg
+  ASCII2H5Part.manchester.cfg
+  ASCII2H5Part.plymouth.cfg
+)
+
+INSTALL(
+  FILES ${TOOL_CFG_FILES}
+  DESTINATION bin/
+)
