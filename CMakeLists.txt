@@ -61,19 +61,38 @@ ELSE (VTK_USE_PARALLEL AND VTK_USE_MPI)
 ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 
 #--------------------------------------------------
-# Tipsy reader uses code from Doug Potter's Tipsy lib.
-#--------------------------------------------------
-ADD_SUBDIRECTORY(tipsylib)
-
-#--------------------------------------------------
 # Build minimal H5Part lib for support
 #--------------------------------------------------
 ADD_SUBDIRECTORY(h5part)
 
-#--------------------------------------------------
-# Build minimal Cosmo lib for support
-#--------------------------------------------------
-ADD_SUBDIRECTORY(cosmo)
+MESSAGE("${PARAVIEW_VERSION_MAJOR} ${PARAVIEW_VERSION_MINOR}")
+IF (${PARAVIEW_VERSION_MAJOR} EQUAL 3 AND ${PARAVIEW_VERSION_MINOR} LESS 9)
+  # Cosmo support not included in this version
+ELSE (${PARAVIEW_VERSION_MAJOR} EQUAL 3 AND ${PARAVIEW_VERSION_MINOR} LESS 9)
+  SET(COSMO_COMPATIBLE 1)
+ENDIF (${PARAVIEW_VERSION_MAJOR} EQUAL 3 AND ${PARAVIEW_VERSION_MINOR} LESS 9)
+  
+IF(COSMO_COMPATIBLE)
+  #--------------------------------------------------
+  # Build minimal Cosmo lib for support
+  #--------------------------------------------------
+  
+  ADD_SUBDIRECTORY(cosmo)
+  #--------------------------------------------------
+  # Tipsy reader uses code from Doug Potter's Tipsy lib.
+  #--------------------------------------------------
+  ADD_SUBDIRECTORY(tipsylib)
+  
+  SET(TIPSY_XML
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkTipsyReader.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.xml
+  )
+  SET(TIPSY_CXX
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkTipsyReader.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.cxx
+  )
+ENDIF (COSMO_COMPATIBLE)
+
 
 #--------------------------------------------------
 # Set Definitions 
@@ -188,13 +207,12 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter2.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkTipsyReader.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.xml
+    ${TIPSY_XML}
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkRegularGridSource.cxx
@@ -208,14 +226,13 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTree.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkTipsyReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartWriter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5SPHReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.cxx
+    ${TIPSY_CXX}
   SERVER_SOURCES
     ${KernelFiles_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/AstroVizHelpers.cxx  
