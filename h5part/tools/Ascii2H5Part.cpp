@@ -13,7 +13,8 @@
 // ECN Data
 // Ascii2H5Part -c C:/code/CSCS/pv-meshless/CSCS/vtkH5Part/Tools/Ascii2H5Part.ecn.cfg -f C:/Data/ParticleData/ECN/BGL_SPhere0POSX.dat
 // Ascii2H5Part -c D:/Code/CSCS/csviz/Shared/vtkCSCS/vtkH5Part/Tools/ASCII2H5Part.ecn.cfg -f D:/data/ecn/MillenISOP0POSX.dat 
-
+// 
+// Ascii2H5Part -c C:/Code/CSCS/cscs_plugins/vtkCSCSMeshless/h5part/tools/ASCII2H5Part.ens-lyon.cfg -d C:/data/AsciiData-ens-lyon -f dust_sph_030.out
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -173,8 +174,6 @@ int main(int argc, char **argv)
   Finder->SetExtRegEx(ExtRegEx.c_str());
   Finder->SetText0RegEx(Text0RegEx.c_str());
   Finder->Scan(asciifile.c_str());
-//  Finder->GetTimeValues(TimeStepValues);
-//  NumberOfTimeSteps = Finder->GetNumberOfTimeSteps();
 
   bool multiblock = (Finder->GetNumberOfBlocks()>0);
   bool multivar   = (Finder->GetNumberOfVars()>0);
@@ -184,6 +183,11 @@ int main(int argc, char **argv)
   typedef vtkstd::vector< vtkSmartPointer<vtkASCIIParticleReader> > varReader;
   typedef vtkstd::vector< varReader > blockReader;
   blockReader readers;
+  //
+  if (multitime) {
+    Tnum = Finder->GetNumberOfTimeSteps();
+    Finder->GetTimeValues(time_values);
+  }
   int t=0;
   int b=0;
   do {
@@ -208,13 +212,8 @@ int main(int argc, char **argv)
           std::cout << "Scanning for Time Steps " << asciifile.c_str() << std::endl;
           reader->UpdateInformation();
           reader->GetTimeStepValues(time_values);
-          Tnum = time_values.size();
+          Tnum = (int)time_values.size();
           std::cout << "Found " << Tnum << " Time steps in file " << std::endl;
-        }
-        else {
-          for (int i=0; i<Tnum; i++) {
-            time_values.push_back(i);
-          }
         }
       }
     } while (++v<Vnum);
@@ -250,7 +249,7 @@ int main(int argc, char **argv)
         reader->Update();
         vtkstd::vector<double> values;
 	      reader->GetTimeStepValues(values);
-        if (values.size()>0) time_values[t] = values[t];
+        if (values.size()>0) time_values[t] = values[values.size()>t ? t : 0];
 
         if (multivar) {
           vtkPolyData *p = vtkPolyData::SafeDownCast(reader->GetOutput());
