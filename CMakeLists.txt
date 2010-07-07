@@ -72,6 +72,10 @@ ELSE (${PARAVIEW_VERSION_MAJOR} EQUAL 3 AND ${PARAVIEW_VERSION_MINOR} LESS 9)
 ENDIF (${PARAVIEW_VERSION_MAJOR} EQUAL 3 AND ${PARAVIEW_VERSION_MINOR} LESS 9)
   
 IF(COSMO_COMPATIBLE)
+  IF(WIN32)
+    ADD_DEFINITIONS("-DUSE_VTK_COSMO")
+  ENDIF(WIN32)
+  
   #--------------------------------------------------
   # Build minimal Cosmo lib for support
   #--------------------------------------------------
