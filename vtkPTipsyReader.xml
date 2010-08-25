@@ -1,7 +1,7 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="sources">
     <SourceProxy name="PTipsyReader"
-					 class="vtkPTipsyReader">
+           class="vtkPTipsyReader">
  
      <StringVectorProperty
         name="FileName"
@@ -20,7 +20,7 @@
         label="rL (physical box side length)"
         number_of_elements="1"
         default_values="1" >
-     <DoubleRangeDomain name="range" min="0" />
+        <DoubleRangeDomain name="range" min="0" />
        <Documentation>
        The box side length used to wrap particles around if they exceed rL (or less than 0) in any dimension.
        </Documentation>
@@ -44,7 +44,6 @@
         number_of_elements="1"
         default_values="1">
         <BooleanDomain name="bool"/>
-        <DoubleRangeDomain name="range" min="0" />
         <Documentation>
           Change the bounding box of the data to be {0,1} in {x,y,z} instead of {-0.5,0.5}
         </Documentation>
