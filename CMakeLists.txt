@@ -208,13 +208,16 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxWidget.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxRepresentation.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter2.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractValueFilter.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractDataOverTime.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.xml
     ${TIPSY_XML}
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
@@ -224,7 +227,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMCustomBoxRepresentationProxy.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMSPHManagerProxy.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter2.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTree.cxx
@@ -235,6 +238,8 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractValueFilter.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.cxx
     ${TIPSY_CXX}
   SERVER_SOURCES
     ${KernelFiles_SRCS}

@@ -1,0 +1,44 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- Sources (Custom Probe Source/Geometry reader)                    -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="sources">
+    <SourceProxy name="CustomProbeReader"
+                 class="vtkProbeFileReader"
+                 label="Custom Probe Reader">
+
+      <StringVectorProperty
+        name="ProbeFile"
+        command="SetProbeFileName"
+        number_of_elements="1" >
+        <FileListDomain name="files"/>
+        <Documentation>
+          This property specifies the probe location file.
+        </Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <Property name="ProbeFile" show="0"/>
+      </Hints>
+
+      <IntVectorProperty
+         name="Resolution1"
+         command="SetResolution1"
+         number_of_elements="1"
+         default_values="20">
+        <IntRangeDomain name="range" min="10" max="500"/>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="Resolution2"
+         command="SetResolution2"
+         number_of_elements="1"
+         default_values="20">
+        <IntRangeDomain name="range" min="10" max="500"/>
+      </IntVectorProperty>
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

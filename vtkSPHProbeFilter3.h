@@ -35,62 +35,20 @@
 #ifndef __vtkSPHProbeFilter3_h
 #define __vtkSPHProbeFilter3_h
 
-#include "vtkDataSetAlgorithm.h"
-#include "vtkSmartPointer.h" // for smartpointers
-#include "vtkSPHManager.h"   // for vtkSPHManager
+#include "vtkSPHProbeFilter.h"
 
-class vtkIdTypeArray;
-class vtkPointLocator;
-class vtkDataSet;
-class vtkPointSet;
-class vtkIdList;
-class vtkTimerLog;
 class vtkImplicitFunction;
-//BTX
-class Kernel;
-//ETX
 
-class VTK_EXPORT vtkSPHProbeFilter3 : public vtkDataSetAlgorithm
+class VTK_EXPORT vtkSPHProbeFilter3 : public vtkSPHProbeFilter
 {
-public:
-  static vtkSPHProbeFilter3 *New();
-  vtkTypeMacro(vtkSPHProbeFilter3,vtkDataSetAlgorithm);
+  public:
+    static vtkSPHProbeFilter3 *New();
+    vtkTypeMacro(vtkSPHProbeFilter3,vtkSPHProbeFilter);
 
-  // Description
-  // Specify the implicit function to perform the cutting.
-  virtual void SetCutFunction(vtkImplicitFunction*);
-  vtkGetObjectMacro(CutFunction,vtkImplicitFunction);
-
-  // Description:
-  // Set/Get the SPH manager that will look after Kernel parameters
-  void SetSPHManager(vtkSPHManager *SPHManager);
-  vtkGetObjectMacro(SPHManager, vtkSPHManager);
-
-  // Description:
-  // if VolumeScalars are provided (per particle), then the kernel
-  // summation term m/rho uses the array provided and the parameters
-  // (DensityScalars, DefaultDensity, MassScalars) are ignored.
-  vtkSetStringMacro(VolumeScalars);
-  vtkGetStringMacro(VolumeScalars);
-
-  // Description:
-  // For a variable-h simulation, an h-array must be supplied
-  // this determines the kernel cutoff on a per-particle basis.
-  vtkSetStringMacro(HScalars);
-  vtkGetStringMacro(HScalars);
-
-  // Description:
-  // if each particle has a density value, specify the array name here.
-  // if not specified then the value of DefaultDensity will be used
-  vtkSetStringMacro(DensityScalars);
-  vtkGetStringMacro(DensityScalars);
-
-  // Description:
-  // if each particle has a mass value, specify the array name here.
-  // if not specified then the value of mass will be computed from particle size
-  // and density etc.
-  vtkSetStringMacro(MassScalars);
-  vtkGetStringMacro(MassScalars);
+    // Description
+    // Specify the implicit function to perform the sampling.
+    virtual void SetCutFunction(vtkImplicitFunction*);
+    vtkGetObjectMacro(CutFunction,vtkImplicitFunction);
 
     // Description
     // If Resolution[X/Y/Z]are all Non-zero, then
@@ -124,104 +82,37 @@ public:
 
     unsigned long GetMTime();
 
-protected:
-   vtkSPHProbeFilter3();
-  ~vtkSPHProbeFilter3();
+  protected:
+     vtkSPHProbeFilter3();
+    ~vtkSPHProbeFilter3();
 
-  int SpatialMatch;
+    virtual int RequestDataObject(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+    virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+    virtual int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+    virtual int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int FillOutputPortInformation(int port, vtkInformation* info);
-  virtual int RequestDataObject(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  virtual int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  virtual int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-//BTX
-  // create the correct output type when looping over blocks
-  // with multiblock probes
-  vtkSmartPointer<vtkDataSet> NewOutput(vtkDataSet *probepts);
-  virtual int OutputType(vtkDataSet *probepts);
-//ETX
-  // main execution of loop over probe points
-  bool ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, vtkDataSet *output);
+  //BTX
+    vtkSmartPointer<vtkPointSet> GenerateProbePts(vtkDataSet *data);
+  //ETX
 
-  // kernel specific functions
-  void   InitializeKernelCoefficients();
-  double GetMaxKernelCutoffDistance();
-  void   KernelCompute(double x[3], vtkPointSet *source, vtkIdList *NearestPoints, double *gradW);
+    int RequiredDataType();
 
-//BTX
-  vtkSmartPointer<vtkPointSet> GenerateProbePts(vtkDataSet *data);
-//ETX
-  int RequiredDataType();
+    //
+    // Variables
+    //
 
-  //
-  // Variables
-  //
-//BTX
-  vtkSmartPointer<vtkPointLocator>   Locator;
-  vtkSmartPointer<vtkTimerLog>       Timer;
-//ETX
+    //  
+    // Implicit Function for cutting
+    //
+    vtkImplicitFunction *CutFunction;
+    int Resolution[3];
+    int GenerateConnectedCells;
+    int UseKernelDistanceForSampling;
+    double KernelDistanceMultiplier;
 
-  //  
-  // SPHManager
-  //
-  vtkSPHManager *SPHManager;
-
-  //  
-  // Implicit Function for cutting
-  //
-  vtkImplicitFunction *CutFunction;
-  int Resolution[3];
-  int GenerateConnectedCells;
-  int UseKernelDistanceForSampling;
-  double KernelDistanceMultiplier;
-
-  // switch shepard/sph
-  int    InterpolationMethod;
-
-  // Shepard Mode
-  int    LimitSearchByNeighbourCount;
-  int    MaximumNeighbours;
-  double MaximumRadius;
-
-  // SPH Mode
-  int                KernelType;
-  int                KernelDimension;
-  char              *HScalars;
-  char              *VolumeScalars;
-  char              *MassScalars;
-  char              *DensityScalars;
-  vtkDataArray      *MassArray;
-  vtkDataArray      *DensityArray;
-  vtkDataArray      *VolumeArray;
-  vtkDataArray      *HArray;
-
-  // SPH Variables
-  double             DefaultParticleSideLength;
-  double             DefaultParticleVolume;
-  double             DefaultParticleMass;
-  double             DefaultDensity;
-  double             HCoefficient;
-  double             weights[KERNEL_MAX_NEIGHBOURS];
-  float             *HData;
-  float             *MassData;
-  float             *DensityData;
-  float             *VolumeData;
-
-  //
-  double             ScaleCoefficient;
-  double             GradientMagnitude;
-  vtkIdType          NumInputParticles;
-  vtkIdType          NumOutputPoints;
-
-//BTX
-  Kernel            *KernelFunction;
-//ETX
-
-private:
-  vtkSPHProbeFilter3(const vtkSPHProbeFilter3&);  // Not implemented.
-  void operator=(const vtkSPHProbeFilter3&);  // Not implemented.
+  private:
+    vtkSPHProbeFilter3(const vtkSPHProbeFilter3&);  // Not implemented.
+    void operator=(const vtkSPHProbeFilter3&);  // Not implemented.
 };
 
 #endif

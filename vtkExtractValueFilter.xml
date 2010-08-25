@@ -1,0 +1,68 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- Filters                                                          -->
+  <!-- ================================================================ -->
+  <ProxyGroup name="filters">
+
+    <!-- ================================================================ -->
+    <!-- Extract maximum filter                                             -->
+    <!-- ================================================================ -->
+    <SourceProxy name="ExtractValueFilter"
+                 class="vtkExtractValueFilter"
+                 label="Extract MaxMin (Water height)">
+      <Documentation
+        long_help="Extract one point from a dataset based on a value"
+        short_help="Extract one point from a dataset based on a value">
+      </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+      </InputProperty>
+
+      <IntVectorProperty
+        name="ExtractByMaximum"
+        command="SetExtractByMaximum"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          The Maximum or Minum can be extracted
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="ExtractByCoordinate"
+        command="SetExtractByCoordinate"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Extraction may be based on coordinate values, or by scalar values (Only cordinate extraction is implemented currently)
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="Component"
+        command="SetComponent"
+        number_of_elements="1"
+        default_values="2">
+        <IntRangeDomain name="range" min="0" max="2"/>
+        <Documentation>
+          When extracting by Coordinate {x=0, y=1, z=2}
+        </Documentation>
+      </IntVectorProperty>
+
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>
