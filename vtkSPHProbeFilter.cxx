@@ -51,112 +51,11 @@
 #include "KernelSpline3rdOrder.h"
 #include "KernelSpline5thOrder.h"
 
-vtkCxxRevisionMacro(vtkSPHProbeFilter, "$Revision: 1.91 $");
+//----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSPHProbeFilter);
+vtkCxxSetObjectMacro(vtkSPHProbeFilter, SPHManager, vtkSPHManager);
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-int CheckIfPointInsideNeighbors(vtkDataSet *input, int Mesh,
-														double *Pt, vtkIdType numNeighbors, vtkIdList *NeighborArray, double range)
-{
-	double avg[3] = {0.0, 0.0, 0.0};
-	double angle;
-	double max_angle = 0.0;
-	double u[3];
-	double v[3];
-	double xx[3];
-	double lu, lv;
-	
-	int cnt = 0;
-
-	if(Mesh)
-		return 1;
-	
-#if 1
-
-	for(int j = 0; j < numNeighbors; j++)
-	{
-		input->GetPoint(NeighborArray->GetId(j), xx);
-		if(!Mesh)
-		{
-			if(sqrt(vtkMath::Distance2BetweenPoints(xx, Pt)) < range)
-			{
-				avg[0] += xx[0];	
-				avg[1] += xx[1];	
-				avg[2] += xx[2];
-				cnt++;
-			}
-		}
-	}
-
-  if (!Mesh && cnt==0) return 0;
-
-	avg[0] = avg[0] / (double)cnt;
-	avg[1] = avg[1] / (double)cnt;
-	avg[2] = avg[2] / (double)cnt;
-
-#else
-
-	double den[3] = {0.0, 0.0, 0.0};
-	double nom = 0.0;
-	double tt = 0.0;
-	double h = 0.01;
-
-	for(int j = 0; j < numNeighbors; j++)
-	{
-		input->GetPoint(NeighborArray->GetId(j), xx);
-		tt = exp((-1.0) * vtkMath::Distance2BetweenPoints(xx, Pt) / (h*h));
-		den[0] += tt * xx[0];
-		den[1] += tt * xx[1];
-		den[2] += tt * xx[2];
-		nom += tt;
-	}
-
-
-	avg[0] = den[0] / nom;
-	avg[1] = den[1] / nom;
-	avg[2] = den[2] / nom;
-	
-	//printf("%f %f %f\n", avg[0], avg[1], avg[2]);
-
-#endif
-	
-	for(int j = 0; j < numNeighbors; j++)
-	{
-		input->GetPoint(NeighborArray->GetId(j), xx);
-		if(!Mesh)
-		{
-			if(sqrt(vtkMath::Distance2BetweenPoints(xx, Pt)) < range)
-			{
-				u[0] = xx[0] - Pt[0];
-				u[1] = xx[1] - Pt[1];
-				u[2] = xx[2] - Pt[2];
-				v[0] = avg[0] - Pt[0];
-				v[1] = avg[1] - Pt[1];
-				v[2] = avg[2] - Pt[2];
-				lu = vtkMath::Normalize(u);
-				lv = vtkMath::Normalize(v);
-				if(lu != 0.0 && lv != 0.0)
-					angle = acos(vtkMath::Dot(u, v));
-				else
-					//angle = (PI);
-					angle = 0.0;
-
-				if(fabs(angle) > max_angle)
-					max_angle = fabs(angle);
-			}
-		}
-	}
-	//printf("\n");
-
-	//if(Mesh)
-	//	return 1;
-
-  if(max_angle > (vtkMath::Pi()) * (1.0 / 2.0))
-		return 1;
-	else
-		return 0;
-}
 //----------------------------------------------------------------------------
 float Avg_Min_Distance_Between_Pts(vtkDataSet *input, double *Pt, 
 												int numNeighbors, vtkIdList *NeighborArray)
@@ -188,48 +87,33 @@ float Avg_Min_Distance_Between_Pts(vtkDataSet *input, double *Pt,
 	return (3.0 * t2 / (double)numNeighbors);
 }
 //----------------------------------------------------------------------------
-int Cal_Weights_ShepardMethod(double x[3], vtkDataSet *data, vtkIdList *NearestPoints, double *weights)
+void Cal_Weights_ShepardMethod(double x[3], vtkDataSet *data, vtkIdList *NearestPoints, double *weights)
 {
-	int i;
 	int num_neighbors = NearestPoints->GetNumberOfIds();
-
-	int Inside = 0;
-	int Mesh = 0;
-
 	double range = Avg_Min_Distance_Between_Pts(data, x, num_neighbors, NearestPoints);
-	Inside = CheckIfPointInsideNeighbors(data, Mesh, x, num_neighbors, NearestPoints, range);
-
 	double total_w = 0.0;
 
-	if(num_neighbors>0)
-	{
-		for(i = 0; i < num_neighbors; i++)
-		{
+	if (num_neighbors>0) {
+		for (int i = 0; i < num_neighbors; i++) {
 			vtkIdType index = NearestPoints->GetId(i);
 			double *point = data->GetPoint(index);
 
-			if(sqrt(vtkMath::Distance2BetweenPoints(point, x)) < range)
-			{
+			if (sqrt(vtkMath::Distance2BetweenPoints(point, x)) < range) {
 				weights[i] = 1.0 / vtkMath::Distance2BetweenPoints(point, x);
 				total_w += weights[i];
 			}
 		}
-		for(i = 0; i < num_neighbors; i++)
-		{
+		for (int i = 0; i < num_neighbors; i++) {
 			if(total_w != 0.0)
 				weights[i] = weights[i] / total_w;
 			else
 				weights[i] = 0.0;
 		}
 	}
-	else
-	{
-		for(i = 0; i < num_neighbors; i++)
+	else {
+		for (int i = 0; i < num_neighbors; i++)
 			weights[i] = 0.0;
 	}
-
-	//
-	return Inside;
 }
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -238,26 +122,19 @@ vtkSPHProbeFilter::vtkSPHProbeFilter()
 {
   this->SetNumberOfInputPorts(2);
   this->SetNumberOfOutputPorts(1);
-  this->SpatialMatch                = 0; // not used yet
   // Point based interpolation
   this->Locator                     = vtkSmartPointer<vtkPointLocator>::New();
   this->Timer                       = vtkSmartPointer<vtkTimerLog>::New();
-  this->InterpolationMethod         = POINT_INTERPOLATION_KERNEL;
-  // Shepard method
-  this->LimitSearchByNeighbourCount = 1;
-  this->MaximumNeighbours           = 128;
-  this->MaximumRadius               = 0.001;
   //
-  this->DefaultParticleSideLength   = 0.0183333333333333333;
-  this->HCoefficient                = 1.5;
-  this->KernelType                  = 0;
-  this->KernelDimension             = 3;
   this->KernelFunction              = NULL;
   this->DefaultParticleVolume       = 1.0;
+  this->DefaultParticleMass         = 1.0;
   this->DensityScalars              = NULL;
   this->MassScalars                 = NULL;
   this->VolumeScalars               = NULL;
   this->HScalars                    = NULL;
+  //
+  this->SPHManager                  = vtkSPHManager::New();
 }
 
 //----------------------------------------------------------------------------
@@ -311,6 +188,7 @@ vtkDataObject *vtkSPHProbeFilter::GetProbe()
 //----------------------------------------------------------------------------
 void vtkSPHProbeFilter::InitializeKernelCoefficients()
 {
+  //
   double dpsl = this->DefaultParticleSideLength>0 ? this->DefaultParticleSideLength : 1E-6;
   this->DefaultParticleVolume  = pow(this->DefaultParticleSideLength, this->KernelDimension);
   this->DefaultParticleMass    = this->DefaultDensity*this->DefaultParticleVolume;
@@ -321,16 +199,16 @@ void vtkSPHProbeFilter::InitializeKernelCoefficients()
     delete this->KernelFunction;
   }
   switch (this->KernelType) {
-    case SPH_KERNEL_GAUSSIAN:
+    case vtkSPHManager::SPH_KERNEL_GAUSSIAN:
       this->KernelFunction = new KernelGaussian(this->KernelDimension, H);
       break;
-    case SPH_KERNEL_QUADRATIC:
+    case vtkSPHManager::SPH_KERNEL_QUADRATIC:
       this->KernelFunction = new KernelQuadratic(this->KernelDimension, H);
       break;
-    case SPH_KERNEL_SPLINE_3RD:
+    case vtkSPHManager::SPH_KERNEL_SPLINE_3RD:
       this->KernelFunction = new KernelSpline3rdOrder(this->KernelDimension, H);
       break;
-    case SPH_KERNEL_SPLINE_5TH:
+    case vtkSPHManager::SPH_KERNEL_SPLINE_5TH:
       this->KernelFunction = new KernelSpline5thOrder(this->KernelDimension, H);
       break;
    default :
@@ -339,17 +217,9 @@ void vtkSPHProbeFilter::InitializeKernelCoefficients()
   };
 }
 //----------------------------------------------------------------------------
-int vtkSPHProbeFilter::GetImplicitFunctionStatus(vtkDataSet *probepts)
-{
-  vtkVariantArray *implicitfn = vtkVariantArray::SafeDownCast(probepts->GetFieldData()->GetAbstractArray("ImplicitPlaneData"));
-  return (implicitfn!=NULL);
-}
-//----------------------------------------------------------------------------
 int vtkSPHProbeFilter::OutputType(vtkDataSet *probepts) 
 {
   int outputType = probepts->GetDataObjectType();
-  int implicit   = this->GetImplicitFunctionStatus(probepts);
-  //
   return probepts->GetDataObjectType();
 }
 //----------------------------------------------------------------------------
@@ -377,9 +247,6 @@ int vtkSPHProbeFilter::RequestDataObject(
   vtkDataSet *output = vtkDataSet::SafeDownCast(
     info->Get(vtkDataObject::DATA_OBJECT()));
   //
-  // do we have an implicit function desciption?
-  // if so the output data type will be UnstructuredGrid, because that's what
-  // the cutter exports (if an implicit function is being used for cutting).
   int outputType = -1; 
   if (probepts) {
     outputType = this->OutputType(probepts);
@@ -411,8 +278,6 @@ int vtkSPHProbeFilter::RequestData(
   vtkInformation *outInfo      = outputVector->GetInformationObject(0);
 
   // get the input and output, check for multiblock probe/output geometry
-  vtkDataSet *data = vtkDataSet::SafeDownCast(
-    dataInfo->Get(vtkDataObject::DATA_OBJECT()));
   vtkPointSet *particles = vtkPointSet::SafeDownCast(
     dataInfo->Get(vtkDataObject::DATA_OBJECT()));
   vtkPointSet *probepts = vtkPointSet::SafeDownCast(
@@ -434,6 +299,10 @@ int vtkSPHProbeFilter::RequestData(
   //
   this->Timer->StartTimer();
   if (probepts) {
+    this->InitializeVariables(particles);
+    if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
+      this->InitializeKernelCoefficients();
+    }
     this->ProbeMeshless(particles, probepts, output);
     vtkStructuredGrid *grid = vtkStructuredGrid::SafeDownCast(probepts);
     if (grid) {
@@ -460,8 +329,11 @@ int vtkSPHProbeFilter::RequestData(
       //
       if (probepts) {
         vtkSmartPointer<vtkDataSet> newOutput = this->NewOutput(probepts);
-        bool nonempty;
-        nonempty = this->ProbeMeshless(particles, probepts, newOutput);
+        this->InitializeVariables(particles);
+        if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
+          this->InitializeKernelCoefficients();
+        }
+        bool nonempty = this->ProbeMeshless(particles, probepts, newOutput);
         if (nonempty) {
           mboutput->SetBlock(block, newOutput);
           mboutput->GetMetaData(block++)->Set(vtkCompositeDataSet::NAME(), name.c_str());
@@ -579,16 +451,19 @@ void vtkSPHProbeFilter::KernelCompute(
   this->GradientMagnitude = _gradW.magnitude();
 }
 //----------------------------------------------------------------------------
-bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, vtkDataSet *output)
+bool vtkSPHProbeFilter::InitializeVariables(vtkDataSet *data)
 {
-  vtkIdType ptId, N;
-  double x[3];
-  double bounds[6], cutoff; 
-  vtkPointData *pd, *outPD;
-
-  vtkDebugMacro(<<"Probing data");
-
+  this->InterpolationMethod         = this->SPHManager->GetInterpolationMethod();
+  this->DefaultParticleSideLength   = this->SPHManager->GetDefaultParticleSideLength();
+  this->DefaultDensity              = this->SPHManager->GetDefaultDensity();
+  this->HCoefficient                = this->SPHManager->GetHCoefficient();
+  this->KernelType                  = this->SPHManager->GetKernelType();
+  this->KernelDimension             = this->SPHManager->GetKernelDimension();
+  this->LimitSearchByNeighbourCount = this->SPHManager->GetLimitSearchByNeighbourCount();
+  this->MaximumNeighbours           = this->SPHManager->GetMaximumNeighbours();
+  this->MaximumRadius               = this->SPHManager->GetMaximumRadius();
   Vector::dim = this->KernelDimension;
+
   this->NumInputParticles = data->GetNumberOfPoints();
   // 
   // Find the arrays to be used for Mass/Density
@@ -620,26 +495,30 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
   if (HArray && vtkFloatArray::SafeDownCast(HArray)) {
     this->HData = vtkFloatArray::SafeDownCast(HArray)->GetPointer(0);
   }
+  return true;
+}
+//----------------------------------------------------------------------------
+bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, vtkDataSet *output)
+{
+  vtkIdType ptId, N;
+  double x[3];
+  double bounds[6], cutoff; 
+  vtkPointData *pd, *outPD;
 
-  //
-  // Precompute any coefficients that we know already
-  //
-  if (this->InterpolationMethod==POINT_INTERPOLATION_KERNEL) {
-    this->InitializeKernelCoefficients();
-  }
+  vtkDebugMacro(<<"Probing data");
 
   //
   // Locator optimization
   //
   double bins[3] = {50, 50, 50};
-  if (this->InterpolationMethod==POINT_INTERPOLATION_KERNEL) {
+  if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
     cutoff = this->GetMaxKernelCutoffDistance(); 
     data->GetBounds(bounds);
     bins[0] = (bounds[1]-bounds[0])/cutoff;
     bins[1] = (bounds[3]-bounds[2])/cutoff;
     bins[2] = (bounds[5]-bounds[4])/cutoff;
   }
-  else if (this->InterpolationMethod==POINT_INTERPOLATION_SHEPARD &&
+  else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD &&
     !this->LimitSearchByNeighbourCount) 
   {
     //data->GetBounds(bounds);
@@ -668,16 +547,13 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
   // Copy the probe structure to the output
   output->CopyStructure( probepts );
   output->CopyInformation( probepts );
+
   // Allocate storage for output PointData
   outPD = output->GetPointData();
   outPD->InterpolateAllocate(pd, this->NumOutputPoints, this->NumOutputPoints);
 
   //
   // we will add some new arrays to the point data as well as the interpolated ones.
-  //
-  vtkSmartPointer<vtkCharArray> InsideArray = vtkSmartPointer<vtkCharArray>::New();
-  InsideArray->SetName("Inside");
-  InsideArray->SetNumberOfTuples(this->NumOutputPoints);
   //
   vtkSmartPointer<vtkFloatArray> GradArray = vtkSmartPointer<vtkFloatArray>::New();
   GradArray->SetName("GradW");
@@ -706,11 +582,11 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
     probepts->GetPoint(ptId, x);
 
     // get neighbours of this point
-    if (this->InterpolationMethod==POINT_INTERPOLATION_KERNEL) {
+    if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
       this->Locator->FindPointsWithinRadius(
         cutoff, x, NearestPoints);
     }
-    else if (this->InterpolationMethod==POINT_INTERPOLATION_SHEPARD) {
+    else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
       if (this->LimitSearchByNeighbourCount) {
         this->Locator->FindClosestNPoints(this->MaximumNeighbours, x, NearestPoints);
       }
@@ -726,7 +602,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
     
     // compute the interpolated scalar value(s)
     if (N>0) {
-      if (this->InterpolationMethod==POINT_INTERPOLATION_KERNEL) {
+      if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
         // Compute the weights (equivalent) for each nearest point
         double grad[3];
         this->KernelCompute(x, data, NearestPoints, grad);
@@ -736,15 +612,14 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
         outPD->InterpolatePoint(pd, ptId, NearestPoints, weights);
         ShepardArray->SetValue(ptId, this->ScaleCoefficient);
       }
-      else if (this->InterpolationMethod==POINT_INTERPOLATION_SHEPARD) {
+      else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
         // if Cal_Interpolation_ShepardMethod_All is called, 
         // then please comment out outPD->InterpolatePoint(pd, ptId, NearestPoints, weights);
         // because Cal_Interpolation_ShepardMethod_All calcualtes interpolations.       
         //int inside = Cal_Interpolation_ShepardMethod_All(data, false, x, N, NearestPoints, ptId, outPD);
-        int inside = Cal_Weights_ShepardMethod(x, data, NearestPoints, this->weights);
+        Cal_Weights_ShepardMethod(x, data, NearestPoints, this->weights);
         ShepardArray->SetValue(ptId, 0.0);
         GradArray->SetValue(ptId, 0.0);
-        InsideArray->SetValue(ptId, static_cast<char>(inside));
         // need to call this interpolation function 
         // becasue Cal_Weights_ShepardMethod only calculates weights.
         outPD->InterpolatePoint(pd, ptId, NearestPoints, weights);
@@ -754,18 +629,13 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
       outPD->NullPoint(ptId);
       ShepardArray->SetValue(ptId, 0.0);
       GradArray->SetValue(ptId, 0.0);
-      InsideArray->SetValue(ptId, static_cast<char>(0));
     }
   }
 
   // Add Grad and Shepard arrays
-  if (this->InterpolationMethod==POINT_INTERPOLATION_KERNEL) {
+  if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
     outPD->AddArray(GradArray);
     outPD->AddArray(ShepardArray);
-  }
-  // Add inside/outside array to point data
-  if (this->InterpolationMethod==POINT_INTERPOLATION_SHEPARD) {
-    outPD->AddArray(InsideArray);
   }
   return 1;
 }
@@ -780,7 +650,7 @@ int vtkSPHProbeFilter::RequestInformation(
   vtkInformation *probePtsInfo = inputVector[1]->GetInformationObject(0);
   vtkInformation *outInfo      = outputVector->GetInformationObject(0);
 /*
-  I don't remember why I wanted this in, but it stopf the probe re-execting
+  I don't remember why I wanted this in, but it stops the probe re-execting
   when time increments - so leave it out
   outInfo->CopyEntry(dataInfo, 
                      vtkStreamingDemandDrivenPipeline::TIME_STEPS());

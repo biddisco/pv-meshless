@@ -1,11 +1,11 @@
 <ParaViewFilters>
   <Category name="Meshless" menu_label="&amp;Meshless">
     <Filter name="RegularGridSampler" />
-    <Filter name="SPHProbeFilterWidget" />
-    <Filter name="SPHProbeFilter" />
+    <Filter name="SPHProbeFilterCustom" />
     <Filter name="SPHProbeFilterPoint" />
     <Filter name="SPHProbeFilterLine" />
     <Filter name="SPHProbeFilterGrid" />
+    <Filter name="ExtractValueFilter" />
     <Filter name="TemporalParticleInterpolator" />
     <Filter name="ParticleBoxTreeRepresentation" />
     <Filter name="CenterOfMass" />

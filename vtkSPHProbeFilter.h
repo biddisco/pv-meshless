@@ -12,25 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSPHProbeFilter - Probe Meshless data 
+// .NAME vtkSPHProbeFilter - vtkSPHProbeFilter is a abstract base class for SPH probe filters.
 // .SECTION Description
-// vtkSPHProbeFilter is a filter that takes two inputs, one is a dataset
-// which will be probed, the other is geometry representing probe locations.
-// The filter operates on particle data, or on mesh-based data and detects
-// which type of data is being operated upon. 
-// If meshed data is supplied, and the probe is a planar slice,
-// the filter will attempt to use clip/cut filters to preserve the original
-// mesh so that the interpolation is exact (providing the original mesh
-// consisted of linear cells). To activate this smart probing, the user
-// should use the vtkRegularGridSource filter to generate the input plane.
-// vtkRegularGridSource tags the output data with plane parameters so that
-// an implicit plane and box can be created for clip/cut operations.
-// If meshed data is supplied and the probe type is some arbitrary geometry
-// then the filter internally uses a standard vtkProbe filter to create the
-// required output.
-// When meshless data is probed, the filter uses custom interpolation
-// routines based on SPH kernel or Shepard interpolations to generate
-// output values.
+// vtkSPHProbeFilter is a abstract base class for SPH probe filters.
+// It contains the main logic, neighbour searching and interpolation
+// routines that are used by all SPH probe filters.
+// Concrete sub-classes of this may use geometry/implicit functions
+// file readers etc to generate the probe locations.
+// The Probe filter reads its kernel parameters from the SPH manager class.
 
 #ifndef __vtkSPHProbeFilter_h
 #define __vtkSPHProbeFilter_h
@@ -53,39 +42,21 @@ class VTK_EXPORT vtkSPHProbeFilter : public vtkDataSetAlgorithm
 {
 public:
   static vtkSPHProbeFilter *New();
-  vtkTypeRevisionMacro(vtkSPHProbeFilter,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkSPHProbeFilter,vtkDataSetAlgorithm);
 
   // Description:
-  // Specify the point locations used to probe input. Any geometry
-  // can be used. Old style. Do not use unless for backwards compatibility.
+  // Set/Get the geometry used for probing/sampling
+  void SetProbeConnection(vtkAlgorithmOutput* algOutput);
+
+  // Description:
+  // Set/Get the geometry used for probing/sampling
   void SetProbe(vtkDataObject *probe);
   vtkDataObject *GetProbe();
 
   // Description:
-  // Specify the point locations used to probe input. Any geometry
-  // can be used.
-  void SetProbeConnection(vtkAlgorithmOutput* algOutput);
-
-  //BTX
-  enum {
-    POINT_INTERPOLATION_KERNEL=0,
-    POINT_INTERPOLATION_SHEPARD,
-  };
-  //ETX
-
-  // Description:
-  // An internal method used to test if an implicit function exists 
-  // on the probe input
-  int GetImplicitFunctionStatus(vtkDataSet *probepts);
-
-  // Description:
-  // Use either SPH Kernel interpolation or Linear interpolation
-  vtkSetMacro(InterpolationMethod, int);
-  vtkGetMacro(InterpolationMethod, int);
-  void SetInterpolationMethodToKernel(int k) { 
-    this->SetKernelType(POINT_INTERPOLATION_KERNEL); }
-  void SetInterpolationMethodToLinear(int k) { 
-    this->SetKernelType(POINT_INTERPOLATION_SHEPARD); }
+  // Set/Get the SPH manager that will look after Kernel parameters
+  void SetSPHManager(vtkSPHManager *SPHManager);
+  vtkGetObjectMacro(SPHManager, vtkSPHManager);
 
   // Description:
   // if VolumeScalars are provided (per particle), then the kernel
@@ -101,42 +72,10 @@ public:
   vtkGetStringMacro(HScalars);
 
   // Description:
-  // The Kernel H Factor with a Default value of 1.5.
-  // It is also referred to as the LengthRatio and converts the 
-  // side length of a cubic particle of volume v into the h value
-  // <verbatim>
-  // h = HCoefficient * DefaultParticleSideLength
-  // </verbatim>
-  // the Kernel cutoff is usually 2h (3rd order spline) 
-  // or 3h (5th order spline)
-  vtkSetMacro(HCoefficient, double);
-  vtkGetMacro(HCoefficient, double);
-  
-  // Description:
-  // The DefaultParticleSideLength is the length (in metres) of 1 side of a cube 
-  // holding the particle at the start of the simulation. 
-  // When using a 3D kernel the volume of a particle will
-  // be the cube of DefaultParticleSideLength, and this is used to normalize
-  // the summation of kernel contributions given the density.
-  // For EDF Test Case 2, DefaultParticleSideLength = 0.01*(55.0/30.0)m
-  // Where the 0.01 factor converts cm to m. 
-  // The units used must be consistent with the position coordinates
-  // of the particles (ie metres, cm, etc)
-  // Default value = 0.0183333333333333333
-  vtkSetMacro(DefaultParticleSideLength, double);
-  vtkGetMacro(DefaultParticleSideLength, double);
-
-  // Description:
   // if each particle has a density value, specify the array name here.
   // if not specified then the value of DefaultDensity will be used
   vtkSetStringMacro(DensityScalars);
   vtkGetStringMacro(DensityScalars);
-
-  // Description:
-  // Material density is 1000 (Kg/m^3) by default, but can be changed if
-  // the simulation requires it, overridden if DensityScalars are supplied.
-  vtkSetMacro(DefaultDensity, double);
-  vtkGetMacro(DefaultDensity, double);
 
   // Description:
   // if each particle has a mass value, specify the array name here.
@@ -145,60 +84,10 @@ public:
   vtkSetStringMacro(MassScalars);
   vtkGetStringMacro(MassScalars);
 
-  //BTX
-  enum {
-    SPH_KERNEL_GAUSSIAN=0,
-    SPH_KERNEL_QUADRATIC,
-    SPH_KERNEL_SPLINE_3RD,
-    SPH_KERNEL_SPLINE_5TH,
-    SPH_KERNEL_CUSP,
-    SPH_KERNEL_BOX,
-  };
-  //ETX
-
-  // Description:
-  // Set which kernel is being used, currently the following are supported
-  // CubicSPline3D, CubicSPline2D, Cusp3D
-  vtkSetMacro(KernelType, int);
-  vtkGetMacro(KernelType, int);
-  void SetKernelTypeToGaussian(int k) { 
-    this->SetKernelType(SPH_KERNEL_GAUSSIAN); }
-  void SetKernelTypeToQuadratic3D(int k) { 
-    this->SetKernelType(SPH_KERNEL_QUADRATIC); }
-  void SetKernelTypeToCubicSpline(int k) { 
-    this->SetKernelType(SPH_KERNEL_SPLINE_3RD); }
-  void SetKernelTypeToQuinticSpline(int k) { 
-    this->SetKernelType(SPH_KERNEL_SPLINE_5TH); }
-  void SetKernelTypeToCusp(int k) { 
-    this->SetKernelType(SPH_KERNEL_CUSP); }
-
-  // Description:
-  // Set the kernel dimension, 2D or 3D are permitted
-  vtkSetMacro(KernelDimension, int);
-  vtkGetMacro(KernelDimension, int);
-  
-  // Description:
-  // Set to true to limit by MaximumNeighbours count,
-  // false to limit by radius
-  vtkSetMacro(LimitSearchByNeighbourCount, int);
-  vtkGetMacro(LimitSearchByNeighbourCount, int);
-  vtkBooleanMacro(LimitSearchByNeighbourCount, int);
-
-  // Description:
-  // Set the Maximum number of Neighbours to use in SHEPARD mode
-  vtkSetMacro(MaximumNeighbours, int);
-  vtkGetMacro(MaximumNeighbours, int);
-  
-  // Description:
-  // Set the Maximum radius to use in SHEPARD mode
-  vtkSetMacro(MaximumRadius, double);
-  vtkGetMacro(MaximumRadius, double);
-  
 protected:
    vtkSPHProbeFilter();
   ~vtkSPHProbeFilter();
 
-  int SpatialMatch;
 
   virtual int FillInputPortInformation(int port, vtkInformation* info);
   virtual int FillOutputPortInformation(int port, vtkInformation* info);
@@ -212,6 +101,10 @@ protected:
   vtkSmartPointer<vtkDataSet> NewOutput(vtkDataSet *probepts);
   virtual int OutputType(vtkDataSet *probepts);
 //ETX
+
+  // Setup of variables prior to main probing routine
+  bool InitializeVariables(vtkDataSet *data);
+
   // main execution of loop over probe points
   bool ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, vtkDataSet *output);
 
@@ -227,6 +120,11 @@ protected:
   vtkSmartPointer<vtkPointLocator>   Locator;
   vtkSmartPointer<vtkTimerLog>       Timer;
 //ETX
+
+  //  
+  // SPHManager
+  //
+  vtkSPHManager *SPHManager;
 
   // switch shepard/sph
   int    InterpolationMethod;
@@ -259,11 +157,13 @@ protected:
   float             *MassData;
   float             *DensityData;
   float             *VolumeData;
+
   //
   double             ScaleCoefficient;
   double             GradientMagnitude;
   vtkIdType          NumInputParticles;
   vtkIdType          NumOutputPoints;
+
 //BTX
   Kernel            *KernelFunction;
 //ETX
