@@ -68,14 +68,12 @@ ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 #--------------------------------------------------
 ADD_SUBDIRECTORY(h5part)
 
-IF (${PARAVIEW_VERSION_MAJOR} EQUAL 3 AND ${PARAVIEW_VERSION_MINOR} LESS 9)
-  # Cosmo support not included in this version
-  MESSAGE("Meshless cosmo not supported for ${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
-ELSE (${PARAVIEW_VERSION_MAJOR} EQUAL 3 AND ${PARAVIEW_VERSION_MINOR} LESS 9)
-  SET(COSMO_COMPATIBLE 1)
-ENDIF (${PARAVIEW_VERSION_MAJOR} EQUAL 3 AND ${PARAVIEW_VERSION_MINOR} LESS 9)
+# --------------------------------------------------
+# Optional cosmo support 
+# --------------------------------------------------
+OPTION(USE_COSMO "Use cosmo library" ON)
   
-IF(COSMO_COMPATIBLE)
+IF(USE_COSMO)
   ADD_DEFINITIONS("-DUSE_VTK_COSMO")
   
   #--------------------------------------------------
@@ -97,7 +95,7 @@ IF(COSMO_COMPATIBLE)
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.cxx
   )
   SET(TIPSY_LIB TipsyLib Cosmo2)
-ENDIF (COSMO_COMPATIBLE)
+ENDIF (USE_COSMO)
 
 
 #--------------------------------------------------
