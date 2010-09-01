@@ -204,6 +204,11 @@ int vtkMultiBlockExtractDataOverTime::AllocateOutputData(vtkMultiBlockDataSet *i
       }
       out->GetPointData()->AddArray(timeArray);
       output->SetBlock(blocknum,out);
+
+      const char *dname = input->GetMetaData(blocknum)->Get(vtkCompositeDataSet::NAME());
+      if (dname) {
+        output->GetMetaData(blocknum)->Set(vtkCompositeDataSet::NAME(), dname);
+      }
     }
     else {
       output->SetBlock(blocknum,NULL);
