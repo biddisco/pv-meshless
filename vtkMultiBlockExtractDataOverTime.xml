@@ -1,0 +1,42 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- MultiBlockExtractDataOverTime                                    -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="filters">
+  
+    <SourceProxy name="MultiBlockExtractDataOverTime" 
+                 class="vtkMultiBlockExtractDataOverTime"
+                 label="Extract Data Over Time (Multiblock)">
+      <Documentation
+        short_help="Extracts a single point over time and then plots it."
+        long_help="Extracts  a single point over time and then plots it." >
+      </Documentation>
+
+      <InputProperty name="Input"
+          command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkMultiBlockDataSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          The input from which the selection is extracted.
+        </Documentation>
+      </InputProperty>
+
+      <Hints>
+        <Visibility replace_input="0" />
+        <!-- View can be used to specify the preferred view for the proxy -->
+        <View type="XYChartView" />
+        <Plotable />
+      </Hints>
+      <!-- End of MultiBlockExtractDataOverTime -->
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>
