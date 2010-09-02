@@ -1,6 +1,18 @@
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/vtkCSCSMeshless/sph)
-ADD_EXECUTABLE(TestKernel TestKernel.cxx)
-TARGET_LINK_LIBRARIES(TestKernel
-  pvmeshless_plugin 
-)
-ADD_TEST(TestKernel ${PROJECT_BINARY_DIR}/../bin/TestKernel)
+
+# a list of all tests
+SET(TEST_LIST TestKernel3D TestKernel2D)
+
+# a macro to add one test
+MACRO(add_local_test test_name) 
+  ADD_EXECUTABLE(${test_name} ${test_name}.cxx)
+  TARGET_LINK_LIBRARIES(${test_name}
+    pvmeshless_plugin 
+    )
+  ADD_TEST(${test_name} ${PROJECT_BINARY_DIR}/../bin/${test_name})
+ENDMACRO(add_test)
+
+
+FOREACH(test_name ${TEST_LIST})
+  add_local_test(${test_name})
+ENDFOREACH(test_name)
