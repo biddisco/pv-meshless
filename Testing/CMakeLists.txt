@@ -10,7 +10,7 @@ MACRO(add_local_test test_name)
     pvmeshless_plugin 
     )
   ADD_TEST(${test_name} ${PROJECT_BINARY_DIR}/../bin/${test_name})
-ENDMACRO(add_test)
+ENDMACRO(add_local_test)
 
 
 FOREACH(test_name ${TEST_LIST})
