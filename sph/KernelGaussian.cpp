@@ -1,8 +1,5 @@
 #include "KernelGaussian.h"
 
-#define _USE_MATH_DEFINES
-#include <math.h> 
-
 // Constructor initializes auxiliary values, so the calculation is faster
 KernelGaussian::KernelGaussian(int dim, double smoothingLength)
     : Kernel(dim, smoothingLength)

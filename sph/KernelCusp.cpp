@@ -1,8 +1,4 @@
-
 #include "KernelCusp.h"
-
-#define _USE_MATH_DEFINES
-#include <math.h> 
 
 //----------------------------------------------------------------------------
 KernelCusp::KernelCusp(unsigned long group, int dim, double smoothingLength)

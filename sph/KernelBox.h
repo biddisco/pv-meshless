@@ -5,7 +5,7 @@
 #include "Kernel.h"
 #include "Vector.hpp"
 
-class Box : public Kernel {
+class VTK_EXPORT Box : public Kernel {
   public:
     /**
      * Constructor : Initializes constants
