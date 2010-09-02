@@ -289,7 +289,7 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/vtkLocalConfigure.h.in
 # Testing
 #--------------------------------------------------
 IF (BUILD_TESTING)
-#  ADD_SUBDIRECTORY(Testing)
+  ADD_SUBDIRECTORY(Testing)
 ENDIF (BUILD_TESTING)  
 
 #--------------------------------------------------
