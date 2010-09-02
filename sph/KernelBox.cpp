@@ -1,8 +1,5 @@
 #include "KernelBox.h"
 
-#define _USE_MATH_DEFINES
-#include <math.h> 
-
 //----------------------------------------------------------------------------
 Box::Box(int dim, double smoothingLength)
   : Kernel(dim, smoothingLength)

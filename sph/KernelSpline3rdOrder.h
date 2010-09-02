@@ -4,7 +4,7 @@
 #include "Kernel.h"
 #include "Vector.hpp"
 
-class KernelSpline3rdOrder : public Kernel
+class VTK_EXPORT KernelSpline3rdOrder : public Kernel
 {
 
 public:

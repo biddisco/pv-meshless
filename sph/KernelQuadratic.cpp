@@ -1,7 +1,5 @@
 #include "KernelQuadratic.h"
 
-#define _USE_MATH_DEFINES
-#include <math.h> 
 //----------------------------------------------------------------------------
 KernelQuadratic::KernelQuadratic(int dim, double smoothingLength)
     : Kernel(dim, smoothingLength)

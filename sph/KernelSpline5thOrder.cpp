@@ -1,7 +1,5 @@
 #include "KernelSpline5thOrder.h"
 
-#define _USE_MATH_DEFINES
-#include <math.h> 
 //----------------------------------------------------------------------------
 KernelSpline5thOrder::KernelSpline5thOrder(int dim, double smoothingLength)
     : Kernel(dim, smoothingLength)

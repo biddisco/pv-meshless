@@ -34,7 +34,7 @@
  * zero line. But the gradient would still be unsteady!
  * (This implementation only cuts the kernel without fitting).
  */
-class KernelGaussian : public Kernel
+class VTK_EXPORT KernelGaussian : public Kernel
 {
   public:
 

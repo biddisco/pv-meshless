@@ -2,10 +2,13 @@
 #define KERNEL_HPP 
 
 #include <string>
+#define _USE_MATH_DEFINES
+#include <math.h> 
 
+#include "vtkSystemIncludes.h"
 #include "Vector.hpp"
 
-class Kernel
+class VTK_EXPORT Kernel
 {
   public:
 

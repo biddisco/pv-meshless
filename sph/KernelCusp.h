@@ -25,7 +25,7 @@
  * <br>
  * This Kernel has a well-developed peak in the center. 
  */
-class KernelCusp : public Kernel
+class VTK_EXPORT KernelCusp : public Kernel
 {
   public:
 

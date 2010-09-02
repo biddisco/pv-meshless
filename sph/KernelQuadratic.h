@@ -4,7 +4,7 @@
 #include "Kernel.h"
 #include "Vector.hpp"
 
-class KernelQuadratic : public Kernel
+class VTK_EXPORT KernelQuadratic : public Kernel
 {
 
 public:
