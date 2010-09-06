@@ -1,7 +1,8 @@
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/vtkCSCSMeshless/sph)
 
 # a list of all tests
-SET(TEST_LIST TestKernel3D TestKernel2D TestCenerOfMassFilter)
+SET(TEST_LIST TestKernel3D TestKernel2D TestCenerOfMassFilter 
+  TestMomentsOfInertiaFilter)
 
 # a macro to add one test
 MACRO(add_local_test test_name) 
