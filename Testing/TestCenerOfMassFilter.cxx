@@ -64,7 +64,5 @@ int main() {
   }
   mass->Initialize();
   points->Initialize();
-
-  
   return EXIT_SUCCESS;
 }
