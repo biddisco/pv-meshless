@@ -39,6 +39,12 @@ public:
   // By defualt this filter uses the global controller,
   // but this method can be used to set another instead.
   virtual void SetController(vtkMultiProcessController*);
+
+  // Description:
+  // Helper function, for serial applications calls UpdateInertiaTensor
+  // then UpdateInertiaTensorFinal
+  void ComputeInertiaTensor(vtkPointSet* input, vtkstd::string massArrayName,
+        double* centerPoint,double inertiaTensor[3][3]);
 //BTX
 protected:
   vtkMomentsOfInertiaFilter();
@@ -63,12 +69,6 @@ protected:
 private:
   vtkMomentsOfInertiaFilter(const vtkMomentsOfInertiaFilter&);  // Not implemented.
   void operator=(const vtkMomentsOfInertiaFilter&);  // Not implemented.
-
-	// Description:
-	// Helper function, for serial applications calls UpdateInertiaTensor
-	// then UpdateInertiaTensorFinal
-	void ComputeInertiaTensor(vtkPointSet* input, vtkstd::string massArrayName,
-		double* centerPoint,double inertiaTensor[3][3]);
 
 	// Description:
 	// helper function to compute the moment of inertia tensor, returns
