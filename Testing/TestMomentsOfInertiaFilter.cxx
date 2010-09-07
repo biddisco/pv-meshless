@@ -122,6 +122,8 @@ int main() {
     mycerr << *ref;
     return EXIT_FAILURE;
   }
+  points->Initialize();
+  massArray->Initialize();
 
   // =========================================================================
   // one point on Z axis
