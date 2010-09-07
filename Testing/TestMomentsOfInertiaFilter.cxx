@@ -84,18 +84,18 @@ int main() {
 
 
   // =========================================================================
-  // one point on X axis
+  // one point on Y axis
   // =========================================================================
-  points->InsertNextPoint(1.0, 0.0, 0.0);
+  points->InsertNextPoint(0.0, 1.0, 0.0);
   massArray->InsertNextValue(1.0);
   vtkSmartPointer<vtkTensor>  result =  getInertiaTensor(points, massArray);
   // reference inertia tensor
-  vtkSmartPointer<vtkTensor> ref = FillTensor(0.0, 0.0, 0.0,
-					      0.0, 1.0, 0.0,
+  vtkSmartPointer<vtkTensor> ref = FillTensor(1.0, 0.0, 0.0,
+					      0.0, 0.0, 0.0,
 					      0.0, 0.0, 1.0);
   if (!isEqual(result, ref)) {
     std::cerr << "Configuration number 1 faild\n"; 
-    std::cerr << "ComputeInertiaTensor returns" ;
+    std::cerr << "ComputeInertiaTensor returns " ;
     mycerr << *result;
     std::cerr << "Reference tensor is ";
     mycerr << *ref;
@@ -105,14 +105,14 @@ int main() {
   massArray->Initialize();
 
   // =========================================================================
-  // one point on Y axis
+  // one point on X axis
   // =========================================================================
-  points->InsertNextPoint(0.0, 1.0, 0.0);
+  points->InsertNextPoint(1.0, 0.0, 0.0);
   massArray->InsertNextValue(1.0);
   result =  getInertiaTensor(points, massArray);
   // reference inertia tensor
-  ref = FillTensor(1.0, 0.0, 0.0,
-		   0.0, 0.0, 0.0,
+  ref = FillTensor(0.0, 0.0, 0.0,
+		   0.0, 1.0, 0.0,
 		   0.0, 0.0, 1.0);
   if (!isEqual(result, ref)) {
     std::cerr << "Configuration number 2 faild\n"; 
