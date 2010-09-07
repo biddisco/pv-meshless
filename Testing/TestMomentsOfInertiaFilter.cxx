@@ -94,7 +94,7 @@ int main() {
 					      0.0, 0.0, 0.0,
 					      0.0, 0.0, 1.0);
   if (!isEqual(result, ref)) {
-    std::cerr << "Configuration number 1 faild\n"; 
+    std::cerr << "Configuration number 1 failed\n"; 
     std::cerr << "ComputeInertiaTensor returns " ;
     mycerr << *result;
     std::cerr << "Reference tensor is ";
@@ -115,7 +115,7 @@ int main() {
 		   0.0, 1.0, 0.0,
 		   0.0, 0.0, 1.0);
   if (!isEqual(result, ref)) {
-    std::cerr << "Configuration number 2 faild\n"; 
+    std::cerr << "Configuration number 2 failed\n"; 
     std::cerr << "ComputeInertiaTensor returns: " ;
     mycerr << *result;
     std::cerr << "Reference tensor is ";
@@ -136,7 +136,7 @@ int main() {
 		   0.0, 1.0, 0.0,
 		   0.0, 0.0, 0.0);
   if (!isEqual(result, ref)) {
-    std::cerr << "Configuration number 3 faild\n"; 
+    std::cerr << "Configuration number 3 failed\n"; 
     std::cerr << "ComputeInertiaTensor returns: " ;
     mycerr << *result;
     std::cerr << "Reference tensor is ";
