@@ -35,8 +35,8 @@ bool isEqual(vtkSmartPointer<vtkTensor> A, vtkSmartPointer<vtkTensor> B) {
 
 vtkSmartPointer<vtkTensor> DoubleToTensor(double B[ndim][ndim])  {
   VTK_CREATE(vtkTensor, A);
-  for (int i=1; i<ndim; i++) {
-    for (int j=1; j<ndim; j++) {
+  for (int i=0; i<ndim; i++) {
+    for (int j=0; j<ndim; j++) {
       A->SetComponent(i, j, B[i][j]);
     }
   }  
@@ -123,8 +123,23 @@ int main() {
     return EXIT_FAILURE;
   }
 
-
-
-  
+  // =========================================================================
+  // one point on Z axis
+  // =========================================================================
+  points->InsertNextPoint(0.0, 0.0, 1.0);
+  massArray->InsertNextValue(1.0);
+  result =  getInertiaTensor(points, massArray);
+  // reference inertia tensor
+  ref = FillTensor(1.0, 0.0, 0.0,
+		   0.0, 1.0, 0.0,
+		   0.0, 0.0, 0.0);
+  if (!isEqual(result, ref)) {
+    std::cerr << "Configuration number 3 faild\n"; 
+    std::cerr << "ComputeInertiaTensor returns: " ;
+    mycerr << *result;
+    std::cerr << "Reference tensor is ";
+    mycerr << *ref;
+    return EXIT_FAILURE;
+  }
   return EXIT_SUCCESS;
 }
