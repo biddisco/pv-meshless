@@ -79,7 +79,9 @@ int main() {
 
   // set precision for tensor output
   std::ostream& mycerr(std::cerr);
-  mycerr.precision(2);
+  mycerr.precision(3);
+  mycerr.width(12);
+  mycerr << std::scientific;
   mycerr.setf(ios::fixed);
 
 
