@@ -33,7 +33,7 @@ class VTK_EXPORT vtkMomentsOfInertiaFilter : public vtkPointSetAlgorithm
 {
 public:
   static vtkMomentsOfInertiaFilter *New();
-  vtkTypeRevisionMacro(vtkMomentsOfInertiaFilter,vtkPointSetAlgorithm);
+  vtkTypeMacro(vtkMomentsOfInertiaFilter,vtkPointSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   // Description:
   // By defualt this filter uses the global controller,

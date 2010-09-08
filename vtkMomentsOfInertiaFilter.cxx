@@ -21,7 +21,6 @@
 #include "vtkSmartPointer.h"
 #include "vtkMath.h"
 
-vtkCxxRevisionMacro(vtkMomentsOfInertiaFilter, "$Revision: 1.72 $");
 vtkStandardNewMacro(vtkMomentsOfInertiaFilter);
 vtkCxxSetObjectMacro(vtkMomentsOfInertiaFilter,Controller, vtkMultiProcessController);
 
