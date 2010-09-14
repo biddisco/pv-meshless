@@ -58,62 +58,62 @@ vtkCxxSetObjectMacro(vtkSPHProbeFilter, SPHManager, vtkSPHManager);
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 float Avg_Min_Distance_Between_Pts(vtkDataSet *input, double *Pt, 
-												int numNeighbors, vtkIdList *NeighborArray)
+                        int numNeighbors, vtkIdList *NeighborArray)
 {
-	double xx[3];
-	double yy[3];
-	double t1 = 1.42383234E20;
-	double t2 = 0.0;
-	double tt;
-	for(int j = 0; j < numNeighbors; j++)
-	{
-		input->GetPoint(NeighborArray->GetId(j), xx);
-		t1 = 1.42383234E20;
-		for(int k = 0; k < numNeighbors; k++)
-		{	
-			if(j != k)
-			{
-				input->GetPoint(NeighborArray->GetId(k), yy);
-				tt = sqrt(vtkMath::Distance2BetweenPoints(xx, yy));
-				if(tt != 0.0)
-					if(t1 > tt)
-						t1 = tt;
-			}
-		}
-		t2 += t1;
-	}
-	//printf("avg distance = %f\n", t2 / (double) numNeighbors);
+  double xx[3];
+  double yy[3];
+  double t1 = 1.42383234E20;
+  double t2 = 0.0;
+  double tt;
+  for(int j = 0; j < numNeighbors; j++)
+  {
+    input->GetPoint(NeighborArray->GetId(j), xx);
+    t1 = 1.42383234E20;
+    for(int k = 0; k < numNeighbors; k++)
+    {  
+      if(j != k)
+      {
+        input->GetPoint(NeighborArray->GetId(k), yy);
+        tt = sqrt(vtkMath::Distance2BetweenPoints(xx, yy));
+        if(tt != 0.0)
+          if(t1 > tt)
+            t1 = tt;
+      }
+    }
+    t2 += t1;
+  }
+  //printf("avg distance = %f\n", t2 / (double) numNeighbors);
 
-	return (3.0 * t2 / (double)numNeighbors);
+  return (3.0 * t2 / (double)numNeighbors);
 }
 //----------------------------------------------------------------------------
 void Cal_Weights_ShepardMethod(double x[3], vtkDataSet *data, vtkIdList *NearestPoints, double *weights)
 {
-	int num_neighbors = NearestPoints->GetNumberOfIds();
-	double range = Avg_Min_Distance_Between_Pts(data, x, num_neighbors, NearestPoints);
-	double total_w = 0.0;
+  int num_neighbors = NearestPoints->GetNumberOfIds();
+  double range = Avg_Min_Distance_Between_Pts(data, x, num_neighbors, NearestPoints);
+  double total_w = 0.0;
 
-	if (num_neighbors>0) {
-		for (int i = 0; i < num_neighbors; i++) {
-			vtkIdType index = NearestPoints->GetId(i);
-			double *point = data->GetPoint(index);
-
-			if (sqrt(vtkMath::Distance2BetweenPoints(point, x)) < range) {
-				weights[i] = 1.0 / vtkMath::Distance2BetweenPoints(point, x);
-				total_w += weights[i];
-			}
-		}
-		for (int i = 0; i < num_neighbors; i++) {
-			if(total_w != 0.0)
-				weights[i] = weights[i] / total_w;
-			else
-				weights[i] = 0.0;
-		}
-	}
-	else {
-		for (int i = 0; i < num_neighbors; i++)
-			weights[i] = 0.0;
-	}
+  if (num_neighbors>0) {
+    for (int i = 0; i < num_neighbors; i++) {
+      vtkIdType index = NearestPoints->GetId(i);
+      double *point = data->GetPoint(index);
+        double d = vtkMath::Distance2BetweenPoints(point, x);
+      if (d!=0.0) {
+        weights[i] = 1.0 / d;
+        total_w += weights[i];
+      }
+    }
+    for (int i = 0; i < num_neighbors; i++) {
+      if(total_w != 0.0)
+        weights[i] = weights[i] / total_w;
+      else
+        weights[i] = 0.0;
+    }
+  }
+  else {
+    for (int i = 0; i < num_neighbors; i++)
+      weights[i] = 0.0;
+  }
 }
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
