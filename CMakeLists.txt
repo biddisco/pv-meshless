@@ -265,7 +265,6 @@ ADD_PARAVIEW_PLUGIN(
     # none for now  
   GUI_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.ui
-#    ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Sources.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Filters.xml

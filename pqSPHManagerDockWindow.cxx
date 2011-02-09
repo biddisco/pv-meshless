@@ -82,7 +82,7 @@ public:
 
   void CreateProxy() {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
-    this->SPHProxy = pm->NewProxy("meshless_helpers", "SPHManager");
+    this->SPHProxy.TakeReference(pm->NewProxy("meshless_helpers", "SPHManager"));
     this->pqSPHProxy = new pqProxy("meshless_helpers", "SPHManager", SPHProxy, 0, 0);
     this->SPHProxy->UpdatePropertyInformation();
   }
