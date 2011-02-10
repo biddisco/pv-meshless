@@ -18,7 +18,13 @@ INCLUDE_DIRECTORIES(
 )
 
 #--------------------------------------------------
-# Set Other Includes
+# Trilinos
+#--------------------------------------------------
+FIND_PACKAGE(Trilinos)
+INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
+
+#--------------------------------------------------
+# Set Includes
 #--------------------------------------------------
   INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/sph
