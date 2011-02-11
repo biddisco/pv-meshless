@@ -18,12 +18,6 @@ INCLUDE_DIRECTORIES(
 )
 
 #--------------------------------------------------
-# Trilinos
-#--------------------------------------------------
-FIND_PACKAGE(Trilinos)
-INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
-
-#--------------------------------------------------
 # Set Includes
 #--------------------------------------------------
   INCLUDE_DIRECTORIES(

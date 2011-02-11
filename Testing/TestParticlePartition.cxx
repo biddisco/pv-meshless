@@ -51,9 +51,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include "zoltan.h"
 
 #define PART_COUNT 1024
+#define NUM_PARTITIONS 32
+#define NUM_PARTITIONSS "32"
 //----------------------------------------------------------------------------
 std::string usage = "\n"\
 "\t-D path to use for temp h5part file \n" \
@@ -163,7 +167,7 @@ int i;
 static int get_num_geometry(void *data, int *ierr)
 {
   *ierr = ZOLTAN_OK;
-  return 2;
+  return 3;
 }
 
 static void get_geometry_list(void *data, int sizeGID, int sizeLID,
@@ -175,7 +179,7 @@ int i;
 
   MESH_DATA *mesh= (MESH_DATA *)data;
 
-  if ( (sizeGID != 1) || (sizeLID != 1) || (num_dim != 2)){
+  if ( (sizeGID != 1) || (sizeLID != 1) || (num_dim != 3)){
     *ierr = ZOLTAN_FATAL;
     return;
   }
@@ -183,8 +187,9 @@ int i;
   *ierr = ZOLTAN_OK;
 
   for (i=0;  i < num_obj ; i++){
-    geom_vec[2*i]   = (double)mesh->points[3*i];
-    geom_vec[2*i+1] = (double)mesh->points[3*i+1];
+    geom_vec[3*i]   = (double)mesh->points[3*i];
+    geom_vec[3*i+1] = (double)mesh->points[3*i+1];
+    geom_vec[3*i+1] = (double)mesh->points[3*i+1];
   }
 
   return;
@@ -243,6 +248,31 @@ void SetStuffRMI(void *localArg, void* vtkNotUsed(remoteArg),
   vtkMultiProcessController* contrl = args->Controller;
 }
 //----------------------------------------------------------------------------
+void SpherePoints(int n, float radius, float X[])
+{
+int i;
+double x, y, z, w, t;
+
+for( i=0; i< n; i++ ) {
+  #ifdef WIN32
+   double r1 = double(rand())/RAND_MAX;
+   double r2 = double(rand())/RAND_MAX;
+  #else
+   double r1 = drand48();
+   double r2 = drand48();
+  #endif
+  z = 2.0 * r1 - 1.0;
+  t = 2.0 * M_PI * r2;
+  w = radius * sqrt( 1 - z*z );
+  x = w * cos( t );
+  y = w * sin( t );
+//  printf("i=%d:  x,y,z=\t%10.5lf\t%10.5lf\t%10.5lf\n", i, x,y,z);
+  X[3*i+0] = x;
+  X[3*i+1] = y;
+  X[3*i+2] = z*radius;
+  }
+}
+//----------------------------------------------------------------------------
 #define ROWS 50
 #define POINTS_PER_PROCESS ROWS*ROWS*ROWS
 //----------------------------------------------------------------------------
@@ -259,7 +289,9 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   }
   controller->Barrier();
 
-  // Setup testing utilities/args etc
+  //--------------------------------------------------------------
+  // command line params : Setup testing utilities/args etc
+  //--------------------------------------------------------------
   ParallelArgs_tmp* args = reinterpret_cast<ParallelArgs_tmp*>(arg);
   vtkSmartPointer<vtkTesting> test = vtkSmartPointer<vtkTesting>::New();
   for (int c=1; c<args->argc; c++ ) {
@@ -288,12 +320,17 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       std::cout << "Process Id : " << myId << " Requested Particles : " << numPoints << std::endl;
     }
   }
-  //
+
+  //--------------------------------------------------------------
+  // allocate scalar arrays
+  //--------------------------------------------------------------
   vtkSmartPointer<vtkPolyData>  Sprites = vtkSmartPointer<vtkPolyData>::New();
   vtkSmartPointer<vtkPoints>     points = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray>   verts = vtkSmartPointer<vtkCellArray>::New();
   vtkSmartPointer<vtkDoubleArray> sizes = vtkSmartPointer<vtkDoubleArray>::New();
   vtkSmartPointer<vtkIntArray>      Ids = vtkSmartPointer<vtkIntArray>::New();
+  vtkSmartPointer<vtkIntArray>    Ranks = vtkSmartPointer<vtkIntArray>::New();
+  vtkSmartPointer<vtkIntArray>    Parts = vtkSmartPointer<vtkIntArray>::New();
   //
   points->SetNumberOfPoints(numPoints);
   //
@@ -311,22 +348,46 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   Ids->SetName("PointIds");
   Sprites->GetPointData()->AddArray(Ids);  
   //
+  Ranks->SetNumberOfTuples(numPoints);
+  Ranks->SetNumberOfComponents(1);
+  Ranks->SetName("Rank");
+  Sprites->GetPointData()->AddArray(Ranks);  
+  //
+  Parts->SetNumberOfTuples(numPoints);
+  Parts->SetNumberOfComponents(1);
+  Parts->SetName("Partition");
+  Sprites->GetPointData()->AddArray(Parts);  
+  //
+  //--------------------------------------------------------------
+  // Create default scalar arrays
+  //--------------------------------------------------------------
   double radius  = 0.0001;
   radius  = 0.08;
   double spacing = radius*2.0;
   double offset  = myId*spacing*rows;
+  const double a = 0.9;
   for (vtkTypeInt64 z=0; z<rows; z++) {
     for (vtkTypeInt64 y=0; y<rows; y++) {
       for (vtkTypeInt64 x=0; x<rows; x++) {
         vtkIdType Id = static_cast<vtkIdType>(z*rows*rows + y*rows + x);
-        points->SetPoint(Id, x*spacing, y*spacing, z*spacing + offset);
+        double Y = cos(4*x*2*M_PI/rows);
+        double X = sin(5*y*2*M_PI/rows);
+        double Z = cos(4*y*2*M_PI/rows) * cos(5*z*2*M_PI/rows);
+        points->SetPoint(Id, X, Y, Z);
+//        points->SetPoint(Id, x*spacing, y*spacing, z*spacing + offset);
         sizes->SetValue(Id, radius);
         Ids->SetTuple1(Id, Id + myId*numPoints);
+        Ranks->SetTuple1(Id, myId);
+        Parts->SetTuple1(Id, myId);
         verts->InsertNextCell(1,&Id);
       }
     }
   }
+  SpherePoints(numPoints, (1.0+myId)*0.5/numProcs, vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0));
 
+  //--------------------------------------------------------------
+  // Add colour by elevation
+  //--------------------------------------------------------------
   vtkSmartPointer<vtkElevationFilter> elev = vtkSmartPointer<vtkElevationFilter>::New();
   elev->SetInput(Sprites);
   elev->SetLowPoint(offset, 0.0, 0.0);
@@ -341,7 +402,115 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
    collective = true;
   }
 
-  // Create writer
+  //--------------------------------------------------------------
+  // Use Zoltan library to re-partition the particles in parallel
+  //--------------------------------------------------------------
+  struct Zoltan_Struct *zz;
+  int changes, numGidEntries, numLidEntries, numImport, numExport;
+  ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids; 
+  int *importProcs, *importToPart, *exportProcs, *exportToPart;
+  MESH_DATA myMesh;
+
+  float ver;
+  int rc = Zoltan_Initialize(args->argc, args->argv, &ver);
+  if (rc != ZOLTAN_OK){
+    printf("Zoltan initialization failed ...\n");
+    return;
+  }
+
+  myMesh.myGlobalIDs     = Ids->GetPointer(0);
+  myMesh.numGlobalPoints = numPoints*numProcs;
+  myMesh.numMyPoints     = numPoints;
+  myMesh.points          = vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0);
+
+  /******************************************************************
+  ** Create a Zoltan library structure for this instance of load
+  ** balancing.  Set the parameters and query functions that will
+  ** govern the library's calculation.  See the Zoltan User's
+  ** Guide for the definition of these and many other parameters.
+  ******************************************************************/
+
+  zz = Zoltan_Create(MPI_COMM_WORLD); 
+
+  /* General parameters */
+
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
+  Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
+//  Zoltan_Set_Param(zz, "LB_METHOD", "PARMETIS");
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
+  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
+  Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", NUM_PARTITIONSS); // we will create 4 partitions locally (testing)
+//  Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS", NUM_PARTITIONSS); // we will create 4 partitions locally (testing)
+  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
+  Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
+
+  /* RCB parameters */
+
+//  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
+
+  Zoltan_Set_Param(zz, "RCB_RECOMPUTE_BOX", "1");
+  
+//  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
+//  Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
+  /*Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "0"); */
+
+  /* Query functions, to provide geometry to Zoltan */
+
+  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, &myMesh);
+  Zoltan_Set_Obj_List_Fn(zz, get_object_list, &myMesh);
+  Zoltan_Set_Num_Geom_Fn(zz, get_num_geometry, &myMesh);
+  Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list, &myMesh);
+
+  /******************************************************************
+  ** Zoltan can now partition the vertices in the simple mesh.
+  ******************************************************************/
+
+  rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
+        &changes,           /* 1 if partitioning was changed, 0 otherwise */ 
+        &numGidEntries,     /* Number of integers used for a global ID */
+        &numLidEntries,     /* Number of integers used for a local ID */
+        &numImport,         /* Number of vertices to be sent to me */
+        &importGlobalGids,  /* Global IDs of vertices to be sent to me */
+        &importLocalGids,   /* Local IDs of vertices to be sent to me */
+        &importProcs,       /* Process rank for source of each incoming vertex */
+        &importToPart,      /* New partition for each incoming vertex */
+        &numExport,         /* Number of vertices I must send to other processes*/
+        &exportGlobalGids,  /* Global IDs of the vertices I must send */
+        &exportLocalGids,   /* Local IDs of the vertices I must send */
+        &exportProcs,       /* Process to which I send each of the vertices */
+        &exportToPart);     /* Partition to which each vertex will belong */
+
+  if (rc != ZOLTAN_OK){
+    printf("Zoltan_LB_Partition NOT OK...\n");
+    MPI_Finalize();
+    Zoltan_Destroy(&zz);
+    exit(0);
+  }
+
+  /******************************************************************
+  ** Visualize the mesh partitioning before and after calling Zoltan.
+  ******************************************************************/
+
+  int *parts = Parts->GetPointer(0);
+  for (int i=0; i < numExport; i++){
+    parts[exportLocalGids[i]] = exportToPart[i];
+  }
+
+  /******************************************************************
+  ** Free the arrays allocated by Zoltan_LB_Partition, and free
+  ** the storage allocated for the Zoltan structure.
+  ******************************************************************/
+
+  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
+                      &importProcs, &importToPart);
+  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
+                      &exportProcs, &exportToPart);
+
+  Zoltan_Destroy(&zz);
+
+  //--------------------------------------------------------------
+  // Create writer on all processes
+  //--------------------------------------------------------------
   vtkSmartPointer<vtkH5PartWriter> writer = vtkSmartPointer<vtkH5PartWriter>::New();
   writer->SetFileModeToWrite();
   writer->SetFileName(fullname);
@@ -349,7 +518,6 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   writer->SetCollectiveIO(collective);
   writer->SetDisableInformationGather(1);
   writer->SetVectorsWithStridedWrite(0);
-
 
 /*
   // Randomly give some processes zero points to improve test coverage
@@ -377,16 +545,20 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   //  std::cin >> ch;
   //}
 
+  //--------------------------------------------------------------
+  // Write in parallel
+  //--------------------------------------------------------------
   writer->SetTimeStep(0);
   writer->SetTimeValue(0.5);
   writer->Write();
+
   // 
   // make sure they have all finished writing before going on to the read part
   //
   timer->StopTimer();
   writer->CloseFile();
   controller->Barrier();
-  //
+
   // memory usage - Ids(int) Size(double) Elevation(float) Verts(double*3)
   double bytes = numPoints*(sizeof(int) + sizeof(double) + sizeof(float) + 3*sizeof(float));
   double MBytes = bytes/(1024*1024);
@@ -394,6 +566,9 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   std::cout << "Process Id : " << myId << " File Written in " << elapsed << " seconds" << std::endl;
   std::cout << "Process Id : " << myId << " IO-Speed " << MBytes/timer->GetElapsedTime() << " MB/s" << std::endl;
   //
+  //--------------------------------------------------------------
+  // processes 1-N doing nothing for now
+  //--------------------------------------------------------------
   if (myId != 0)
     {
     // If I am not the root process
@@ -405,6 +580,9 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     controller->ProcessRMIs();
     
     }
+  //--------------------------------------------------------------
+  // Read back all particles on process zero
+  //--------------------------------------------------------------
   else
     {
     std::cout << std::endl;
@@ -413,6 +591,8 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
 
     // Read the file we just wrote on N processes
     vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
+    // we want to read all the particles on this node, so don't use MPI/Parallel
+    reader->SetController(NULL);
     reader->SetFileName(fullname);
     reader->Update();
     vtkTypeInt64 ReadPoints = reader->GetOutput()->GetNumberOfPoints();
@@ -461,130 +641,6 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
      doRender = true;
     }
 
-    struct Zoltan_Struct *zz;
-    int changes, numGidEntries, numLidEntries, numImport, numExport;
-    ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids; 
-    int *importProcs, *importToPart, *exportProcs, *exportToPart;
-    int *parts;
-    MESH_DATA myMesh;
-
-    float ver;
-    int rc = Zoltan_Initialize(args->argc, args->argv, &ver);
-    if (rc != ZOLTAN_OK){
-      printf("Zoltan initialization failed ...\n");
-      return;
-    }
-
-    myMesh.myGlobalIDs     = vtkIntArray::SafeDownCast(reader->GetOutput()->GetPointData()->GetArray("PointIds"))->GetPointer(0);
-    myMesh.numGlobalPoints = numPoints*numProcs;
-    myMesh.numMyPoints     = ReadPoints;
-    myMesh.points          = vtkFloatArray::SafeDownCast(reader->GetOutput()->GetPoints()->GetData())->GetPointer(0);
-
-
-    /******************************************************************
-    ** Create a Zoltan library structure for this instance of load
-    ** balancing.  Set the parameters and query functions that will
-    ** govern the library's calculation.  See the Zoltan User's
-    ** Guide for the definition of these and many other parameters.
-    ******************************************************************/
-
-    zz = Zoltan_Create(MPI_COMM_WORLD); 
-  //  vtkMPIController::SafeDownCast(controller)->GetCommunicator()->
-   
-    /* General parameters */
-
-    Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
-    Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
-    Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
-    Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
-    Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS", "4");
-    Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
-    Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
-
-    /* RCB parameters */
-
-    Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
-    Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
-    /*Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "0"); */
-
-    /* Query functions, to provide geometry to Zoltan */
-
-    Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, &myMesh);
-    Zoltan_Set_Obj_List_Fn(zz, get_object_list, &myMesh);
-    Zoltan_Set_Num_Geom_Fn(zz, get_num_geometry, &myMesh);
-    Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list, &myMesh);
-
-    /******************************************************************
-    ** Zoltan can now partition the vertices in the simple mesh.
-    ** In this simple example, we assume the number of partitions is
-    ** equal to the number of processes.  Process rank 0 will own
-    ** partition 0, process rank 1 will own partition 1, and so on.
-    ******************************************************************/
-
-    rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
-          &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
-          &numGidEntries,  /* Number of integers used for a global ID */
-          &numLidEntries,  /* Number of integers used for a local ID */
-          &numImport,      /* Number of vertices to be sent to me */
-          &importGlobalGids,  /* Global IDs of vertices to be sent to me */
-          &importLocalGids,   /* Local IDs of vertices to be sent to me */
-          &importProcs,    /* Process rank for source of each incoming vertex */
-          &importToPart,   /* New partition for each incoming vertex */
-          &numExport,      /* Number of vertices I must send to other processes*/
-          &exportGlobalGids,  /* Global IDs of the vertices I must send */
-          &exportLocalGids,   /* Local IDs of the vertices I must send */
-          &exportProcs,    /* Process to which I send each of the vertices */
-          &exportToPart);  /* Partition to which each vertex will belong */
-
-    if (rc != ZOLTAN_OK){
-      printf("sorry...\n");
-      MPI_Finalize();
-      Zoltan_Destroy(&zz);
-      exit(0);
-    }
-
-    /******************************************************************
-    ** Visualize the mesh partitioning before and after calling Zoltan.
-    ******************************************************************/
-
-    parts = (int *)malloc(sizeof(int) * myMesh.numMyPoints);
-
-    for (int i=0; i < myMesh.numMyPoints; i++){
-      parts[i] = myId;
-    }
-
-    if (myId== 0){
-      printf("\nMesh partition assignments before calling Zoltan\n");
-    }
-
-    showSimpleMeshPartitions(myId, myMesh.numMyPoints, myMesh.myGlobalIDs, parts);
-
-    for (int i=0; i < numExport; i++){
-      parts[exportLocalGids[i]] = exportToPart[i];
-    }
-
-    if (myId == 0){
-      printf("Mesh partition assignments after calling Zoltan\n");
-    }
-
-    showSimpleMeshPartitions(myId, myMesh.numMyPoints, myMesh.myGlobalIDs, parts);
-
-    free(parts);
-
-    /******************************************************************
-    ** Free the arrays allocated by Zoltan_LB_Partition, and free
-    ** the storage allocated for the Zoltan structure.
-    ******************************************************************/
-
-    Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
-                        &importProcs, &importToPart);
-    Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
-                        &exportProcs, &exportToPart);
-
-    Zoltan_Destroy(&zz);
-
-
-
     if (doRender) {
       // Generate vertices from the points
       vtkSmartPointer<vtkMaskPoints> verts = vtkSmartPointer<vtkMaskPoints>::New();
@@ -597,7 +653,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       // Display something to see if we got a good output
       vtkSmartPointer<vtkPolyData> polys = vtkSmartPointer<vtkPolyData>::New();
       polys->ShallowCopy(verts->GetOutput());
-      polys->GetPointData()->SetScalars(polys->GetPointData()->GetArray("Elevation"));
+      polys->GetPointData()->SetScalars(polys->GetPointData()->GetArray("Partition"));
       std::cout << "Process Id : " << myId << " Created vertices : " << polys->GetNumberOfPoints() << std::endl;
       //
       vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -609,12 +665,24 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       ren->SetBackground(0.1, 0.1, 0.1);
       renWindow->SetSize( 400, 400);
       mapper->SetInput(polys);
-      mapper->SelectColorArray("Elevation");
+      mapper->SetScalarRange(0,NUM_PARTITIONS-1);
       actor->SetMapper(mapper);
       actor->GetProperty()->SetPointSize(2);
       ren->AddActor(actor);
       renWindow->AddRenderer(ren);
-    
+
+      vtkSmartPointer<vtkPolyData> polys2 = vtkSmartPointer<vtkPolyData>::New();
+      polys2->ShallowCopy(verts->GetOutput());
+      polys2->GetPointData()->SetScalars(polys->GetPointData()->GetArray("Rank"));
+      vtkSmartPointer<vtkPolyDataMapper>       mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
+      vtkSmartPointer<vtkActor>                 actor2 = vtkSmartPointer<vtkActor>::New();
+      mapper2->SetInput(polys2);
+      mapper2->SetScalarRange(0,numProcs-1);
+      actor2->SetMapper(mapper2);
+      actor2->GetProperty()->SetPointSize(2);
+      actor2->SetPosition(1.0, 0.0, 0.0);
+      ren->AddActor(actor2);
+
       std::cout << "Process Id : " << myId << " About to Render" << std::endl;
       renWindow->Render();
 
