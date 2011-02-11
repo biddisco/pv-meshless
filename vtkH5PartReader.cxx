@@ -87,7 +87,7 @@ static hid_t H5PartGetNativeDatasetType(H5PartFile *f, const char *name)
     {
     H5PartSetStep(f,f->timestep); /* choose current step */
     }
-#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
+#if (!H5_USE_16_API && ((H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))))
   dataset=H5Dopen(f->timegroup, name, H5P_DEFAULT);
 #else
   dataset=H5Dopen(f->timegroup, name);
@@ -154,7 +154,6 @@ hid_t H5PartGetDiskShape(H5PartFile *f, hid_t dataset)
   #define vtkErrorMacro(a) vtkDebugMacro(a)  
 #endif
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkH5PartReader, "$Revision: 1.4 $");
 vtkStandardNewMacro(vtkH5PartReader);
 //----------------------------------------------------------------------------
 vtkH5PartReader::vtkH5PartReader()
@@ -558,7 +557,7 @@ public:
     }
 };
 //----------------------------------------------------------------------------
-#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
+#if (!H5_USE_16_API && ((H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))))
   #define h_params ,H5P_DEFAULT
 #else
   #define h_params
