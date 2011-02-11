@@ -325,8 +325,14 @@ int vtkH5PartReader::RequestInformation(
     this->UpdatePiece = this->Controller->GetLocalProcessId();
     this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
     }
+  else 
+    {
+    this->UpdatePiece = 0;
+    this->UpdateNumPieces = 1;
+    }
 #else
-  this->UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+    this->UpdatePiece = this->Controller->GetLocalProcessId();
+    this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
 #endif
 
   bool NeedToReadInformation = (FileModifiedTime>FileOpenedTime || !this->H5FileId);
