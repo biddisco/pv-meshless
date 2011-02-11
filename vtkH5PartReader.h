@@ -40,7 +40,7 @@ class VTK_EXPORT vtkH5PartReader : public vtkPolyDataAlgorithm
 {
 public:
   static vtkH5PartReader *New();
-  vtkTypeRevisionMacro(vtkH5PartReader,vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkH5PartReader,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);   
 
   // Description:
