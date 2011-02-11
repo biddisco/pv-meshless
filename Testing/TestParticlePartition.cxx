@@ -59,6 +59,9 @@
 #define NUM_PARTITIONS 32
 #define NUM_PARTITIONSS "32"
 //----------------------------------------------------------------------------
+#define ROWS 50
+#define POINTS_PER_PROCESS ROWS*ROWS*ROWS
+//----------------------------------------------------------------------------
 std::string usage = "\n"\
 "\t-D path to use for temp h5part file \n" \
 "\t-F name to use for temp h5part file \n" \
@@ -119,38 +122,29 @@ typedef struct{
 //----------------------------------------------------------------------------
 /* Application defined query functions */
 //----------------------------------------------------------------------------
-
-static int get_number_of_objects(void *data, int *ierr);
+static int  get_number_of_objects(void *data, int *ierr);
 static void get_object_list(void *data, int sizeGID, int sizeLID,
-            ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+                  ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
                   int wgt_dim, float *obj_wgts, int *ierr);
-static int get_num_geometry(void *data, int *ierr);
+static int  get_num_geometry(void *data, int *ierr);
 static void get_geometry_list(void *data, int sizeGID, int sizeLID,
              int num_obj, ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
              int num_dim, double *geom_vec, int *ierr);
 
 //----------------------------------------------------------------------------
-/* display input mesh, handle errors */
-//----------------------------------------------------------------------------
-
-void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts);
-
-//----------------------------------------------------------------------------
 /* Application defined query functions */
 //----------------------------------------------------------------------------
-
 static int get_number_of_objects(void *data, int *ierr)
 {
   MESH_DATA *mesh= (MESH_DATA *)data;
   *ierr = ZOLTAN_OK;
   return mesh->numMyPoints;
 }
-
+//----------------------------------------------------------------------------
 static void get_object_list(void *data, int sizeGID, int sizeLID,
             ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
                   int wgt_dim, float *obj_wgts, int *ierr)
 {
-int i;
   MESH_DATA *mesh= (MESH_DATA *)data;
   *ierr = ZOLTAN_OK;
 
@@ -158,72 +152,39 @@ int i;
    * Zoltan will assume equally weighted objects.
    */
 
-  for (i=0; i<mesh->numMyPoints; i++){
+  for (int i=0; i<mesh->numMyPoints; i++){
     globalID[i] = mesh->myGlobalIDs[i];
     localID[i] = i;
   }
 }
-
+//----------------------------------------------------------------------------
 static int get_num_geometry(void *data, int *ierr)
 {
   *ierr = ZOLTAN_OK;
   return 3;
 }
-
+//----------------------------------------------------------------------------
 static void get_geometry_list(void *data, int sizeGID, int sizeLID,
                       int num_obj,
              ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
              int num_dim, double *geom_vec, int *ierr)
 {
-int i;
-
   MESH_DATA *mesh= (MESH_DATA *)data;
-
+/*
   if ( (sizeGID != 1) || (sizeLID != 1) || (num_dim != 3)){
     *ierr = ZOLTAN_FATAL;
     return;
   }
-
+*/
   *ierr = ZOLTAN_OK;
-
-  for (i=0;  i < num_obj ; i++){
+  for (int i=0;  i < num_obj ; i++){
     geom_vec[3*i]   = (double)mesh->points[3*i];
     geom_vec[3*i+1] = (double)mesh->points[3*i+1];
-    geom_vec[3*i+1] = (double)mesh->points[3*i+1];
+    geom_vec[3*i+1] = (double)mesh->points[3*i+2];
   }
-
   return;
 }
-//----------------------------------------------------------------------------
-void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts)
-{
-  int partAssign[PART_COUNT], allPartAssign[PART_COUNT];
 
-  memset(partAssign, 0, sizeof(int) * PART_COUNT);
-
-  for (int i=0; i < numIDs; i++){
-//    std::cout << i << std::endl;
-    partAssign[GIDs[i]] = parts[i];
-  }
-
-  MPI_Reduce(partAssign, allPartAssign, PART_COUNT, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
-
-  if (myProc == 0){
-
-    for (int i=20; i >= 0; i-=5){
-      for (int j=0; j < 5; j++){
-        int part = allPartAssign[i + j];
-        if (j < 4)
-          printf("%d-----",part);
-        else
-          printf("%d\n",part);
-      }
-      if (i > 0)
-        printf("|     |     |     |     |\n");
-    }
-    printf("\n");
-  }
-}
 //----------------------------------------------------------------------------
 // Just pick a tag which is available
 static const int RMI_TAG=300; 
@@ -248,33 +209,26 @@ void SetStuffRMI(void *localArg, void* vtkNotUsed(remoteArg),
   vtkMultiProcessController* contrl = args->Controller;
 }
 //----------------------------------------------------------------------------
-void SpherePoints(int n, float radius, float X[])
-{
-int i;
-double x, y, z, w, t;
-
-for( i=0; i< n; i++ ) {
-  #ifdef WIN32
-   double r1 = double(rand())/RAND_MAX;
-   double r2 = double(rand())/RAND_MAX;
-  #else
-   double r1 = drand48();
-   double r2 = drand48();
-  #endif
-  z = 2.0 * r1 - 1.0;
-  t = 2.0 * M_PI * r2;
-  w = radius * sqrt( 1 - z*z );
-  x = w * cos( t );
-  y = w * sin( t );
-//  printf("i=%d:  x,y,z=\t%10.5lf\t%10.5lf\t%10.5lf\n", i, x,y,z);
-  X[3*i+0] = x;
-  X[3*i+1] = y;
-  X[3*i+2] = z*radius;
+void SpherePoints(int n, float radius, float X[]) {
+  double x, y, z, w, t;
+  for(int i=0; i< n; i++ ) {
+    #ifdef WIN32
+     double r1 = double(rand())/RAND_MAX;
+     double r2 = double(rand())/RAND_MAX;
+    #else
+     double r1 = drand48();
+     double r2 = drand48();
+    #endif
+    z = 2.0 * r1 - 1.0;
+    t = 2.0 * M_PI * r2;
+    w = radius * sqrt( 1 - z*z );
+    x = w * cos( t );
+    y = w * sin( t );
+    X[3*i+0] = x;
+    X[3*i+1] = y;
+    X[3*i+2] = z*3.0*radius;
   }
 }
-//----------------------------------------------------------------------------
-#define ROWS 50
-#define POINTS_PER_PROCESS ROWS*ROWS*ROWS
 //----------------------------------------------------------------------------
 // This will be called by all processes
 void MyMain( vtkMultiProcessController *controller, void *arg )
@@ -449,9 +403,10 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
 //  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
 
   Zoltan_Set_Param(zz, "RCB_RECOMPUTE_BOX", "1");
+  Zoltan_Set_Param(zz, "REDUCE_DIMENSIONS", "0");
   
-//  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
-//  Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
+  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
+  Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
   /*Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "0"); */
 
   /* Query functions, to provide geometry to Zoltan */
