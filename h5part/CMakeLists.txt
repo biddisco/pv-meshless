@@ -37,12 +37,12 @@ SET(H5Part_LIBS
   ${PARAVIEW_HDF5_LIBRARIES}
 )
 
-IF (H5PART_PARALLEL_IO)
+IF (VTK_USE_MPI)
   SET(H5Part_LIBS
     ${H5Part_LIBS} 
     ${MPI_LIBRARY}
   )
-ENDIF (H5PART_PARALLEL_IO)
+ENDIF (VTK_USE_MPI)
 
 #--------------------------------------------------------
 # Include class, configuration headers
