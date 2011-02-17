@@ -13,6 +13,15 @@ MACRO(add_local_test test_name)
   ADD_TEST(${test_name} ${PROJECT_BINARY_DIR}/../bin/${test_name})
 ENDMACRO(add_local_test)
 
+#--------------------------------------------------
+# Cxx Tests 
+#--------------------------------------------------
+SET(TEST_LIST 
+  TestKernel3D
+  TestKernel2D 
+  TestCenterOfMassFilter
+  TestMomentsOfInertiaFilter
+)
 
 FOREACH(test_name ${TEST_LIST})
   add_local_test(${test_name})
