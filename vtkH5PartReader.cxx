@@ -331,8 +331,8 @@ int vtkH5PartReader::RequestInformation(
     this->UpdateNumPieces = 1;
     }
 #else
-    this->UpdatePiece = this->Controller->GetLocalProcessId();
-    this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
+  //this->UpdatePiece = this->Controller->GetLocalProcessId();
+  //this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
 #endif
 
   bool NeedToReadInformation = (FileModifiedTime>FileOpenedTime || !this->H5FileId);
