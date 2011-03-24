@@ -13,8 +13,8 @@ INCLUDE_DIRECTORIES(
 )
  
 SET(TOOL_VTK_LIBS
-  CSCSCommon_plugin 
-  pvmeshless_plugin
+  pv_common
+  pv_meshless
   vtkPVFilters
   vtkWidgets
   vtkHybrid
