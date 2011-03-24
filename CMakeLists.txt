@@ -1,56 +1,25 @@
 PROJECT("pv-meshless")
 
-CMAKE_MINIMUM_REQUIRED (VERSION 2.8)
-
-IF(COMMAND CMAKE_POLICY)
-  CMAKE_POLICY(SET CMP0003 NEW)
-ENDIF(COMMAND CMAKE_POLICY)
-
 #--------------------------------------------------
-# Find and Use ParaView
+# Set project include directories 
+# pv-common is assumed to be checkout out too
 #--------------------------------------------------
-IF(NOT PARAVIEW_LOADED)
-  FIND_PACKAGE(ParaView REQUIRED)
-  INCLUDE(${PARAVIEW_USE_FILE})
-  INCLUDE(${PARAVIEW_VTK_DIR}/VTKConfig.cmake)
-  SET(PARAVIEW_LOADED 1)
-ELSE(NOT PARAVIEW_LOADED)
-  IF (PARAVIEW_BUILD_QT_GUI)
-    INCLUDE(${QT_USE_FILE})
-  ENDIF (PARAVIEW_BUILD_QT_GUI)
-  INCLUDE_DIRECTORIES(
-    ${PARAVIEW_INCLUDE_DIRS}
-    ${ParaView_SOURCE_DIR}/VTK/Geovis
-    ${PARAVIEW_GUI_INCLUDE_DIRS}
-    ${PARAVIEW_KWSYS_INCLUDE_DIRS}
-    ${VTK_INCLUDE_DIR}
-    ${MPI_INCLUDE_PATH}
-  )
-ENDIF(NOT PARAVIEW_LOADED)
-
-#--------------------------------------------------
-# Find and Use vtkCSCSCommon
-#--------------------------------------------------
-FIND_PATH(CSCS_COMMON_DIR 
-  UsevtkCSCSCommon.cmake 
-  PATHS 
-    "${CSCS_COMMON_DIR}"
-    "${PROJECT_BINARY_DIR}/../Common"  
+INCLUDE_DIRECTORIES(
+  "${PROJECT_SOURCE_DIR}"
+  "${PROJECT_BINARY_DIR}"
+  "${PROJECT_SOURCE_DIR}/../pv-common"
+  "${PROJECT_BINARY_DIR}/../pv-common"
 )
-IF (EXISTS ${CSCS_COMMON_DIR}/UsevtkCSCSCommon.cmake)
-  INCLUDE(${CSCS_COMMON_DIR}/UsevtkCSCSCommon.cmake)
-ELSE (EXISTS ${CSCS_COMMON_DIR}/UsevtkCSCSCommon.cmake)
-  MESSAGE(FATAL_ERROR "We need vtkCSCSCommon for Project ${PROJECT_NAME}")
-ENDIF(EXISTS ${CSCS_COMMON_DIR}/UsevtkCSCSCommon.cmake)
 
 #--------------------------------------------------
-# Set Includes
+# Set Other Includes
 #--------------------------------------------------
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sph)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/h5part)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/cosmo)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tipsylib)
+INCLUDE_DIRECTORIES(
+  ${CMAKE_CURRENT_SOURCE_DIR}/sph
+  ${CMAKE_CURRENT_SOURCE_DIR}/h5part
+  ${CMAKE_CURRENT_SOURCE_DIR}/cosmo
+  ${CMAKE_CURRENT_SOURCE_DIR}/tipsylib
+)
 
 #------------------------------------------------------
 # Parallel IO (H5Part Readers and Writers)
@@ -198,11 +167,11 @@ SOURCE_GROUP(KernelFiles FILES
 #--------------------------------------------------
 # Define Plugin 
 #--------------------------------------------------
-SET(LIBRARY_TARGET_NAME pvmeshless_plugin)
+SET(PLUGIN_NAME pv_meshless)
 ADD_PARAVIEW_PLUGIN(
-  ${LIBRARY_TARGET_NAME}
+  ${PLUGIN_NAME}
   "1.0" 
-  REQUIRED_PLUGINS CSCSCommon_plugin
+  REQUIRED_PLUGINS pv_common
 
   SERVER_MANAGER_XML 
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkRegularGridSource.xml
@@ -271,17 +240,17 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Readers.xml
 )
 
-TARGET_LINK_LIBRARIES(pvmeshless_plugin 
-  vtkWidgets
+TARGET_LINK_LIBRARIES(${PLUGIN_NAME}
   H5Part 
+  pv_common
+  vtkWidgets
   ${TIPSY_LIB}
-  CSCSCommon_plugin
 )
 
 #--------------------------------------------------------
 # Create the configuration header.
 #--------------------------------------------------------
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/vtkLocalConfigure.h.in
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/pv_meshless_configure.h.in
                ${PROJECT_BINARY_DIR}/vtkCSCSMeshlessConfigure.h
                @ONLY IMMEDIATE)
 
@@ -306,7 +275,7 @@ SET(INSTALL_PATH
 
 INSTALL(
   TARGETS
-    pvmeshless_plugin
+    ${PLUGIN_NAME}
   DESTINATION 
     ${INSTALL_PATH}
 )

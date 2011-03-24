@@ -1,10 +1,10 @@
 /*=========================================================================
 Standard setup for module exports 
 =========================================================================*/
-#ifndef __@PROJECT_NAME@Configure_h
-#define __@PROJECT_NAME@Configure_h
+#ifndef __vtkCSCSMeshless_Configure_h
+#define __vtkCSCSMeshless_Configure_h
 
-#if defined(@LIBRARY_TARGET_NAME@_EXPORTS)
+#if defined(@PLUGIN_NAME@_EXPORTS)
   #define vtkCSCSMeshless_EXPORT VTK_ABI_EXPORT 
 #else
   #define vtkCSCSMeshless_EXPORT VTK_ABI_IMPORT 
