@@ -36,7 +36,7 @@ ENDIF (WIN32)
 # List the libraries used
 #--------------------------------------------------------
 SET(H5Part_LIBS  
-  ${PARAVIEW_HDF_LIBRARIES}
+  ${PARAVIEW_HDF5_LIBRARIES}
 )
 
 IF (H5PART_PARALLEL_IO)
