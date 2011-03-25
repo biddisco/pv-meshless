@@ -3,6 +3,9 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
+#ifdef PARALLEL_IO
+#include <mpi.h>
+#endif
 #include <hdf5.h>
 
 #ifdef __cplusplus
