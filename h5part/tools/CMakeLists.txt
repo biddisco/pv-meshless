@@ -24,7 +24,6 @@ SET(TOOL_VTK_LIBS
   vtkIO
   vtkFiltering
   vtkCommon
-  vtkzlib
   vtksys
 )
 
