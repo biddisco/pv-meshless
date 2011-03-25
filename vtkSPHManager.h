@@ -122,6 +122,7 @@ public:
     SPH_KERNEL_SPLINE_5TH,
     SPH_KERNEL_CUSP,
     SPH_KERNEL_BOX,
+    SPH_KERNEL_WENDLAND,
   };
   //ETX
 
@@ -132,6 +133,8 @@ public:
   vtkGetMacro(KernelType, int);
   void SetKernelTypeToGaussian(int k) { 
     this->SetKernelType(SPH_KERNEL_GAUSSIAN); }
+  void SetKernelTypeToWendland(int k) { 
+    this->SetKernelType(SPH_KERNEL_WENDLAND); }
   void SetKernelTypeToQuadratic3D(int k) { 
     this->SetKernelType(SPH_KERNEL_QUADRATIC); }
   void SetKernelTypeToCubicSpline(int k) { 

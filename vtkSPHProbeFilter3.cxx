@@ -49,6 +49,7 @@
 #include "vtkPlane.h"
 //
 #include "KernelGaussian.h"
+#include "KernelWendland.h"
 #include "KernelQuadratic.h"
 #include "KernelSpline3rdOrder.h"
 #include "KernelSpline5thOrder.h"
