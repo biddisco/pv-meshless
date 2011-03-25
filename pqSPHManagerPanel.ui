@@ -108,6 +108,11 @@
               </item>
               <item>
                <property name="text">
+                <string>Wendland</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
                 <string>Quadratic</string>
                </property>
               </item>

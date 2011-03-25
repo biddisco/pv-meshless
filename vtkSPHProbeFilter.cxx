@@ -47,6 +47,7 @@
 #include "vtkBoundingBox.h"
 //
 #include "KernelGaussian.h"
+#include "KernelWendland.h"
 #include "KernelQuadratic.h"
 #include "KernelSpline3rdOrder.h"
 #include "KernelSpline5thOrder.h"
@@ -201,6 +202,9 @@ void vtkSPHProbeFilter::InitializeKernelCoefficients()
   switch (this->KernelType) {
     case vtkSPHManager::SPH_KERNEL_GAUSSIAN:
       this->KernelFunction = new KernelGaussian(this->KernelDimension, H);
+      break;
+    case vtkSPHManager::SPH_KERNEL_WENDLAND:
+      this->KernelFunction = new KernelWendland(this->KernelDimension, H);
       break;
     case vtkSPHManager::SPH_KERNEL_QUADRATIC:
       this->KernelFunction = new KernelQuadratic(this->KernelDimension, H);

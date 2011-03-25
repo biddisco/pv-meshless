@@ -35,6 +35,7 @@
           <Entry value="3" text="Spline-5th-Order" />
           <Entry value="4" text="Cusp" />
           <Entry value="5" text="Box" />
+          <Entry value="6" text="Wendland" />
         </EnumerationDomain>
       </IntVectorProperty>
 

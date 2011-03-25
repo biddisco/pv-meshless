@@ -14,7 +14,7 @@ INCLUDE_DIRECTORIES(
 #--------------------------------------------------
 # Set Other Includes
 #--------------------------------------------------
-INCLUDE_DIRECTORIES(
+  INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/sph
   ${CMAKE_CURRENT_SOURCE_DIR}/h5part
   ${CMAKE_CURRENT_SOURCE_DIR}/cosmo
@@ -153,6 +153,7 @@ SET(KernelFiles_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/sph/Vector.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sph/Kernel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sph/KernelGaussian.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sph/KernelWendland.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sph/KernelSpline3rdOrder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sph/KernelSpline5thOrder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sph/KernelQuadratic.cpp
