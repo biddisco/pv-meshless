@@ -3,8 +3,6 @@
 # Parallel compilation flag
 #--------------------------------------------------------
 IF (VTK_USE_MPI)
-  ADD_DEFINITIONS("-DMPICH_IGNORE_CXX_SEEK")
-  ADD_DEFINITIONS("-DMPICH_SKIP_MPICXX")
   ADD_DEFINITIONS("-DH5PART_HAS_MPI")
 ENDIF (VTK_USE_MPI)
 
