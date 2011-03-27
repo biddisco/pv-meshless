@@ -3,6 +3,7 @@
   Program:   AstroViz plugin for ParaView
   Module:    $RCSfile: AstroVizHelpers.cxx,v $
 =========================================================================*/
+#define _USE_MATH_DEFINES
 #include "AstroVizHelpers.h"
 #include "vtkCell.h"
 #include "vtkCellArray.h"
@@ -24,7 +25,6 @@
 #include "vtkSmartPointer.h"
 #include "vtkMultiProcessController.h"
 #include "vtkMath.h"
-#define _USE_MATH_DEFINES
 #include <cmath>
 /*----------------------------------------------------------------------------
 *
