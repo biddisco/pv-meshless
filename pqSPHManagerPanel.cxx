@@ -30,7 +30,6 @@
 #include "vtkSMRepresentationProxy.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkProcessModule.h"
-#include "vtkProcessModuleConnectionManager.h"
 
 // ParaView includes
 #include "pqActiveServer.h"

@@ -42,6 +42,10 @@ protected:
   vtkCallbackCommand *SPHObserver;
   vtkSPHManager      *SPHSingleton;
   static vtkSMSPHManagerProxy *ReferenceProxy;
+
+protected:
+  vtkSMSPHManagerProxy(const vtkSMSPHManagerProxy&); // Not implemented
+  void operator=(const vtkSMSPHManagerProxy&);       // Not implemented
 };
 
 #endif
