@@ -43,15 +43,12 @@ void vtkSMCustomBoxRepresentationProxy::CreateVTKObjects()
   this->Superclass::CreateVTKObjects();
 
   vtkClientServerStream stream;
-  stream  << vtkClientServerStream::Invoke
-          << this->GetID()
-          << "SetTransform"
-          << this->GetSubProxy("Transform")->GetID()
-          << vtkClientServerStream::End;
-  vtkProcessModule::GetProcessModule()->SendStream(
-    this->GetConnectionID(),
-    this->GetServers(), 
-    stream);
+  stream << vtkClientServerStream::Invoke
+         << VTKOBJECT(this)
+         << "SetTransform"
+         << VTKOBJECT(this->GetSubProxy("Transform"))
+         << vtkClientServerStream::End;
+  this->ExecuteStream(stream);
 }
 
 //----------------------------------------------------------------------------
@@ -64,15 +61,17 @@ void vtkSMCustomBoxRepresentationProxy::UpdateVTKObjects(vtkClientServerStream& 
 
   int something_changed = this->ArePropertiesModified();
 
-  this->Superclass::UpdateVTKObjects(stream);
+  this->Superclass::UpdateVTKObjects();
 
   if (something_changed)
     {
-    stream  << vtkClientServerStream::Invoke
-            << this->GetID()
-            << "SetTransform"
-            << this->GetSubProxy("Transform")->GetID()
-            << vtkClientServerStream::End;
+    vtkClientServerStream stream;
+    stream << vtkClientServerStream::Invoke
+      << VTKOBJECT(this)
+      << "SetTransform"
+      << VTKOBJECT(this->GetSubProxy("Transform"))
+      << vtkClientServerStream::End;
+    this->ExecuteStream(stream);
     }
 }
 
@@ -82,8 +81,7 @@ void vtkSMCustomBoxRepresentationProxy::UpdatePropertyInformation()
   vtkCustomBoxRepresentation* repr = vtkCustomBoxRepresentation::SafeDownCast(
     this->GetClientSideObject());
   vtkTransform* transform = vtkTransform::SafeDownCast(
-    vtkProcessModule::GetProcessModule()->GetObjectFromID(
-      this->GetSubProxy("Transform")->GetID()));
+      this->GetSubProxy("Transform")->GetClientSideObject());
   repr->GetTransform(transform);
 
   this->Superclass::UpdatePropertyInformation();
