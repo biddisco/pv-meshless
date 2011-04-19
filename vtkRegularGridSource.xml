@@ -181,10 +181,12 @@
         </Documentation>
       </DoubleVectorProperty>
 
+<!--
       <Property name="ComputeOBB"
                 command="ComputeOBB">
       </Property>
-
+-->
+      
       <Hints>
         <Property name="UseAutoPlacement" show="0"/>
         <!-- We must remap Origin (of widget) to Centre (of plane) -->
