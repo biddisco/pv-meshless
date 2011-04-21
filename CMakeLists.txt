@@ -27,6 +27,11 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/tipsylib
 )
 
+# --------------------------------------------------
+# Option to disable hdf5 readers etc
+# --------------------------------------------------
+OPTION(USE_HDF5 "Use HDF5 readers/writers" ON)
+  
 #------------------------------------------------------
 # Parallel IO (H5Part Readers and Writers)
 #------------------------------------------------------
@@ -40,8 +45,11 @@ ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 
 #--------------------------------------------------
 # Build minimal H5Part lib for support
-#--------------------------------------------------
-ADD_SUBDIRECTORY(h5part)
+#-----------------------------------------------
+IF(USE_HDF5)
+  ADD_SUBDIRECTORY(h5part)
+  SET(H5PART_LIBS H5Part)
+ENDIF(USE_HDF5)
 
 # --------------------------------------------------
 # Optional cosmo support 
@@ -171,6 +179,17 @@ SOURCE_GROUP(KernelFiles FILES
   ${KernelFiles_SRCS}
 )
 
+IF(USE_HDF5)
+  SET(HDF5_XML 
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.xml
+  )
+  SET(HDF5_CXX
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartWriter.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5SPHReader.cxx
+  )
+ENDIF(USE_HDF5)
+  
 #--------------------------------------------------
 # Define Plugin 
 #--------------------------------------------------
@@ -188,7 +207,6 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.xml
@@ -196,6 +214,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractDataOverTime.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.xml
+    ${HDF5_XML}
     
     ${TIPSY_XML}
   SERVER_MANAGER_SOURCES
@@ -211,15 +230,13 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTree.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartWriter.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5SPHReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractValueFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.cxx
+    ${HDF5_CXX}
     ${TIPSY_CXX}
   SERVER_SOURCES
     ${KernelFiles_SRCS}
@@ -248,7 +265,7 @@ ADD_PARAVIEW_PLUGIN(
 )
 
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME}
-  H5Part 
+  ${H5PART_LIBS}
   pv_common
   vtkWidgets
   ${TIPSY_LIB}
