@@ -45,8 +45,10 @@ ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 
 #--------------------------------------------------
 # Build minimal H5Part lib for support
-#--------------------------------------------------
-ADD_SUBDIRECTORY(h5part)
+#-----------------------------------------------
+IF(USE_HDF5)
+  ADD_SUBDIRECTORY(h5part)
+ENDIF(USE_HDF5)
 
 # --------------------------------------------------
 # Optional cosmo support 
