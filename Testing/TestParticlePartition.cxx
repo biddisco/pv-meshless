@@ -1,11 +1,9 @@
-// TestHDF5PartWriter -I -D D:/ -F test.h5
+// -D C:\share -F sph-test.h5 -N 10000 -I -R
 
 // windows mpi command line
 // cd D:\cmakebuild\csviz\bin\relwithdebinfo
-// mpiexec --localonly -n 4 TestH5PartParallelWriter -I -D D:\ -F sph-test.h5 -R -X -N 1000000
+// mpiexec --localonly -n 4 TestParticlePartition -D C:\share -F sph-test.h5 -N 10000 -I -R
 
-// horus slurm command line for auto allocation of nodes
-// mpirun -prot -srun -N 6 -n 6 TestH5PartParallelWriter -R -D . -N 1000000
 
 #ifdef _WIN32
   #include <windows.h>
@@ -43,6 +41,8 @@
 #include "vtkCellArray.h"
 #include "vtkFloatArray.h"
 #include "vtkTimerLog.h"
+#include "vtkBoundingBox.h"
+#include "vtkOutlineSource.h"
 //
 #include <vtksys/SystemTools.hxx>
 #include <sstream>
@@ -313,6 +313,10 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   Sprites->GetPointData()->AddArray(Parts);  
   //
   //--------------------------------------------------------------
+  // Make up some max kernel size for testing
+  //--------------------------------------------------------------
+  double KernelMaximum  = 0.0001/10.0;
+  //--------------------------------------------------------------
   // Create default scalar arrays
   //--------------------------------------------------------------
   double radius  = 0.0001;
@@ -394,6 +398,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", NUM_PARTITIONSS); // we will create 4 partitions locally (testing)
+  Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS", NUM_PARTITIONSS); // we will create 4 partitions locally (testing)
 //  Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS", NUM_PARTITIONSS); // we will create 4 partitions locally (testing)
   Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
@@ -404,13 +409,20 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
 
   Zoltan_Set_Param(zz, "RCB_RECOMPUTE_BOX", "1");
   Zoltan_Set_Param(zz, "REDUCE_DIMENSIONS", "0");
+
+  // we need the cuts to get BBoxes for partitions later
+  Zoltan_Set_Param(zz, "KEEP_CUTS", "1");
+
+  // don't allow points on cut to be in different partitions
+  // not likely/useful for particle data anyway
+  Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "0"); 
   
+  // we don't need any debug info
   Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
-  Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
-  /*Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "0"); */
-
-  /* Query functions, to provide geometry to Zoltan */
-
+  
+  //
+  // Query functions, to provide geometry to Zoltan 
+  //
   Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, &myMesh);
   Zoltan_Set_Obj_List_Fn(zz, get_object_list, &myMesh);
   Zoltan_Set_Num_Geom_Fn(zz, get_num_geometry, &myMesh);
@@ -449,6 +461,21 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   int *parts = Parts->GetPointer(0);
   for (int i=0; i < numExport; i++){
     parts[exportLocalGids[i]] = exportToPart[i];
+  }
+
+  std::vector<vtkBoundingBox> BoxList;
+  for (int p=0; p<NUM_PARTITIONS; p++) {
+    double bounds[6];
+    int ndim;
+    if (ZOLTAN_OK==Zoltan_RCB_Box(zz, p, &ndim, &bounds[0], &bounds[2], &bounds[4], &bounds[1], &bounds[3], &bounds[5])) {
+      if (bounds[4]==-DBL_MAX) { bounds[4]=-1; }
+      if (bounds[5]== DBL_MAX) { bounds[5]= 1; }
+      vtkBoundingBox box(bounds);
+      box.Inflate(KernelMaximum);
+      BoxList.push_back(box);
+//      FindOverlappingPoints(box, myMesh.points, ghostIds);
+      
+    }
   }
 
   /******************************************************************
@@ -637,6 +664,21 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       actor2->GetProperty()->SetPointSize(2);
       actor2->SetPosition(1.0, 0.0, 0.0);
       ren->AddActor(actor2);
+
+      //
+      // Display boxes for each partition
+      //
+      for (std::vector<vtkBoundingBox>::iterator it=BoxList.begin(); it!=BoxList.end(); ++it) {
+        double bounds[6];
+        it->GetBounds(bounds);
+        vtkSmartPointer<vtkOutlineSource> boxsource = vtkSmartPointer<vtkOutlineSource>::New();
+        boxsource->SetBounds(bounds);
+        vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+        vtkSmartPointer<vtkActor>                 actor = vtkSmartPointer<vtkActor>::New();
+        mapper->SetInputConnection(boxsource->GetOutputPort());
+        actor->SetMapper(mapper);
+        ren->AddActor(actor);
+      }
 
       std::cout << "Process Id : " << myId << " About to Render" << std::endl;
       renWindow->Render();
