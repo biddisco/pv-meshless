@@ -84,6 +84,14 @@ public:
   vtkSetStringMacro(MassScalars);
   vtkGetStringMacro(MassScalars);
 
+  // Description:
+  // When enabled (and mass is present), the density for each sample point is 
+  // computed by smoothing the mass and using the volume from the sphere 
+  // which surrounds all N neighbours
+  vtkSetMacro(ComputeDensityFromNeighbourVolume,int);
+  vtkGetMacro(ComputeDensityFromNeighbourVolume,int);
+  vtkBooleanMacro(ComputeDensityFromNeighbourVolume,int);
+
 protected:
    vtkSPHProbeFilter();
   ~vtkSPHProbeFilter();
@@ -111,7 +119,8 @@ protected:
   // kernel specific functions
   void   InitializeKernelCoefficients();
   double GetMaxKernelCutoffDistance();
-  void   KernelCompute(double x[3], vtkPointSet *source, vtkIdList *NearestPoints, double *gradW);
+  void   KernelCompute(double x[3], vtkPointSet *source, 
+    vtkIdList *NearestPoints, double *gradW, double &maxDistance);
 
   //
   // Variables
@@ -128,6 +137,9 @@ protected:
 
   // switch shepard/sph
   int    InterpolationMethod;
+
+  // Compute Density
+  int    ComputeDensityFromNeighbourVolume;
 
   // Shepard Mode
   int    LimitSearchByNeighbourCount;

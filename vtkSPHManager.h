@@ -32,7 +32,7 @@
 class Kernel;
 //ETX
 
-#define KERNEL_MAX_NEIGHBOURS 1024
+#define KERNEL_MAX_NEIGHBOURS 256
 
 class VTK_EXPORT vtkSPHManager : public vtkObject
 {

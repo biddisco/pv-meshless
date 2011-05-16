@@ -123,7 +123,18 @@
           This property indicates the name of the array to be used for particle densities if present
         </Documentation>
       </StringVectorProperty>
-     
+
+      
+      <IntVectorProperty
+         name="ComputeDensityFromNeighbourVolume"
+         command="SetComputeDensityFromNeighbourVolume"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+        </Documentation>
+      </IntVectorProperty>
+
     </SourceProxy>
 
     <!-- ================================================================ -->
