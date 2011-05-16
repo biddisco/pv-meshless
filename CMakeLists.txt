@@ -48,6 +48,7 @@ ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 #-----------------------------------------------
 IF(USE_HDF5)
   ADD_SUBDIRECTORY(h5part)
+  SET(H5PART_LIBS H5Part)
 ENDIF(USE_HDF5)
 
 # --------------------------------------------------
@@ -264,7 +265,7 @@ ADD_PARAVIEW_PLUGIN(
 )
 
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME}
-  H5Part 
+  ${H5PART_LIBS}
   pv_common
   vtkWidgets
   ${TIPSY_LIB}
