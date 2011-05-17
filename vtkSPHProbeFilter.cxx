@@ -137,6 +137,7 @@ vtkSPHProbeFilter::vtkSPHProbeFilter()
   this->ComputeDensityFromNeighbourVolume = 0;
   //
   this->SPHManager                  = vtkSPHManager::New();
+  this->ModifiedNumber              = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -186,6 +187,14 @@ vtkDataObject *vtkSPHProbeFilter::GetProbe()
     }
   
   return this->GetExecutive()->GetInputData(1, 0);
+}
+//----------------------------------------------------------------------------
+unsigned long vtkSPHProbeFilter::GetMTime()
+{
+  unsigned long mtime = this->Superclass::GetMTime();
+  unsigned long sm_mtime = this->SPHManager->GetMTime();
+  mtime = mtime > sm_mtime? mtime : sm_mtime;
+  return mtime;
 }
 //----------------------------------------------------------------------------
 void vtkSPHProbeFilter::InitializeKernelCoefficients()

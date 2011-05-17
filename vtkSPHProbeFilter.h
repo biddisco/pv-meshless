@@ -92,6 +92,12 @@ public:
   vtkGetMacro(ComputeDensityFromNeighbourVolume,int);
   vtkBooleanMacro(ComputeDensityFromNeighbourVolume,int);
 
+  // overridden to handle SPHManager changes
+  unsigned long GetMTime();
+
+  vtkSetMacro(ModifiedNumber,int);
+  vtkGetMacro(ModifiedNumber,int);
+
 protected:
    vtkSPHProbeFilter();
   ~vtkSPHProbeFilter();
@@ -175,6 +181,8 @@ protected:
   double             GradientMagnitude;
   vtkIdType          NumInputParticles;
   vtkIdType          NumOutputPoints;
+
+  int                ModifiedNumber;
 
 //BTX
   Kernel            *KernelFunction;

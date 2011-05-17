@@ -103,6 +103,8 @@ pqSPHManagerPanel::pqSPHManagerPanel(pqProxy* proxy, QWidget* p) :
   pqNamedWidgets::linkObject(this->UI->InterpolationMethod, proxy->getProxy(), 
       "InterpolationMethod", this->propertyManager());
 
+  // after changes are accepted, we must release hold of the DSM
+  this->connect(this, SIGNAL(onaccept()), this, SLOT(onAccept()));
 }
 //----------------------------------------------------------------------------
 pqSPHManagerPanel::~pqSPHManagerPanel()
@@ -182,3 +184,32 @@ void pqSPHManagerPanel::SaveSettings()
   settings->endGroup();
 }
 //-----------------------------------------------------------------------------
+void pqSPHManagerPanel::onAccept()
+{
+  this->ModifyGUIFilters();
+}
+//----------------------------------------------------------------------------
+void pqSPHManagerPanel::ModifyGUIFilters()
+{
+    //
+    // Set status of registered pipeline source to unmodified 
+    //
+
+    QList<pqPipelineSource*> sources = 
+      pqApplicationCore::instance()->getServerManagerModel()->findItems<pqPipelineSource*>((pqServer*)(0));
+
+    for (QList<pqPipelineSource*>::Iterator it=sources.begin(); it!=sources.end(); it++) {
+      pqPipelineSource *source = *it;
+      std::string xmlName = source->getProxy()->GetXMLName();
+      if (xmlName.find("SPHProbe")!=xmlName.npos) {
+        source->setModifiedState(pqProxy::MODIFIED);
+        source->getProxy()->MarkAllPropertiesAsModified();
+        vtkSMPropertyHelper modified(source->getProxy(), "ModifiedNumber");
+        modified.UpdateValueFromServer();
+        modified.Set(modified.GetAsInt()+1);
+       //          InvokeCommand("Modified");
+
+//        source->getProxy()->GetProperty("SPHManager")->Modified();
+      }
+    }
+}

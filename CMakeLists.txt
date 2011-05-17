@@ -224,7 +224,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxRepresentation.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMCustomBoxRepresentationProxy.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMSPHManagerProxy.cxx
+#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMSPHManagerProxy.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.cxx
