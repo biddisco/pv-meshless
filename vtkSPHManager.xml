@@ -11,7 +11,7 @@
     </SPHManagerProxy>
     -->
 
-    <SPHManagerProxy name="SPHManager" class="vtkSPHManager">
+    <Proxy name="SPHManager" class="vtkSPHManager">
       <IntVectorProperty
         name="InterpolationMethod"
         command="SetInterpolationMethod"
@@ -142,7 +142,7 @@
          default_values="0.001" >
       </DoubleVectorProperty>
 
-    </SPHManagerProxy>
+    </Proxy>
 
   </ProxyGroup>
 </ServerManagerConfiguration>

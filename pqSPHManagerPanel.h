@@ -15,10 +15,12 @@ public:
 
   void LoadSettings();
   void SaveSettings();
+  void ModifyGUIFilters();
 
 private slots:
   void onPointMethodChanged(int mode);
   void onLimitChanged(bool checked);
+  void onAccept();
 
 protected:
 
