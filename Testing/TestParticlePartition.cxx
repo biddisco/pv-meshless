@@ -55,9 +55,8 @@
 #include <math.h>
 #include "zoltan.h"
 
-#define PART_COUNT 1024
-#define NUM_PARTITIONS 32
-#define NUM_PARTITIONSS "32"
+#define NUM_GLOBAL_PARTITIONS 16
+
 //----------------------------------------------------------------------------
 #define ROWS 50
 #define POINTS_PER_PROCESS ROWS*ROWS*ROWS
@@ -164,24 +163,23 @@ static int get_num_geometry(void *data, int *ierr)
   return 3;
 }
 //----------------------------------------------------------------------------
-static void get_geometry_list(void *data, int sizeGID, int sizeLID,
-                      int num_obj,
-             ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
-             int num_dim, double *geom_vec, int *ierr)
+static void get_geometry_list(
+  void *data, int sizeGID, int sizeLID, int num_obj, 
+  ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+  int num_dim, double *geom_vec, int *ierr)
 {
-  MESH_DATA *mesh= (MESH_DATA *)data;
-/*
   if ( (sizeGID != 1) || (sizeLID != 1) || (num_dim != 3)){
     *ierr = ZOLTAN_FATAL;
     return;
   }
-*/
-  *ierr = ZOLTAN_OK;
+
+  MESH_DATA *mesh= (MESH_DATA *)data;
   for (int i=0;  i < num_obj ; i++){
     geom_vec[3*i]   = (double)mesh->points[3*i];
     geom_vec[3*i+1] = (double)mesh->points[3*i+1];
-    geom_vec[3*i+1] = (double)mesh->points[3*i+2];
+    geom_vec[3*i+2] = (double)mesh->points[3*i+2];
   }
+  *ierr = ZOLTAN_OK;
   return;
 }
 
@@ -226,7 +224,7 @@ void SpherePoints(int n, float radius, float X[]) {
     y = w * sin( t );
     X[3*i+0] = x;
     X[3*i+1] = y;
-    X[3*i+2] = z*3.0*radius;
+    X[3*i+2] = z*radius;
   }
 }
 //----------------------------------------------------------------------------
@@ -313,14 +311,9 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   Sprites->GetPointData()->AddArray(Parts);  
   //
   //--------------------------------------------------------------
-  // Make up some max kernel size for testing
-  //--------------------------------------------------------------
-  double KernelMaximum  = 0.0001/10.0;
-  //--------------------------------------------------------------
   // Create default scalar arrays
   //--------------------------------------------------------------
-  double radius  = 0.0001;
-  radius  = 0.08;
+  double radius  = 500.0;
   double spacing = radius*2.0;
   double offset  = myId*spacing*rows;
   const double a = 0.9;
@@ -328,11 +321,16 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     for (vtkTypeInt64 y=0; y<rows; y++) {
       for (vtkTypeInt64 x=0; x<rows; x++) {
         vtkIdType Id = static_cast<vtkIdType>(z*rows*rows + y*rows + x);
-        double Y = cos(4*x*2*M_PI/rows);
-        double X = sin(5*y*2*M_PI/rows);
-        double Z = cos(4*y*2*M_PI/rows) * cos(5*z*2*M_PI/rows);
+        #ifdef WIN32
+         double X = 2.0*radius*(double(rand())/RAND_MAX-0.5);
+         double Y = 2.0*radius*(double(rand())/RAND_MAX-0.5);
+         double Z = 2.0*radius*(double(rand())/RAND_MAX-0.5);
+        #else
+         double X = drand48();
+         double Y = drand48();
+         double Z = drand48();
+        #endif
         points->SetPoint(Id, X, Y, Z);
-//        points->SetPoint(Id, x*spacing, y*spacing, z*spacing + offset);
         sizes->SetValue(Id, radius);
         Ids->SetTuple1(Id, Id + myId*numPoints);
         Ranks->SetTuple1(Id, myId);
@@ -341,7 +339,12 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       }
     }
   }
-  SpherePoints(numPoints, (1.0+myId)*0.5/numProcs, vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0));
+  SpherePoints(numPoints, radius*(1.5+myId)/(numProcs+0.5), vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0));
+
+  //--------------------------------------------------------------
+  // Make up some max kernel size for testing
+  //--------------------------------------------------------------
+  double KernelMaximum  = radius*0.01;
 
   //--------------------------------------------------------------
   // Add colour by elevation
@@ -388,18 +391,32 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   ** Guide for the definition of these and many other parameters.
   ******************************************************************/
 
+  std::stringstream global;
+  global << NUM_GLOBAL_PARTITIONS << ends;
+  std::stringstream local;
+  local << NUM_GLOBAL_PARTITIONS/numProcs << ends;
+
+
   zz = Zoltan_Create(MPI_COMM_WORLD); 
 
-  /* General parameters */
+  // we don't need any debug info
+  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "1");
 
-  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
+  // Method for subdivision
+  Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
-//  Zoltan_Set_Param(zz, "LB_METHOD", "PARMETIS");
+  //  Zoltan_Set_Param(zz, "LB_METHOD", "PARMETIS");
+
+  // Global and local Ids are a single integer
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
-  Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", NUM_PARTITIONSS); // we will create 4 partitions locally (testing)
-  Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS", NUM_PARTITIONSS); // we will create 4 partitions locally (testing)
-//  Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS", NUM_PARTITIONSS); // we will create 4 partitions locally (testing)
+
+  // divide into N global and M local partitions
+  Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", global.str().c_str());
+  Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS",  local.str().c_str());
+
+  // All points have the same weight
   Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
 
@@ -409,16 +426,14 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
 
   Zoltan_Set_Param(zz, "RCB_RECOMPUTE_BOX", "1");
   Zoltan_Set_Param(zz, "REDUCE_DIMENSIONS", "0");
+  Zoltan_Set_Param(zz, "RCB_MAX_ASPECT_RATIO", "2");
 
   // we need the cuts to get BBoxes for partitions later
   Zoltan_Set_Param(zz, "KEEP_CUTS", "1");
 
   // don't allow points on cut to be in different partitions
   // not likely/useful for particle data anyway
-  Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "0"); 
-  
-  // we don't need any debug info
-  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
+  Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
   
   //
   // Query functions, to provide geometry to Zoltan 
@@ -464,12 +479,18 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   }
 
   std::vector<vtkBoundingBox> BoxList;
-  for (int p=0; p<NUM_PARTITIONS; p++) {
+  for (int p=0; p<NUM_GLOBAL_PARTITIONS; p++) {
     double bounds[6];
     int ndim;
     if (ZOLTAN_OK==Zoltan_RCB_Box(zz, p, &ndim, &bounds[0], &bounds[2], &bounds[4], &bounds[1], &bounds[3], &bounds[5])) {
-      if (bounds[4]==-DBL_MAX) { bounds[4]=-1; }
-      if (bounds[5]== DBL_MAX) { bounds[5]= 1; }
+
+      if (bounds[0]==-DBL_MAX) { bounds[0]=-radius; }
+      if (bounds[1]== DBL_MAX) { bounds[1]= radius; }
+      if (bounds[2]==-DBL_MAX) { bounds[2]=-radius; }
+      if (bounds[3]== DBL_MAX) { bounds[3]= radius; }
+      if (bounds[4]==-DBL_MAX) { bounds[4]=-radius; }
+      if (bounds[5]== DBL_MAX) { bounds[5]= radius; }
+
       vtkBoundingBox box(bounds);
       box.Inflate(KernelMaximum);
       BoxList.push_back(box);
@@ -647,12 +668,12 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       ren->SetBackground(0.1, 0.1, 0.1);
       renWindow->SetSize( 400, 400);
       mapper->SetInput(polys);
-      mapper->SetScalarRange(0,NUM_PARTITIONS-1);
+      mapper->SetScalarRange(0,NUM_GLOBAL_PARTITIONS-1);
       actor->SetMapper(mapper);
-      actor->GetProperty()->SetPointSize(2);
+      actor->GetProperty()->SetPointSize(4);
       ren->AddActor(actor);
       renWindow->AddRenderer(ren);
-
+/*
       vtkSmartPointer<vtkPolyData> polys2 = vtkSmartPointer<vtkPolyData>::New();
       polys2->ShallowCopy(verts->GetOutput());
       polys2->GetPointData()->SetScalars(polys->GetPointData()->GetArray("Rank"));
@@ -662,9 +683,9 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       mapper2->SetScalarRange(0,numProcs-1);
       actor2->SetMapper(mapper2);
       actor2->GetProperty()->SetPointSize(2);
-      actor2->SetPosition(1.0, 0.0, 0.0);
+      actor2->SetPosition(2.0*radius, 0.0, 0.0);
       ren->AddActor(actor2);
-
+*/
       //
       // Display boxes for each partition
       //
