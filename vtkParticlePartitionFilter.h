@@ -39,41 +39,53 @@ enum CenterOfMassMPIData
 };
 class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
 {
-public:
-  static vtkParticlePartitionFilter *New();
-  vtkTypeMacro(vtkParticlePartitionFilter,vtkPointSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  public:
+    static vtkParticlePartitionFilter *New();
+    vtkTypeMacro(vtkParticlePartitionFilter,vtkPointSetAlgorithm);
+    void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // By default this filter uses the global controller,
-  // but this method can be used to set another instead.
-  virtual void SetController(vtkMultiProcessController*);
+    // Description:
+    // By default this filter uses the global controller,
+    // but this method can be used to set another instead.
+    virtual void SetController(vtkMultiProcessController*);
 
-protected:
-  vtkParticlePartitionFilter();
-  ~vtkParticlePartitionFilter();
+    // Description:
+    // Specify the name of a scalar array which will be used to fetch
+    // the index of each point. This is necessary only if the particles
+    // change position (Id order) on each time step. The Id can be used
+    // to identify particles at each step and hence track them properly.
+    // If this array is NULL, the global point ids are used.  If an Id
+    // array cannot otherwise be found, the point index is used as the ID.
+    vtkSetStringMacro(IdChannelArray);
+    vtkGetStringMacro(IdChannelArray);
 
-  // Override to specify support for vtkPointSet input type.
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
 
-	// Override to specify different type of output
-	virtual int FillOutputPortInformation(int vtkNotUsed(port), 
-		vtkInformation* info);
+  protected:
+    vtkParticlePartitionFilter();
+    ~vtkParticlePartitionFilter();
 
-  // Main implementation.
-  virtual int RequestData(vtkInformation*,
-                          vtkInformationVector**,
-                          vtkInformationVector*);
-  //
-  vtkMultiProcessController *Controller;
-  //
-  int           UpdatePiece;
-  int           UpdateNumPieces;
-  vtkIdType     NumberOfLocalPoints;
-  //
-private:
-  vtkParticlePartitionFilter(const vtkParticlePartitionFilter&);  // Not implemented.
-  void operator=(const vtkParticlePartitionFilter&);  // Not implemented.
+    // Override to specify support for vtkPointSet input type.
+    virtual int FillInputPortInformation(int port, vtkInformation* info);
+
+	  // Override to specify different type of output
+	  virtual int FillOutputPortInformation(int vtkNotUsed(port), 
+		  vtkInformation* info);
+
+    // Main implementation.
+    virtual int RequestData(vtkInformation*,
+                            vtkInformationVector**,
+                            vtkInformationVector*);
+    //
+    vtkMultiProcessController *Controller;
+    //
+    int           UpdatePiece;
+    int           UpdateNumPieces;
+    vtkIdType     NumberOfLocalPoints;
+    char         *IdChannelArray;
+    //
+  private:
+    vtkParticlePartitionFilter(const vtkParticlePartitionFilter&);  // Not implemented.
+    void operator=(const vtkParticlePartitionFilter&);  // Not implemented.
 };
 
 #endif

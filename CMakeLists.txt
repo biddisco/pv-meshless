@@ -43,6 +43,18 @@ ELSE (VTK_USE_PARALLEL AND VTK_USE_MPI)
   ADD_DEFINITIONS(-DUSE_SERIAL_COSMO)
 ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 
+# --------------------------------------------------
+# Optional Trilinos support 
+# --------------------------------------------------
+OPTION(USE_TRILINOS "Use Trilinos library" ON)
+FIND_PACKAGE(Trilinos)
+MESSAGE("Trilinos_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS}")
+IF(${Trilinos_FOUND})
+  INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
+  LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS})
+  MESSAGE("Trilinos_LIBRARY_DIRS ${Trilinos_LIBRARY_DIRS}/${CMAKE_CFG_INTDIR}") 
+ENDIF(${Trilinos_FOUND})
+
 #--------------------------------------------------
 # Build minimal H5Part lib for support
 #-----------------------------------------------
@@ -79,7 +91,6 @@ IF(USE_COSMO)
   )
   SET(TIPSY_LIB TipsyLib Cosmo2)
 ENDIF (USE_COSMO)
-
 
 #--------------------------------------------------
 # Set Definitions 
@@ -230,6 +241,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTree.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.cxx
@@ -269,6 +281,7 @@ TARGET_LINK_LIBRARIES(${PLUGIN_NAME}
   pv_common
   vtkWidgets
   ${TIPSY_LIB}
+  ${Trilinos_LIBRARIES}
 )
 
 #--------------------------------------------------------
