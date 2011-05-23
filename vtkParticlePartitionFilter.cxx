@@ -36,17 +36,17 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
-#include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkStringArray.h"
 #include "vtkSmartPointer.h"
 #include "vtkTimerLog.h"
 #include "vtkIdTypeArray.h"
+#include "vtkBoundingBox.h"
 //
 #include <sstream>
-#include "zoltan.h"
 //
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <float.h>
+#include "zoltan.h"
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkParticlePartitionFilter);
 vtkCxxSetObjectMacro(vtkParticlePartitionFilter, Controller, vtkMultiProcessController);
@@ -57,7 +57,6 @@ vtkCxxSetObjectMacro(vtkParticlePartitionFilter, Controller, vtkMultiProcessCont
 // Structure to hold mesh data 
 //----------------------------------------------------------------------------
 typedef struct{
-  vtkIdType  numGlobalPoints;
   vtkIdType  numMyPoints;
   vtkIdType *myGlobalIDs;
   vtkIdType  TotalPointsThisProcess;
@@ -279,6 +278,7 @@ vtkParticlePartitionFilter::vtkParticlePartitionFilter()
   this->Controller          = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
   this->IdChannelArray      = NULL;
+  this->GhostCellOverlap    = 0.0;
 }
 
 //----------------------------------------------------------------------------
@@ -313,27 +313,6 @@ int vtkParticlePartitionFilter::FillOutputPortInformation(
   // now add our info
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
   return 1;
-}
-//----------------------------------------------------------------------------
-void SpherePoints2(int n, float radius, float X[]) {
-  double x, y, z, w, t;
-  for(int i=0; i< n; i++ ) {
-    #ifdef WIN32
-     double r1 = double(rand())/RAND_MAX;
-     double r2 = double(rand())/RAND_MAX;
-    #else
-     double r1 = drand48();
-     double r2 = drand48();
-    #endif
-    z = 2.0 * r1 - 1.0;
-    t = 2.0 * M_PI * r2;
-    w = radius * sqrt( 1 - z*z );
-    x = w * cos( t );
-    y = w * sin( t );
-    X[3*i+0] = x;
-    X[3*i+1] = y;
-    X[3*i+2] = z*radius;
-  }
 }
 //----------------------------------------------------------------------------
 int vtkParticlePartitionFilter::RequestData(vtkInformation*,
@@ -382,6 +361,17 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   }
 
   //
+  // We'd like to clamp bounding boxes of all the generated partitions to the original data
+  // rather than DBL_MAX etc used by zoltan (infinite extents)
+  //
+  double bounds[6];
+  input->GetBounds(bounds);
+  double bmin[3], bmn[3] = {bounds[0], bounds[2], bounds[4]};
+  double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
+  MPI_Allreduce(bmn, bmin, 3, MPI_DOUBLE, MPI_MIN, mpiComm);
+  MPI_Allreduce(bmx, bmax, 3, MPI_DOUBLE, MPI_MAX, mpiComm);
+
+  //
   // Ids
   //
   vtkDataArray *Ids = NULL;
@@ -413,7 +403,6 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   mesh.Input           = input;
   mesh.Output          = output;
   mesh.myGlobalIDs     = IdArray->GetPointer(0);
-  mesh.numGlobalPoints = numPoints*this->UpdateNumPieces; // TODO : Allgather
   mesh.numMyPoints     = numPoints;
   mesh.InputPointData  = inPoints->GetPointer(0);
   mesh.OutputPoints    = output->GetPoints();
@@ -520,6 +509,30 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     MPI_Finalize();
     Zoltan_Destroy(&zz);
     exit(0);
+  }
+
+  //
+  // For ghost cells we would like the bounding boxes of each partition
+  //
+  std::vector<vtkBoundingBox> BoxList;
+  for (int p=0; p<this->UpdateNumPieces; p++) {
+    double bounds[6];
+    int ndim;
+    if (ZOLTAN_OK==Zoltan_RCB_Box(zz, p, &ndim, &bounds[0], &bounds[2], &bounds[4], &bounds[1], &bounds[3], &bounds[5])) {
+
+      if (bounds[0]==-DBL_MAX) { bounds[0]= bmin[0]; }
+      if (bounds[1]== DBL_MAX) { bounds[1]= bmax[0]; }
+      if (bounds[2]==-DBL_MAX) { bounds[2]= bmin[1]; }
+      if (bounds[3]== DBL_MAX) { bounds[3]= bmax[1]; }
+      if (bounds[4]==-DBL_MAX) { bounds[4]= bmin[2]; }
+      if (bounds[5]== DBL_MAX) { bounds[5]= bmax[2]; }
+
+      vtkBoundingBox box(bounds);
+      box.Inflate(this->GhostCellOverlap);
+      BoxList.push_back(box);
+//      FindOverlappingPoints(box, myMesh.points, ghostIds);
+      
+    }
   }
 
   // Ghost information
