@@ -18,11 +18,11 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-// .NAME vtkParticlePartitionFilter 
+// .NAME vtkParticlePartitionFilter distribute particle datasets in parallel
 // .SECTION Description
-// vtkParticlePartitionFilter 
-// Finds the center of mass of a collection of particles. Either of all marked
-// particles or of all particles. Fully parallel.
+// vtkParticlePartitionFilter is a parallel load balancing/partitioning 
+// filter for particle datasets. It uses the Zoltan library from the Trilinos 
+// package to perform the redistribution.
 
 #ifndef __vtkParticlePartitionFilter_h
 #define __vtkParticlePartitionFilter_h
@@ -59,6 +59,13 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
     vtkSetStringMacro(IdChannelArray);
     vtkGetStringMacro(IdChannelArray);
 
+    // Description:
+    // The thickness of the region between each partition that is used for 
+    // ghost cell exchanges. Any particles within this overlap region of another
+    // processor will be duplicated on neighbouring processors (possibly multiple times
+    // at corner region overlaps)
+    vtkSetMacro(GhostCellOverlap, double);
+    vtkGetMacro(GhostCellOverlap, double);
 
   protected:
     vtkParticlePartitionFilter();
@@ -82,6 +89,7 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
     int           UpdateNumPieces;
     vtkIdType     NumberOfLocalPoints;
     char         *IdChannelArray;
+    double        GhostCellOverlap; 
     //
   private:
     vtkParticlePartitionFilter(const vtkParticlePartitionFilter&);  // Not implemented.
