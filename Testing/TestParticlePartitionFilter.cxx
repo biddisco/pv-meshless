@@ -483,6 +483,8 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       vtkSmartPointer<vtkPolyData> polys2 = vtkSmartPointer<vtkPolyData>::New();
       polys2->ShallowCopy(verts->GetOutput());
       polys2->GetPointData()->SetScalars(polys->GetPointData()->GetArray("Rank"));
+      polys2->GetPointData()->SetScalars(polys->GetPointData()->GetArray("ghostPartition"));
+      
       vtkSmartPointer<vtkPolyDataMapper>       mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
       vtkSmartPointer<vtkActor>                 actor2 = vtkSmartPointer<vtkActor>::New();
       mapper2->SetInput(polys2);
