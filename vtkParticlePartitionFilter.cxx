@@ -60,6 +60,7 @@ typedef struct{
   vtkIdType  numGlobalPoints;
   vtkIdType  numMyPoints;
   vtkIdType *myGlobalIDs;
+  vtkIdType  TotalPointsThisProcess;
   int        NumberOfFields;
   int        TotalSizePerId;
   float     *InputPointData; 
@@ -240,26 +241,26 @@ void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entr
 {
   MESH_DATA *mesh = (MESH_DATA*)data;
   // newTotal = original points - sent away + received
-  vtkIdType totalPoints = mesh->numMyPoints - num_export + num_import;
-  mesh->OutputPoints->SetNumberOfPoints(totalPoints);
+  mesh->TotalPointsThisProcess = mesh->numMyPoints - num_export + num_import;
+  mesh->OutputPoints->SetNumberOfPoints(mesh->TotalPointsThisProcess);
   mesh->OutputPointData = (float*)(mesh->OutputPoints->GetData()->GetVoidPointer(0));
   vtkPointData *inPD  = mesh->Input->GetPointData();
   vtkPointData *outPD = mesh->Output->GetPointData();
-  outPD->CopyAllocate(inPD, totalPoints);
+  outPD->CopyAllocate(inPD, mesh->TotalPointsThisProcess);
   //
   for (int i=0; i<mesh->NumberOfFields; i++) {
     vtkDataArray *oarray = mesh->Output->GetPointData()->GetArray(i);
-    oarray->SetNumberOfTuples(totalPoints);
+    oarray->SetNumberOfTuples(mesh->TotalPointsThisProcess);
     mesh->OutputArrayPointers.push_back(oarray->GetVoidPointer(0));
   }
-  vtkIdType id = 0, cnt = 0;
+  std::vector<bool> alive(mesh->TotalPointsThisProcess, true);
+  for (vtkIdType i=0; i<num_export; i++) {
+    alive[export_local_ids[i]] = false;    
+  }
+  vtkIdType id = 0;
   mesh->OutPointCount = 0;
-  while (id<mesh->numMyPoints) {
-    while (cnt<num_export && id==export_local_ids[cnt]) {
-      cnt++;
-      id++;
-    }
-    if (id<mesh->numMyPoints) {
+  for (vtkIdType i=0; i<mesh->TotalPointsThisProcess; i++) {
+    if (alive[i]) {
       outPD->CopyData(inPD, id, mesh->OutPointCount);
       memcpy(&mesh->OutputPointData[mesh->OutPointCount*3], &mesh->InputPointData[id*3], sizeof(float)*3);
       mesh->OutPointCount++;
