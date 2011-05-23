@@ -18,6 +18,14 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
+#include "vtkToolkits.h"     // For VTK_USE_MPI
+//
+#ifdef VTK_USE_MPI
+  #include "vtkMPI.h"
+  #include "vtkMPIController.h"
+  #include "vtkMPICommunicator.h"
+#endif
+#include "vtkMultiProcessController.h"
 #include "vtkParticlePartitionFilter.h"
 #include "vtkPolyData.h"
 #include "vtkDataSetAttributes.h"
@@ -30,25 +38,257 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStringArray.h"
-#include "vtkMultiProcessController.h"
 #include "vtkSmartPointer.h"
 #include "vtkTimerLog.h"
+#include "vtkIdTypeArray.h"
+//
+#include <sstream>
+#include "zoltan.h"
+//
+#define _USE_MATH_DEFINES
+#include <math.h>
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkParticlePartitionFilter);
-vtkCxxSetObjectMacro(vtkParticlePartitionFilter,Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkParticlePartitionFilter, Controller, vtkMultiProcessController);
+
+//----------------------------------------------------------------------------
+// Zoltan callback interface
+//
+// Structure to hold mesh data 
+//----------------------------------------------------------------------------
+typedef struct{
+  vtkIdType  numGlobalPoints;
+  vtkIdType  numMyPoints;
+  vtkIdType *myGlobalIDs;
+  int        NumberOfFields;
+  int        TotalSizePerId;
+  float     *InputPointData; 
+  float     *OutputPointData; 
+  vtkPoints *OutputPoints; 
+  vtkPointSet *Input;
+  vtkPointSet *Output;
+  std::vector<void*> InputArrayPointers;
+  std::vector<void*> OutputArrayPointers;
+  std::vector<int>   ArrayTypeSizes;
+  vtkIdType          OutPointCount;
+} MESH_DATA;
+
+//----------------------------------------------------------------------------
+// Zoltan : Application defined query functions (prototypes)
+//----------------------------------------------------------------------------
+static int  get_number_of_objects(void *data, int *ierr);
+static void get_object_list(void *data, int sizeGID, int sizeLID, 
+  ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID, int wgt_dim, float *obj_wgts, int *ierr);
+static int  get_num_geometry(void *data, int *ierr);
+static void get_geometry_list(void *data, int sizeGID, int sizeLID, int num_obj, 
+  ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID, int num_dim, double *geom_vec, int *ierr);
+
+//----------------------------------------------------------------------------
+// Application defined query functions (Implementation)
+//----------------------------------------------------------------------------
+static int get_number_of_objects(void *data, int *ierr)
+{
+  MESH_DATA *mesh= (MESH_DATA *)data;
+  *ierr = ZOLTAN_OK;
+  return mesh->numMyPoints;
+}
+//----------------------------------------------------------------------------
+static void get_object_list(void *data, int sizeGID, int sizeLID,
+            ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+                  int wgt_dim, float *obj_wgts, int *ierr)
+{
+  MESH_DATA *mesh = (MESH_DATA*)data;
+  *ierr = ZOLTAN_OK;
+
+  //
+  // Return the IDs of our objects, but no weights.
+  // Zoltan will assume equally weighted objects.
+  //
+  for (int i=0; i<mesh->numMyPoints; i++){
+    globalID[i] = mesh->myGlobalIDs[i];
+    localID[i] = i;
+  }
+}
+//----------------------------------------------------------------------------
+static int get_num_geometry(void *data, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  return 3;
+}
+//----------------------------------------------------------------------------
+static void get_geometry_list(
+  void *data, int sizeGID, int sizeLID, int num_obj, 
+  ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+  int num_dim, double *geom_vec, int *ierr)
+{
+  if ( (sizeGID != 1) || (sizeLID != 1) || (num_dim != 3)){
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  MESH_DATA *mesh = (MESH_DATA*)data;
+  for (int i=0;  i < num_obj ; i++){
+    geom_vec[3*i]   = (double)mesh->InputPointData[3*i];
+    geom_vec[3*i+1] = (double)mesh->InputPointData[3*i+1];
+    geom_vec[3*i+2] = (double)mesh->InputPointData[3*i+2];
+  }
+  *ierr = ZOLTAN_OK;
+  return;
+}
+//----------------------------------------------------------------------------
+//
+/*
+A ZOLTAN_OBJ_SIZE_FN query function returns the size (in bytes) of the data buffer 
+that is needed to pack all of a single object's data.
+ 
+Function Type: 	ZOLTAN_OBJ_SIZE_FN_TYPE
+Arguments: 	
+    data 	Pointer to user-defined data.
+   num_gid_entries 	The number of array entries used to describe a single global ID.  
+      This value is the maximum value over all processors of the parameter NUM_GID_ENTRIES.
+   num_lid_entries 	The number of array entries used to describe a single local ID.  
+      This value is the maximum value over all processors of the parameter NUM_LID_ENTRIES.
+   global_id 	Pointer to the global ID of the object.
+   local_id 	Pointer to the local ID of the object.
+   ierr 	Error code to be set by function.
+Returned Value: 	
+    int 	The size (in bytes) of the required data buffer.
+*/
+//----------------------------------------------------------------------------
+int zoltan_obj_size_func(void *data, int num_gid_entries, int num_lid_entries,
+  ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *ierr)
+{
+  if ( (num_gid_entries != 1) || (num_lid_entries != 1) ){
+    *ierr = ZOLTAN_FATAL;
+    return 0;
+  }
+  MESH_DATA *mesh = (MESH_DATA*)data;
+  vtkIdType GID = *global_id;
+  vtkIdType LID = *local_id;
+  //
+  *ierr = ZOLTAN_OK;
+  return mesh->TotalSizePerId + sizeof(float)*3;
+}
+//----------------------------------------------------------------------------
+void zoltan_pack_obj_func(void *data, int num_gid_entries, int num_lid_entries,
+  ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int dest, int size, char *buf, int *ierr)
+{
+  if ( (num_gid_entries != 1) || (num_lid_entries != 1) ){
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+  MESH_DATA *mesh = (MESH_DATA*)data;
+  vtkIdType GID = *global_id;
+  vtkIdType LID = *local_id;
+  //
+  for (int i=0; i<mesh->NumberOfFields; i++) {
+    int asize = mesh->ArrayTypeSizes[i];
+    char *dataptr = (char*)(mesh->InputArrayPointers[i]) + asize*(*local_id);
+    memcpy(buf, dataptr, asize);
+    buf += asize;
+  }
+  memcpy(buf, &mesh->InputPointData[(*local_id)*3], sizeof(float)*3);  
+  *ierr = ZOLTAN_OK;
+  return;
+}
+//----------------------------------------------------------------------------
+void zoltan_unpack_obj_func(void *data, int num_gid_entries,
+  ZOLTAN_ID_PTR global_id, int size, char *buf, int *ierr)
+{
+  if (num_gid_entries != 1) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+  MESH_DATA *mesh = (MESH_DATA*)data;
+  vtkIdType GID = *global_id;
+  //
+  vtkPointData *inPD  = mesh->Input->GetPointData();
+  vtkPointData *outPD = mesh->Output->GetPointData();
+  //
+  for (int i=0; i<mesh->NumberOfFields; i++) {
+    int asize = mesh->ArrayTypeSizes[i];
+    char *dataptr = (char*)(mesh->OutputArrayPointers[i]) + asize*(mesh->OutPointCount);
+    memcpy(dataptr, buf, asize);
+    buf += asize;
+  }
+  memcpy(&mesh->OutputPointData[mesh->OutPointCount*3], buf, sizeof(float)*3);  
+  mesh->OutPointCount++;
+  *ierr = ZOLTAN_OK;
+  return;
+}
+//----------------------------------------------------------------------------
+/*
+data 	            Pointer to user-defined data.
+num_gid_entries 	The number of array entries used to describe a single global ID.  This value is the maximum value over all processors of the parameter NUM_GID_ENTRIES.
+num_lid_entries 	The number of array entries used to describe a single local ID.  This value is the maximum value over all processors of the parameter NUM_LID_ENTRIES.
+num_import 	      The number of objects that will be received by this processor.
+import_global_ids An array of num_import global IDs of objects to be received by this processor. This array may be NULL, as the processor does not necessarily need to know which objects it will receive.
+import_local_ids 	An array of num_import local IDs of objects to be received by this processor. This array may be NULL, as the processor does not necessarily need to know which objects it will receive.
+import_procs 	    An array of size num_import listing the processor IDs of the source processors. This array may be NULL, as the processor does not necessarily need to know which objects is will receive.
+import_to_part 	  An array of size num_import listing the parts to which objects will be imported. This array may be NULL, as the processor does not necessarily need to know from which objects it will receive.
+num_export 	      The number of objects that will be sent from this processor to other processors.
+export_global_ids An array of num_export global IDs of objects to be sent from this processor.
+export_local_ids 	An array of num_export local IDs of objects to be sent from this processor.
+export_procs 	    An array of size num_export listing the processor IDs of the destination processors.
+export_to_part 	  An array of size num_export listing the parts to which objects will be sent.
+ierr 	            Error code to be set by function.
+*/
+void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entries,
+  int num_import, ZOLTAN_ID_PTR import_global_ids, ZOLTAN_ID_PTR import_local_ids,
+  int *import_procs, int *import_to_part, int num_export, ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids, int *export_procs, int *export_to_part, int *ierr)
+{
+  MESH_DATA *mesh = (MESH_DATA*)data;
+  // newTotal = original points - sent away + received
+  vtkIdType totalPoints = mesh->numMyPoints - num_export + num_import;
+  mesh->OutputPoints->SetNumberOfPoints(totalPoints);
+  mesh->OutputPointData = (float*)(mesh->OutputPoints->GetData()->GetVoidPointer(0));
+  vtkPointData *inPD  = mesh->Input->GetPointData();
+  vtkPointData *outPD = mesh->Output->GetPointData();
+  outPD->CopyAllocate(inPD, totalPoints);
+  //
+  for (int i=0; i<mesh->NumberOfFields; i++) {
+    vtkDataArray *oarray = mesh->Output->GetPointData()->GetArray(i);
+    oarray->SetNumberOfTuples(totalPoints);
+    mesh->OutputArrayPointers.push_back(oarray->GetVoidPointer(0));
+  }
+  vtkIdType id = 0, cnt = 0;
+  mesh->OutPointCount = 0;
+  while (id<mesh->numMyPoints) {
+    while (cnt<num_export && id==export_local_ids[cnt]) {
+      cnt++;
+      id++;
+    }
+    if (id<mesh->numMyPoints) {
+      outPD->CopyData(inPD, id, mesh->OutPointCount);
+      memcpy(&mesh->OutputPointData[mesh->OutPointCount*3], &mesh->InputPointData[id*3], sizeof(float)*3);
+      mesh->OutPointCount++;
+      id++;
+    }
+  }
+}
+//----------------------------------------------------------------------------
+// vtkParticlePartitionFilter :: implementation 
 //----------------------------------------------------------------------------
 vtkParticlePartitionFilter::vtkParticlePartitionFilter()
 {
   this->UpdatePiece         = 0;
   this->UpdateNumPieces     = 0;
   this->NumberOfLocalPoints = 0;
+  this->Controller          = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
+  this->IdChannelArray      = NULL;
 }
 
 //----------------------------------------------------------------------------
 vtkParticlePartitionFilter::~vtkParticlePartitionFilter()
 {
-   this->SetController(0);
+  this->SetController(0);
+  if (this->IdChannelArray)
+    {
+    delete [] this->IdChannelArray;
+    this->IdChannelArray = NULL;
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -73,42 +313,241 @@ int vtkParticlePartitionFilter::FillOutputPortInformation(
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
   return 1;
 }
-
+//----------------------------------------------------------------------------
+void SpherePoints2(int n, float radius, float X[]) {
+  double x, y, z, w, t;
+  for(int i=0; i< n; i++ ) {
+    #ifdef WIN32
+     double r1 = double(rand())/RAND_MAX;
+     double r2 = double(rand())/RAND_MAX;
+    #else
+     double r1 = drand48();
+     double r2 = drand48();
+    #endif
+    z = 2.0 * r1 - 1.0;
+    t = 2.0 * M_PI * r2;
+    w = radius * sqrt( 1 - z*z );
+    x = w * cos( t );
+    y = w * sin( t );
+    X[3*i+0] = x;
+    X[3*i+1] = y;
+    X[3*i+2] = z*radius;
+  }
+}
 //----------------------------------------------------------------------------
 int vtkParticlePartitionFilter::RequestData(vtkInformation*,
                                  vtkInformationVector** inputVector,
                                  vtkInformationVector* outputVector)
 {
+#ifdef VTK_USE_MPI
+  if (this->Controller) {
+    this->UpdatePiece     = this->Controller->GetLocalProcessId();
+    this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
+  }
+  else {
+    this->UpdatePiece     = 0;
+    this->UpdateNumPieces = 1;
+  }
+  vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
+  MPI_Comm mpiComm = MPI_COMM_NULL;
+  if (communicator) {
+    mpiComm = *(communicator->GetMPIComm()->GetHandle());
+  }
+#else
+  this->UpdatePiece = 0;
+  this->UpdateNumPieces = 1;
+  int mpiComm = 0;
+#endif
+
   vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
   timer->StartTimer();
 
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
   // Get input and output data.
-  vtkPointSet* input = vtkPointSet::GetData(inputVector[0]);
+  vtkPointSet      *input = vtkPointSet::GetData(inputVector[0]);
+  vtkFloatArray *inPoints = vtkFloatArray::SafeDownCast(input->GetPoints()->GetData());
+  vtkIdType     numPoints = input->GetPoints()->GetNumberOfPoints();
+  std::cout << "Process " << this->UpdatePiece << " Points Input : " << numPoints << std::endl;
 
   // Setup the output
-  vtkPolyData* output = vtkPolyData::GetData(outputVector);
-
-  //
+  vtkPolyData                    *output = vtkPolyData::GetData(outputVector);
   vtkSmartPointer<vtkPoints>   newPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vertices = vtkSmartPointer<vtkCellArray>::New();
   output->SetPoints(newPoints);
+  if (this->UpdateNumPieces==1) {
+    output->ShallowCopy(input);
+    return 1;
+  }
+
+  //
+  // Ids
+  //
+  vtkDataArray *Ids = NULL;
+  if (this->IdChannelArray) {
+    Ids = input->GetPointData()->GetArray(this->IdChannelArray);
+  }
+  if (!Ids) {
+    // Try loading the global ids.
+    Ids = input->GetPointData()->GetGlobalIds();
+  }
+  vtkIdTypeArray *IdArray = vtkIdTypeArray::SafeDownCast(Ids);
+
+  //--------------------------------------------------------------
+  // Use Zoltan library to re-partition the particles in parallel
+  //--------------------------------------------------------------
+  struct Zoltan_Struct *zz;
+  int changes, numGidEntries, numLidEntries, numImport, numExport;
+  ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids; 
+  int *importProcs, *importToPart, *exportProcs, *exportToPart;
+  MESH_DATA mesh;
+
+  float ver;
+  int rc = Zoltan_Initialize(0, NULL, &ver);
+  if (rc != ZOLTAN_OK){
+    printf("Zoltan initialization failed ...\n");
+    return 0;
+  }
+
+  mesh.Input           = input;
+  mesh.Output          = output;
+  mesh.myGlobalIDs     = IdArray->GetPointer(0);
+  mesh.numGlobalPoints = numPoints*this->UpdateNumPieces; // TODO : Allgather
+  mesh.numMyPoints     = numPoints;
+  mesh.InputPointData  = inPoints->GetPointer(0);
+  mesh.OutputPoints    = output->GetPoints();
+  mesh.TotalSizePerId  = 0;
+  mesh.OutPointCount   = 0;
+  mesh.NumberOfFields  = input->GetPointData()->GetNumberOfArrays();
+  for (int i=0; i<mesh.NumberOfFields; i++) {
+    vtkDataArray *darray = input->GetPointData()->GetArray(i);
+    mesh.InputArrayPointers.push_back(darray->GetVoidPointer(0));
+    mesh.ArrayTypeSizes.push_back(darray->GetDataTypeSize());
+    mesh.TotalSizePerId += darray->GetDataTypeSize();
+  }
+
+  //***************************************************************
+  //* Create a Zoltan library structure for this instance of load
+  //* balancing.  Set the parameters and query functions that will
+  //* govern the library's calculation.  See the Zoltan User's
+  //* Guide for the definition of these and many other parameters.
+  //***************************************************************
+
+  zz = Zoltan_Create(mpiComm); 
+
+  // we don't need any debug info
+  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "1");
+
+  // Method for subdivision
+  Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
+  Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
+  //  Zoltan_Set_Param(zz, "LB_METHOD", "PARMETIS");
+
+  // Global and local Ids are a single integer
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
+  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
+
+  // divide into N global and M local partitions
+  std::stringstream global;
+  global << this->UpdateNumPieces << ends;
+  std::stringstream local;
+  local << 1 << ends;
+
+  Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", global.str().c_str());
+  Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS",  local.str().c_str());
+
+  // All points have the same weight
+  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
+  Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
+
+  // RCB parameters
+
+//  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
+
+  Zoltan_Set_Param(zz, "RCB_RECOMPUTE_BOX", "1");
+  Zoltan_Set_Param(zz, "REDUCE_DIMENSIONS", "0");
+  Zoltan_Set_Param(zz, "RCB_MAX_ASPECT_RATIO", "2");
+
+  // we need the cuts to get BBoxes for partitions later
+  Zoltan_Set_Param(zz, "KEEP_CUTS", "1");
+
+  // don't allow points on cut to be in different partitions
+  // not likely/useful for particle data anyway
+  Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
+
+  Zoltan_Set_Param(zz, "AUTO_MIGRATE", "1");  
+  
+  //
+  // Query functions, to provide geometry to Zoltan 
+  //
+  Zoltan_Set_Num_Obj_Fn(zz,    get_number_of_objects, &mesh);
+  Zoltan_Set_Obj_List_Fn(zz,   get_object_list,       &mesh);
+  Zoltan_Set_Num_Geom_Fn(zz,   get_num_geometry,      &mesh);
+  Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list,     &mesh);
+
+  //
+  // Register additional functions for packing and unpacking data
+  // by migration tools.  
+  //
+  Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,       (void (*)()) zoltan_obj_size_func,      &mesh); 
+  Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) zoltan_pack_obj_func,      &mesh); 
+  Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) zoltan_unpack_obj_func,    &mesh); 
+  Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_migrate_pp_func, &mesh); 
+
+  //
+  // Zoltan can now partition our particles
+  //
+
+  rc = Zoltan_LB_Partition(zz, // input (all remaining fields are output)
+        &changes,              // 1 if partitioning was changed, 0 otherwise 
+        &numGidEntries,        // Number of integers used for a global ID
+        &numLidEntries,        // Number of integers used for a local ID
+        &numImport,            // Number of vertices to be sent to me
+        &importGlobalGids,     // Global IDs of vertices to be sent to me
+        &importLocalGids,      // Local IDs of vertices to be sent to me
+        &importProcs,          // Process rank for source of each incoming vertex
+        &importToPart,         // New partition for each incoming vertex
+        &numExport,            // Number of vertices I must send to other processes*/
+        &exportGlobalGids,     // Global IDs of the vertices I must send
+        &exportLocalGids,      // Local IDs of the vertices I must send
+        &exportProcs,          // Process to which I send each of the vertices
+        &exportToPart);        // Partition to which each vertex will belong
+
+  if (rc != ZOLTAN_OK){
+    printf("Zoltan_LB_Partition NOT OK...\n");
+    MPI_Finalize();
+    Zoltan_Destroy(&zz);
+    exit(0);
+  }
+
+  // Ghost information
+  vtkSmartPointer<vtkIdTypeArray> ghostPartition = vtkSmartPointer<vtkIdTypeArray>::New();
+  ghostPartition->SetName("ghostPartition");
+  ghostPartition->SetNumberOfComponents(1);
+//  ghostPartition->SetNumberOfTuples(1);
+//  ghostPartition->SetTuple(0, dbCenterOfMass);
+//  output->GetPointData()->AddArray(ghostPartition);
+
+  std::cout << "Process " << this->UpdatePiece << " Points Output : " << mesh.OutPointCount << std::endl;
+  for (int i=0; i<mesh.NumberOfFields; i++) {
+    vtkDataArray *darray = output->GetPointData()->GetArray(i);
+    std::cout << "Process " << this->UpdatePiece << " Array Output : " << darray->GetNumberOfTuples() << std::endl;
+  }
+
+  vtkIdType *arraydata = vertices->WritePointer(mesh.OutPointCount, 2*mesh.OutPointCount);
+  for (int i=0; i<mesh.OutPointCount; i++) {
+    arraydata[i*2]   = 1;
+    arraydata[i*2+1] = i;
+  }
   output->SetVerts(vertices);
 
-/*
-  // Also saving it as a data array for easy csv export
-  vtkSmartPointer<vtkFloatArray> c_of_m = vtkSmartPointer<vtkFloatArray>::New();
-  c_of_m->SetName("CentreOfMass");
-  c_of_m->SetNumberOfComponents(3);
-  c_of_m->SetNumberOfTuples(1);
-  c_of_m->SetTuple(0, dbCenterOfMass);
-  output->GetPointData()->AddArray(c_of_m);
-*/
+//  SpherePoints2(mesh.OutPointCount, 500.0, mesh.OutputPointData);
+
   //
   timer->StopTimer();
   if (this->UpdatePiece==0) { 
-//    vtkErrorMacro(<< "Particle partitioning : " << timer->GetElapsedTime() << " seconds\n");
+    vtkErrorMacro(<< "Particle partitioning : " << timer->GetElapsedTime() << " seconds\n");
   }
   return 1;
 }

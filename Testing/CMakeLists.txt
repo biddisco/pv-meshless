@@ -26,26 +26,24 @@ FOREACH(test_name ${TEST_LIST})
 ENDFOREACH(test_name)
 
 #--------------------------------------------------
-# Trilinos
+# H5Part
 #--------------------------------------------------
-FIND_PACKAGE(Trilinos)
-MESSAGE("Trilinos_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS}")
-INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
-
-LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS}/${CMAKE_CFG_INTDIR})
-
-MESSAGE("${Trilinos_LIBRARY_DIRS}/${CMAKE_CFG_INTDIR}")
-
 ADD_EXECUTABLE(TestH5PartParallelWriter TestH5PartParallelWriter.cxx)
 TARGET_LINK_LIBRARIES(TestH5PartParallelWriter
-  pvmeshless_plugin 
+  pv_meshless 
   )
 ADD_TEST(TestH5PartParallelWriter.cxx ${PROJECT_BINARY_DIR}/../bin/TestH5PartParallelWriter.cxx)
 
+#--------------------------------------------------
+# Trilinos
+#--------------------------------------------------
+IF(${Trilinos_FOUND})
 
-ADD_EXECUTABLE(TestParticlePartition TestParticlePartition.cxx)
-TARGET_LINK_LIBRARIES(TestParticlePartition
-  pvmeshless_plugin 
-  ${Trilinos_LIBRARIES}
-  )
-ADD_TEST(TestParticlePartition.cxx ${PROJECT_BINARY_DIR}/../bin/TestParticlePartition.cxx)
+  ADD_EXECUTABLE(TestParticlePartitionFilter TestParticlePartitionFilter.cxx)
+  TARGET_LINK_LIBRARIES(TestParticlePartitionFilter
+    pv_meshless 
+    ${Trilinos_LIBRARIES}
+    )
+  ADD_TEST(TestParticlePartitionFilter.cxx ${PROJECT_BINARY_DIR}/../bin/TestParticlePartition.cxx)
+ENDIF(${Trilinos_FOUND})
+
