@@ -28,6 +28,8 @@
 #define __vtkParticlePartitionFilter_h
 
 #include "vtkPointSetAlgorithm.h" // superclass
+#include "vtkBoundingBox.h"
+#include <vector>
 
 class vtkMultiProcessController;
 class vtkPoints;
@@ -82,14 +84,19 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
     virtual int RequestData(vtkInformation*,
                             vtkInformationVector**,
                             vtkInformationVector*);
+
+    typedef std::vector< std::vector<vtkIdType> > ListOfVectors;
+    void FindOverlappingPoints(
+      std::vector<vtkBoundingBox> &BoxList, vtkPoints *pts, ListOfVectors &ids);
     //
     vtkMultiProcessController *Controller;
     //
-    int           UpdatePiece;
-    int           UpdateNumPieces;
-    vtkIdType     NumberOfLocalPoints;
-    char         *IdChannelArray;
-    double        GhostCellOverlap; 
+    int             UpdatePiece;
+    int             UpdateNumPieces;
+    vtkIdType       NumberOfLocalPoints;
+    char           *IdChannelArray;
+    double          GhostCellOverlap; 
+    vtkBoundingBox *LocalBox;
     //
   private:
     vtkParticlePartitionFilter(const vtkParticlePartitionFilter&);  // Not implemented.

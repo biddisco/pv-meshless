@@ -315,6 +315,20 @@ int vtkParticlePartitionFilter::FillOutputPortInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
+void vtkParticlePartitionFilter::FindOverlappingPoints(
+  std::vector<vtkBoundingBox> &BoxList, vtkPoints *pts, ListOfVectors &ids)
+{
+  for (vtkIdType i=0; i<pts->GetNumberOfPoints(); i++) {
+    ListOfVectors::iterator list = ids.begin();
+    for (std::vector<vtkBoundingBox>::iterator it=BoxList.begin(); it!=BoxList.end(); ++it, ++list) {
+      vtkBoundingBox &b = *it;
+      if (&b!=this->LocalBox && b.ContainsPoint(pts->GetPoint(i))) {
+        list->push_back(i);
+      }
+    }
+  }
+}
+//----------------------------------------------------------------------------
 int vtkParticlePartitionFilter::RequestData(vtkInformation*,
                                  vtkInformationVector** inputVector,
                                  vtkInformationVector* outputVector)
@@ -430,8 +444,8 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   Zoltan_Set_Param(zz, "DEBUG_LEVEL", "1");
 
   // Method for subdivision
-  Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
-  Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
+  Zoltan_Set_Param(zz, "LB_APPROACH", "REPARTITION");
+  Zoltan_Set_Param(zz, "LB_METHOD",   "RCB");
   //  Zoltan_Set_Param(zz, "LB_METHOD", "PARMETIS");
 
   // Global and local Ids are a single integer
@@ -457,7 +471,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
 
   Zoltan_Set_Param(zz, "RCB_RECOMPUTE_BOX", "1");
   Zoltan_Set_Param(zz, "REDUCE_DIMENSIONS", "0");
-  Zoltan_Set_Param(zz, "RCB_MAX_ASPECT_RATIO", "2");
+  Zoltan_Set_Param(zz, "RCB_MAX_ASPECT_RATIO", "10");
 
   // we need the cuts to get BBoxes for partitions later
   Zoltan_Set_Param(zz, "KEEP_CUTS", "1");
@@ -519,29 +533,35 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     double bounds[6];
     int ndim;
     if (ZOLTAN_OK==Zoltan_RCB_Box(zz, p, &ndim, &bounds[0], &bounds[2], &bounds[4], &bounds[1], &bounds[3], &bounds[5])) {
-
-      if (bounds[0]==-DBL_MAX) { bounds[0]= bmin[0]; }
-      if (bounds[1]== DBL_MAX) { bounds[1]= bmax[0]; }
-      if (bounds[2]==-DBL_MAX) { bounds[2]= bmin[1]; }
-      if (bounds[3]== DBL_MAX) { bounds[3]= bmax[1]; }
-      if (bounds[4]==-DBL_MAX) { bounds[4]= bmin[2]; }
-      if (bounds[5]== DBL_MAX) { bounds[5]= bmax[2]; }
-
+      if (bounds[0]==-DBL_MAX) { bounds[0] = bmin[0]; }
+      if (bounds[1]== DBL_MAX) { bounds[1] = bmax[0]; }
+      if (bounds[2]==-DBL_MAX) { bounds[2] = bmin[1]; }
+      if (bounds[3]== DBL_MAX) { bounds[3] = bmax[1]; }
+      if (bounds[4]==-DBL_MAX) { bounds[4] = bmin[2]; }
+      if (bounds[5]== DBL_MAX) { bounds[5] = bmax[2]; }
       vtkBoundingBox box(bounds);
-      box.Inflate(this->GhostCellOverlap);
+      box.Inflate(this->GhostCellOverlap+75.0);
       BoxList.push_back(box);
-//      FindOverlappingPoints(box, myMesh.points, ghostIds);
-      
     }
   }
+  this->LocalBox = &BoxList[this->UpdatePiece];
+  ListOfVectors GhostIds(this->UpdateNumPieces);
+  this->FindOverlappingPoints(BoxList, output->GetPoints(), GhostIds);
 
   // Ghost information
   vtkSmartPointer<vtkIdTypeArray> ghostPartition = vtkSmartPointer<vtkIdTypeArray>::New();
   ghostPartition->SetName("ghostPartition");
   ghostPartition->SetNumberOfComponents(1);
-//  ghostPartition->SetNumberOfTuples(1);
-//  ghostPartition->SetTuple(0, dbCenterOfMass);
-//  output->GetPointData()->AddArray(ghostPartition);
+  ghostPartition->SetNumberOfTuples(mesh.OutPointCount);
+  vtkIdType val = 0;
+  for (vtkIdType i=0; i<mesh.OutPointCount; i++) {
+    ghostPartition->SetValue(i, val);
+  }
+  val = 3;
+  for (vtkIdType i=0; i<GhostIds[3].size(); i++) {
+    ghostPartition->SetValue(GhostIds[3][i], val);
+  }
+  output->GetPointData()->AddArray(ghostPartition);
 
   std::cout << "Process " << this->UpdatePiece << " Points Output : " << mesh.OutPointCount << std::endl;
   for (int i=0; i<mesh.NumberOfFields; i++) {
