@@ -474,9 +474,9 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       ren->SetBackground(0.1, 0.1, 0.1);
       renWindow->SetSize( 400, 400);
       mapper->SetInput(polys);
-      mapper->SetScalarRange(0,2);
+      mapper->SetScalarRange(0,numProcs-1);
       actor->SetMapper(mapper);
-      actor->GetProperty()->SetPointSize(4);
+      actor->GetProperty()->SetPointSize(2);
       ren->AddActor(actor);
       renWindow->AddRenderer(ren);
 //
