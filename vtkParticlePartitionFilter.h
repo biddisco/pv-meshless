@@ -30,15 +30,12 @@
 #include "vtkPointSetAlgorithm.h" // superclass
 #include "vtkBoundingBox.h"
 #include <vector>
+#include "zoltan.h"
 
 class vtkMultiProcessController;
 class vtkPoints;
+class vtkIdTypeArray;
 
-enum CenterOfMassMPIData 
-{
-	TOTAL_MASS,
-	TOTAL_WEIGHTED_MASS
-};
 class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
 {
   public:
@@ -73,6 +70,11 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
     // Description:
     // Return the Bounding Box for a partition
     vtkBoundingBox *GetPartitionBoundingBox(int partition);
+
+    // Description:
+    // Return the Bounding Box for a partition plus the extended region
+    // all around the box where ghost cells might be required/present
+    vtkBoundingBox *GetPartitionBoundingBoxWithGhostRegion(int partition);
 //ETX
 
   protected:
@@ -91,10 +93,18 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
                             vtkInformationVector**,
                             vtkInformationVector*);
 //BTX
+    typedef struct {
+      std::vector<ZOLTAN_ID_TYPE> GlobalIds;
+      std::vector<ZOLTAN_ID_TYPE> LocalIds;
+      std::vector<int> Procs;
+      std::vector<int> Parts;
+    } GhostPartition;
+
     typedef std::vector< std::vector<vtkIdType> > ListOfVectors;
-    void FindOverlappingPoints(vtkPoints *pts, ListOfVectors &ids);
+    void FindOverlappingPoints(vtkPoints *pts, vtkIdTypeArray *IdArray, GhostPartition &ghostinfo);
     vtkBoundingBox             *LocalBox;
     std::vector<vtkBoundingBox> BoxList;
+    std::vector<vtkBoundingBox> BoxListWithGhostRegion;
 //ETX
     //
     vtkMultiProcessController *Controller;
