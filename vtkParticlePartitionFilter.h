@@ -84,10 +84,12 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
     virtual int RequestData(vtkInformation*,
                             vtkInformationVector**,
                             vtkInformationVector*);
-
+//BTX
     typedef std::vector< std::vector<vtkIdType> > ListOfVectors;
-    void FindOverlappingPoints(
-      std::vector<vtkBoundingBox> &BoxList, vtkPoints *pts, ListOfVectors &ids);
+    void FindOverlappingPoints(vtkPoints *pts, ListOfVectors &ids);
+    vtkBoundingBox             *LocalBox;
+    std::vector<vtkBoundingBox> BoxList;
+//ETX
     //
     vtkMultiProcessController *Controller;
     //
@@ -96,7 +98,6 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
     vtkIdType       NumberOfLocalPoints;
     char           *IdChannelArray;
     double          GhostCellOverlap; 
-    vtkBoundingBox *LocalBox;
     //
   private:
     vtkParticlePartitionFilter(const vtkParticlePartitionFilter&);  // Not implemented.
