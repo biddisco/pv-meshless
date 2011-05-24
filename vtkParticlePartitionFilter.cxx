@@ -313,6 +313,15 @@ int vtkParticlePartitionFilter::FillOutputPortInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
+vtkBoundingBox *vtkParticlePartitionFilter::GetPartitionBoundingBox(int partition)
+{
+  if (partition<this->BoxList.size()) {
+    return &this->BoxList[partition];
+  }
+  vtkErrorMacro(<<"Partition not found in Bounding Box list");
+  return NULL;
+}
+//----------------------------------------------------------------------------
 void vtkParticlePartitionFilter::FindOverlappingPoints(vtkPoints *pts, ListOfVectors &ids)
 {
   for (vtkIdType i=0; i<pts->GetNumberOfPoints(); i++) {
@@ -481,6 +490,8 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // not likely/useful for particle data anyway
   Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
 
+  // Let Zoltan do the load balance step automatically
+  // particles will be transferred as required between processes
   Zoltan_Set_Param(zz, "AUTO_MIGRATE", "1");  
   
   //
@@ -492,7 +503,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list,     &mesh);
 
   //
-  // Register additional functions for packing and unpacking data
+  // Register functions for packing and unpacking data
   // by migration tools.  
   //
   Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,       (void (*)()) zoltan_obj_size_func,      &mesh); 
@@ -501,9 +512,10 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_migrate_pp_func, &mesh); 
 
   //
-  // Zoltan can now partition our particles
+  // Zoltan can now partition our particles. 
+  // After this returns, we have redistributed particles and the Output holds
+  // the list of correct points/fields etc for each process
   //
-
   rc = Zoltan_LB_Partition(zz, // input (all remaining fields are output)
         &changes,              // 1 if partitioning was changed, 0 otherwise 
         &numGidEntries,        // Number of integers used for a global ID
@@ -541,7 +553,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
       if (bounds[4]==-DBL_MAX) { bounds[4] = bmin[2]; }
       if (bounds[5]== DBL_MAX) { bounds[5] = bmax[2]; }
       vtkBoundingBox box(bounds);
-      box.Inflate(this->GhostCellOverlap + 100.0);
+      box.Inflate(this->GhostCellOverlap);
       BoxList.push_back(box);
     }
   }
@@ -579,7 +591,19 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   }
   output->SetVerts(vertices);
 
-//  SpherePoints2(mesh.OutPointCount, 500.0, mesh.OutputPointData);
+  //
+  //*****************************************************************
+  // Free the arrays allocated by Zoltan_LB_Partition, and free
+  // the storage allocated for the Zoltan structure.
+  //*****************************************************************
+  //
+
+  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
+                      &importProcs, &importToPart);
+  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
+                      &exportProcs, &exportToPart);
+
+  Zoltan_Destroy(&zz);
 
   //
   timer->StopTimer();

@@ -296,6 +296,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   vtkSmartPointer<vtkParticlePartitionFilter> partitioner = vtkSmartPointer<vtkParticlePartitionFilter>::New();
   partitioner->SetInputConnection(elev->GetOutputPort());
   partitioner->SetIdChannelArray("PointIds");
+  partitioner->SetGhostCellOverlap(radius/50.0);
   partitioner->Update();
 
   vtkSmartPointer<vtkProcessIdScalars> processId = vtkSmartPointer<vtkProcessIdScalars>::New();
@@ -303,22 +304,8 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   processId->Update();
 
   //*****************************************************************
-  // Visualize the mesh partitioning before and after calling Zoltan.
+  // Visualize the mesh partitioning
   //*****************************************************************
-
-/*
-  //*****************************************************************
-  // Free the arrays allocated by Zoltan_LB_Partition, and free
-  // the storage allocated for the Zoltan structure.
-  //*****************************************************************
-
-  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
-                      &importProcs, &importToPart);
-  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
-                      &exportProcs, &exportToPart);
-
-  Zoltan_Destroy(&zz);
-*/
 
   //--------------------------------------------------------------
   // Create writer on all processes
@@ -493,14 +480,14 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       actor2->GetProperty()->SetPointSize(2);
       actor2->SetPosition(2.0*radius, 0.0, 0.0);
       ren->AddActor(actor2);
-//
-/*
+
       //
       // Display boxes for each partition
       //
-      for (std::vector<vtkBoundingBox>::iterator it=BoxList.begin(); it!=BoxList.end(); ++it) {
+      for (int i=0; i<numProcs; i++) {
+        vtkBoundingBox *box = partitioner->GetPartitionBoundingBox(i);
         double bounds[6];
-        it->GetBounds(bounds);
+        box->GetBounds(bounds);
         vtkSmartPointer<vtkOutlineSource> boxsource = vtkSmartPointer<vtkOutlineSource>::New();
         boxsource->SetBounds(bounds);
         vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -509,7 +496,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
         actor->SetMapper(mapper);
         ren->AddActor(actor);
       }
-*/
+
       std::cout << "Process Id : " << myId << " About to Render" << std::endl;
       renWindow->Render();
 

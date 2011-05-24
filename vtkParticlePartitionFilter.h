@@ -68,9 +68,15 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
     // at corner region overlaps)
     vtkSetMacro(GhostCellOverlap, double);
     vtkGetMacro(GhostCellOverlap, double);
+    
+//BTX
+    // Description:
+    // Return the Bounding Box for a partition
+    vtkBoundingBox *GetPartitionBoundingBox(int partition);
+//ETX
 
   protected:
-    vtkParticlePartitionFilter();
+     vtkParticlePartitionFilter();
     ~vtkParticlePartitionFilter();
 
     // Override to specify support for vtkPointSet input type.
