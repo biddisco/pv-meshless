@@ -630,7 +630,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
         &GhostIds.GlobalIds[0],
         &GhostIds.LocalIds[0],
         &GhostIds.Procs[0],
-        &GhostIds.Parts[0],
+        &GhostIds.Procs[0],
         &num_found,
         &found_global_ids,
         &found_local_ids,
@@ -663,7 +663,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
         &GhostIds.GlobalIds[0],
         &GhostIds.LocalIds[0],
         &GhostIds.Procs[0],
-        &GhostIds.Parts[0]);
+        &GhostIds.Procs[0]);
 
   //
   // Ghost information
