@@ -57,20 +57,20 @@ vtkCxxSetObjectMacro(vtkParticlePartitionFilter, Controller, vtkMultiProcessCont
 // Structure to hold mesh data 
 //----------------------------------------------------------------------------
 typedef struct{
-  vtkIdType  numMyPoints;
-  vtkIdType *myGlobalIDs;
-  vtkIdType  TotalPointsThisProcess;
-  int        NumberOfFields;
-  int        TotalSizePerId;
-  float     *InputPointData; 
-  float     *OutputPointData; 
-  vtkPoints *OutputPoints; 
-  vtkPointSet *Input;
-  vtkPointSet *Output;
-  std::vector<void*> InputArrayPointers;
-  std::vector<void*> OutputArrayPointers;
-  std::vector<int>   ArrayTypeSizes;
-  vtkIdType          OutPointCount;
+  vtkPointSet        *Input;
+  vtkPointSet        *Output;
+  vtkIdType           InputNumberOfLocalPoints;
+  vtkIdType           OutputNumberOfLocalPoints;
+  vtkIdType          *myGlobalIDs;
+  float              *InputPointData; 
+  float              *OutputPointData; 
+  vtkPoints          *OutputPoints; 
+  int                 NumberOfFields;
+  std::vector<void*>  InputArrayPointers;
+  std::vector<void*>  OutputArrayPointers;
+  std::vector<int>    ArrayTypeSizes;
+  int                 TotalSizePerId;
+  vtkIdType           OutPointCount;
 } MESH_DATA;
 
 //----------------------------------------------------------------------------
@@ -90,7 +90,7 @@ static int get_number_of_objects(void *data, int *ierr)
 {
   MESH_DATA *mesh= (MESH_DATA *)data;
   *ierr = ZOLTAN_OK;
-  return mesh->numMyPoints;
+  return mesh->InputNumberOfLocalPoints;
 }
 //----------------------------------------------------------------------------
 static void get_object_list(void *data, int sizeGID, int sizeLID,
@@ -104,7 +104,7 @@ static void get_object_list(void *data, int sizeGID, int sizeLID,
   // Return the IDs of our objects, but no weights.
   // Zoltan will assume equally weighted objects.
   //
-  for (int i=0; i<mesh->numMyPoints; i++){
+  for (int i=0; i<mesh->InputNumberOfLocalPoints; i++){
     globalID[i] = mesh->myGlobalIDs[i];
     localID[i] = i;
   }
@@ -240,30 +240,28 @@ void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entr
 {
   MESH_DATA *mesh = (MESH_DATA*)data;
   // newTotal = original points - sent away + received
-  mesh->TotalPointsThisProcess = mesh->numMyPoints - num_export + num_import;
-  mesh->OutputPoints->SetNumberOfPoints(mesh->TotalPointsThisProcess);
+  mesh->OutputNumberOfLocalPoints = mesh->InputNumberOfLocalPoints - num_export + num_import;
+  mesh->OutputPoints->SetNumberOfPoints(mesh->OutputNumberOfLocalPoints);
   mesh->OutputPointData = (float*)(mesh->OutputPoints->GetData()->GetVoidPointer(0));
   vtkPointData *inPD  = mesh->Input->GetPointData();
   vtkPointData *outPD = mesh->Output->GetPointData();
-  outPD->CopyAllocate(inPD, mesh->TotalPointsThisProcess);
+  outPD->CopyAllocate(inPD, mesh->OutputNumberOfLocalPoints);
   //
   for (int i=0; i<mesh->NumberOfFields; i++) {
     vtkDataArray *oarray = mesh->Output->GetPointData()->GetArray(i);
-    oarray->SetNumberOfTuples(mesh->TotalPointsThisProcess);
+    oarray->SetNumberOfTuples(mesh->OutputNumberOfLocalPoints);
     mesh->OutputArrayPointers.push_back(oarray->GetVoidPointer(0));
   }
-  std::vector<bool> alive(mesh->TotalPointsThisProcess, true);
+  std::vector<bool> alive(mesh->OutputNumberOfLocalPoints, true);
   for (vtkIdType i=0; i<num_export; i++) {
     alive[export_local_ids[i]] = false;    
   }
-  vtkIdType id = 0;
   mesh->OutPointCount = 0;
-  for (vtkIdType i=0; i<mesh->TotalPointsThisProcess; i++) {
+  for (vtkIdType i=0; i<mesh->OutputNumberOfLocalPoints; i++) {
     if (alive[i]) {
-      outPD->CopyData(inPD, id, mesh->OutPointCount);
-      memcpy(&mesh->OutputPointData[mesh->OutPointCount*3], &mesh->InputPointData[id*3], sizeof(float)*3);
+      outPD->CopyData(inPD, i, mesh->OutPointCount);
+      memcpy(&mesh->OutputPointData[mesh->OutPointCount*3], &mesh->InputPointData[i*3], sizeof(float)*3);
       mesh->OutPointCount++;
-      id++;
     }
   }
 }
@@ -315,14 +313,17 @@ int vtkParticlePartitionFilter::FillOutputPortInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
-void vtkParticlePartitionFilter::FindOverlappingPoints(
-  std::vector<vtkBoundingBox> &BoxList, vtkPoints *pts, ListOfVectors &ids)
+void vtkParticlePartitionFilter::FindOverlappingPoints(vtkPoints *pts, ListOfVectors &ids)
 {
   for (vtkIdType i=0; i<pts->GetNumberOfPoints(); i++) {
+    double *pt = pts->GetPoint(i);
     ListOfVectors::iterator list = ids.begin();
-    for (std::vector<vtkBoundingBox>::iterator it=BoxList.begin(); it!=BoxList.end(); ++it, ++list) {
+    for (std::vector<vtkBoundingBox>::iterator it=this->BoxList.begin(); it!=this->BoxList.end(); ++it, ++list) {
       vtkBoundingBox &b = *it;
-      if (&b!=this->LocalBox && b.ContainsPoint(pts->GetPoint(i))) {
+      if (
+        &b!=this->LocalBox && 
+        b.ContainsPoint(pt[0], pt[1], pt[2])) 
+      {
         list->push_back(i);
       }
     }
@@ -417,7 +418,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   mesh.Input           = input;
   mesh.Output          = output;
   mesh.myGlobalIDs     = IdArray->GetPointer(0);
-  mesh.numMyPoints     = numPoints;
+  mesh.InputNumberOfLocalPoints     = numPoints;
   mesh.InputPointData  = inPoints->GetPointer(0);
   mesh.OutputPoints    = output->GetPoints();
   mesh.TotalSizePerId  = 0;
@@ -528,7 +529,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //
   // For ghost cells we would like the bounding boxes of each partition
   //
-  std::vector<vtkBoundingBox> BoxList;
+  this->BoxList.clear();
   for (int p=0; p<this->UpdateNumPieces; p++) {
     double bounds[6];
     int ndim;
@@ -540,28 +541,30 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
       if (bounds[4]==-DBL_MAX) { bounds[4] = bmin[2]; }
       if (bounds[5]== DBL_MAX) { bounds[5] = bmax[2]; }
       vtkBoundingBox box(bounds);
-      box.Inflate(this->GhostCellOverlap+75.0);
+      box.Inflate(this->GhostCellOverlap + 100.0);
       BoxList.push_back(box);
     }
   }
-  this->LocalBox = &BoxList[this->UpdatePiece];
+  this->LocalBox = &this->BoxList[this->UpdatePiece];
   ListOfVectors GhostIds(this->UpdateNumPieces);
-  this->FindOverlappingPoints(BoxList, output->GetPoints(), GhostIds);
+  this->FindOverlappingPoints(output->GetPoints(), GhostIds);
 
   // Ghost information
   vtkSmartPointer<vtkIdTypeArray> ghostPartition = vtkSmartPointer<vtkIdTypeArray>::New();
   ghostPartition->SetName("ghostPartition");
   ghostPartition->SetNumberOfComponents(1);
   ghostPartition->SetNumberOfTuples(mesh.OutPointCount);
+  output->GetPointData()->AddArray(ghostPartition);
+  
+  std::vector<vtkIdType> &list = GhostIds[1];
   vtkIdType val = 0;
   for (vtkIdType i=0; i<mesh.OutPointCount; i++) {
     ghostPartition->SetValue(i, val);
   }
-  val = 3;
-  for (vtkIdType i=0; i<GhostIds[3].size(); i++) {
-    ghostPartition->SetValue(GhostIds[3][i], val);
+  val = 2;
+  for (vtkIdType i=0; i<list.size(); i++) {
+    ghostPartition->SetValue(list[i], val);
   }
-  output->GetPointData()->AddArray(ghostPartition);
 
   std::cout << "Process " << this->UpdatePiece << " Points Output : " << mesh.OutPointCount << std::endl;
   for (int i=0; i<mesh.NumberOfFields; i++) {
