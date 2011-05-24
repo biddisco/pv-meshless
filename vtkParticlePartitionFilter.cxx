@@ -46,7 +46,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <float.h>
-#include "zoltan.h"
+#include <numeric>
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkParticlePartitionFilter);
 vtkCxxSetObjectMacro(vtkParticlePartitionFilter, Controller, vtkMultiProcessController);
@@ -61,7 +61,8 @@ typedef struct{
   vtkPointSet        *Output;
   vtkIdType           InputNumberOfLocalPoints;
   vtkIdType           OutputNumberOfLocalPoints;
-  vtkIdType          *myGlobalIDs;
+  vtkIdType           OutputNumberOfPointsFinal;
+  vtkIdType          *InputGlobalIds;
   float              *InputPointData; 
   float              *OutputPointData; 
   vtkPoints          *OutputPoints; 
@@ -71,7 +72,7 @@ typedef struct{
   std::vector<int>    ArrayTypeSizes;
   int                 TotalSizePerId;
   vtkIdType           OutPointCount;
-} MESH_DATA;
+} PartitionVariables;
 
 //----------------------------------------------------------------------------
 // Zoltan : Application defined query functions (prototypes)
@@ -88,7 +89,7 @@ static void get_geometry_list(void *data, int sizeGID, int sizeLID, int num_obj,
 //----------------------------------------------------------------------------
 static int get_number_of_objects(void *data, int *ierr)
 {
-  MESH_DATA *mesh= (MESH_DATA *)data;
+  PartitionVariables *mesh= (PartitionVariables *)data;
   *ierr = ZOLTAN_OK;
   return mesh->InputNumberOfLocalPoints;
 }
@@ -97,7 +98,7 @@ static void get_object_list(void *data, int sizeGID, int sizeLID,
             ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
                   int wgt_dim, float *obj_wgts, int *ierr)
 {
-  MESH_DATA *mesh = (MESH_DATA*)data;
+  PartitionVariables *mesh = (PartitionVariables*)data;
   *ierr = ZOLTAN_OK;
 
   //
@@ -105,7 +106,7 @@ static void get_object_list(void *data, int sizeGID, int sizeLID,
   // Zoltan will assume equally weighted objects.
   //
   for (int i=0; i<mesh->InputNumberOfLocalPoints; i++){
-    globalID[i] = mesh->myGlobalIDs[i];
+    globalID[i] = mesh->InputGlobalIds[i];
     localID[i] = i;
   }
 }
@@ -126,7 +127,7 @@ static void get_geometry_list(
     return;
   }
 
-  MESH_DATA *mesh = (MESH_DATA*)data;
+  PartitionVariables *mesh = (PartitionVariables*)data;
   for (int i=0;  i < num_obj ; i++){
     geom_vec[3*i]   = (double)mesh->InputPointData[3*i];
     geom_vec[3*i+1] = (double)mesh->InputPointData[3*i+1];
@@ -162,7 +163,7 @@ int zoltan_obj_size_func(void *data, int num_gid_entries, int num_lid_entries,
     *ierr = ZOLTAN_FATAL;
     return 0;
   }
-  MESH_DATA *mesh = (MESH_DATA*)data;
+  PartitionVariables *mesh = (PartitionVariables*)data;
   vtkIdType GID = *global_id;
   vtkIdType LID = *local_id;
   //
@@ -177,7 +178,7 @@ void zoltan_pack_obj_func(void *data, int num_gid_entries, int num_lid_entries,
     *ierr = ZOLTAN_FATAL;
     return;
   }
-  MESH_DATA *mesh = (MESH_DATA*)data;
+  PartitionVariables *mesh = (PartitionVariables*)data;
   vtkIdType GID = *global_id;
   vtkIdType LID = *local_id;
   //
@@ -199,7 +200,7 @@ void zoltan_unpack_obj_func(void *data, int num_gid_entries,
     *ierr = ZOLTAN_FATAL;
     return;
   }
-  MESH_DATA *mesh = (MESH_DATA*)data;
+  PartitionVariables *mesh = (PartitionVariables*)data;
   vtkIdType GID = *global_id;
   //
   vtkPointData *inPD  = mesh->Input->GetPointData();
@@ -238,7 +239,7 @@ void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entr
   int *import_procs, int *import_to_part, int num_export, ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids, int *export_procs, int *export_to_part, int *ierr)
 {
-  MESH_DATA *mesh = (MESH_DATA*)data;
+  PartitionVariables *mesh = (PartitionVariables*)data;
   // newTotal = original points - sent away + received
   mesh->OutputNumberOfLocalPoints = mesh->InputNumberOfLocalPoints - num_export + num_import;
   mesh->OutputPoints->SetNumberOfPoints(mesh->OutputNumberOfLocalPoints);
@@ -263,6 +264,36 @@ void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entr
       memcpy(&mesh->OutputPointData[mesh->OutPointCount*3], &mesh->InputPointData[i*3], sizeof(float)*3);
       mesh->OutPointCount++;
     }
+  }
+}
+//----------------------------------------------------------------------------
+void zolta_pre_ghost_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entries,
+  int num_import, ZOLTAN_ID_PTR import_global_ids, ZOLTAN_ID_PTR import_local_ids,
+  int *import_procs, int *import_to_part, int num_export, ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids, int *export_procs, int *export_to_part, int *ierr)
+{
+  PartitionVariables *mesh = (PartitionVariables*)data;
+  // resize points to accept ghost cell additions
+  mesh->OutputNumberOfPointsFinal = mesh->OutputNumberOfLocalPoints + num_import;
+  mesh->OutputPoints->GetData()->Resize(mesh->OutputNumberOfPointsFinal);
+  mesh->OutputPoints->SetNumberOfPoints(mesh->OutputNumberOfPointsFinal);
+  mesh->OutputPointData = (float*)(mesh->OutputPoints->GetData()->GetVoidPointer(0));
+  // copies are now being made from existing data, so use output as new input points
+  mesh->InputPointData = mesh->OutputPointData;
+  vtkPointData *inPD  = mesh->Output->GetPointData();
+  vtkPointData *outPD = mesh->Output->GetPointData();
+  //
+  // we must resize all the scalar/vector fields for the point data
+  // and we set the input pointer to the output ones so that copies use the correct
+  // scalar values from their new positions
+  mesh->InputArrayPointers.clear();
+  mesh->OutputArrayPointers.clear();
+  for (int i=0; i<mesh->NumberOfFields; i++) {
+    vtkDataArray *oarray = mesh->Output->GetPointData()->GetArray(i);
+    oarray->Resize(mesh->OutputNumberOfPointsFinal);
+    oarray->SetNumberOfTuples(mesh->OutputNumberOfPointsFinal);
+    mesh->InputArrayPointers.push_back(oarray->GetVoidPointer(0));
+    mesh->OutputArrayPointers.push_back(oarray->GetVoidPointer(0));
   }
 }
 //----------------------------------------------------------------------------
@@ -322,18 +353,29 @@ vtkBoundingBox *vtkParticlePartitionFilter::GetPartitionBoundingBox(int partitio
   return NULL;
 }
 //----------------------------------------------------------------------------
-void vtkParticlePartitionFilter::FindOverlappingPoints(vtkPoints *pts, ListOfVectors &ids)
+vtkBoundingBox *vtkParticlePartitionFilter::GetPartitionBoundingBoxWithGhostRegion(int partition)
+{
+  if (partition<this->BoxList.size()) {
+    return &this->BoxList[partition];
+  }
+  vtkErrorMacro(<<"Partition not found in Bounding Box list");
+  return NULL;
+}
+//----------------------------------------------------------------------------
+void vtkParticlePartitionFilter::FindOverlappingPoints(vtkPoints *pts, vtkIdTypeArray *IdArray, GhostPartition &ghostinfo)
 {
   for (vtkIdType i=0; i<pts->GetNumberOfPoints(); i++) {
     double *pt = pts->GetPoint(i);
-    ListOfVectors::iterator list = ids.begin();
-    for (std::vector<vtkBoundingBox>::iterator it=this->BoxList.begin(); it!=this->BoxList.end(); ++it, ++list) {
+    int proc = 0;
+    for (std::vector<vtkBoundingBox>::iterator it=this->BoxListWithGhostRegion.begin(); 
+      it!=this->BoxListWithGhostRegion.end(); ++it, ++proc) 
+    {
       vtkBoundingBox &b = *it;
-      if (
-        &b!=this->LocalBox && 
-        b.ContainsPoint(pt[0], pt[1], pt[2])) 
-      {
-        list->push_back(i);
+      if (&b!=this->LocalBox && b.ContainsPoint(pt[0], pt[1], pt[2])) {
+        ghostinfo.GlobalIds.push_back(IdArray->GetValue(i));
+        ghostinfo.LocalIds.push_back(i);
+        ghostinfo.Procs.push_back(proc);
+//        ghostinfo.Parts.push_back(proc);
       }
     }
   }
@@ -415,7 +457,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids; 
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
-  MESH_DATA mesh;
+  PartitionVariables mesh;
 
   float ver;
   int rc = Zoltan_Initialize(0, NULL, &ver);
@@ -426,7 +468,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
 
   mesh.Input           = input;
   mesh.Output          = output;
-  mesh.myGlobalIDs     = IdArray->GetPointer(0);
+  mesh.InputGlobalIds     = IdArray->GetPointer(0);
   mesh.InputNumberOfLocalPoints     = numPoints;
   mesh.InputPointData  = inPoints->GetPointer(0);
   mesh.OutputPoints    = output->GetPoints();
@@ -538,6 +580,11 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     exit(0);
   }
 
+  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
+                      &importProcs, &importToPart);
+  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
+                      &exportProcs, &exportToPart);
+
   //
   // For ghost cells we would like the bounding boxes of each partition
   //
@@ -553,29 +600,87 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
       if (bounds[4]==-DBL_MAX) { bounds[4] = bmin[2]; }
       if (bounds[5]== DBL_MAX) { bounds[5] = bmax[2]; }
       vtkBoundingBox box(bounds);
+      this->BoxList.push_back(box);
+      // we add a ghost cell region to our boxes
       box.Inflate(this->GhostCellOverlap);
-      BoxList.push_back(box);
+      this->BoxListWithGhostRegion.push_back(box);
     }
   }
-  this->LocalBox = &this->BoxList[this->UpdatePiece];
-  ListOfVectors GhostIds(this->UpdateNumPieces);
-  this->FindOverlappingPoints(output->GetPoints(), GhostIds);
+  this->LocalBox = &this->BoxListWithGhostRegion[this->UpdatePiece];
 
+  //
+  // Find points which overlap other processes' ghost regions
+  //
+  GhostPartition GhostIds;
+  this->FindOverlappingPoints(output->GetPoints(), IdArray, GhostIds);
+
+  //
+  // Pass the lists of ghost cells to zoltan so that it
+  // can build a list of lists for exchanges between processes
+  //
+  size_t        num_known = GhostIds.GlobalIds.size(); 
+  int           num_found;
+  ZOLTAN_ID_PTR found_global_ids;
+  ZOLTAN_ID_PTR found_local_ids;
+  int          *found_procs;
+  int          *found_to_part;
+
+  rc = Zoltan_Invert_Lists(zz, 
+        num_known,
+        &GhostIds.GlobalIds[0],
+        &GhostIds.LocalIds[0],
+        &GhostIds.Procs[0],
+        &GhostIds.Parts[0],
+        &num_found,
+        &found_global_ids,
+        &found_local_ids,
+        &found_procs,
+        &found_to_part); 
+
+  if (rc != ZOLTAN_OK){
+    printf("Zoltan_LB_Partition NOT OK...\n");
+    MPI_Finalize();
+    Zoltan_Destroy(&zz);
+    exit(0);
+  }
+
+  //
+  // Before sending, we need to change the pre-migrate function as we are now adding
+  // extra ghost cells and not starting our lists from a clean slate.
+  //
+  Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_ghost_migrate_pp_func, &mesh); 
+
+  //
+  // Now we can actually send ghost particles between processes
+  //
+	rc = Zoltan_Migrate (zz,
+        num_found,
+        found_global_ids,
+        found_local_ids,
+        found_procs,
+        found_to_part,
+        num_known,
+        &GhostIds.GlobalIds[0],
+        &GhostIds.LocalIds[0],
+        &GhostIds.Procs[0],
+        &GhostIds.Parts[0]);
+
+  //
   // Ghost information
+  //
   vtkSmartPointer<vtkIdTypeArray> ghostPartition = vtkSmartPointer<vtkIdTypeArray>::New();
   ghostPartition->SetName("ghostPartition");
   ghostPartition->SetNumberOfComponents(1);
   ghostPartition->SetNumberOfTuples(mesh.OutPointCount);
   output->GetPointData()->AddArray(ghostPartition);
   
-  std::vector<vtkIdType> &list = GhostIds[1];
   vtkIdType val = 0;
   for (vtkIdType i=0; i<mesh.OutPointCount; i++) {
     ghostPartition->SetValue(i, val);
   }
   val = 2;
-  for (vtkIdType i=0; i<list.size(); i++) {
-    ghostPartition->SetValue(list[i], val);
+  for (vtkIdType i=0; i<GhostIds.GlobalIds.size(); i++) {
+    ghostPartition->SetValue(GhostIds.LocalIds[i], val);
   }
 
   std::cout << "Process " << this->UpdatePiece << " Points Output : " << mesh.OutPointCount << std::endl;
@@ -598,10 +703,6 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //*****************************************************************
   //
 
-  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
-                      &importProcs, &importToPart);
-  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
-                      &exportProcs, &exportToPart);
 
   Zoltan_Destroy(&zz);
 

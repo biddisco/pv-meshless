@@ -60,11 +60,6 @@
 #include <math.h>
 #include "zoltan.h"
 
-#define NUM_GLOBAL_PARTITIONS 16
-
-//----------------------------------------------------------------------------
-#define ROWS 50
-#define POINTS_PER_PROCESS ROWS*ROWS*ROWS
 //----------------------------------------------------------------------------
 std::string usage = "\n"\
 "\t-D path to use for temp h5part file \n" \
@@ -129,7 +124,6 @@ struct ParallelRMIArgs_tmp
   vtkMultiProcessController* Controller;
 };
 //----------------------------------------------------------------------------
-// call back to set the iso surface value.
 void SetStuffRMI(void *localArg, void* vtkNotUsed(remoteArg), 
                     int vtkNotUsed(remoteArgLen), int vtkNotUsed(id))
 { 
@@ -163,10 +157,10 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
 {
   // Obtain the id of the running process and the total
   // number of processes
-  vtkTypeInt64 myId = controller->GetLocalProcessId();
+  vtkTypeInt64 myRank = controller->GetLocalProcessId();
   vtkTypeInt64 numProcs = controller->GetNumberOfProcesses();
 
-  if (myId==0) {
+  if (myRank==0) {
     std::cout << usage.c_str() << std::endl;
   }
   controller->Barrier();
@@ -183,12 +177,11 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   char *filename = vtkTestUtilities::GetArgOrEnvOrDefault(
     "-F", args->argc, args->argv, "DUMMY_ENV_VAR", "temp.h5");
   char* fullname = vtkTestUtilities::ExpandDataFileName(args->argc, args->argv, filename);
-  if (myId==0) {
-    std::cout << "Process Id : " << myId << " FileName : " << fullname << std::endl;
+  if (myRank==0) {
+    std::cout << "Process Id : " << myRank << " FileName : " << fullname << std::endl;
   }
 
-  vtkTypeInt64 numPoints = POINTS_PER_PROCESS;
-  double       rows      = ROWS;
+  vtkTypeInt64 numPoints = 100;
 
   char *number = vtkTestUtilities::GetArgOrEnvOrDefault(
     "-N", args->argc, args->argv, "DUMMY_ENV_VAR", "");
@@ -196,10 +189,8 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     vtkstd::stringstream temp;
     temp << number;
     temp >> numPoints;
-    rows = floor(pow(numPoints,1.0/3.0)+0.5);
-    numPoints = static_cast<vtkTypeInt64>(pow(rows,3));
-    if (myId<2) {
-      std::cout << "Process Id : " << myId << " Requested Particles : " << numPoints << std::endl;
+    if (myRank<2) {
+      std::cout << "Process Id : " << myRank << " Requested Particles : " << numPoints << std::endl;
     }
   }
 
@@ -209,21 +200,14 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   vtkSmartPointer<vtkPolyData>  Sprites = vtkSmartPointer<vtkPolyData>::New();
   vtkSmartPointer<vtkPoints>     points = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray>   verts = vtkSmartPointer<vtkCellArray>::New();
-  vtkSmartPointer<vtkDoubleArray> sizes = vtkSmartPointer<vtkDoubleArray>::New();
   vtkSmartPointer<vtkIdTypeArray>   Ids = vtkSmartPointer<vtkIdTypeArray>::New();
   vtkSmartPointer<vtkIntArray>    Ranks = vtkSmartPointer<vtkIntArray>::New();
-  vtkSmartPointer<vtkIntArray>    Parts = vtkSmartPointer<vtkIntArray>::New();
   //
   points->SetNumberOfPoints(numPoints);
   //
   verts->Allocate(numPoints,numPoints);
   Sprites->SetPoints(points);
   Sprites->SetVerts(verts);
-  //
-  sizes->SetNumberOfTuples(numPoints);
-  sizes->SetNumberOfComponents(1);
-  sizes->SetName("PointSizes");
-  Sprites->GetPointData()->AddArray(sizes);
   //
   Ids->SetNumberOfTuples(numPoints);
   Ids->SetNumberOfComponents(1);
@@ -235,60 +219,36 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   Ranks->SetName("Rank");
   Sprites->GetPointData()->AddArray(Ranks);  
   //
-  Parts->SetNumberOfTuples(numPoints);
-  Parts->SetNumberOfComponents(1);
-  Parts->SetName("Partition");
-  Sprites->GetPointData()->AddArray(Parts);  
-  //
   //--------------------------------------------------------------
   // Create default scalar arrays
   //--------------------------------------------------------------
   double radius  = 500.0;
-  double spacing = radius*2.0;
-  double offset  = myId*spacing*rows;
   const double a = 0.9;
-  for (vtkTypeInt64 z=0; z<rows; z++) {
-    for (vtkTypeInt64 y=0; y<rows; y++) {
-      for (vtkTypeInt64 x=0; x<rows; x++) {
-        vtkIdType Id = static_cast<vtkIdType>(z*rows*rows + y*rows + x);
-        #ifdef WIN32
-         double X = 2.0*radius*(double(rand())/RAND_MAX-0.5);
-         double Y = 2.0*radius*(double(rand())/RAND_MAX-0.5);
-         double Z = 2.0*radius*(double(rand())/RAND_MAX-0.5);
-        #else
-         double X = drand48();
-         double Y = drand48();
-         double Z = drand48();
-        #endif
-        points->SetPoint(Id, X, Y, Z);
-        sizes->SetValue(Id, radius);
-        Ids->SetTuple1(Id, Id + myId*numPoints);
-        Ranks->SetTuple1(Id, myId);
-        Parts->SetTuple1(Id, myId);
-        verts->InsertNextCell(1,&Id);
-      }
-    }
+  SpherePoints(numPoints, radius*(1.5+myRank)/(numProcs+0.5), vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0));
+  for (vtkIdType Id=0; Id<numPoints; Id++) {
+    Ids->SetTuple1(Id, Id + myRank*numPoints);
+    Ranks->SetTuple1(Id, myRank);
+    verts->InsertNextCell(1,&Id);
   }
-  SpherePoints(numPoints, radius*(1.5+myId)/(numProcs+0.5), vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0));
 
   //--------------------------------------------------------------
   // Make up some max kernel size for testing
   //--------------------------------------------------------------
-  double KernelMaximum  = radius*0.01;
+  double KernelMaximum  = radius*0.1;
 
   //--------------------------------------------------------------
   // Add colour by elevation
   //--------------------------------------------------------------
   vtkSmartPointer<vtkElevationFilter> elev = vtkSmartPointer<vtkElevationFilter>::New();
   elev->SetInput(Sprites);
-  elev->SetLowPoint(offset, 0.0, 0.0);
-  elev->SetHighPoint(offset+rows*spacing, 0.0, 0.0);
+  elev->SetLowPoint(-radius, -radius, -radius);
+  elev->SetHighPoint(radius,  radius,  radius);
   elev->Update();
 
   bool collective = false;
   if (test->IsFlagSpecified("-C")) {
-    if (myId==0) {
-     std::cout << "Process Id : " << myId << " Collective IO requested" << std::endl;
+    if (myRank==0) {
+     std::cout << "Process Id : " << myRank << " Collective IO requested" << std::endl;
     }
    collective = true;
   }
@@ -296,7 +256,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   vtkSmartPointer<vtkParticlePartitionFilter> partitioner = vtkSmartPointer<vtkParticlePartitionFilter>::New();
   partitioner->SetInputConnection(elev->GetOutputPort());
   partitioner->SetIdChannelArray("PointIds");
-  partitioner->SetGhostCellOverlap(radius/50.0);
+  partitioner->SetGhostCellOverlap(KernelMaximum);
   partitioner->Update();
 
   vtkSmartPointer<vtkProcessIdScalars> processId = vtkSmartPointer<vtkProcessIdScalars>::New();
@@ -329,14 +289,14 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   }
   
   controller->Barrier();
-  if (myId==0) {
-    std::cout << "Process Id : " << myId << " Generated N Points : " << numPoints << std::endl;
+  if (myRank==0) {
+    std::cout << "Process Id : " << myRank << " Generated N Points : " << numPoints << std::endl;
   }
   //
   vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
   timer->StartTimer();
 
-  //if (numProcs>1 && myId==0) {
+  //if (numProcs>1 && myRank==0) {
   //  char ch;  
   //  std::cin >> ch;
   //}
@@ -359,13 +319,13 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   double bytes = numPoints*(sizeof(int) + sizeof(double) + sizeof(float) + 3*sizeof(float));
   double MBytes = bytes/(1024*1024);
   double elapsed = timer->GetElapsedTime();
-  std::cout << "Process Id : " << myId << " File Written in " << elapsed << " seconds" << std::endl;
-  std::cout << "Process Id : " << myId << " IO-Speed " << MBytes/timer->GetElapsedTime() << " MB/s" << std::endl;
+  std::cout << "Process Id : " << myRank << " File Written in " << elapsed << " seconds" << std::endl;
+  std::cout << "Process Id : " << myRank << " IO-Speed " << MBytes/timer->GetElapsedTime() << " MB/s" << std::endl;
   //
   //--------------------------------------------------------------
   // processes 1-N doing nothing for now
   //--------------------------------------------------------------
-  if (myId != 0)
+  if (myRank != 0)
     {
     // If I am not the root process
     ParallelRMIArgs_tmp args2;
@@ -383,7 +343,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     {
     std::cout << std::endl;
     std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * " << std::endl;
-    std::cout << "Process Id : " << myId << " Expected " << static_cast<vtkTypeInt64>(numPoints*numProcs) << std::endl;
+    std::cout << "Process Id : " << myRank << " Expected " << static_cast<vtkTypeInt64>(numPoints*numProcs) << std::endl;
 
     // Read the file we just wrote on N processes
     vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
@@ -392,48 +352,12 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     reader->SetFileName(fullname);
     reader->Update();
     vtkTypeInt64 ReadPoints = reader->GetOutput()->GetNumberOfPoints();
-    std::cout << "Process Id : " << myId << " Read : " << ReadPoints << std::endl;
+    std::cout << "Process Id : " << myRank << " Read : " << ReadPoints << std::endl;
     std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * " << std::endl;
-    //
-    // Validate the point Ids to make sure nothing went wrong in the writing
-    //
-    vtkIntArray *pointIds = vtkIntArray::SafeDownCast(reader->GetOutput()->GetPointData()->GetArray("PointIds"));
-    bool IdsGood = true;
-    vtkTypeInt64 valid = 0;
-    for (vtkTypeInt64 i=0; IdsGood && pointIds && i<ReadPoints; i++) {
-      if (pointIds->GetValue(i)==i) {
-        valid++;
-      }
-      else {
-        IdsGood = false;
-      }
-    }
-    if (IdsGood && ReadPoints==numPoints*numProcs) {
-      *(args->retVal) = 0;
-      std::cout << " " << std::endl;
-      std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * "   << std::endl;
-      std::cout << " All Points read back and Validated OK "               << std::endl;
-      std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * \n" << std::endl;
-      //
-      if (myId==0) {
-        unsigned long size = vtksys::SystemTools::FileLength(fullname);
-        double filesize = size/(1024.0*1024.0);
-        std::cout << "Process Id : " << myId << " Total IO/Disk-Speed " << filesize/elapsed << " MB/s" << std::endl;
-      }
-    }
-    else {
-      *(args->retVal) = 1;
-      std::cout << " " << std::endl;
-      std::cout << " # # # # # # # # # # # # # # # # # # # # # # # # # " << std::endl;
-      std::cout << " FAIL "                                              << std::endl;
-      std::cout << " Valid Ids "                                << valid << std::endl;
-      std::cout << " # # # # # # # # # # # # # # # # # # # # # # # # # " << std::endl;
-      std::cout << " " << std::endl;
-    }
 
     bool doRender = false;
     if (test->IsFlagSpecified("-R")) {
-     std::cout << "Process Id : " << myId << " Rendering" << std::endl;
+     std::cout << "Process Id : " << myRank << " Rendering" << std::endl;
      doRender = true;
     }
 
@@ -442,7 +366,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       vtkSmartPointer<vtkMaskPoints> verts = vtkSmartPointer<vtkMaskPoints>::New();
       verts->SetGenerateVertices(1);
       verts->SetOnRatio(1);
-      verts->SetMaximumNumberOfPoints(numPoints*numProcs);
+      verts->SetMaximumNumberOfPoints(2*numPoints*numProcs);
       verts->SetInputConnection(reader->GetOutputPort());
       verts->Update();
 
@@ -450,7 +374,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       vtkSmartPointer<vtkPolyData> polys = vtkSmartPointer<vtkPolyData>::New();
       polys->ShallowCopy(verts->GetOutput());
       polys->GetPointData()->SetScalars(polys->GetPointData()->GetArray("ProcessId"));
-      std::cout << "Process Id : " << myId << " Created vertices : " << polys->GetNumberOfPoints() << std::endl;
+      std::cout << "Process Id : " << myRank << " Created vertices : " << polys->GetNumberOfPoints() << std::endl;
       //
       vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
       vtkSmartPointer<vtkActor>                 actor = vtkSmartPointer<vtkActor>::New();
@@ -497,7 +421,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
         ren->AddActor(actor);
       }
 
-      std::cout << "Process Id : " << myId << " About to Render" << std::endl;
+      std::cout << "Process Id : " << myRank << " About to Render" << std::endl;
       renWindow->Render();
 
       *(args->retVal) = 
@@ -507,7 +431,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
         {
         iren->Start();
         }
-      std::cout << "Process Id : " << myId << " Rendered" << std::endl;
+      std::cout << "Process Id : " << myRank << " Rendered" << std::endl;
     }
 
     // Tell the other processors to stop processing RMIs.
@@ -519,8 +443,8 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
 
 //  writer = NULL;
 
-  if (myId==0 && test->IsFlagSpecified("-X")) {
-   std::cout << "Process Id : " << myId << " About to Delete file" << std::endl;
+  if (myRank==0 && test->IsFlagSpecified("-X")) {
+   std::cout << "Process Id : " << myRank << " About to Delete file" << std::endl;
    vtksys::SystemTools::RemoveFile(fullname);
   }
   delete []fullname;
