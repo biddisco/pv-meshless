@@ -225,6 +225,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractDataOverTime.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml
     ${HDF5_XML}
     
     ${TIPSY_XML}
