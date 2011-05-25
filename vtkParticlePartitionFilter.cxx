@@ -466,15 +466,15 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     return 0;
   }
 
-  mesh.Input           = input;
-  mesh.Output          = output;
-  mesh.InputGlobalIds     = IdArray->GetPointer(0);
-  mesh.InputNumberOfLocalPoints     = numPoints;
-  mesh.InputPointData  = inPoints->GetPointer(0);
-  mesh.OutputPoints    = output->GetPoints();
-  mesh.TotalSizePerId  = 0;
-  mesh.OutPointCount   = 0;
-  mesh.NumberOfFields  = input->GetPointData()->GetNumberOfArrays();
+  mesh.Input                    = input;
+  mesh.Output                   = output;
+  mesh.InputGlobalIds           = IdArray->GetPointer(0);
+  mesh.InputNumberOfLocalPoints = numPoints;
+  mesh.InputPointData           = inPoints->GetPointer(0);
+  mesh.OutputPoints             = output->GetPoints();
+  mesh.TotalSizePerId           = 0;
+  mesh.OutPointCount            = 0;
+  mesh.NumberOfFields           = input->GetPointData()->GetNumberOfArrays();
   for (int i=0; i<mesh.NumberOfFields; i++) {
     vtkDataArray *darray = input->GetPointData()->GetArray(i);
     mesh.InputArrayPointers.push_back(darray->GetVoidPointer(0));
@@ -518,9 +518,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
 
   // RCB parameters
-
-//  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
-
+  //  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
   Zoltan_Set_Param(zz, "RCB_RECOMPUTE_BOX", "1");
   Zoltan_Set_Param(zz, "REDUCE_DIMENSIONS", "0");
   Zoltan_Set_Param(zz, "RCB_MAX_ASPECT_RATIO", "10");
@@ -666,29 +664,44 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
         &GhostIds.Procs[0]);
 
   //
-  // Ghost information
+  // Ghost information : Paraview doesn't let us visualize an array called vtkGhostLevels
+  // because it's an 'internal' array, so we make an extra one for debug purposes
   //
-  vtkSmartPointer<vtkIdTypeArray> ghostPartition = vtkSmartPointer<vtkIdTypeArray>::New();
-  ghostPartition->SetName("ghostPartition");
-  ghostPartition->SetNumberOfComponents(1);
-  ghostPartition->SetNumberOfTuples(mesh.OutPointCount);
-  output->GetPointData()->AddArray(ghostPartition);
+  vtkSmartPointer<vtkUnsignedCharArray> GhostArray = vtkSmartPointer<vtkUnsignedCharArray>::New();
+  vtkSmartPointer<vtkIntArray> GhostArray2 = vtkSmartPointer<vtkIntArray>::New();
+  GhostArray->SetName("vtkGhostLevels");
+  GhostArray->SetNumberOfComponents(1);
+  GhostArray->SetNumberOfTuples(mesh.OutputNumberOfLocalPoints + num_found);
+  GhostArray2->SetName("GhostLevels");
+  GhostArray2->SetNumberOfComponents(1);
+  GhostArray2->SetNumberOfTuples(mesh.OutputNumberOfLocalPoints + num_found);
+  unsigned char *ghost = GhostArray->GetPointer(0);
+  int          *ghost2 = GhostArray2->GetPointer(0);
+  for (vtkIdType i=0; i<mesh.OutputNumberOfLocalPoints + num_found; i++) {
+    if (i<mesh.OutputNumberOfLocalPoints) {
+      ghost[i]  = 0;
+      ghost2[i] = 0;
+    }
+    else {
+      ghost[i]  = 1;
+      ghost2[i] = 1;
+    }
+  }
+  output->GetPointData()->AddArray(GhostArray);
+  output->GetPointData()->AddArray(GhostArray2);
   
-  vtkIdType val = 0;
-  for (vtkIdType i=0; i<mesh.OutPointCount; i++) {
-    ghostPartition->SetValue(i, val);
-  }
-  val = 2;
-  for (vtkIdType i=0; i<GhostIds.GlobalIds.size(); i++) {
-    ghostPartition->SetValue(GhostIds.LocalIds[i], val);
-  }
-
+  //
+  //
+  //
   std::cout << "Process " << this->UpdatePiece << " Points Output : " << mesh.OutPointCount << std::endl;
   for (int i=0; i<mesh.NumberOfFields; i++) {
     vtkDataArray *darray = output->GetPointData()->GetArray(i);
     std::cout << "Process " << this->UpdatePiece << " Array Output : " << darray->GetNumberOfTuples() << std::endl;
   }
 
+  //
+  // Create Vertices for each point
+  //
   vtkIdType *arraydata = vertices->WritePointer(mesh.OutPointCount, 2*mesh.OutPointCount);
   for (int i=0; i<mesh.OutPointCount; i++) {
     arraydata[i*2]   = 1;
@@ -702,7 +715,6 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // the storage allocated for the Zoltan structure.
   //*****************************************************************
   //
-
 
   Zoltan_Destroy(&zz);
 
