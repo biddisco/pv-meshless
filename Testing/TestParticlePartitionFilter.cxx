@@ -390,16 +390,16 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       actor->GetProperty()->SetPointSize(2);
       ren->AddActor(actor);
       renWindow->AddRenderer(ren);
-//
+      //
       vtkSmartPointer<vtkPolyData> polys2 = vtkSmartPointer<vtkPolyData>::New();
       polys2->ShallowCopy(verts->GetOutput());
-      polys2->GetPointData()->SetScalars(polys->GetPointData()->GetArray("Rank"));
-      polys2->GetPointData()->SetScalars(polys->GetPointData()->GetArray("ghostPartition"));
-      
+      polys2->GetPointData()->SetScalars(polys->GetPointData()->GetArray("GhostLevels"));
+      //
       vtkSmartPointer<vtkPolyDataMapper>       mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
       vtkSmartPointer<vtkActor>                 actor2 = vtkSmartPointer<vtkActor>::New();
       mapper2->SetInput(polys2);
-      mapper2->SetScalarRange(0,numProcs-1);
+      mapper2->SetScalarRange(0,1);
+      mapper2->SetScalarModeToUsePointData();
       actor2->SetMapper(mapper2);
       actor2->GetProperty()->SetPointSize(2);
       actor2->SetPosition(2.0*radius, 0.0, 0.0);
