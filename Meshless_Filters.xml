@@ -8,6 +8,7 @@
     <Filter name="ExtractValueFilter" />
     <Filter name="TemporalParticleInterpolator" />
     <Filter name="ParticleBoxTreeRepresentation" />
+    <Filter name="ParticlePartitionFilter" />
     <Filter name="CenterOfMass" />
     <Filter name="MomentsOfInertia" />
     <Filter name="H5PartWriter" />
