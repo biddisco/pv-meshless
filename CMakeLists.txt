@@ -52,6 +52,8 @@ MESSAGE("Trilinos_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS}")
 IF(${Trilinos_FOUND})
   INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
   LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS})
+  SET(TRILINOS_CXX ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx)
+  SET(TRILINOS_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml)
   MESSAGE("Trilinos_LIBRARY_DIRS ${Trilinos_LIBRARY_DIRS}/${CMAKE_CFG_INTDIR}") 
 ENDIF(${Trilinos_FOUND})
 
@@ -225,7 +227,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractDataOverTime.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml
+    ${TRILINOS_XML}
     ${HDF5_XML}
     
     ${TIPSY_XML}
@@ -242,13 +244,13 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTree.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractValueFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.cxx
+    ${TRILINOS_CXX}
     ${HDF5_CXX}
     ${TIPSY_CXX}
   SERVER_SOURCES
