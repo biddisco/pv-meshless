@@ -587,6 +587,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // For ghost cells we would like the bounding boxes of each partition
   //
   this->BoxList.clear();
+  this->BoxListWithGhostRegion.clear();
   for (int p=0; p<this->UpdateNumPieces; p++) {
     double bounds[6];
     int ndim;
