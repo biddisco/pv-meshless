@@ -572,14 +572,18 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
   ShepardArray->SetNumberOfTuples(this->NumOutputPoints);
   //
   vtkSmartPointer<vtkFloatArray> ComputedDensity;
-  float *SmoothedMassData = NULL;
+  float  *SmoothedMassDataF = NULL;
+  double *SmoothedMassDataD = NULL;
   if (this->ComputeDensityFromNeighbourVolume) {
     ComputedDensity = vtkSmartPointer<vtkFloatArray>::New();
     ComputedDensity->SetName("ComputedDensity");
     ComputedDensity->SetNumberOfTuples(this->NumOutputPoints);
     vtkDataArray *SmoothedMass = this->MassScalars ? outPD->GetArray(this->MassScalars) : NULL;
     if (vtkFloatArray::SafeDownCast(SmoothedMass)) {
-      SmoothedMassData = vtkFloatArray::SafeDownCast(SmoothedMass)->GetPointer(0);
+      SmoothedMassDataF = vtkFloatArray::SafeDownCast(SmoothedMass)->GetPointer(0);
+    }
+    if (vtkDoubleArray::SafeDownCast(SmoothedMass)) {
+      SmoothedMassDataD = vtkDoubleArray::SafeDownCast(SmoothedMass)->GetPointer(0);
     }
   }
 
@@ -637,15 +641,16 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
         GradArray->SetValue(ptId, gradmag/this->ScaleCoefficient);
         ShepardArray->SetValue(ptId, this->ScaleCoefficient);
         //
-        if (this->ComputeDensityFromNeighbourVolume && this->MassData) {
+        if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
           double rho;
-          double mass   = SmoothedMassData ? SmoothedMassData[ptId] : 0.0;
+          double mass   = SmoothedMassDataF ? SmoothedMassDataF[ptId] : 
+                         (SmoothedMassDataD ? SmoothedMassDataD[ptId] : 0.0);
           double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
           if (mass>0.0 && volume>0.0) {
             rho = mass/volume;
           }
           else {
-            rho = 1.0;
+            rho = 0.0;
           }
           ComputedDensity->SetValue(ptId, rho);
         }
