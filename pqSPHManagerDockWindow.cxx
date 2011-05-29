@@ -73,11 +73,29 @@ class pqSPHManagerDockWindow::pqUI : public QObject
 public:
   pqUI(pqSPHManagerDockWindow* p) : QObject((QDockWidget*)p)
   {
-    this->SPHpanel         = NULL;
+    this->SPHManagerPanel  = NULL;
     this->SPHInitialized   = 0;
   }
   //
   ~pqUI() {
+  }
+
+  bool SPHReady() {
+    if (!this->ProxyReady()) return 0;
+    //
+    if (!this->SPHInitialized) {
+      this->SPHProxy->UpdateVTKObjects();
+      this->SPHInitialized = 1;
+    }
+    return this->SPHInitialized;
+  }
+
+  bool ProxyReady() {
+    if (!this->ProxyCreated()) {
+      this->CreateProxy();
+      return this->ProxyCreated();
+    }
+    return true;
   }
 
   void CreateProxy() {
@@ -87,9 +105,26 @@ public:
     this->SPHProxy->UpdatePropertyInformation();
   }
 
+  void DeleteProxy() {
+    if (this->ProxyCreated()) {
+      vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+//      pm->UnRegisterProxy("meshless_helpers", "SPHManager",this->SPHProxy);
+      this->SPHProxy = NULL;
+      delete this->SPHManagerPanel;
+      delete this->pqSPHProxy;
+    }
+  }
+
+  void CreatePanel(QScrollArea *ScrollArea) {
+    if (this->SPHReady()) {
+      this->SPHManagerPanel = new pqSPHManagerPanel(this->pqSPHProxy,NULL);
+      ScrollArea->setWidget(this->SPHManagerPanel);
+    }
+  }
+
   //
   bool ProxyCreated() { return this->SPHProxy!=NULL; }
-  pqSPHManagerPanel          *SPHpanel; 
+  pqSPHManagerPanel          *SPHManagerPanel;
   int                         SPHInitialized;
   vtkSmartPointer<vtkSMProxy> SPHProxy;
   pqProxy                    *pqSPHProxy;
@@ -100,27 +135,20 @@ public:
 pqSPHManagerDockWindow::pqSPHManagerDockWindow(QWidget* p) : QDockWidget("SPH Manager", p) 
 {
   this->UI = new pqSPHManagerDockWindow::pqUI(this);
-//  this->UI->setupUi(this);
 
   QWidget *dockWidgetContents = new QWidget();
-  QVBoxLayout* mainLayout = new QVBoxLayout(dockWidgetContents);
-  mainLayout->setMargin(0);
+  this->PanelLayout = new QVBoxLayout(dockWidgetContents);
+  this->PanelLayout->setMargin(0);
 
   //
   // Most of the following code is taken from pqObjectInspector
   //
 
-  QScrollArea*s = new QScrollArea();
-  s->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  s->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  s->setWidgetResizable(true);
-  s->setFrameShape(QFrame::NoFrame);
-
-  if (this->SPHReady()) {
-    this->SPHManagerPanel = new pqSPHManagerPanel(this->UI->pqSPHProxy,NULL);
-    s->setWidget(this->SPHManagerPanel);
-  }
-
+  this->ScrollArea = new QScrollArea();
+  this->ScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  this->ScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  this->ScrollArea->setWidgetResizable(true);
+  this->ScrollArea->setFrameShape(QFrame::NoFrame);
 
   QBoxLayout* buttonlayout = new QHBoxLayout();
   this->AcceptButton = new QPushButton(this);
@@ -138,17 +166,24 @@ pqSPHManagerDockWindow::pqSPHManagerDockWindow(QWidget* p) : QDockWidget("SPH Ma
   this->ResetButton->setShortcut(QKeySequence(Qt::AltModifier + Qt::Key_R));
 #endif
 
+  this->InitButton = new QPushButton(this);
+  this->InitButton->setObjectName("Init");
+  this->InitButton->setText(tr("&Init"));
+
   buttonlayout->addStretch();
+  buttonlayout->addWidget(InitButton);
   buttonlayout->addWidget(this->AcceptButton);
   buttonlayout->addWidget(this->ResetButton);
   buttonlayout->addStretch();
 
-  mainLayout->addLayout(buttonlayout);
-  mainLayout->addWidget(s);
+  this->PanelLayout->addLayout(buttonlayout);
+  this->PanelLayout->addWidget(this->ScrollArea);
 
   this->connect(this->AcceptButton, SIGNAL(clicked()), SLOT(accept()));
   this->connect(this->ResetButton, SIGNAL(clicked()), SLOT(reset()));
-
+  this->connect(this->InitButton, SIGNAL(clicked()), SLOT(init()));
+  
+  this->InitButton->setEnabled(true);
   this->AcceptButton->setEnabled(false);
   this->ResetButton->setEnabled(false);
 
@@ -178,48 +213,57 @@ pqSPHManagerDockWindow::pqSPHManagerDockWindow(QWidget* p) : QDockWidget("SPH Ma
   //
   this->setWidget(dockWidgetContents);
 
-  QObject::connect(this->SPHManagerPanel, SIGNAL(modified()),
-    this, SLOT(updateAcceptState()));
-
-  QObject::connect(this->UI->pqSPHProxy,
-    SIGNAL(modifiedStateChanged(pqServerManagerModelItem*)),
-    this, SLOT(updateAcceptState()));
-
-  this->updateAcceptState();
   //
-  this->SPHManagerPanel->LoadSettings();
+  // Link paraview server events to callbacks
+  //
+  pqServerManagerModel* smModel =
+    pqApplicationCore::instance()->getServerManagerModel();
+
+  this->connect(smModel, SIGNAL(aboutToRemoveServer(pqServer *)),
+    this, SLOT(StartRemovingServer(pqServer *)));
+
+  this->connect(smModel, SIGNAL(serverAdded(pqServer *)),
+    this, SLOT(serverAdded(pqServer *)));
+
+  this->serverAdded(pqActiveObjects::instance().activeServer());
+
 }
 //----------------------------------------------------------------------------
 pqSPHManagerDockWindow::~pqSPHManagerDockWindow()
 {
-  this->SPHManagerPanel->SaveSettings();
+  this->UI->SPHManagerPanel->SaveSettings();
 }
-//---------------------------------------------------------------------------
-bool pqSPHManagerDockWindow::ProxyReady()
+//----------------------------------------------------------------------------
+void pqSPHManagerDockWindow::init()
 {
-  if (!this->UI->ProxyCreated()) {
-    this->UI->CreateProxy();
-    return this->UI->ProxyCreated();
+  if (this->UI->SPHReady()) { 
+    this->InitButton->setEnabled(false);
+
+    this->UI->CreatePanel(this->ScrollArea);
+    //
+    // Link gui/proxy events to callbacks
+    //
+    QObject::connect(this->UI->SPHManagerPanel, SIGNAL(modified()),
+      this, SLOT(updateAcceptState()));
+
+    QObject::connect(this->UI->pqSPHProxy,
+      SIGNAL(modifiedStateChanged(pqServerManagerModelItem*)),
+      this, SLOT(updateAcceptState()));
+    //
+    this->UI->SPHManagerPanel->LoadSettings();
+    //
+    this->updateAcceptState();
   }
-  return true;
 }
-//---------------------------------------------------------------------------
-bool pqSPHManagerDockWindow::SPHReady()
+//----------------------------------------------------------------------------
+void pqSPHManagerDockWindow::serverAdded(pqServer *server)
 {
-  if (!this->ProxyReady()) return 0;
-  //
-  if (!this->UI->SPHInitialized) {
-    //
-//    bool server = (this->UI->dsmIsServer->isChecked() || this->UI->dsmIsStandalone->isChecked());
-//    pqSMAdaptor::setElementProperty(
-//      this->UI->SPHProxy->GetProperty("DsmIsServer"), server);
-    //
-    //
-    this->UI->SPHProxy->UpdateVTKObjects();
-//    this->UI->SPHProxy->InvokeCommand("CreateSPH");
-    this->UI->SPHInitialized = 1;
-  }
-  return this->UI->SPHInitialized;
+}
+//----------------------------------------------------------------------------
+void pqSPHManagerDockWindow::StartRemovingServer(pqServer *server)
+{
+  this->UI->DeleteProxy();
+  this->InitButton->setEnabled(true);
 }
 //-----------------------------------------------------------------------------
 void pqSPHManagerDockWindow::setModified()
@@ -231,9 +275,6 @@ void pqSPHManagerDockWindow::showEvent( QShowEvent * event )
 {
   QDockWidget::showEvent( event );
 }
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
 //-----------------------------------------------------------------------------
 void pqSPHManagerDockWindow::accept()
 {
@@ -242,14 +283,14 @@ void pqSPHManagerDockWindow::accept()
 
   QSet<pqProxy*> proxies_to_show;
 
-  if (this->SPHManagerPanel)
+  if (this->UI->SPHManagerPanel)
     {
     int modified_state = this->UI->pqSPHProxy->modifiedState();
     if (modified_state == pqProxy::UNINITIALIZED)
       {
 //      proxies_to_show.insert(refProxy);
       }
-    this->SPHManagerPanel->accept();
+    this->UI->SPHManagerPanel->accept();
     }
 
   emit this->accepted();
@@ -266,9 +307,9 @@ void pqSPHManagerDockWindow::reset()
 {
   emit this->prereject();
 
-  if(this->SPHManagerPanel)
+  if(this->UI->SPHManagerPanel)
     {
-    this->SPHManagerPanel->reset();
+    this->UI->SPHManagerPanel->reset();
     }
 
   emit this->postreject();
@@ -276,11 +317,10 @@ void pqSPHManagerDockWindow::reset()
 //-----------------------------------------------------------------------------
 void pqSPHManagerDockWindow::canAccept(bool status)
 {
-
   this->AcceptButton->setEnabled(status);
 
   bool resetStatus = status;
-  if(resetStatus && this->SPHManagerPanel &&
+  if(resetStatus && this->UI->SPHManagerPanel &&
      this->UI->pqSPHProxy->modifiedState() ==
      pqProxy::UNINITIALIZED)
     {
@@ -303,5 +343,4 @@ void pqSPHManagerDockWindow::updateAcceptState()
     emit this->canAccept();
     }
 }
-
 //-----------------------------------------------------------------------------
