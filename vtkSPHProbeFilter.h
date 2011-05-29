@@ -126,7 +126,7 @@ protected:
   void   InitializeKernelCoefficients();
   double GetMaxKernelCutoffDistance();
   void   KernelCompute(double x[3], vtkPointSet *source, 
-    vtkIdList *NearestPoints, double *gradW, double &maxDistance);
+    vtkIdList *NearestPoints, double *gradW, double &totalmass, double &maxDistance);
 
   //
   // Variables
@@ -172,7 +172,8 @@ protected:
   double             HCoefficient;
   double             weights[KERNEL_MAX_NEIGHBOURS];
   float             *HData;
-  float             *MassData;
+  float             *MassDataF;
+  double            *MassDataD;
   float             *DensityData;
   float             *VolumeData;
 

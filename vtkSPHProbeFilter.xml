@@ -141,17 +141,18 @@
          number_of_elements="1"
          default_values="0" >
       </IntVectorProperty>
-      
+
       <!--
+      <Hints>
+        <Property name="ModifiedNumber" show="0"/>
+      </Hints>
+
       <ProxyProperty
         command="SetSPHManager"
         name="SPHManager">
       </ProxyProperty>
 
-      <Hints>
-        <Property name="SPHManager" show="0"></Property>
-      </Hints>
--->
+      -->
     </SourceProxy>
 
     <!-- ================================================================ -->
