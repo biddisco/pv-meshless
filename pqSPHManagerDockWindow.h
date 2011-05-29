@@ -9,13 +9,16 @@
 class QCheckBox;
 class QComboBox;
 class QPushButton;
-class pqServer;
-class pqView;
 class QTreeWidgetItem;
 class QProgressDialog;
 class QButtonGroup;
+class QScrollArea;
+class QVBoxLayout;
+//
+class pqServer;
+class pqView;
 class pqObjectPanel;
-
+//
 class vtkSMSourceProxy;
 class vtkSMRepresentationProxy;
 class pqSPHManagerPanel;
@@ -28,9 +31,6 @@ public:
   /// constructor
   pqSPHManagerDockWindow(QWidget* p = NULL);
  ~pqSPHManagerDockWindow();
-
-  bool ProxyReady();
-  bool SPHReady();
 
   ///////////////////////////////////
   // From pqObjectInspectorWidget
@@ -56,8 +56,12 @@ signals:
   void canAccept();
 
 public slots:
+  void serverAdded(pqServer *server);
+  void StartRemovingServer(pqServer *server);
 
   void updateAcceptState();
+
+  void init();
 
   /// accept the changes made to the properties
   /// changes will be propogated down to the server manager
@@ -92,9 +96,11 @@ protected:
 protected slots:
 
 protected:
+  QPushButton   *InitButton;
   QPushButton   *AcceptButton;
   QPushButton   *ResetButton;
-  pqSPHManagerPanel *SPHManagerPanel;
+  QScrollArea   *ScrollArea;
+  QVBoxLayout   *PanelLayout;
 
 };
 

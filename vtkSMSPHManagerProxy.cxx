@@ -27,6 +27,7 @@ vtkSMSPHManagerProxy::vtkSMSPHManagerProxy() : vtkSMProxy()
 //----------------------------------------------------------------------------
 vtkSMSPHManagerProxy::~vtkSMSPHManagerProxy()
 {
+  vtkSMSPHManagerProxy::ReferenceProxy = NULL;
 //  this->SPHSingleton->RemoveObserver(this->SPHObserver);
 //  this->SPHSingleton->Delete();
 }

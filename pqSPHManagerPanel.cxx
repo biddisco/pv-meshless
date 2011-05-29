@@ -202,11 +202,11 @@ void pqSPHManagerPanel::ModifyGUIFilters()
       pqPipelineSource *source = *it;
       std::string xmlName = source->getProxy()->GetXMLName();
       if (xmlName.find("SPHProbe")!=xmlName.npos) {
-        source->setModifiedState(pqProxy::MODIFIED);
-        source->getProxy()->MarkAllPropertiesAsModified();
+//        source->getProxy()->MarkAllPropertiesAsModified();
         vtkSMPropertyHelper modified(source->getProxy(), "ModifiedNumber");
         modified.UpdateValueFromServer();
         modified.Set(modified.GetAsInt()+1);
+        source->setModifiedState(pqProxy::MODIFIED);
        //          InvokeCommand("Modified");
 
 //        source->getProxy()->GetProperty("SPHManager")->Modified();
