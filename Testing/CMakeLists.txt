@@ -44,6 +44,14 @@ IF(${Trilinos_FOUND})
     pv_meshless 
     ${Trilinos_LIBRARIES}
     )
-  ADD_TEST(TestParticlePartitionFilter.cxx ${PROJECT_BINARY_DIR}/../bin/TestParticlePartition.cxx)
+  ADD_TEST(TestParticlePartitionFilter.cxx ${PROJECT_BINARY_DIR}/../bin/TestParticlePartitionFilter)
+
+  ADD_EXECUTABLE(TestSPHProbeParallel TestSPHProbeParallel.cxx)
+  TARGET_LINK_LIBRARIES(TestSPHProbeParallel
+    pv_meshless 
+    ${Trilinos_LIBRARIES}
+    )
+  ADD_TEST(TestSPHProbeParallel.cxx ${PROJECT_BINARY_DIR}/../bin/TestSPHProbeParallel)
+  
 ENDIF(${Trilinos_FOUND})
 
