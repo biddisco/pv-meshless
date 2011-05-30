@@ -302,7 +302,7 @@ void zolta_pre_ghost_migrate_pp_func(void *data, int num_gid_entries, int num_li
 vtkParticlePartitionFilter::vtkParticlePartitionFilter()
 {
   this->UpdatePiece         = 0;
-  this->UpdateNumPieces     = 0;
+  this->UpdateNumPieces     = 1;
   this->NumberOfLocalPoints = 0;
   this->Controller          = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
@@ -355,8 +355,8 @@ vtkBoundingBox *vtkParticlePartitionFilter::GetPartitionBoundingBox(int partitio
 //----------------------------------------------------------------------------
 vtkBoundingBox *vtkParticlePartitionFilter::GetPartitionBoundingBoxWithGhostRegion(int partition)
 {
-  if (partition<this->BoxList.size()) {
-    return &this->BoxList[partition];
+  if (partition<this->BoxListWithGhostRegion.size()) {
+    return &this->BoxListWithGhostRegion[partition];
   }
   vtkErrorMacro(<<"Partition not found in Bounding Box list");
   return NULL;
