@@ -51,9 +51,9 @@ public:
   // Use either SPH Kernel interpolation or Linear interpolation
   vtkSetMacro(InterpolationMethod, int);
   vtkGetMacro(InterpolationMethod, int);
-  void SetInterpolationMethodToKernel(int k) { 
+  void SetInterpolationMethodToKernel() { 
     this->SetKernelType(POINT_INTERPOLATION_KERNEL); }
-  void SetInterpolationMethodToLinear(int k) { 
+  void SetInterpolationMethodToLinear() { 
     this->SetKernelType(POINT_INTERPOLATION_SHEPARD); }
 
   // Description:
@@ -131,17 +131,17 @@ public:
   // CubicSPline3D, CubicSPline2D, Cusp3D
   vtkSetMacro(KernelType, int);
   vtkGetMacro(KernelType, int);
-  void SetKernelTypeToGaussian(int k) { 
+  void SetKernelTypeToGaussian() { 
     this->SetKernelType(SPH_KERNEL_GAUSSIAN); }
-  void SetKernelTypeToWendland(int k) { 
+  void SetKernelTypeToWendland() { 
     this->SetKernelType(SPH_KERNEL_WENDLAND); }
-  void SetKernelTypeToQuadratic3D(int k) { 
+  void SetKernelTypeToQuadratic3D() { 
     this->SetKernelType(SPH_KERNEL_QUADRATIC); }
-  void SetKernelTypeToCubicSpline(int k) { 
+  void SetKernelTypeToCubicSpline() { 
     this->SetKernelType(SPH_KERNEL_SPLINE_3RD); }
-  void SetKernelTypeToQuinticSpline(int k) { 
+  void SetKernelTypeToQuinticSpline() { 
     this->SetKernelType(SPH_KERNEL_SPLINE_5TH); }
-  void SetKernelTypeToCusp(int k) { 
+  void SetKernelTypeToCusp() { 
     this->SetKernelType(SPH_KERNEL_CUSP); }
 
   // Description:
