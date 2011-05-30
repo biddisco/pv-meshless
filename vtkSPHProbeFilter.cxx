@@ -564,16 +564,60 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
   this->Locator->SetDivisions((int)bins[0],(int)bins[1],(int)bins[2]);
   this->Locator->BuildLocator();
 
+  //
+  // ghost cell stuff
+  //
+  unsigned char updateLevel = static_cast<unsigned char>
+    (probepts->GetInformation()->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS()));
+  unsigned char *ghostdata = 0;
+  vtkDataArray* ghostarray = 0;
+  vtkIdType G = 0, nonGhost = 0;
+  if (probepts->GetPointData()) {
+    ghostarray = probepts->GetPointData()->GetArray("vtkGhostLevels");
+  }
+  if ( (!ghostarray) || (ghostarray->GetDataType() != VTK_UNSIGNED_CHAR) || (ghostarray->GetNumberOfComponents() != 1)) {
+    vtkDebugMacro("No appropriate ghost levels field available.");
+  }
+  else {
+    G = ghostarray->GetNumberOfTuples();
+    ghostdata=static_cast<vtkUnsignedCharArray *>(ghostarray)->GetPointer(0);
+    std::cout << "Probe filter found ghost array with N = " << G << std::endl;
+  }
+  for (vtkIdType i=0; i<G; i++) {
+    if (ghostdata[i]==0) nonGhost++;
+  }
+  std::cout << "Probe filter found non ghost N = " << nonGhost << std::endl;
+
   // 
   // setup output dataset
   // 
-  pd = data->GetPointData();
-  this->NumOutputPoints = probepts->GetNumberOfPoints();
-  // Copy the probe structure to the output
-  output->CopyStructure( probepts );
-  output->CopyInformation( probepts );
+  this->NumOutputPoints = nonGhost==0 ? probepts->GetNumberOfPoints() : nonGhost;
+  vtkIdType numInputPoints = probepts->GetNumberOfPoints();
+
+  if (this->NumOutputPoints==numInputPoints) {
+    // Copy the probe structure to the output
+    output->CopyStructure( probepts );
+    output->CopyInformation( probepts );
+  }
+  else if (vtkPointSet::SafeDownCast(output)) {
+    output->CopyStructure( probepts );
+    output->CopyInformation( probepts );
+    vtkSmartPointer<vtkPoints> newPts = vtkSmartPointer<vtkPoints>::New();
+    newPts->SetNumberOfPoints(this->NumOutputPoints);
+    vtkPointSet::SafeDownCast(output)->SetPoints(newPts);
+    vtkIdType outId = 0;
+    for (vtkIdType i=0; i<numInputPoints; i++) {
+      if (ghostdata[i]==0) {
+        newPts->SetPoint(outId++, probepts->GetPoint(i));
+      }
+    }
+  }
+  else {
+    vtkErrorMacro(<<"Unsupported data type with Ghost Cells found");
+  }
 
   // Allocate storage for output PointData
+  pd = data->GetPointData();
   outPD = output->GetPointData();
   outPD->InterpolateAllocate(pd, this->NumOutputPoints, this->NumOutputPoints);
 
@@ -603,10 +647,13 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
   //
   int abort=0;
   vtkIdType progressInterval=this->NumOutputPoints/20 + 1;
-  for (ptId=0; ptId<this->NumOutputPoints && !abort; ptId++) {
-    
+  vtkIdType outId = 0;
+  for (ptId=0; ptId<numInputPoints && !abort; ptId++) {
+    if (ghostdata && ghostdata[ptId]>0) {
+      continue;
+    }
     if ( !(ptId % progressInterval) ) {
-      this->UpdateProgress((double)ptId/this->NumOutputPoints);
+      this->UpdateProgress((double)ptId/numInputPoints);
       abort = GetAbortExecute();
     }
 
@@ -644,10 +691,10 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
         this->KernelCompute(x, data, NearestPoints, grad, totalmass, maxDistance);
         double gradmag = vtkMath::Norm(grad);
         // Interpolate the point data
-        outPD->InterpolatePoint(pd, ptId, NearestPoints, weights);
+        outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
         // set our extra computed values
-        GradArray->SetValue(ptId, gradmag/this->ScaleCoefficient);
-        ShepardArray->SetValue(ptId, this->ScaleCoefficient);
+        GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
+        ShepardArray->SetValue(outId, this->ScaleCoefficient);
         //
         if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
           double rho;
@@ -660,7 +707,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
           else {
             rho = 0.0;
           }
-          ComputedDensity->SetValue(ptId, rho);
+          ComputedDensity->SetValue(outId, rho);
         }
       }
       else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
@@ -669,19 +716,27 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
         // because Cal_Interpolation_ShepardMethod_All calcualtes interpolations.       
         //int inside = Cal_Interpolation_ShepardMethod_All(data, false, x, N, NearestPoints, ptId, outPD);
         Cal_Weights_ShepardMethod(x, data, NearestPoints, this->weights);
-        ShepardArray->SetValue(ptId, 0.0);
-        GradArray->SetValue(ptId, 0.0);
+        ShepardArray->SetValue(outId, 0.0);
+        GradArray->SetValue(outId, 0.0);
         // need to call this interpolation function 
         // becasue Cal_Weights_ShepardMethod only calculates weights.
-        outPD->InterpolatePoint(pd, ptId, NearestPoints, weights);
+        outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
+        if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
+          ComputedDensity->SetValue(outId, 0.0);
+        }
       }
     }
     else {
-      outPD->NullPoint(ptId);
-      ShepardArray->SetValue(ptId, 0.0);
-      GradArray->SetValue(ptId, 0.0);
+      outPD->NullPoint(outId);
+      ShepardArray->SetValue(outId, 0.0);
+      GradArray->SetValue(outId, 0.0);
+      if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
+        ComputedDensity->SetValue(outId, 0.0);
+      }
     }
+    outId++;
   }
+  std::cout << "Probe filter exported N = " << outId << std::endl;
 
   // Add Grad and Shepard arrays
   if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
@@ -736,5 +791,8 @@ int vtkSPHProbeFilter::RequestUpdateExtent(
               probePtsInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),
               6);
     
+  // we must request ghost cells from the particle data
+  dataInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(), 1);
+
   return 1;
 }
