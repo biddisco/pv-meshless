@@ -231,7 +231,9 @@ pqSPHManagerDockWindow::pqSPHManagerDockWindow(QWidget* p) : QDockWidget("SPH Ma
 //----------------------------------------------------------------------------
 pqSPHManagerDockWindow::~pqSPHManagerDockWindow()
 {
-  this->UI->SPHManagerPanel->SaveSettings();
+  if (this->UI->SPHManagerPanel) {
+    this->UI->SPHManagerPanel->SaveSettings();
+  }
 }
 //----------------------------------------------------------------------------
 void pqSPHManagerDockWindow::init()
