@@ -1,0 +1,20 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+
+    <SourceProxy 
+      name="ParticleIds" 
+      class="vtkParticleIdFilter" 
+      label="Particle Ids"
+      base_proxygroup="filters"
+      base_proxyname="GenerateIdScalars">
+      <Documentation
+         long_help="Assigns an ID to each particle, taking into account parallel offsets"
+         short_help="Assigns an ID to each particle">
+      </Documentation>
+
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>
+
