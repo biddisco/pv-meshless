@@ -665,6 +665,12 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
         &GhostIds.Procs[0]);
 
   //
+  // Release the arrays allocated during Zoltan_Invert_Lists
+  //
+  Zoltan_LB_Free_Part(&found_global_ids, &found_local_ids, 
+                      &found_procs, &found_to_part);
+
+  //
   // Ghost information : Paraview doesn't let us visualize an array called vtkGhostLevels
   // because it's an 'internal' array, so we make an extra one for debug purposes
   //
