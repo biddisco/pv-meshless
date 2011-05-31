@@ -454,9 +454,15 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // Use Zoltan library to re-partition the particles in parallel
   //--------------------------------------------------------------
   struct Zoltan_Struct *zz;
-  int changes, numGidEntries, numLidEntries, numImport, numExport;
-  ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids; 
-  int *importProcs, *importToPart, *exportProcs, *exportToPart;
+  int changes, numGidEntries, numLidEntries, numImport=0, numExport=0;
+  ZOLTAN_ID_PTR importGlobalGids = NULL;
+  ZOLTAN_ID_PTR importLocalGids  = NULL; 
+  ZOLTAN_ID_PTR exportGlobalGids = NULL;
+  ZOLTAN_ID_PTR exportLocalGids  = NULL;
+  int *importProcs  = NULL;
+  int *importToPart = NULL;
+  int *exportProcs  = NULL;
+  int *exportToPart = NULL;
   PartitionVariables mesh;
 
   float ver;
@@ -578,6 +584,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     exit(0);
   }
 
+  MPI_Barrier(mpiComm);
   Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
                       &importProcs, &importToPart);
   Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
@@ -618,11 +625,11 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // can build a list of lists for exchanges between processes
   //
   size_t        num_known = GhostIds.GlobalIds.size(); 
-  int           num_found;
-  ZOLTAN_ID_PTR found_global_ids;
-  ZOLTAN_ID_PTR found_local_ids;
-  int          *found_procs;
-  int          *found_to_part;
+  int           num_found = 0;
+  ZOLTAN_ID_PTR found_global_ids = NULL;
+  ZOLTAN_ID_PTR found_local_ids  = NULL;
+  int          *found_procs      = NULL;
+  int          *found_to_part    = NULL;
 
   rc = Zoltan_Invert_Lists(zz, 
         num_known,
