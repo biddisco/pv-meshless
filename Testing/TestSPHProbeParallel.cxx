@@ -130,12 +130,13 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   char *filename = vtkTestUtilities::GetArgOrEnvOrDefault(
     "-F", args->argc, args->argv, "DUMMY_ENV_VAR", "temp.h5");
   char* fullname = vtkTestUtilities::ExpandDataFileName(args->argc, args->argv, filename);
+  char *tempname = vtkTestUtilities::ExpandDataFileName(args->argc, args->argv, "temp.h5part");
   if (myRank==0) {
-    std::cout << "Process Id : " << myRank << " FileName : " << fullname << std::endl;
+    std::cout << "Process Id : " << myRank << " FileName : " << fullname << " " << tempname << std::endl;
   }
 
   vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-  reader->SetFileName("C:\\data\\corbett\\AGN-subset.vtu");
+  reader->SetFileName(fullname);
   reader->Update();
 
   vtkSmartPointer<vtkParticleIdFilter> particleIds = vtkSmartPointer<vtkParticleIdFilter>::New();
@@ -187,7 +188,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   //--------------------------------------------------------------
   vtkSmartPointer<vtkH5PartWriter> writer = vtkSmartPointer<vtkH5PartWriter>::New();
   writer->SetFileModeToWrite();
-  writer->SetFileName(fullname);
+  writer->SetFileName(tempname);
   writer->SetInputConnection(processId->GetOutputPort());
   writer->SetCollectiveIO(1);
   writer->SetDisableInformationGather(1);
@@ -246,7 +247,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
     // we want to read all the particles on this node, so don't use MPI/Parallel
     reader->SetController(NULL);
-    reader->SetFileName(fullname);
+    reader->SetFileName(tempname);
     reader->SetGenerateVertexCells(1);
     reader->Update();
     vtkTypeInt64 ReadPoints = reader->GetOutput()->GetNumberOfPoints();
