@@ -421,10 +421,6 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   vtkSmartPointer<vtkPoints>   newPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vertices = vtkSmartPointer<vtkCellArray>::New();
   output->SetPoints(newPoints);
-  if (this->UpdateNumPieces==1) {
-    output->ShallowCopy(input);
-    return 1;
-  }
 
   //
   // We'd like to clamp bounding boxes of all the generated partitions to the original data
@@ -436,6 +432,19 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
   MPI_Allreduce(bmn, bmin, 3, MPI_DOUBLE, MPI_MIN, mpiComm);
   MPI_Allreduce(bmx, bmax, 3, MPI_DOUBLE, MPI_MAX, mpiComm);
+  this->BoxList.clear();
+  this->BoxListWithGhostRegion.clear();
+  if (this->UpdateNumPieces==1) {
+    output->ShallowCopy(input);
+    vtkBoundingBox box;
+    box.SetMinPoint(bmin);
+    box.SetMaxPoint(bmax);
+    this->BoxList.push_back(box);
+    // we add a ghost cell region to our boxes
+    box.Inflate(this->GhostCellOverlap);
+    this->BoxListWithGhostRegion.push_back(box);
+    return 1;
+  }
 
   //
   // Ids
@@ -593,8 +602,6 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //
   // For ghost cells we would like the bounding boxes of each partition
   //
-  this->BoxList.clear();
-  this->BoxListWithGhostRegion.clear();
   for (int p=0; p<this->UpdateNumPieces; p++) {
     double bounds[6];
     int ndim;
