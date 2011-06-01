@@ -99,8 +99,6 @@ static void get_object_list(void *data, int sizeGID, int sizeLID,
                   int wgt_dim, float *obj_wgts, int *ierr)
 {
   PartitionVariables *mesh = (PartitionVariables*)data;
-  *ierr = ZOLTAN_OK;
-
   //
   // Return the IDs of our objects, but no weights.
   // Zoltan will assume equally weighted objects.
@@ -109,6 +107,7 @@ static void get_object_list(void *data, int sizeGID, int sizeLID,
     globalID[i] = mesh->InputGlobalIds[i];
     localID[i] = i;
   }
+  *ierr = ZOLTAN_OK;
 }
 //----------------------------------------------------------------------------
 static int get_num_geometry(void *data, int *ierr)
@@ -122,11 +121,6 @@ static void get_geometry_list(
   ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
   int num_dim, double *geom_vec, int *ierr)
 {
-  if ( (sizeGID != 1) || (sizeLID != 1) || (num_dim != 3)){
-    *ierr = ZOLTAN_FATAL;
-    return;
-  }
-
   PartitionVariables *mesh = (PartitionVariables*)data;
   for (int i=0;  i < num_obj ; i++){
     geom_vec[3*i]   = (double)mesh->InputPointData[3*i];
@@ -159,13 +153,9 @@ Returned Value:
 int zoltan_obj_size_func(void *data, int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *ierr)
 {
-  if ( (num_gid_entries != 1) || (num_lid_entries != 1) ){
-    *ierr = ZOLTAN_FATAL;
-    return 0;
-  }
   PartitionVariables *mesh = (PartitionVariables*)data;
-  vtkIdType GID = *global_id;
-  vtkIdType LID = *local_id;
+//  vtkIdType GID = *global_id;
+//  vtkIdType LID = *local_id;
   //
   *ierr = ZOLTAN_OK;
   return mesh->TotalSizePerId + sizeof(float)*3;
@@ -174,17 +164,13 @@ int zoltan_obj_size_func(void *data, int num_gid_entries, int num_lid_entries,
 void zoltan_pack_obj_func(void *data, int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int dest, int size, char *buf, int *ierr)
 {
-  if ( (num_gid_entries != 1) || (num_lid_entries != 1) ){
-    *ierr = ZOLTAN_FATAL;
-    return;
-  }
   PartitionVariables *mesh = (PartitionVariables*)data;
   vtkIdType GID = *global_id;
   vtkIdType LID = *local_id;
   //
   for (int i=0; i<mesh->NumberOfFields; i++) {
     int asize = mesh->ArrayTypeSizes[i];
-    char *dataptr = (char*)(mesh->InputArrayPointers[i]) + asize*(*local_id);
+    char *dataptr = (char*)(mesh->InputArrayPointers[i]) + asize*LID;
     memcpy(buf, dataptr, asize);
     buf += asize;
   }
@@ -241,7 +227,7 @@ void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entr
 {
   PartitionVariables *mesh = (PartitionVariables*)data;
   // newTotal = original points - sent away + received
-  mesh->OutputNumberOfLocalPoints = mesh->InputNumberOfLocalPoints - num_export + num_import;
+  mesh->OutputNumberOfLocalPoints = mesh->InputNumberOfLocalPoints + num_import - num_export;
   mesh->OutputPoints->SetNumberOfPoints(mesh->OutputNumberOfLocalPoints);
   mesh->OutputPointData = (float*)(mesh->OutputPoints->GetData()->GetVoidPointer(0));
   vtkPointData *inPD  = mesh->Input->GetPointData();
@@ -253,12 +239,12 @@ void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entr
     oarray->SetNumberOfTuples(mesh->OutputNumberOfLocalPoints);
     mesh->OutputArrayPointers.push_back(oarray->GetVoidPointer(0));
   }
-  std::vector<bool> alive(mesh->OutputNumberOfLocalPoints, true);
+  std::vector<bool> alive(mesh->InputNumberOfLocalPoints, true);
   for (vtkIdType i=0; i<num_export; i++) {
     alive[export_local_ids[i]] = false;    
   }
   mesh->OutPointCount = 0;
-  for (vtkIdType i=0; i<mesh->OutputNumberOfLocalPoints; i++) {
+  for (vtkIdType i=0; i<mesh->InputNumberOfLocalPoints; i++) {
     if (alive[i]) {
       outPD->CopyData(inPD, i, mesh->OutPointCount);
       memcpy(&mesh->OutputPointData[mesh->OutPointCount*3], &mesh->InputPointData[i*3], sizeof(float)*3);
