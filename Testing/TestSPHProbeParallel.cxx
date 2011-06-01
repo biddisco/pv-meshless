@@ -135,8 +135,10 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     std::cout << "Process Id : " << myRank << " FileName : " << fullname << " " << tempname << std::endl;
   }
 
-  vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
+  vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
   reader->SetFileName(fullname);
+  reader->SetController(controller);
+  reader->SetGenerateVertexCells(1);
   reader->Update();
 
   vtkSmartPointer<vtkParticleIdFilter> particleIds = vtkSmartPointer<vtkParticleIdFilter>::New();
