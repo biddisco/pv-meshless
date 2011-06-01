@@ -400,7 +400,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   vtkPointSet      *input = vtkPointSet::GetData(inputVector[0]);
   vtkFloatArray *inPoints = vtkFloatArray::SafeDownCast(input->GetPoints()->GetData());
   vtkIdType     numPoints = input->GetPoints()->GetNumberOfPoints();
-  std::cout << "Process " << this->UpdatePiece << " Points Input : " << numPoints << std::endl;
+  std::cout << "Partitioning on " << this->UpdatePiece << " Points Input : " << numPoints << std::endl;
 
   // Setup the output
   vtkPolyData                    *output = vtkPolyData::GetData(outputVector);
