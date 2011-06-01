@@ -592,10 +592,6 @@ int vtkH5PartReader::RequestData(
   this->UpdateNumPieces =1;
 #endif
   //
-  // Parallel read currently not implemented, just read on process zero and
-  // exit quick on the others. @TODO : Add in Slab selection code
-  if (this->UpdatePiece>0) return 1;
-  //
   typedef vtkstd::map< vtkstd::string, vtkstd::vector<vtkstd::string> > FieldMap;
   FieldMap scalarFields;
   //
