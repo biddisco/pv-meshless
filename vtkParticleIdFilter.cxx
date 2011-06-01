@@ -109,11 +109,11 @@ int vtkParticleIdFilter::RequestData(
       vtkstd::partial_sum(PointsPerProcess.begin(), PointsPerProcess.end(), PartialSum.begin()+1);
     }
     vtkIdType initialValue = PartialSum[this->UpdatePiece];
-    std::cout << "Id filter rank " << this->UpdatePiece << " Using offset " << initialValue << std::endl;
-    for (int i=0; i<PartialSum.size(); i++) {
-      std::cout << PartialSum[i] << " " ;
-    }
-      std::cout << std::endl;
+//    std::cout << "Id filter rank " << this->UpdatePiece << " Using offset " << initialValue << std::endl;
+//    for (int i=0; i<PartialSum.size(); i++) {
+//      std::cout << PartialSum[i] << " " ;
+//    }
+//      std::cout << std::endl;
     //
     ptIds = vtkIdTypeArray::New();
     ptIds->SetNumberOfValues(numPts);
