@@ -45,6 +45,7 @@
 #include "vtkProbeFilter.h"
 #include "vtkDataObjectTypes.h"
 #include "vtkBoundingBox.h"
+#include "vtkCellArray.h"
 //
 #include "KernelGaussian.h"
 #include "KernelWendland.h"
@@ -575,6 +576,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
   if (probepts->GetPointData()) {
     ghostarray = probepts->GetPointData()->GetArray("vtkGhostLevels");
   }
+  // we don't need this check, we'll take any datatype for ghost flags
   if ( (!ghostarray) || (ghostarray->GetDataType() != VTK_UNSIGNED_CHAR) || (ghostarray->GetNumberOfComponents() != 1)) {
     vtkDebugMacro("No appropriate ghost levels field available.");
   }
@@ -610,6 +612,25 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
       if (ghostdata[i]==0) {
         newPts->SetPoint(outId++, probepts->GetPoint(i));
       }
+    }
+    //
+    // Create Vertices for each point (assumption of point probing)
+    //
+    vtkSmartPointer<vtkCellArray> verts = vtkSmartPointer<vtkCellArray>::New();
+    verts->Allocate(this->NumOutputPoints);
+    for (vtkIdType c=0; c<this->NumOutputPoints; c++) {
+      verts->InsertNextCell(1, &c);
+    }
+    vtkPolyData *polydata = vtkPolyData::SafeDownCast(output);
+    if (polydata) {
+      polydata->SetVerts(verts);
+      polydata->SetLines(NULL);
+      polydata->SetPolys(NULL);
+      polydata->SetStrips(NULL);
+    }
+    vtkUnstructuredGrid *grid = vtkUnstructuredGrid::SafeDownCast(output);
+    if (grid) {
+      grid->SetCells(VTK_VERTEX, verts);
     }
   }
   else {
