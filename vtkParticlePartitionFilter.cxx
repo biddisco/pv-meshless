@@ -728,7 +728,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //
   timer->StopTimer();
   if (this->UpdatePiece==0) { 
-    vtkErrorMacro(<< "Particle partitioning : " << timer->GetElapsedTime() << " seconds\n");
+    std::cout << "Particle partitioning : " << timer->GetElapsedTime() << " seconds\n";
   }
   return 1;
 }

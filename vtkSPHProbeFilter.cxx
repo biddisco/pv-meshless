@@ -52,6 +52,13 @@
 #include "KernelQuadratic.h"
 #include "KernelSpline3rdOrder.h"
 #include "KernelSpline5thOrder.h"
+//
+#include "vtkToolkits.h"     // For VTK_USE_MPI
+#ifdef VTK_USE_MPI
+  #include "vtkMPI.h"
+  #include "vtkMPIController.h"
+  #include "vtkMPICommunicator.h"
+#endif
 
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSPHProbeFilter);
@@ -712,6 +719,15 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
         this->KernelCompute(x, data, NearestPoints, grad, totalmass, maxDistance);
         double gradmag = vtkMath::Norm(grad);
         // Interpolate the point data
+/*
+// NULL COMPUTATION
+        outPD->NullPoint(outId);
+        ShepardArray->SetValue(outId, 0.0);
+        GradArray->SetValue(outId, 0.0);
+        if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
+          ComputedDensity->SetValue(outId, 0.0);
+        }
+*/
         outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
         // set our extra computed values
         GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
@@ -719,16 +735,13 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
         //
         if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
           double rho;
-//          double mass   = SmoothedMassDataF ? SmoothedMassDataF[ptId] : 
-//                         (SmoothedMassDataD ? SmoothedMassDataD[ptId] : 0.0);
           double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
-          if (totalmass>0.0 && volume>0.0) {
-            rho = totalmass/volume;
+          if (volume>0.0) {
+            ComputedDensity->SetValue(outId, totalmass/volume);
           }
           else {
-            rho = 0.0;
+            ComputedDensity->SetValue(outId, 0.0);
           }
-          ComputedDensity->SetValue(outId, rho);
         }
       }
       else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
@@ -757,13 +770,23 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
     }
     outId++;
   }
-  std::cout << "Probe filter exported N = " << outId << std::endl;
+
+  vtkMPIController *con = vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController());
+  vtkMPICommunicator *com = vtkMPICommunicator::SafeDownCast(con->GetCommunicator());
+
+  int UpdatePiece     = com->GetLocalProcessId();
+  int UpdateNumPieces = com->GetNumberOfProcesses();
+
+  std::cout << "Probe filter " << UpdatePiece << " exported N = " << outId << std::endl;
+  com->Barrier();
 
   // Add Grad and Shepard arrays
   if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
     outPD->AddArray(GradArray);
     outPD->AddArray(ShepardArray);
-    outPD->AddArray(ComputedDensity);
+    if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
+      outPD->AddArray(ComputedDensity);
+    }
   }
   return 1;
 }
