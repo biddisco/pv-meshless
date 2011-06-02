@@ -572,6 +572,17 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
   this->Locator->SetDivisions((int)bins[0],(int)bins[1],(int)bins[2]);
   this->Locator->BuildLocator();
 
+#ifdef VTK_USE_MPI
+  //
+  // for debug in parallel
+  //
+  vtkMPIController *con = vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController());
+  vtkMPICommunicator *com = vtkMPICommunicator::SafeDownCast(con->GetCommunicator());
+
+  int UpdatePiece     = com->GetLocalProcessId();
+  int UpdateNumPieces = com->GetNumberOfProcesses();
+#endif
+  
   //
   // ghost cell stuff
   //
@@ -590,17 +601,18 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
   else {
     G = ghostarray->GetNumberOfTuples();
     ghostdata=static_cast<vtkUnsignedCharArray *>(ghostarray)->GetPointer(0);
-    std::cout << "Probe filter found ghost array with N = " << G << std::endl;
   }
-  for (vtkIdType i=0; i<G; i++) {
+  for (vtkIdType i=0; ghostdata!=NULL & i<G; i++) {
     if (ghostdata[i]==0) nonGhost++;
   }
-  std::cout << "Probe filter found non ghost N = " << nonGhost << std::endl;
+#ifdef VTK_USE_MPI
+  std::cout << "Probe " << UpdatePiece << " non ghost N = " << nonGhost << " from total " << G << std::endl;
+#endif
 
   // 
   // setup output dataset
   // 
-  this->NumOutputPoints = nonGhost==0 ? probepts->GetNumberOfPoints() : nonGhost;
+  this->NumOutputPoints = (nonGhost==0) ? probepts->GetNumberOfPoints() : nonGhost;
   vtkIdType numInputPoints = probepts->GetNumberOfPoints();
 
   if (this->NumOutputPoints==numInputPoints) {
@@ -609,8 +621,8 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
     output->CopyInformation( probepts );
   }
   else if (vtkPointSet::SafeDownCast(output)) {
-    output->CopyStructure( probepts );
-    output->CopyInformation( probepts );
+//    output->CopyStructure( probepts );
+//    output->CopyInformation( probepts );
     vtkSmartPointer<vtkPoints> newPts = vtkSmartPointer<vtkPoints>::New();
     newPts->SetNumberOfPoints(this->NumOutputPoints);
     vtkPointSet::SafeDownCast(output)->SetPoints(newPts);
@@ -644,7 +656,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
     vtkErrorMacro(<<"Unsupported data type with Ghost Cells found");
   }
 
+  //
   // Allocate storage for output PointData
+  //
   pd = data->GetPointData();
   outPD = output->GetPointData();
   outPD->InterpolateAllocate(pd, this->NumOutputPoints, this->NumOutputPoints);
@@ -718,7 +732,6 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
         double grad[3], totalmass, maxDistance;
         this->KernelCompute(x, data, NearestPoints, grad, totalmass, maxDistance);
         double gradmag = vtkMath::Norm(grad);
-        // Interpolate the point data
 /*
 // NULL COMPUTATION
         outPD->NullPoint(outId);
@@ -728,13 +741,13 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
           ComputedDensity->SetValue(outId, 0.0);
         }
 */
+        // Interpolate the point scalar/field data
         outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
         // set our extra computed values
         GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
         ShepardArray->SetValue(outId, this->ScaleCoefficient);
         //
         if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
-          double rho;
           double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
           if (volume>0.0) {
             ComputedDensity->SetValue(outId, totalmass/volume);
@@ -771,14 +784,11 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
     outId++;
   }
 
-  vtkMPIController *con = vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController());
-  vtkMPICommunicator *com = vtkMPICommunicator::SafeDownCast(con->GetCommunicator());
 
-  int UpdatePiece     = com->GetLocalProcessId();
-  int UpdateNumPieces = com->GetNumberOfProcesses();
-
+#ifdef VTK_USE_MPI
   std::cout << "Probe filter " << UpdatePiece << " exported N = " << outId << std::endl;
   com->Barrier();
+#endif
 
   // Add Grad and Shepard arrays
   if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
@@ -788,6 +798,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
       outPD->AddArray(ComputedDensity);
     }
   }
+#ifdef VTK_USE_MPI
+  std::cout << "Probe filter complete on " << UpdatePiece << std::endl;
+#endif
   return 1;
 }
 //----------------------------------------------------------------------------
