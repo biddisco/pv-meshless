@@ -12,6 +12,32 @@
          short_help="Assigns an ID to each particle">
       </Documentation>
 
+      <IntVectorProperty
+        name="PointIds"
+        command="SetPointIds"
+        label="Generate Point Ids"
+        number_of_elements="1"
+        animateable="0"
+        default_values="1">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Generate Ids for points
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="CellIds"
+        command="SetCellIds"
+        label="Generate Cell Ids"
+        number_of_elements="1"
+        animateable="0"
+        default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Generate Ids for cells
+        </Documentation>
+      </IntVectorProperty>
+      
     </SourceProxy>
 
   </ProxyGroup>
