@@ -63,8 +63,8 @@ typedef struct{
   vtkIdType           OutputNumberOfLocalPoints;
   vtkIdType           OutputNumberOfPointsFinal;
   vtkIdType          *InputGlobalIds;
-  float              *InputPointData; 
-  float              *OutputPointData; 
+  void               *InputPointData;   // float/double
+  void               *OutputPointData;  // float/double
   vtkPoints          *OutputPoints; 
   int                 NumberOfFields;
   std::vector<void*>  InputArrayPointers;
@@ -73,16 +73,6 @@ typedef struct{
   int                 TotalSizePerId;
   vtkIdType           OutPointCount;
 } PartitionVariables;
-
-//----------------------------------------------------------------------------
-// Zoltan : Application defined query functions (prototypes)
-//----------------------------------------------------------------------------
-static int  get_number_of_objects(void *data, int *ierr);
-static void get_object_list(void *data, int sizeGID, int sizeLID, 
-  ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID, int wgt_dim, float *obj_wgts, int *ierr);
-static int  get_num_geometry(void *data, int *ierr);
-static void get_geometry_list(void *data, int sizeGID, int sizeLID, int num_obj, 
-  ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID, int num_dim, double *geom_vec, int *ierr);
 
 //----------------------------------------------------------------------------
 // Application defined query functions (Implementation)
@@ -116,16 +106,17 @@ static int get_num_geometry(void *data, int *ierr)
   return 3;
 }
 //----------------------------------------------------------------------------
-static void get_geometry_list(
+template<typename T>
+void get_geometry_list(
   void *data, int sizeGID, int sizeLID, int num_obj, 
   ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
   int num_dim, double *geom_vec, int *ierr)
 {
   PartitionVariables *mesh = (PartitionVariables*)data;
   for (int i=0;  i < num_obj ; i++){
-    geom_vec[3*i]   = (double)mesh->InputPointData[3*i];
-    geom_vec[3*i+1] = (double)mesh->InputPointData[3*i+1];
-    geom_vec[3*i+2] = (double)mesh->InputPointData[3*i+2];
+    geom_vec[3*i]   = (double)((T*)(mesh->InputPointData))[3*i+0];
+    geom_vec[3*i+1] = (double)((T*)(mesh->InputPointData))[3*i+1];
+    geom_vec[3*i+2] = (double)((T*)(mesh->InputPointData))[3*i+2];
   }
   *ierr = ZOLTAN_OK;
   return;
@@ -161,6 +152,7 @@ int zoltan_obj_size_func(void *data, int num_gid_entries, int num_lid_entries,
   return mesh->TotalSizePerId + sizeof(float)*3;
 }
 //----------------------------------------------------------------------------
+template<typename T>
 void zoltan_pack_obj_func(void *data, int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int dest, int size, char *buf, int *ierr)
 {
@@ -174,11 +166,12 @@ void zoltan_pack_obj_func(void *data, int num_gid_entries, int num_lid_entries,
     memcpy(buf, dataptr, asize);
     buf += asize;
   }
-  memcpy(buf, &mesh->InputPointData[(*local_id)*3], sizeof(float)*3);  
+  memcpy(buf, &((T*)(mesh->InputPointData))[(*local_id)*3], sizeof(T)*3);  
   *ierr = ZOLTAN_OK;
   return;
 }
 //----------------------------------------------------------------------------
+template<typename T>
 void zoltan_unpack_obj_func(void *data, int num_gid_entries,
   ZOLTAN_ID_PTR global_id, int size, char *buf, int *ierr)
 {
@@ -198,7 +191,7 @@ void zoltan_unpack_obj_func(void *data, int num_gid_entries,
     memcpy(dataptr, buf, asize);
     buf += asize;
   }
-  memcpy(&mesh->OutputPointData[mesh->OutPointCount*3], buf, sizeof(float)*3);  
+  memcpy(&((T*)(mesh->OutputPointData))[mesh->OutPointCount*3], buf, sizeof(T)*3);  
   mesh->OutPointCount++;
   *ierr = ZOLTAN_OK;
   return;
@@ -220,6 +213,7 @@ export_procs 	    An array of size num_export listing the processor IDs of the d
 export_to_part 	  An array of size num_export listing the parts to which objects will be sent.
 ierr 	            Error code to be set by function.
 */
+template<typename T>
 void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entries,
   int num_import, ZOLTAN_ID_PTR import_global_ids, ZOLTAN_ID_PTR import_local_ids,
   int *import_procs, int *import_to_part, int num_export, ZOLTAN_ID_PTR export_global_ids,
@@ -247,12 +241,13 @@ void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entr
   for (vtkIdType i=0; i<mesh->InputNumberOfLocalPoints; i++) {
     if (alive[i]) {
       outPD->CopyData(inPD, i, mesh->OutPointCount);
-      memcpy(&mesh->OutputPointData[mesh->OutPointCount*3], &mesh->InputPointData[i*3], sizeof(float)*3);
+      memcpy(&((T*)(mesh->OutputPointData))[mesh->OutPointCount*3], &((T*)(mesh->InputPointData))[i*3], sizeof(T)*3);
       mesh->OutPointCount++;
     }
   }
 }
 //----------------------------------------------------------------------------
+template <typename T>
 void zolta_pre_ghost_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entries,
   int num_import, ZOLTAN_ID_PTR import_global_ids, ZOLTAN_ID_PTR import_local_ids,
   int *import_procs, int *import_to_part, int num_export, ZOLTAN_ID_PTR export_global_ids,
@@ -263,7 +258,7 @@ void zolta_pre_ghost_migrate_pp_func(void *data, int num_gid_entries, int num_li
   mesh->OutputNumberOfPointsFinal = mesh->OutputNumberOfLocalPoints + num_import;
   mesh->OutputPoints->GetData()->Resize(mesh->OutputNumberOfPointsFinal);
   mesh->OutputPoints->SetNumberOfPoints(mesh->OutputNumberOfPointsFinal);
-  mesh->OutputPointData = (float*)(mesh->OutputPoints->GetData()->GetVoidPointer(0));
+  mesh->OutputPointData = (T*)(mesh->OutputPoints->GetData()->GetVoidPointer(0));
   // copies are now being made from existing data, so use output as new input points
   mesh->InputPointData = mesh->OutputPointData;
   vtkPointData *inPD  = mesh->Output->GetPointData();
@@ -404,9 +399,10 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
 
   // Setup the output
   vtkPolyData                    *output = vtkPolyData::GetData(outputVector);
-  vtkSmartPointer<vtkPoints>   newPoints = vtkSmartPointer<vtkPoints>::New();
+  vtkSmartPointer<vtkPoints>   outPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vertices = vtkSmartPointer<vtkCellArray>::New();
-  output->SetPoints(newPoints);
+  outPoints->SetDataType(inPoints->GetDataType());
+  output->SetPoints(outPoints);
 
   //
   // We'd like to clamp bounding boxes of all the generated partitions to the original data
@@ -472,7 +468,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   mesh.InputGlobalIds           = IdArray->GetPointer(0);
   mesh.InputNumberOfLocalPoints = numPoints;
   mesh.InputPointData           = inPoints->GetPointer(0);
-  mesh.OutputPoints             = output->GetPoints();
+  mesh.OutputPoints             = outPoints;
   mesh.TotalSizePerId           = 0;
   mesh.OutPointCount            = 0;
   mesh.NumberOfFields           = input->GetPointData()->GetNumberOfArrays();
@@ -541,17 +537,28 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   Zoltan_Set_Num_Obj_Fn(zz,    get_number_of_objects, &mesh);
   Zoltan_Set_Obj_List_Fn(zz,   get_object_list,       &mesh);
   Zoltan_Set_Num_Geom_Fn(zz,   get_num_geometry,      &mesh);
-  Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list,     &mesh);
+  if (inPoints->GetDataType()==VTK_FLOAT) {
+    Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list<float>, &mesh);
+  }
+  else if (inPoints->GetDataType()==VTK_DOUBLE) {
+    Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list<double>, &mesh);
+  }
 
   //
   // Register functions for packing and unpacking data
   // by migration tools.  
-  //
-  Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,       (void (*)()) zoltan_obj_size_func,      &mesh); 
-  Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) zoltan_pack_obj_func,      &mesh); 
-  Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) zoltan_unpack_obj_func,    &mesh); 
-  Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_migrate_pp_func, &mesh); 
-
+  //    
+  Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE, (void (*)()) zoltan_obj_size_func, &mesh); 
+  if (inPoints->GetDataType()==VTK_FLOAT) {
+    Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) zoltan_pack_obj_func<float>,      &mesh); 
+    Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) zoltan_unpack_obj_func<float>,    &mesh); 
+    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_migrate_pp_func<float>, &mesh); 
+  }
+  else if (inPoints->GetDataType()==VTK_DOUBLE) {
+    Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) zoltan_pack_obj_func<double>,      &mesh); 
+    Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) zoltan_unpack_obj_func<double>,    &mesh); 
+    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_migrate_pp_func<double>, &mesh); 
+  }
   //
   // Zoltan can now partition our particles. 
   // After this returns, we have redistributed particles and the Output holds
@@ -611,7 +618,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // Find points which overlap other processes' ghost regions
   //
   GhostPartition GhostIds;
-  this->FindOverlappingPoints(output->GetPoints(), IdArray, GhostIds);
+  this->FindOverlappingPoints(outPoints, IdArray, GhostIds);
 
   //
   // Pass the lists of ghost cells to zoltan so that it
@@ -625,7 +632,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   int          *found_to_part    = NULL;
 
   rc = Zoltan_Invert_Lists(zz, 
-        num_known,
+        (int)num_known,
         &GhostIds.GlobalIds[0],
         &GhostIds.LocalIds[0],
         &GhostIds.Procs[0],
@@ -647,18 +654,23 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // Before sending, we need to change the pre-migrate function as we are now adding
   // extra ghost cells and not starting our lists from a clean slate.
   //
-  Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_ghost_migrate_pp_func, &mesh); 
+  if (inPoints->GetDataType()==VTK_FLOAT) {
+    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_ghost_migrate_pp_func<float>, &mesh); 
+  }
+  else if (inPoints->GetDataType()==VTK_DOUBLE) {
+    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_ghost_migrate_pp_func<double>, &mesh); 
+  }
 
   //
   // Now we can actually send ghost particles between processes
   //
 	rc = Zoltan_Migrate (zz,
-        num_found,
+        (int)num_found,
         found_global_ids,
         found_local_ids,
         found_procs,
         found_to_part,
-        num_known,
+        (int)num_known,
         &GhostIds.GlobalIds[0],
         &GhostIds.LocalIds[0],
         &GhostIds.Procs[0],
