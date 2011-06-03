@@ -30,8 +30,8 @@
 #include "vtkPolyData.h"
 #include "vtkDataSetAttributes.h"
 #include "vtkPointData.h"
-#include "vtkFloatArray.h"
-#include "vtkDoubleArray.h"
+//#include "vtkFloatArray.h"
+//#include "vtkDoubleArray.h"
 #include "vtkCellArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -114,9 +114,9 @@ void get_geometry_list(
 {
   PartitionVariables *mesh = (PartitionVariables*)data;
   for (int i=0;  i < num_obj ; i++){
-    geom_vec[3*i]   = (double)((T*)(mesh->InputPointData))[3*i+0];
-    geom_vec[3*i+1] = (double)((T*)(mesh->InputPointData))[3*i+1];
-    geom_vec[3*i+2] = (double)((T*)(mesh->InputPointData))[3*i+2];
+    geom_vec[3*i]   = ((T*)(mesh->InputPointData))[3*i+0];
+    geom_vec[3*i+1] = ((T*)(mesh->InputPointData))[3*i+1];
+    geom_vec[3*i+2] = ((T*)(mesh->InputPointData))[3*i+2];
   }
   *ierr = ZOLTAN_OK;
   return;
@@ -141,15 +141,13 @@ Returned Value:
     int 	The size (in bytes) of the required data buffer.
 */
 //----------------------------------------------------------------------------
+template<typename T>
 int zoltan_obj_size_func(void *data, int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *ierr)
 {
   PartitionVariables *mesh = (PartitionVariables*)data;
-//  vtkIdType GID = *global_id;
-//  vtkIdType LID = *local_id;
-  //
   *ierr = ZOLTAN_OK;
-  return mesh->TotalSizePerId + sizeof(float)*3;
+  return mesh->TotalSizePerId + sizeof(T)*3;
 }
 //----------------------------------------------------------------------------
 template<typename T>
@@ -393,7 +391,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
 
   // Get input and output data.
   vtkPointSet      *input = vtkPointSet::GetData(inputVector[0]);
-  vtkFloatArray *inPoints = vtkFloatArray::SafeDownCast(input->GetPoints()->GetData());
+  vtkDataArray  *inPoints = input->GetPoints()->GetData();
   vtkIdType     numPoints = input->GetPoints()->GetNumberOfPoints();
   std::cout << "Partitioning on " << this->UpdatePiece << " Points Input : " << numPoints << std::endl;
 
@@ -467,7 +465,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   mesh.Output                   = output;
   mesh.InputGlobalIds           = IdArray->GetPointer(0);
   mesh.InputNumberOfLocalPoints = numPoints;
-  mesh.InputPointData           = inPoints->GetPointer(0);
+  mesh.InputPointData           = inPoints->GetVoidPointer(0);
   mesh.OutputPoints             = outPoints;
   mesh.TotalSizePerId           = 0;
   mesh.OutPointCount            = 0;
@@ -538,6 +536,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   Zoltan_Set_Obj_List_Fn(zz,   get_object_list,       &mesh);
   Zoltan_Set_Num_Geom_Fn(zz,   get_num_geometry,      &mesh);
   if (inPoints->GetDataType()==VTK_FLOAT) {
+    std::cout << "Using float data pointers " << std::endl;
     Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list<float>, &mesh);
   }
   else if (inPoints->GetDataType()==VTK_DOUBLE) {
@@ -548,13 +547,14 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // Register functions for packing and unpacking data
   // by migration tools.  
   //    
-  Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE, (void (*)()) zoltan_obj_size_func, &mesh); 
   if (inPoints->GetDataType()==VTK_FLOAT) {
+    Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,       (void (*)()) zoltan_obj_size_func<float>,      &mesh); 
     Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) zoltan_pack_obj_func<float>,      &mesh); 
     Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) zoltan_unpack_obj_func<float>,    &mesh); 
     Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_migrate_pp_func<float>, &mesh); 
   }
   else if (inPoints->GetDataType()==VTK_DOUBLE) {
+    Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,       (void (*)()) zoltan_obj_size_func<double>,      &mesh); 
     Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) zoltan_pack_obj_func<double>,      &mesh); 
     Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) zoltan_unpack_obj_func<double>,    &mesh); 
     Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_migrate_pp_func<double>, &mesh); 
