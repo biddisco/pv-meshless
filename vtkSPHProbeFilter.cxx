@@ -576,11 +576,15 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
   //
   // for debug in parallel
   //
-  vtkMPIController *con = vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController());
-  vtkMPICommunicator *com = vtkMPICommunicator::SafeDownCast(con->GetCommunicator());
-
-  int UpdatePiece     = com->GetLocalProcessId();
-  int UpdateNumPieces = com->GetNumberOfProcesses();
+  int UpdatePiece     = 0;
+  int UpdateNumPieces = 1;
+  vtkMPICommunicator *com = NULL;
+  vtkMPIController   *con = vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController());
+  if (con) {
+    com = vtkMPICommunicator::SafeDownCast(con->GetCommunicator());
+    UpdatePiece     = com ? com->GetLocalProcessId() : 0;
+    UpdateNumPieces = com ? com->GetNumberOfProcesses() : 1;
+  }
 #endif
   
   //
@@ -787,7 +791,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
 
 #ifdef VTK_USE_MPI
   std::cout << "Probe filter " << UpdatePiece << " exported N = " << outId << std::endl;
-  com->Barrier();
+  if (com) com->Barrier();
 #endif
 
   // Add Grad and Shepard arrays
