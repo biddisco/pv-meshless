@@ -12,9 +12,9 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkCustomBoxRepresentation - a class defining the representation for the vtkvtkCustomBoxRepresentationBoxWidget
+// .NAME vtkCustomBoxRepresentation - a class defining the representation for the vtkCustomBoxWidget
 // .SECTION Description
-// This class is a concrete representation for the vtkvtkCustomBoxRepresentationBoxWidget. It
+// This class is a concrete representation for the vtkCustomBoxWidget. It
 // represents a box with seven handles: one on each of the six faces, plus a
 // center handle. Through interaction with the widget, the box
 // representation can be arbitrarily positioned in the 3D space.
@@ -35,7 +35,6 @@
 #define __vtkCustomBoxRepresentation_h
 
 #include "vtkBoxRepresentation.h"
-
 
 class vtkConeSource;
 
