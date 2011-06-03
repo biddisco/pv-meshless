@@ -546,18 +546,36 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //
   // Register functions for packing and unpacking data
   // by migration tools.  
+  // GCC has trouble resolving the templated function pointers, so we explicitly
+  // declare the types ant then cast them as args
   //    
+
+  
+  typedef int  (*zsize_fn) (void *, int , int , ZOLTAN_ID_PTR , ZOLTAN_ID_PTR , int *);
+  typedef void (*zpack_fn) (void *, int , int , ZOLTAN_ID_PTR , ZOLTAN_ID_PTR , int , int , char *, int *);
+  typedef void (*zupack_fn)(void *, int , ZOLTAN_ID_PTR , int , char *, int *);
+  typedef void (*zprem_fn) (void *, int , int , int , ZOLTAN_ID_PTR , ZOLTAN_ID_PTR , int *, int *, int , ZOLTAN_ID_PTR ,
+    ZOLTAN_ID_PTR , int *, int *, int *);
+
   if (inPoints->GetDataType()==VTK_FLOAT) {
-    Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,       (void (*)()) zoltan_obj_size_func<float>,      &mesh); 
-    Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) zoltan_pack_obj_func<float>,      &mesh); 
-    Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) zoltan_unpack_obj_func<float>,    &mesh); 
-    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_migrate_pp_func<float>, &mesh); 
+    zsize_fn  f1 = zoltan_obj_size_func<float>;
+    zpack_fn  f2 = zoltan_pack_obj_func<float>;
+    zupack_fn f3 = zoltan_unpack_obj_func<float>;
+    zprem_fn  f4 = zolta_pre_migrate_pp_func<float>; 
+    Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,       (void (*)()) f1, &mesh); 
+    Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) f2, &mesh); 
+    Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) f3, &mesh); 
+    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) f4, &mesh); 
   }
   else if (inPoints->GetDataType()==VTK_DOUBLE) {
-    Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,       (void (*)()) zoltan_obj_size_func<double>,      &mesh); 
-    Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) zoltan_pack_obj_func<double>,      &mesh); 
-    Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) zoltan_unpack_obj_func<double>,    &mesh); 
-    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_migrate_pp_func<double>, &mesh); 
+    zsize_fn  f1 = zoltan_obj_size_func<double>;
+    zpack_fn  f2 = zoltan_pack_obj_func<double>;
+    zupack_fn f3 = zoltan_unpack_obj_func<double>;
+    zprem_fn  f4 = zolta_pre_migrate_pp_func<double>;
+    Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,       (void (*)()) f1, &mesh);
+    Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) f2, &mesh);
+    Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) f3, &mesh);
+    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) f4, &mesh);
   }
   //
   // Zoltan can now partition our particles. 
@@ -655,10 +673,12 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // extra ghost cells and not starting our lists from a clean slate.
   //
   if (inPoints->GetDataType()==VTK_FLOAT) {
-    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_ghost_migrate_pp_func<float>, &mesh); 
+    zprem_fn  f4 = zolta_pre_ghost_migrate_pp_func<float>;
+    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) f4, &mesh);
   }
   else if (inPoints->GetDataType()==VTK_DOUBLE) {
-    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) zolta_pre_ghost_migrate_pp_func<double>, &mesh); 
+    zprem_fn  f4 = zolta_pre_ghost_migrate_pp_func<double>;
+    Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) f4, &mesh);
   }
 
   //
