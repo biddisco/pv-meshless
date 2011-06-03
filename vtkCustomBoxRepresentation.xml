@@ -144,7 +144,9 @@
 
   <ProxyGroup name="representations">
 
-    <NewWidgetRepresentationProxy name="CustomBoxWidgetRepresentation">
+    <NewWidgetRepresentationProxy 
+      name="CustomBoxWidgetRepresentation"
+      class="vtk3DWidgetRepresentation" >
     <Documentation>
       Representation proxy for the the custom box widget. This includes the
       widget/representation proxies for the custom box 3D widget.
