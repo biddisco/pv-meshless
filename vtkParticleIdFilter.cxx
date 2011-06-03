@@ -79,6 +79,11 @@ int vtkParticleIdFilter::RequestData(
   numPts = input->GetNumberOfPoints();
   numCells = input->GetNumberOfCells();
 
+//  if (this->FieldData) {
+    outPD->ShallowCopy(inPD);
+    outCD->ShallowCopy(inCD);
+//  }
+
   //
   // setup communicator for parallel work
   //
@@ -124,17 +129,8 @@ int vtkParticleIdFilter::RequestData(
       }
 
     ptIds->SetName(this->IdsArrayName);
-    if ( ! this->FieldData )
-      {
-      int idx = outPD->AddArray(ptIds);
-      outPD->SetActiveAttribute(idx, vtkDataSetAttributes::SCALARS);
-      outPD->CopyScalarsOff();
-      }
-    else
-      {
-      outPD->AddArray(ptIds);
-      outPD->CopyFieldOff(this->IdsArrayName);
-      }
+    int idx = outPD->AddArray(ptIds);
+    outPD->SetActiveAttribute(idx, vtkDataSetAttributes::SCALARS);
     ptIds->Delete();
     }
 
@@ -173,9 +169,6 @@ int vtkParticleIdFilter::RequestData(
       }
     cellIds->Delete();
     }
-
-  outPD->PassData(inPD);
-  outCD->PassData(inCD);
 
   return 1;
 }
