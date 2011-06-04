@@ -46,16 +46,17 @@ ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 # --------------------------------------------------
 # Optional Trilinos support 
 # --------------------------------------------------
-OPTION(USE_TRILINOS "Use Trilinos library" ON)
-FIND_PACKAGE(Trilinos)
-MESSAGE("Trilinos_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS}")
-IF(${Trilinos_FOUND})
-  INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
-  LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS})
-  SET(TRILINOS_CXX ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx)
-  SET(TRILINOS_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml)
-  MESSAGE("Trilinos_LIBRARY_DIRS ${Trilinos_LIBRARY_DIRS}/${CMAKE_CFG_INTDIR}") 
-ENDIF(${Trilinos_FOUND})
+OPTION(USE_TRILINOS "Use Trilinos library" OFF)
+IF(USE_TRILINOS)
+  FIND_PACKAGE(Trilinos)
+  IF(${Trilinos_FOUND})
+    INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
+    LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS})
+    SET(TRILINOS_CXX ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx)
+    SET(TRILINOS_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml)
+    MESSAGE("Trilinos_LIBRARY_DIRS ${Trilinos_LIBRARY_DIRS}/${CMAKE_CFG_INTDIR}") 
+  ENDIF(${Trilinos_FOUND})
+ENDIF(USE_TRILINOS)
 
 #--------------------------------------------------
 # Build minimal H5Part lib for support
@@ -68,7 +69,7 @@ ENDIF(USE_HDF5)
 # --------------------------------------------------
 # Optional cosmo support 
 # --------------------------------------------------
-OPTION(USE_COSMO "Use cosmo library" ON)
+OPTION(USE_COSMO "Use cosmo library" OFF)
   
 IF(USE_COSMO)
   ADD_DEFINITIONS("-DUSE_VTK_COSMO")
