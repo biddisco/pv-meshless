@@ -21,7 +21,8 @@
 #include <QVBoxLayout>
 #include <QScrollArea>
 
-// VTK includes
+// version includes
+#include "vtkPVConfig.h"
 
 // ParaView Server Manager includes
 #include "vtkSMInputProperty.h"
@@ -226,7 +227,14 @@ pqSPHManagerDockWindow::pqSPHManagerDockWindow(QWidget* p) : QDockWidget("SPH Ma
     this, SLOT(serverAdded(pqServer *)));
 
   this->serverAdded(pqActiveObjects::instance().activeServer());
-
+  //
+#if PARAVIEW_VERSION_MAJOR==3 && PARAVIEW_VERSION_MINOR==10
+  #ifndef VTK_USE_MPI
+    this->init();
+  #endif
+#else
+  // we might be wanting parallel support
+#endif
 }
 //----------------------------------------------------------------------------
 pqSPHManagerDockWindow::~pqSPHManagerDockWindow()
