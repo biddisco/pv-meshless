@@ -28,11 +28,13 @@ ENDFOREACH(test_name)
 #--------------------------------------------------
 # H5Part
 #--------------------------------------------------
-ADD_EXECUTABLE(TestH5PartParallelWriter TestH5PartParallelWriter.cxx)
-TARGET_LINK_LIBRARIES(TestH5PartParallelWriter
-  pv_meshless 
-  )
-ADD_TEST(TestH5PartParallelWriter.cxx ${PROJECT_BINARY_DIR}/../bin/TestH5PartParallelWriter.cxx)
+IF (VTK_USE_PARALLEL AND VTK_USE_MPI)
+  ADD_EXECUTABLE(TestH5PartParallelWriter TestH5PartParallelWriter.cxx)
+  TARGET_LINK_LIBRARIES(TestH5PartParallelWriter
+    pv_meshless 
+    )
+  ADD_TEST(TestH5PartParallelWriter.cxx ${PROJECT_BINARY_DIR}/../bin/TestH5PartParallelWriter.cxx)
+ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 
 #--------------------------------------------------
 # Trilinos
