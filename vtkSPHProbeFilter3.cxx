@@ -158,8 +158,9 @@ int vtkSPHProbeFilter3::RequestDataObject(
   //
   ok = (ok && output->GetDataObjectType()==this->RequiredDataType());
   //
-  vtkDataSet *newOutput = NULL;
   if (!ok) {
+    std::cout << "Replacing output " << std::endl;
+    vtkDataSet *newOutput = NULL;
     switch (this->RequiredDataType()) {
       case VTK_POLY_DATA:
         newOutput = vtkPolyData::New();
