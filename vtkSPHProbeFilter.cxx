@@ -606,7 +606,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
     G = ghostarray->GetNumberOfTuples();
     ghostdata=static_cast<vtkUnsignedCharArray *>(ghostarray)->GetPointer(0);
   }
-  for (vtkIdType i=0; ghostdata!=NULL & i<G; i++) {
+  for (vtkIdType i=0; ghostdata!=NULL && i<G; i++) {
     if (ghostdata[i]==0) nonGhost++;
   }
 #ifdef VTK_USE_MPI
