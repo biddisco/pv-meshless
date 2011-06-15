@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pq3DWidgetFactory.h"
 #include "pqServer.h"
 #include "pqServerManagerModel.h"
+#include "pqActiveObjects.h"
 #include "pqSMAdaptor.h"
 #include "pqBoxWidget.h"
 #include "pqImplicitPlaneWidget.h"
@@ -181,7 +182,7 @@ pqRegularGridSourceWidget::pqRegularGridSourceWidget(vtkSMProxy* refProxy, vtkSM
   pqServerManagerModel* smmodel =
     pqApplicationCore::instance()->getServerManagerModel();
   //
-  this->createWidget(smmodel->findServer(refProxy->GetConnectionID()));
+  this->createWidget(pqActiveObjects::instance().activeServer());
 
   QObject::connect(this->boxWidget, SIGNAL(widgetVisibilityChanged(bool)),
     this, SLOT(onWidgetVisibilityChanged(bool)));
