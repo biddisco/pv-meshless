@@ -438,7 +438,10 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     Ids = input->GetPointData()->GetGlobalIds();
   }
   vtkIdTypeArray *IdArray = vtkIdTypeArray::SafeDownCast(Ids);
-
+  if (!Ids) {
+    vtkErrorMacro(<<"Parallel partition requires Global Ids");
+    return 0;
+  }
   //--------------------------------------------------------------
   // Use Zoltan library to re-partition the particles in parallel
   //--------------------------------------------------------------
@@ -651,10 +654,10 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
 
   rc = Zoltan_Invert_Lists(zz, 
         (int)num_known,
-        &GhostIds.GlobalIds[0],
-        &GhostIds.LocalIds[0],
-        &GhostIds.Procs[0],
-        &GhostIds.Procs[0],
+        num_known>0 ? &GhostIds.GlobalIds[0] : NULL,
+        num_known>0 ? &GhostIds.LocalIds[0]  : NULL,
+        num_known>0 ? &GhostIds.Procs[0]     : NULL,
+        num_known>0 ? &GhostIds.Procs[0]     : NULL,
         &num_found,
         &found_global_ids,
         &found_local_ids,
@@ -691,10 +694,11 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
         found_procs,
         found_to_part,
         (int)num_known,
-        &GhostIds.GlobalIds[0],
-        &GhostIds.LocalIds[0],
-        &GhostIds.Procs[0],
-        &GhostIds.Procs[0]);
+        num_known>0 ? &GhostIds.GlobalIds[0] : NULL,
+        num_known>0 ? &GhostIds.LocalIds[0]  : NULL,
+        num_known>0 ? &GhostIds.Procs[0]     : NULL,
+        num_known>0 ? &GhostIds.Procs[0]     : NULL
+      );
 
   //
   // Release the arrays allocated during Zoltan_Invert_Lists
