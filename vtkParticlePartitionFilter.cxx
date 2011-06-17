@@ -637,9 +637,18 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
 
   //
   // Find points which overlap other processes' ghost regions
+  // note that we must use the 'new' migrated points which are not the same
+  // as the original input points, so get the new IdArray 
   //
+  vtkIdTypeArray *newIds = vtkIdTypeArray::SafeDownCast(
+    mesh.Output->GetPointData()->GetArray(this->IdChannelArray));
+  if (!newIds || newIds->GetNumberOfTuples()!=mesh.OutputPoints->GetNumberOfPoints()) {
+    vtkErrorMacro(<<"Fatal : Ids on migrated data corrupted");
+    return 0;
+  }
+
   GhostPartition GhostIds;
-  this->FindOverlappingPoints(outPoints, IdArray, GhostIds);
+  this->FindOverlappingPoints(mesh.OutputPoints, newIds, GhostIds);
 
   //
   // Pass the lists of ghost cells to zoltan so that it
