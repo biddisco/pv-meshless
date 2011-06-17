@@ -1,7 +1,6 @@
 #include "vtkSMSPHManagerProxy.h"
 #include "vtkObjectFactory.h"
 #include "vtkSMProxyManager.h"
-#include "vtkProcessModuleConnectionManager.h"
 #include "vtkProcessModule.h"
 #include "vtkSPHManager.h"
 #include "vtkCallbackCommand.h"
@@ -39,7 +38,7 @@ void vtkSMSPHManagerProxy::CreateVTKObjects()
     vtkSMProxy::CreateVTKObjects();
   }
   else {
-    this->InitializeAndCopyFromProxy(vtkSMSPHManagerProxy::ReferenceProxy);
+//    this->InitializeAndCopyFromProxy(vtkSMSPHManagerProxy::ReferenceProxy);
   }
 }
 //----------------------------------------------------------------------------
