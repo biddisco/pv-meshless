@@ -246,7 +246,7 @@ bool vtkH5PartWriter::GatherDataArrayInfo(vtkDataArray *data,
   }
   vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(
     this->Controller->GetCommunicator()); 
-  int result = com->AllGather((char*)&datatypes[this->UpdatePiece], (char*)&datatypes[0], sizeof(vtkH5PW_datainfo));
+  int result = com->AllGather((char*)MPI_IN_PLACE, (char*)&datatypes[0], sizeof(vtkH5PW_datainfo));
   for (int i=0; i<this->UpdateNumPieces; i++) {
     vtkH5PW_datainfo &newdata = datatypes[i];
     if (newdata.datatype!=-1) {
@@ -269,7 +269,7 @@ bool vtkH5PartWriter::GatherScalarInfo(vtkPointData *pd, int N, int &numScalar)
   if (pd) numScalars[this->UpdatePiece] = pd->GetNumberOfArrays();
   vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(
     this->Controller->GetCommunicator()); 
-  int result = com->AllGather(&numScalars[this->UpdatePiece], &numScalars[0], 1);
+  int result = com->AllGather((const int *)MPI_IN_PLACE, &numScalars[0], 1);
   for (int i=0; i<this->UpdateNumPieces; i++) {
     if (numScalars[i]>0) numScalar = numScalars[i];
   }
