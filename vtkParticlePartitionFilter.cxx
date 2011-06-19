@@ -51,6 +51,9 @@
 vtkStandardNewMacro(vtkParticlePartitionFilter);
 vtkCxxSetObjectMacro(vtkParticlePartitionFilter, Controller, vtkMultiProcessController);
 
+static int pack_count = 0;
+static int size_count = 0;
+static int unpack_count = 0;
 //----------------------------------------------------------------------------
 // Zoltan callback interface
 //
@@ -145,6 +148,7 @@ template<typename T>
 int zoltan_obj_size_func(void *data, int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *ierr)
 {
+  size_count++;
   PartitionVariables *mesh = (PartitionVariables*)data;
   *ierr = ZOLTAN_OK;
   return mesh->TotalSizePerId + sizeof(T)*3;
@@ -154,6 +158,7 @@ template<typename T>
 void zoltan_pack_obj_func(void *data, int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int dest, int size, char *buf, int *ierr)
 {
+  pack_count++;
   PartitionVariables *mesh = (PartitionVariables*)data;
   vtkIdType GID = *global_id;
   vtkIdType LID = *local_id;
@@ -173,6 +178,7 @@ template<typename T>
 void zoltan_unpack_obj_func(void *data, int num_gid_entries,
   ZOLTAN_ID_PTR global_id, int size, char *buf, int *ierr)
 {
+  unpack_count++;
   if (num_gid_entries != 1) {
     *ierr = ZOLTAN_FATAL;
     return;
@@ -606,6 +612,12 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     Zoltan_Destroy(&zz);
     exit(0);
   }
+
+  std::cout << "Partitioning complete on " << this->UpdatePiece << 
+    " pack_count : " << pack_count <<
+    " size_count : " << size_count <<
+    " unpack_count : " << unpack_count 
+    << std::endl;
 
   MPI_Barrier(mpiComm);
   Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
