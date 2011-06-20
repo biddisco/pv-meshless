@@ -31,6 +31,7 @@
 #include "vtkBoundingBox.h"
 #include <vector>
 #include "zoltan.h"
+#include "vtkSmartPointer.h"
 
 class vtkMultiProcessController;
 class vtkPoints;
@@ -81,6 +82,8 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
      vtkParticlePartitionFilter();
     ~vtkParticlePartitionFilter();
 
+    int GatherDataTypeInfo(vtkPointSet *input);
+
     // Override to specify support for vtkPointSet input type.
     virtual int FillInputPortInformation(int port, vtkInformation* info);
 
@@ -93,6 +96,8 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
                             vtkInformationVector**,
                             vtkInformationVector*);
 //BTX
+    vtkSmartPointer<vtkIdTypeArray> GenerateGlobalIds(vtkIdType N);
+
     typedef struct {
       std::vector<ZOLTAN_ID_TYPE> GlobalIds;
       std::vector<ZOLTAN_ID_TYPE> LocalIds;
