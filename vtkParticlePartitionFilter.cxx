@@ -218,7 +218,7 @@ export_to_part 	  An array of size num_export listing the parts to which objects
 ierr 	            Error code to be set by function.
 */
 template<typename T>
-void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entries,
+void zoltan_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entries,
   int num_import, ZOLTAN_ID_PTR import_global_ids, ZOLTAN_ID_PTR import_local_ids,
   int *import_procs, int *import_to_part, int num_export, ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids, int *export_procs, int *export_to_part, int *ierr)
@@ -227,7 +227,7 @@ void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entr
   // newTotal = original points - sent away + received
   mesh->OutputNumberOfLocalPoints = mesh->InputNumberOfLocalPoints + num_import - num_export;
   mesh->OutputPoints->SetNumberOfPoints(mesh->OutputNumberOfLocalPoints);
-  mesh->OutputPointData = (float*)(mesh->OutputPoints->GetData()->GetVoidPointer(0));
+  mesh->OutputPointData = mesh->OutputPoints->GetData()->GetVoidPointer(0);
   vtkPointData *inPD  = mesh->Input->GetPointData();
   vtkPointData *outPD = mesh->Output->GetPointData();
   outPD->CopyAllocate(inPD, mesh->OutputNumberOfLocalPoints);
@@ -252,7 +252,7 @@ void zolta_pre_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entr
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void zolta_pre_ghost_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entries,
+void zoltan_pre_ghost_migrate_pp_func(void *data, int num_gid_entries, int num_lid_entries,
   int num_import, ZOLTAN_ID_PTR import_global_ids, ZOLTAN_ID_PTR import_local_ids,
   int *import_procs, int *import_to_part, int num_export, ZOLTAN_ID_PTR export_global_ids,
   ZOLTAN_ID_PTR export_local_ids, int *export_procs, int *export_to_part, int *ierr)
@@ -349,7 +349,8 @@ vtkBoundingBox *vtkParticlePartitionFilter::GetPartitionBoundingBoxWithGhostRegi
 //----------------------------------------------------------------------------
 void vtkParticlePartitionFilter::FindOverlappingPoints(vtkPoints *pts, vtkIdTypeArray *IdArray, GhostPartition &ghostinfo)
 {
-  for (vtkIdType i=0; i<pts->GetNumberOfPoints(); i++) {
+  vtkIdType N = pts->GetNumberOfPoints();
+  for (vtkIdType i=0; i<N; i++) {
     double *pt = pts->GetPoint(i);
     int proc = 0;
     for (std::vector<vtkBoundingBox>::iterator it=this->BoxListWithGhostRegion.begin(); 
@@ -364,6 +365,61 @@ void vtkParticlePartitionFilter::FindOverlappingPoints(vtkPoints *pts, vtkIdType
       }
     }
   }
+}
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkIdTypeArray> vtkParticlePartitionFilter::GenerateGlobalIds(vtkIdType N)
+{
+  vtkSmartPointer<vtkIdTypeArray> Ids = vtkSmartPointer<vtkIdTypeArray>::New();
+
+  vtkstd::vector<int>       PartialSum(this->UpdateNumPieces+1);
+  vtkstd::vector<vtkIdType> PointsPerProcess(this->UpdateNumPieces);
+  //
+  vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
+  com->AllGather(&N, &PointsPerProcess[0], 1);
+  vtkstd::partial_sum(PointsPerProcess.begin(), PointsPerProcess.end(), PartialSum.begin()+1);
+
+  vtkIdType initialValue = PartialSum[this->UpdatePiece];
+  std::cout << "Id filter rank " << this->UpdatePiece << " Using offset " << initialValue << std::endl;
+  for (int i=0; i<PartialSum.size(); i++) { std::cout << PartialSum[i] << " " ; } std::cout << std::endl;
+  //
+  Ids->SetNumberOfValues(N);
+
+  for (vtkIdType id=0; id<N; id++) {
+    Ids->SetValue(id, id+initialValue);
+  }
+
+  Ids->SetName(this->IdChannelArray ? this->IdChannelArray : "PointIds");
+  return Ids;
+}
+//----------------------------------------------------------------------------
+struct vtkPPF_datainfo {
+  int  datatype;
+  vtkPPF_datainfo() : datatype(-1){};
+};
+//----------------------------------------------------------------------------
+int vtkParticlePartitionFilter::GatherDataTypeInfo(vtkPointSet *input)
+{
+#ifdef VTK_USE_MPI
+  std::vector< int > datatypes(this->UpdateNumPieces, -1);
+  int datatype = -1;
+  if (input->GetPoints()) {
+    datatypes[this->UpdatePiece] = input->GetPoints()->GetDataType();
+  }
+  vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator()); 
+  int result = com->AllGather((int*)MPI_IN_PLACE, (int*)&datatypes[0], 1);
+  for (int i=0; i<this->UpdateNumPieces; i++) {
+    int &newdatatype = datatypes[i];
+    if (datatype==-1 && newdatatype!=-1) {
+      datatype = newdatatype;
+    }
+    else if (datatype!=-1 && newdatatype!=-1 && newdatatype!=datatype) {
+      vtkErrorMacro(<<"Fatal datatype error in Point DataType Gather");
+    }
+  }
+  return datatype;
+#else
+  return input->GetPoints()->GetDataType();
+#endif
 }
 //----------------------------------------------------------------------------
 int vtkParticlePartitionFilter::RequestData(vtkInformation*,
@@ -395,25 +451,27 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
 
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
-  // Get input and output data.
-  vtkPointSet      *input = vtkPointSet::GetData(inputVector[0]);
-  vtkDataArray  *inPoints = input->GetPoints()->GetData();
-  vtkIdType     numPoints = input->GetPoints()->GetNumberOfPoints();
+  // Get input
+  vtkPointSet *inputdataset = vtkPointSet::GetData(inputVector[0]);
+  vtkIdType       numPoints = inputdataset->GetNumberOfPoints();
+  vtkDataArray    *inPoints = numPoints>0 ? inputdataset->GetPoints()->GetData() : NULL;
   std::cout << "Partitioning on " << this->UpdatePiece << " Points Input : " << numPoints << std::endl;
 
-  // Setup the output
+  // Setup output
   vtkPolyData                    *output = vtkPolyData::GetData(outputVector);
   vtkSmartPointer<vtkPoints>   outPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vertices = vtkSmartPointer<vtkCellArray>::New();
-  outPoints->SetDataType(inPoints->GetDataType());
+  // if input had 0 points, make sure output is still setup correctly (float/double?)
+  int pointstype = this->GatherDataTypeInfo(inputdataset);
+  outPoints->SetDataType(pointstype);
   output->SetPoints(outPoints);
 
   //
   // We'd like to clamp bounding boxes of all the generated partitions to the original data
-  // rather than DBL_MAX etc used by zoltan (infinite extents)
+  // rather than DBL_MAX/MIN etc used by zoltan (infinite extents)
   //
   double bounds[6];
-  input->GetBounds(bounds);
+  inputdataset->GetBounds(bounds);
   double bmin[3], bmn[3] = {bounds[0], bounds[2], bounds[4]};
   double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
   MPI_Allreduce(bmn, bmin, 3, MPI_DOUBLE, MPI_MIN, mpiComm);
@@ -421,7 +479,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   this->BoxList.clear();
   this->BoxListWithGhostRegion.clear();
   if (this->UpdateNumPieces==1) {
-    output->ShallowCopy(input);
+    output->ShallowCopy(inputdataset);
     vtkBoundingBox box;
     box.SetMinPoint(bmin);
     box.SetMaxPoint(bmax);
@@ -433,21 +491,28 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   }
 
   //
+  // we make a temp copy of the input so we can add Ids if necessary
+  //
+  vtkSmartPointer<vtkPointSet> input = inputdataset->NewInstance();
+  input->ShallowCopy(inputdataset);
+
+  std::string IdName = this->IdChannelArray ? this->IdChannelArray : "PointIds";
+  //
   // Ids
   //
-  vtkDataArray *Ids = NULL;
-  if (this->IdChannelArray) {
-    Ids = input->GetPointData()->GetArray(this->IdChannelArray);
-  }
+  vtkSmartPointer<vtkDataArray> Ids = NULL;
+  Ids = inputdataset->GetPointData()->GetArray(IdName.c_str());
   if (!Ids) {
     // Try loading the global ids.
-    Ids = input->GetPointData()->GetGlobalIds();
+    Ids = inputdataset->GetPointData()->GetGlobalIds();
+  }
+  if (!Ids) {
+    // Generate our own since none exist
+    Ids = this->GenerateGlobalIds(numPoints);
+    input->GetPointData()->AddArray(Ids);
   }
   vtkIdTypeArray *IdArray = vtkIdTypeArray::SafeDownCast(Ids);
-  if (!Ids) {
-    vtkErrorMacro(<<"Parallel partition requires Global Ids");
-    return 0;
-  }
+
   //--------------------------------------------------------------
   // Use Zoltan library to re-partition the particles in parallel
   //--------------------------------------------------------------
@@ -474,7 +539,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   mesh.Output                   = output;
   mesh.InputGlobalIds           = IdArray->GetPointer(0);
   mesh.InputNumberOfLocalPoints = numPoints;
-  mesh.InputPointData           = inPoints->GetVoidPointer(0);
+  mesh.InputPointData           = inPoints ? inPoints->GetVoidPointer(0) : NULL;
   mesh.OutputPoints             = outPoints;
   mesh.TotalSizePerId           = 0;
   mesh.OutPointCount            = 0;
@@ -496,8 +561,8 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   zz = Zoltan_Create(mpiComm); 
 
   // we don't need any debug info
-  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
-  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "1");
+  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "2");
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "2");
 
   // Method for subdivision
   Zoltan_Set_Param(zz, "LB_APPROACH", "REPARTITION");
@@ -515,7 +580,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   local << 1 << ends;
 
   Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", global.str().c_str());
-  Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS",  local.str().c_str());
+//  Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS",  local.str().c_str());
 
   // All points have the same weight
   Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
@@ -523,7 +588,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
 
   // RCB parameters
   //  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
-  Zoltan_Set_Param(zz, "RCB_RECOMPUTE_BOX", "1");
+  Zoltan_Set_Param(zz, "RCB_RECOMPUTE_BOX", "0");
   Zoltan_Set_Param(zz, "REDUCE_DIMENSIONS", "0");
   Zoltan_Set_Param(zz, "RCB_MAX_ASPECT_RATIO", "10");
 
@@ -544,11 +609,12 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   Zoltan_Set_Num_Obj_Fn(zz,    get_number_of_objects, &mesh);
   Zoltan_Set_Obj_List_Fn(zz,   get_object_list,       &mesh);
   Zoltan_Set_Num_Geom_Fn(zz,   get_num_geometry,      &mesh);
-  if (inPoints->GetDataType()==VTK_FLOAT) {
+  if (pointstype==VTK_FLOAT) {
     std::cout << "Using float data pointers " << std::endl;
     Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list<float>, &mesh);
   }
-  else if (inPoints->GetDataType()==VTK_DOUBLE) {
+  else if (pointstype==VTK_DOUBLE) {
+    std::cout << "Using double data pointers " << std::endl;
     Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list<double>, &mesh);
   }
 
@@ -566,21 +632,21 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   typedef void (*zprem_fn) (void *, int , int , int , ZOLTAN_ID_PTR , ZOLTAN_ID_PTR , int *, int *, int , ZOLTAN_ID_PTR ,
     ZOLTAN_ID_PTR , int *, int *, int *);
 
-  if (inPoints->GetDataType()==VTK_FLOAT) {
+  if (pointstype==VTK_FLOAT) {
     zsize_fn  f1 = zoltan_obj_size_func<float>;
     zpack_fn  f2 = zoltan_pack_obj_func<float>;
     zupack_fn f3 = zoltan_unpack_obj_func<float>;
-    zprem_fn  f4 = zolta_pre_migrate_pp_func<float>; 
+    zprem_fn  f4 = zoltan_pre_migrate_pp_func<float>; 
     Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,       (void (*)()) f1, &mesh); 
     Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) f2, &mesh); 
     Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) f3, &mesh); 
     Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) f4, &mesh); 
   }
-  else if (inPoints->GetDataType()==VTK_DOUBLE) {
+  else if (pointstype==VTK_DOUBLE) {
     zsize_fn  f1 = zoltan_obj_size_func<double>;
     zpack_fn  f2 = zoltan_pack_obj_func<double>;
     zupack_fn f3 = zoltan_unpack_obj_func<double>;
-    zprem_fn  f4 = zolta_pre_migrate_pp_func<double>;
+    zprem_fn  f4 = zoltan_pre_migrate_pp_func<double>;
     Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,       (void (*)()) f1, &mesh);
     Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE,       (void (*)()) f2, &mesh);
     Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) f3, &mesh);
@@ -650,10 +716,10 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //
   // Find points which overlap other processes' ghost regions
   // note that we must use the 'new' migrated points which are not the same
-  // as the original input points, so get the new IdArray 
+  // as the original input points (might be bigger/smaller), so get the new IdArray 
   //
   vtkIdTypeArray *newIds = vtkIdTypeArray::SafeDownCast(
-    mesh.Output->GetPointData()->GetArray(this->IdChannelArray));
+    mesh.Output->GetPointData()->GetArray(IdName.c_str()));
   if (!newIds || newIds->GetNumberOfTuples()!=mesh.OutputPoints->GetNumberOfPoints()) {
     vtkErrorMacro(<<"Fatal : Ids on migrated data corrupted");
     return 0;
@@ -672,7 +738,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   ZOLTAN_ID_PTR found_local_ids  = NULL;
   int          *found_procs      = NULL;
   int          *found_to_part    = NULL;
-
+  //
   rc = Zoltan_Invert_Lists(zz, 
         (int)num_known,
         num_known>0 ? &GhostIds.GlobalIds[0] : NULL,
@@ -696,12 +762,12 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // Before sending, we need to change the pre-migrate function as we are now adding
   // extra ghost cells and not starting our lists from a clean slate.
   //
-  if (inPoints->GetDataType()==VTK_FLOAT) {
-    zprem_fn  f4 = zolta_pre_ghost_migrate_pp_func<float>;
+  if (pointstype==VTK_FLOAT) {
+    zprem_fn f4 = zoltan_pre_ghost_migrate_pp_func<float>;
     Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) f4, &mesh);
   }
-  else if (inPoints->GetDataType()==VTK_DOUBLE) {
-    zprem_fn  f4 = zolta_pre_ghost_migrate_pp_func<double>;
+  else if (pointstype==VTK_DOUBLE) {
+    zprem_fn f4 = zoltan_pre_ghost_migrate_pp_func<double>;
     Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) f4, &mesh);
   }
 
