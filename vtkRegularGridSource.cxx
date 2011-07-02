@@ -15,6 +15,14 @@
 
 =========================================================================*/
 #include "vtkRegularGridSource.h"
+//
+#include "vtkToolkits.h" // For VTK_USE_MPI
+#ifdef VTK_USE_MPI
+  #include "vtkMPI.h"
+  #include "vtkMPIController.h"
+  #include "vtkMPICommunicator.h"
+#endif
+//
 #include "vtkObjectFactory.h"
 #include "vtkCellArray.h"
 #include "vtkPointData.h"
@@ -213,7 +221,24 @@ int vtkRegularGridSource::ComputeInformation(
   double bounds[6], lengths[3], zerovec[3] = {0.0, 0.0, 0.0};
   if (inData && this->UseAutoPlacement) {
     inData->GetBounds(bounds);
+#ifdef VTK_USE_MPI
+    vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
+      vtkMultiProcessController::GetGlobalController()->GetCommunicator());
+    MPI_Comm mpiComm = MPI_COMM_NULL;
+    if (communicator) {
+      mpiComm = *(communicator->GetMPIComm()->GetHandle());
+    }    
+    double bmin[3], bmn[3] = {bounds[0], bounds[2], bounds[4]};
+    double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
+    MPI_Allreduce(bmn, bmin, 3, MPI_DOUBLE, MPI_MIN, mpiComm);
+    MPI_Allreduce(bmx, bmax, 3, MPI_DOUBLE, MPI_MAX, mpiComm);
+    vtkBoundingBox box;
+    box.SetMinPoint(bmin);
+    box.SetMaxPoint(bmax);
+#else
     vtkBoundingBox box(bounds);
+#endif
+
     box.Inflate(this->Delta);
     box.GetLengths(lengths);
     box.GetBounds(bounds);
@@ -233,6 +258,8 @@ int vtkRegularGridSource::ComputeInformation(
       axesvectors[0][i] = this->Point1[i] - this->Origin[i];
       axesvectors[1][i] = this->Point2[i] - this->Origin[i];
       axesvectors[2][i] = this->Point3[i] - this->Origin[i];
+    }
+    for (int i=0; i<3; i++) {
       lengths[i] = sqrt(vtkMath::Distance2BetweenPoints(zerovec, axesvectors[i]));
     }
   }
@@ -267,8 +294,6 @@ int vtkRegularGridSource::ComputeInformation(
   for (int i=0; i<3; i++) {
     this->centre[i] = this->origin[i] + o2[i]/2.0;
   }
-  //
-  this->NumPoints = Dimension[0]*Dimension[1]*Dimension[2];
   //
   return 1;
 }
@@ -313,23 +338,31 @@ int vtkRegularGridSource::RequestData(
   //
   this->ComputeInformation(request, inputVector, outputVector);
   //
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  int *outUpdateExt = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT());
+  //
+  int dims[3]= {1+outUpdateExt[1]-outUpdateExt[0],
+                1+outUpdateExt[3]-outUpdateExt[2], 
+                1+outUpdateExt[5]-outUpdateExt[4]};
+  vtkIdType NumPoints = dims[0]*dims[1]*dims[2];
+  //
   vtkSmartPointer<vtkPoints>     newpoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkFloatArray> dataarray = vtkFloatArray::SafeDownCast(newpoints->GetData());
   float *pointdata = dataarray->WritePointer(0,NumPoints*3);
   //
   vtkIdType totalpoints = 0;
-  double    pos1[3], pos2[3];
+  double pos1[3], pos2[3];
 
   //
   // Walk bounds and create points
   //
-  for (double k=0; k<Dimension[2]; k++) {
+  for (double k=outUpdateExt[4]; k<=outUpdateExt[5]; k++) {
     // increment along Z axis by k
     REGULARGRID_SAXPY(k*this->scaling[2], this->axesvectors[2], this->origin, pos2);
-    for (double j=0; j<Dimension[1]; j++) {
+    for (double j=outUpdateExt[2]; j<=outUpdateExt[3]; j++) {
       // increment along Y axis by j
       REGULARGRID_SAXPY(j*this->scaling[1], this->axesvectors[1], pos2, pos1);
-      for (double i=0; i<Dimension[0]; i++) {
+      for (double i=outUpdateExt[0]; i<=outUpdateExt[1]; i++) {
         // write final value directly to the points array
         float *position = &pointdata[totalpoints*3];
         // increment start point along Y axis by j
@@ -353,10 +386,10 @@ int vtkRegularGridSource::RequestData(
     outPoly->SetPoints(newpoints);
   }
   else if (outGrid) {
-    outGrid->SetDimensions(this->Dimension);
-    outGrid->SetWholeExtent(0, Dimension[0]-1, 
-                            0, Dimension[1]-1, 
-                            0, Dimension[2]-1);
+    outGrid->SetExtent(outUpdateExt);
+    outGrid->SetWholeExtent(0, this->Dimension[0]-1, 
+                            0, this->Dimension[1]-1, 
+                            0, this->Dimension[2]-1);
     outGrid->SetPoints(newpoints);
   }
   if (this->Dimension[2]==1) {

@@ -179,9 +179,6 @@ int vtkSamplingGridGenerator::ComputeInformation(
     this->centre[i] = this->origin[i] + o2[i]/2.0;
   }
   //
-  this->NumPoints = Dimension[0]*Dimension[1]*Dimension[2];
-  //
   return 1;
 }
 //----------------------------------------------------------------------------
-

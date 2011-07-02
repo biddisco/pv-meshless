@@ -181,7 +181,6 @@ class VTK_EXPORT vtkRegularGridSource : public vtkDataSetAlgorithm {
     int      GenerateConnectedCells;
     int      UseAutoPlacement;
     // internal
-    int      NumPoints;
     int      Dimension[3];
     double   origin[3];
     double   centre[3];
