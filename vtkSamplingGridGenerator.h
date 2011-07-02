@@ -14,16 +14,19 @@
   found in the file Copyright.txt supplied with the software.
 
 =========================================================================*/
-// .NAME vtkSamplingGridGenerator - Generate points in a box-like volume
+// .NAME vtkSamplingGridGenerator - Generate points on a plane or box grid
 //
 // .SECTION Description
-// vtkSamplingGridGenerator creates points along a regular grid
-// in3 dimensions. The grid is defined by the X/Y/Z Spacing fields
-// and a supplied bounding volume. In general the bounding volume
-// is taken from a supplied input dataset.
+// vtkSamplingGridGenerator is a specialized form of vtkRegularGridSource
+// which takes a CutFunction input. The cut function provides an implicit function 
+// for a plane or box which is bound to a 3D widget in paraview for interactive
+// positioning. This differs from the regular grid source which uses variables
+// origin/point1/2/3 to define the sample placement. The SamplingGridGenerator
+// is used by SPH probe filters internally, whereas the RegularGridSource is used
+// by the grid source/filter generators directly from the GUI.
 //
 // .SECTION See Also
-// vtkGeneratePointsFilter
+// vtkRegularGridSource
 
 #ifndef _vtkSamplingGridGenerator_h
 #define _vtkSamplingGridGenerator_h
