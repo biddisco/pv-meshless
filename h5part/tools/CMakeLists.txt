@@ -15,7 +15,6 @@ INCLUDE_DIRECTORIES(
 SET(TOOL_VTK_LIBS
   pv_common
   pv_meshless
-  vtkPVFilters
   vtkWidgets
   vtkHybrid
   vtkRendering
