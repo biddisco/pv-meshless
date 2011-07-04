@@ -238,6 +238,7 @@ pqSPHManagerDockWindow::pqSPHManagerDockWindow(QWidget* p) : QDockWidget("SPH Ma
   #endif
 #else
   // we might be wanting parallel support
+  this->init();
 #endif
 }
 //----------------------------------------------------------------------------
@@ -272,6 +273,7 @@ void pqSPHManagerDockWindow::init()
 //----------------------------------------------------------------------------
 void pqSPHManagerDockWindow::serverAdded(pqServer *server)
 {
+  this->init();
 }
 //----------------------------------------------------------------------------
 void pqSPHManagerDockWindow::StartRemovingServer(pqServer *server)
