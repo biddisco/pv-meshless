@@ -238,6 +238,7 @@ pqSPHManagerDockWindow::pqSPHManagerDockWindow(QWidget* p) : QDockWidget("SPH Ma
   #endif
 #else
   // we might be wanting parallel support
+  this->init();
 #endif
 }
 //----------------------------------------------------------------------------
