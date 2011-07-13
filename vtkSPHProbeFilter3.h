@@ -89,7 +89,6 @@ class VTK_EXPORT vtkSPHProbeFilter3 : public vtkSPHProbeFilter
     virtual int RequestDataObject(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
     virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
     virtual int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-    virtual int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
 
   //BTX
     vtkSmartPointer<vtkPointSet> GenerateProbePts(vtkDataSet *data);
