@@ -170,6 +170,8 @@ class VTK_EXPORT vtkRegularGridSource : public vtkDataSetAlgorithm {
                                    vtkInformationVector **,
                                    vtkInformationVector *);
 
+    virtual void BoundsToExtent(double *bounds, int *extent);
+
     // properties
     double   Spacing[3];
     int      Resolution[3];

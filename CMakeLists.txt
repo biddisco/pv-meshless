@@ -233,6 +233,7 @@ ADD_PARAVIEW_PLUGIN(
     ${HDF5_XML}
     ${TIPSY_XML}
   SERVER_MANAGER_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkBoundsExtentTranslator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkRegularGridSource.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxWidget.cxx

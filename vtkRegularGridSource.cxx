@@ -39,6 +39,9 @@
 #include "vtkMath.h"
 #include "vtkSmartPointer.h"
 #include "vtkOBBTree.h"
+#include "vtkExtentTranslator.h"
+//
+#include "vtkBoundsExtentTranslator.h"
 //
 vtkCxxRevisionMacro(vtkRegularGridSource, "$Revision: 1.4 $");
 vtkStandardNewMacro(vtkRegularGridSource);
@@ -298,6 +301,24 @@ int vtkRegularGridSource::ComputeInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
+#define REGULARGRID_ISAXPY(a,x1,x2,y,z) \
+  a[0] = (z[0] - y[0])/(x1[0]*x2[0]); \
+  a[1] = (z[1] - y[1])/(x1[1]*x2[1]); \
+  a[2] = (z[2] - y[2])/(x1[2]*x2[2]);
+
+// only valid for axis aligned grids
+void vtkRegularGridSource::BoundsToExtent(double *bounds, int *extent) 
+{
+  double minvec[3] = {bounds[0], bounds[2], bounds[4]};
+  double maxvec[3] = {bounds[1], bounds[3], bounds[5]};
+  double updateExtentLo[3],updateExtentHi[3];
+  double axesvec[3] = {this->axesvectors[0][0], this->axesvectors[1][1], this->axesvectors[2][2]};
+  REGULARGRID_ISAXPY(updateExtentLo, this->scaling, axesvec, this->origin, minvec);
+  REGULARGRID_ISAXPY(updateExtentHi, this->scaling, axesvec, this->origin, maxvec);
+  for (int i=0; i<3; i++) { extent[i*2  ] = static_cast<int>(updateExtentLo[i]+0.5); }
+  for (int i=0; i<3; i++) { extent[i*2+1] = static_cast<int>(updateExtentHi[i]+0.5); }
+}
+//----------------------------------------------------------------------------
 int vtkRegularGridSource::RequestInformation(
   vtkInformation* request,
   vtkInformationVector** inputVector,
@@ -337,15 +358,29 @@ int vtkRegularGridSource::RequestData(
   }
   //
   this->ComputeInformation(request, inputVector, outputVector);
+  int outUpdateExt[6];
   //
+  vtkInformation *inInfo = inputVector[0] ? inputVector[0]->GetInformationObject(0) : NULL;
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
-  int *outUpdateExt = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT());
+  //
+  vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
+    inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR())) : NULL;
+  vtkBoundsExtentTranslator *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
+  if (bet) {
+    int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+    double *bounds = bet->GetBoundsForPiece(updatePiece);
+    this->BoundsToExtent(bounds,outUpdateExt);
+  }
+  else {
+    outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), outUpdateExt);
+  }
   //
   int dims[3]= {1+outUpdateExt[1]-outUpdateExt[0],
                 1+outUpdateExt[3]-outUpdateExt[2], 
                 1+outUpdateExt[5]-outUpdateExt[4]};
   vtkIdType NumPoints = dims[0]*dims[1]*dims[2];
   //
+
   vtkSmartPointer<vtkPoints>     newpoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkFloatArray> dataarray = vtkFloatArray::SafeDownCast(newpoints->GetData());
   float *pointdata = dataarray->WritePointer(0,NumPoints*3);
