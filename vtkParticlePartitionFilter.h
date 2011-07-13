@@ -96,7 +96,7 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
                             vtkInformationVector**,
                             vtkInformationVector*);
 //BTX
-    vtkSmartPointer<vtkIdTypeArray> GenerateGlobalIds(vtkIdType N);
+    vtkSmartPointer<vtkIdTypeArray> GenerateGlobalIds(vtkIdType N, const char *idname);
 
     typedef struct {
       std::vector<ZOLTAN_ID_TYPE> GlobalIds;

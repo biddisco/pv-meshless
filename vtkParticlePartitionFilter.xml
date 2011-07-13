@@ -25,7 +25,7 @@
         <DataTypeDomain name="input_type">
           <DataType value="vtkPointSet"/>
         </DataTypeDomain>
-        <InputArrayDomain name="input_array"/>
+        <InputArrayDomain name="input_array" optional="1"/>
       </InputProperty>
 
       <StringVectorProperty
@@ -40,9 +40,11 @@
           attribute_type="Scalars"
           none_string="Not available"
           input_domain_name="input_array">
+          <!--
           <RequiredProperties>
             <Property name="Input" function="Input"/>
           </RequiredProperties>
+          -->
         </ArrayListDomain>
         <Documentation>
           This property indicates the name of the array to be used for Ids
@@ -57,140 +59,6 @@
         animateable="0"
         default_values="0.01" >
       </DoubleVectorProperty>
-
-
-      <!--
-      <IntVectorProperty
-        name="KernelType"
-        command="SetKernelType"
-        number_of_elements="1"
-        default_values="2">
-        <EnumerationDomain name="enum">
-          <Entry value="0" text="Guassian" />
-          <Entry value="1" text="Quadratic" />
-          <Entry value="2" text="Spline-3rd-Order" />
-          <Entry value="3" text="Spline-5th-Order" />
-          <Entry value="4" text="Cusp" />
-          <Entry value="5" text="Box" />
-        </EnumerationDomain>
-      </IntVectorProperty>
-
-      <IntVectorProperty
-        name="KernelDimension"
-        command="SetKernelDimension"
-        number_of_elements="1"
-        default_values="3">
-        <EnumerationDomain name="enum">
-          <Entry value="2" text="2D" />
-          <Entry value="3" text="3D" />
-        </EnumerationDomain>
-      </IntVectorProperty>
-
-      <DoubleVectorProperty
-         name="HCoefficient"
-         command="SetHCoefficient"
-         number_of_elements="1"
-         animateable="0"
-         default_values="1.5" >
-        <Documentation>
-          The Kernel Cutoff can be derived from HCoefficient*ParticleCubeSideLength
-        </Documentation>
-      </DoubleVectorProperty>
-
-      <StringVectorProperty
-        name="HScalars"
-        command="SetHScalars"
-        number_of_elements="1"
-        animateable="0"
-        default_values="Volume"
-        label="H (smoothing length) Array">
-        <ArrayListDomain
-          name="array_list"
-          attribute_type="Scalars"
-          none_string="Not available"
-          input_domain_name="input_array">
-          <RequiredProperties>
-            <Property name="Input" function="Input"/>
-          </RequiredProperties>
-        </ArrayListDomain>
-        <Documentation>
-          This property indicates the name of the array to be used for particle smoothing lengths if present
-        </Documentation>
-      </StringVectorProperty>
-
-      <StringVectorProperty
-        name="MassScalars"
-        command="SetMassScalars"
-        number_of_elements="1"
-        animateable="0"
-        default_values="Mass"
-        label="Mass Scalar Array">
-        <ArrayListDomain
-          name="array_list"
-          attribute_type="Scalars"
-          none_string="Not available"
-          input_domain_name="input_array">
-          <RequiredProperties>
-            <Property name="Input" function="Input"/>
-          </RequiredProperties>
-        </ArrayListDomain>
-        <Documentation>
-          This property indicates the name of the array to be used for particle masses if present
-        </Documentation>
-      </StringVectorProperty>
-
-      <StringVectorProperty
-        name="DensityScalars"
-        command="SetDensityScalars"
-        number_of_elements="1"
-        animateable="0"
-        default_values="Density"
-        label="Density Scalar Array">
-        <ArrayListDomain
-          name="array_list"
-          attribute_type="Scalars"
-          none_string="Not available"
-          input_domain_name="input_array">
-          <RequiredProperties>
-            <Property name="Input" function="Input"/>
-          </RequiredProperties>
-        </ArrayListDomain>
-        <Documentation>
-          This property indicates the name of the array to be used for particle densities if present
-        </Documentation>
-      </StringVectorProperty>
-
-<DoubleVectorProperty
-        name="DefaultDensity"
-        command="SetDefaultDensity"
-        number_of_elements="1"
-        animateable="0"
-        default_values="1000" >
-      </DoubleVectorProperty>
-
-      <IntVectorProperty
-        name="LimitSearchByNeighbourCount"
-        command="SetLimitSearchByNeighbourCount"
-        number_of_elements="1"
-        default_values="1">
-        <BooleanDomain name="bool"/>
-      </IntVectorProperty>
-
-      <IntVectorProperty
-        name="MaximumNeighbours"
-        command="SetMaximumNeighbours"
-        number_of_elements="1"
-        default_values="128">
-      </IntVectorProperty>
-
-      <DoubleVectorProperty
-         name="MaximumRadius"
-         command="SetMaximumRadius"
-         number_of_elements="1"
-         animateable="0"
-         default_values="0.001" >
-      </DoubleVectorProperty>
--->
 
     </SourceProxy>
 

@@ -367,7 +367,7 @@ void vtkParticlePartitionFilter::FindOverlappingPoints(vtkPoints *pts, vtkIdType
   }
 }
 //----------------------------------------------------------------------------
-vtkSmartPointer<vtkIdTypeArray> vtkParticlePartitionFilter::GenerateGlobalIds(vtkIdType N)
+vtkSmartPointer<vtkIdTypeArray> vtkParticlePartitionFilter::GenerateGlobalIds(vtkIdType N, const char *idname)
 {
   vtkSmartPointer<vtkIdTypeArray> Ids = vtkSmartPointer<vtkIdTypeArray>::New();
 
@@ -383,12 +383,10 @@ vtkSmartPointer<vtkIdTypeArray> vtkParticlePartitionFilter::GenerateGlobalIds(vt
   for (int i=0; i<PartialSum.size(); i++) { std::cout << PartialSum[i] << " " ; } std::cout << std::endl;
   //
   Ids->SetNumberOfValues(N);
-
   for (vtkIdType id=0; id<N; id++) {
     Ids->SetValue(id, id+initialValue);
   }
-
-  Ids->SetName(this->IdChannelArray ? this->IdChannelArray : "PointIds");
+  Ids->SetName(idname);
   return Ids;
 }
 //----------------------------------------------------------------------------
@@ -496,19 +494,26 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   vtkSmartPointer<vtkPointSet> input = inputdataset->NewInstance();
   input->ShallowCopy(inputdataset);
 
-  std::string IdName = this->IdChannelArray ? this->IdChannelArray : "PointIds";
   //
-  // Ids
+  // Global Ids
   //
+  std::string IdsName;
+  if (this->IdChannelArray) {
+    IdsName = this->IdChannelArray;
+  }
+  if (IdsName.empty() || IdsName==std::string("Not available")) {
+    IdsName = "PointIds";
+  } 
+
   vtkSmartPointer<vtkDataArray> Ids = NULL;
-  Ids = inputdataset->GetPointData()->GetArray(IdName.c_str());
+  Ids = inputdataset->GetPointData()->GetArray(IdsName.c_str());
   if (!Ids) {
     // Try loading the global ids.
     Ids = inputdataset->GetPointData()->GetGlobalIds();
   }
   if (!Ids) {
     // Generate our own since none exist
-    Ids = this->GenerateGlobalIds(numPoints);
+    Ids = this->GenerateGlobalIds(numPoints, IdsName.c_str());
     input->GetPointData()->AddArray(Ids);
   }
   vtkIdTypeArray *IdArray = vtkIdTypeArray::SafeDownCast(Ids);
@@ -719,7 +724,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // as the original input points (might be bigger/smaller), so get the new IdArray 
   //
   vtkIdTypeArray *newIds = vtkIdTypeArray::SafeDownCast(
-    mesh.Output->GetPointData()->GetArray(IdName.c_str()));
+    mesh.Output->GetPointData()->GetArray(IdsName.c_str()));
   if (!newIds || newIds->GetNumberOfTuples()!=mesh.OutputPoints->GetNumberOfPoints()) {
     vtkErrorMacro(<<"Fatal : Ids on migrated data corrupted");
     return 0;
