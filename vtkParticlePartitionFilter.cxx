@@ -27,6 +27,7 @@
 #endif
 #include "vtkMultiProcessController.h"
 #include "vtkParticlePartitionFilter.h"
+#include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkPolyData.h"
 #include "vtkDataSetAttributes.h"
 #include "vtkPointData.h"
@@ -40,6 +41,8 @@
 #include "vtkTimerLog.h"
 #include "vtkIdTypeArray.h"
 #include "vtkBoundingBox.h"
+//
+#include "vtkBoundsExtentTranslator.h"
 //
 #include <sstream>
 //
@@ -293,6 +296,7 @@ vtkParticlePartitionFilter::vtkParticlePartitionFilter()
   this->SetController(vtkMultiProcessController::GetGlobalController());
   this->IdChannelArray      = NULL;
   this->GhostCellOverlap    = 0.0;
+  this->ExtentTranslator    = vtkBoundsExtentTranslator::New();
 }
 
 //----------------------------------------------------------------------------
@@ -420,6 +424,17 @@ int vtkParticlePartitionFilter::GatherDataTypeInfo(vtkPointSet *input)
 #endif
 }
 //----------------------------------------------------------------------------
+int vtkParticlePartitionFilter::ExecuteInformation(
+  vtkInformation* request,
+  vtkInformationVector** inputVector,
+  vtkInformationVector* outputVector)
+{
+  vtkStreamingDemandDrivenPipeline::SafeDownCast(
+    this->GetExecutive())->SetExtentTranslator(0, this->ExtentTranslator);
+  //
+  return Superclass::ExecuteInformation(request, inputVector, outputVector);
+}
+//----------------------------------------------------------------------------
 int vtkParticlePartitionFilter::RequestData(vtkInformation*,
                                  vtkInformationVector** inputVector,
                                  vtkInformationVector* outputVector)
@@ -455,6 +470,12 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   vtkDataArray    *inPoints = numPoints>0 ? inputdataset->GetPoints()->GetData() : NULL;
   std::cout << "Partitioning on " << this->UpdatePiece << " Points Input : " << numPoints << std::endl;
 
+#ifdef VTK_USE_MPI
+  int updateLevel = static_cast<unsigned char>
+    (inputdataset->GetInformation()->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS()));
+  std::cout << "Partition filter " << this->UpdatePiece << " Ghost level " << updateLevel << std::endl;
+#endif
+
   // Setup output
   vtkPolyData                    *output = vtkPolyData::GetData(outputVector);
   vtkSmartPointer<vtkPoints>   outPoints = vtkSmartPointer<vtkPoints>::New();
@@ -487,6 +508,9 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     this->BoxListWithGhostRegion.push_back(box);
     return 1;
   }
+
+  vtkStreamingDemandDrivenPipeline::SafeDownCast(
+    this->GetExecutive())->SetExtentTranslator(0, this->ExtentTranslator);
 
   //
   // we make a temp copy of the input so we can add Ids if necessary
@@ -699,6 +723,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //
   // For ghost cells we would like the bounding boxes of each partition
   //
+  this->ExtentTranslator->SetNumberOfPieces(this->UpdateNumPieces);
   for (int p=0; p<this->UpdateNumPieces; p++) {
     double bounds[6];
     int ndim;
@@ -711,7 +736,11 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
       if (bounds[5]== DBL_MAX) { bounds[5] = bmax[2]; }
       vtkBoundingBox box(bounds);
       this->BoxList.push_back(box);
-      // we add a ghost cell region to our boxes
+      //
+      // Copy the bounds to our piece to bounds translator
+      this->ExtentTranslator->SetBoundsForPiece(p, bounds);
+      //
+      // Add a ghost cell region to our boxes
       box.Inflate(this->GhostCellOverlap);
       this->BoxListWithGhostRegion.push_back(box);
     }

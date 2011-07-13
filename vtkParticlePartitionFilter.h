@@ -36,6 +36,7 @@
 class vtkMultiProcessController;
 class vtkPoints;
 class vtkIdTypeArray;
+class vtkBoundsExtentTranslator;
 
 class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
 {
@@ -91,7 +92,12 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
 	  virtual int FillOutputPortInformation(int vtkNotUsed(port), 
 		  vtkInformation* info);
 
-    // Main implementation.
+    // Description:
+    virtual int ExecuteInformation(vtkInformation*, 
+                                   vtkInformationVector**, 
+                                   vtkInformationVector*);
+    
+    // Description:
     virtual int RequestData(vtkInformation*,
                             vtkInformationVector**,
                             vtkInformationVector*);
@@ -118,7 +124,8 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
     int             UpdateNumPieces;
     vtkIdType       NumberOfLocalPoints;
     char           *IdChannelArray;
-    double          GhostCellOverlap; 
+    double          GhostCellOverlap;
+    vtkBoundsExtentTranslator *ExtentTranslator;
     //
   private:
     vtkParticlePartitionFilter(const vtkParticlePartitionFilter&);  // Not implemented.
