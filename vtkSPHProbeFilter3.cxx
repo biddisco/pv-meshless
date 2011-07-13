@@ -107,6 +107,30 @@ unsigned long vtkSPHProbeFilter3::GetMTime()
   return mTime;
 }
 //----------------------------------------------------------------------------
+int vtkSPHProbeFilter3::RequestInformation(
+  vtkInformation *request,
+  vtkInformationVector **inputVector,
+  vtkInformationVector *outputVector)
+{
+  vtkInformation *outInfo = outputVector->GetInformationObject(0);
+  int wholeExt[6] = { 0,-1, 0,-1, 0,-1 };
+
+  if (this->GetCutFunction() && vtkPlane::SafeDownCast(this->GetCutFunction())) {
+    wholeExt[1] = this->Resolution[0]-1;
+    wholeExt[3] = this->Resolution[1]-1;
+    wholeExt[5] = 0;
+  }
+  else {
+    wholeExt[1] = this->Resolution[0]-1;
+    wholeExt[3] = this->Resolution[1]-1;
+    wholeExt[5] = this->Resolution[2]-1;
+  }
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), wholeExt, 6);
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
+  //
+  return vtkSPHProbeFilter::RequestInformation(request,inputVector,outputVector);
+}
+//----------------------------------------------------------------------------
 vtkSmartPointer<vtkPointSet> vtkSPHProbeFilter3::GenerateProbePts(vtkDataSet *data)
 {
   vtkSmartPointer<vtkSamplingGridGenerator> grid = vtkSmartPointer<vtkSamplingGridGenerator>::New();
@@ -225,50 +249,5 @@ int vtkSPHProbeFilter3::RequestData(
   double time = this->Timer->GetElapsedTime();
 //  vtkErrorMacro(<<"Probe time is " << time);
   this->UpdateProgress(1.0);
-  return 1;
-}
-//----------------------------------------------------------------------------
-int vtkSPHProbeFilter3::RequestInformation(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
-{
-  // get the info objects
-  vtkInformation *dataInfo     = inputVector[0]->GetInformationObject(0);
-  vtkInformation *outInfo      = outputVector->GetInformationObject(0);
-/*
-  I don't remember why I wanted this in, but it stops the probe re-execting
-  when time increments - so leave it out
-  outInfo->CopyEntry(dataInfo, 
-                     vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-  outInfo->CopyEntry(dataInfo, 
-                     vtkStreamingDemandDrivenPipeline::TIME_RANGE());
-*/
-  // be careful, our output extent is taken from the probe pts which is the 
-  // second input
-//  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-//               probePtsInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),
-//               6);
-//  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
-//               probePtsInfo->Get(
-//                 vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()));
-
-  return 1;
-}
-//----------------------------------------------------------------------------
-int vtkSPHProbeFilter3::RequestUpdateExtent(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
-{
-  // get the info objects
-  vtkInformation *dataInfo = inputVector[0]->GetInformationObject(0);
-  vtkInformation *outInfo = outputVector->GetInformationObject(0);
-
-  // we must request the whole extent from probe pts
-//  probePtsInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-//              probePtsInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),
-//              6);
-    
   return 1;
 }

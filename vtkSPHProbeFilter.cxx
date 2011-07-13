@@ -258,22 +258,28 @@ int vtkSPHProbeFilter::RequestDataObject(
   vtkInformationVector  **inputVector, 
   vtkInformationVector *outputVector)
 {
-  vtkInformation *probePtsInfo = inputVector[1]->GetInformationObject(0);
-  // get the input probe geometry
-  vtkPointSet *probepts = vtkPointSet::SafeDownCast(
-    probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
-  vtkMultiBlockDataSet *mbprobepts = vtkMultiBlockDataSet::SafeDownCast(
-    probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
-
   vtkInformation* info = outputVector->GetInformationObject(0);
   vtkDataSet *output = vtkDataSet::SafeDownCast(
     info->Get(vtkDataObject::DATA_OBJECT()));
+  //
+  vtkInformation     *probePtsInfo = NULL;
+  vtkPointSet            *probepts = NULL;
+  vtkMultiBlockDataSet *mbprobepts = NULL;
+  if (this->GetNumberOfInputPorts()>1 && this->GetNumberOfInputConnections(1)>0) {
+    probePtsInfo = inputVector[1]->GetInformationObject(0);
+    probepts = vtkPointSet::SafeDownCast(
+      probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
+    mbprobepts = vtkMultiBlockDataSet::SafeDownCast(
+      probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
+  }
   //
   int outputType = -1; 
   if (probepts) {
     outputType = this->OutputType(probepts);
   }
-  else if (mbprobepts) outputType = VTK_MULTIBLOCK_DATA_SET;
+  else if (mbprobepts) {
+    outputType = VTK_MULTIBLOCK_DATA_SET;
+  }
   //
   bool ok = (output!=NULL);
   ok = (ok && output->IsA(vtkDataObjectTypes::GetClassNameFromTypeId(outputType))!=0);
@@ -289,27 +295,55 @@ int vtkSPHProbeFilter::RequestDataObject(
   return 1;
 }
 //----------------------------------------------------------------------------
-int vtkSPHProbeFilter::RequestData(
+int vtkSPHProbeFilter::RequestInformation(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **inputVector,
   vtkInformationVector *outputVector)
 {
   // get the info objects
   vtkInformation *dataInfo     = inputVector[0]->GetInformationObject(0);
-  vtkInformation *probePtsInfo = inputVector[1]->GetInformationObject(0);
   vtkInformation *outInfo      = outputVector->GetInformationObject(0);
+  vtkInformation *probePtsInfo = NULL;
+  if (this->GetNumberOfInputPorts()>1 && this->GetNumberOfInputConnections(1)>0) {
+    probePtsInfo = inputVector[1]->GetInformationObject(0);
+    // be careful, our output extent is taken from the probe pts which is the 
+    // second input
+    outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+               probePtsInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),
+               6);
+    outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
+               probePtsInfo->Get(
+               vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()));
+  }
 
-  // get the input and output, check for multiblock probe/output geometry
+  return 1;
+}
+//----------------------------------------------------------------------------
+int vtkSPHProbeFilter::RequestData(
+  vtkInformation *vtkNotUsed(request),
+  vtkInformationVector **inputVector,
+  vtkInformationVector *outputVector)
+{
+  vtkInformation *dataInfo = inputVector[0]->GetInformationObject(0);
+  vtkInformation *outInfo  = outputVector->GetInformationObject(0);
+  //
   vtkPointSet *particles = vtkPointSet::SafeDownCast(
     dataInfo->Get(vtkDataObject::DATA_OBJECT()));
-  vtkPointSet *probepts = vtkPointSet::SafeDownCast(
-    probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
-  vtkMultiBlockDataSet *mbprobepts = vtkMultiBlockDataSet::SafeDownCast(
-    probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
   vtkDataSet *output = vtkDataSet::SafeDownCast(
     outInfo->Get(vtkDataObject::DATA_OBJECT()));
   vtkMultiBlockDataSet *mboutput = vtkMultiBlockDataSet::SafeDownCast(
     outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  //
+  vtkInformation     *probePtsInfo = NULL;
+  vtkPointSet            *probepts = NULL;
+  vtkMultiBlockDataSet *mbprobepts = NULL;
+  if (this->GetNumberOfInputPorts()>1 && this->GetNumberOfInputConnections(1)>0) {
+    probePtsInfo = inputVector[1]->GetInformationObject(0);
+    probepts = vtkPointSet::SafeDownCast(
+      probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
+    mbprobepts = vtkMultiBlockDataSet::SafeDownCast(
+      probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
+  }
 
   if (!probepts && !mbprobepts)
     {
@@ -805,55 +839,5 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
 #ifdef VTK_USE_MPI
   std::cout << "Probe filter complete on " << UpdatePiece << std::endl;
 #endif
-  return 1;
-}
-//----------------------------------------------------------------------------
-int vtkSPHProbeFilter::RequestInformation(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
-{
-  // get the info objects
-  vtkInformation *dataInfo     = inputVector[0]->GetInformationObject(0);
-  vtkInformation *probePtsInfo = inputVector[1]->GetInformationObject(0);
-  vtkInformation *outInfo      = outputVector->GetInformationObject(0);
-/*
-  I don't remember why I wanted this in, but it stops the probe re-execting
-  when time increments - so leave it out
-  outInfo->CopyEntry(dataInfo, 
-                     vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-  outInfo->CopyEntry(dataInfo, 
-                     vtkStreamingDemandDrivenPipeline::TIME_RANGE());
-*/
-  // be careful, our output extent is taken from the probe pts which is the 
-  // second input
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-               probePtsInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),
-               6);
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
-               probePtsInfo->Get(
-                 vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()));
-
-  return 1;
-}
-//----------------------------------------------------------------------------
-int vtkSPHProbeFilter::RequestUpdateExtent(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
-{
-  // get the info objects
-  vtkInformation *dataInfo = inputVector[0]->GetInformationObject(0);
-  vtkInformation *probePtsInfo = inputVector[1]->GetInformationObject(0);
-  vtkInformation *outInfo = outputVector->GetInformationObject(0);
-
-  // we must request the whole extent from probe pts
-  probePtsInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-              probePtsInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),
-              6);
-    
-  // we must request ghost cells from the particle data
-  dataInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(), 1);
-
   return 1;
 }
