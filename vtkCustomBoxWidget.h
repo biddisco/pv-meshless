@@ -90,13 +90,12 @@
 #ifndef __vtkCustomBoxWidget_h
 #define __vtkCustomBoxWidget_h
 
-#include "vtkAbstractWidget.h"
+#include "vtkBoxWidget2.h"
 
 class vtkCustomBoxRepresentation;
-class vtkHandleWidget;
 
 
-class VTK_EXPORT vtkCustomBoxWidget : public vtkAbstractWidget
+class VTK_EXPORT vtkCustomBoxWidget : public vtkBoxWidget2
 {
 public:
   // Description:
@@ -105,8 +104,7 @@ public:
 
   // Description:
   // Standard class methods for type information and printing.
-  vtkTypeRevisionMacro(vtkCustomBoxWidget,vtkAbstractWidget);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeRevisionMacro(vtkCustomBoxWidget,vtkBoxWidget2);
 
   // Description:
   // Specify an instance of vtkWidgetRepresentation used to represent this
@@ -116,44 +114,14 @@ public:
     {this->Superclass::SetWidgetRepresentation(reinterpret_cast<vtkWidgetRepresentation*>(r));}
   
   // Description:
-  // Control the behavior of the widget (i.e., how it processes
-  // events). Translation, rotation, and scaling can all be enabled and
-  // disabled.
-  vtkSetMacro(TranslationEnabled,int);
-  vtkGetMacro(TranslationEnabled,int);
-  vtkBooleanMacro(TranslationEnabled,int);
-  vtkSetMacro(ScalingEnabled,int);
-  vtkGetMacro(ScalingEnabled,int);
-  vtkBooleanMacro(ScalingEnabled,int);
-  vtkSetMacro(RotationEnabled,int);
-  vtkGetMacro(RotationEnabled,int);
-  vtkBooleanMacro(RotationEnabled,int);
-
-  // Description:
   // Create the default widget representation if one is not set. By default,
   // this is an instance of the vtkCustomBoxRepresentation class.
   void CreateDefaultRepresentation();
 
 protected:
-  vtkCustomBoxWidget();
+   vtkCustomBoxWidget();
   ~vtkCustomBoxWidget();
 
-//BTX - manage the state of the widget
-  int WidgetState;
-  enum _WidgetState {Start=0,Active};
-//ETX
-  
-  // These methods handle events
-  static void SelectAction(vtkAbstractWidget*);
-  static void EndSelectAction(vtkAbstractWidget*);
-  static void TranslateAction(vtkAbstractWidget*);
-  static void ScaleAction(vtkAbstractWidget*);
-  static void MoveAction(vtkAbstractWidget*);
-
-  // Control whether scaling, rotation, and translation are supported
-  int TranslationEnabled;
-  int ScalingEnabled;
-  int RotationEnabled;
 private:
   vtkCustomBoxWidget(const vtkCustomBoxWidget&);  //Not implemented
   void operator=(const vtkCustomBoxWidget&);  //Not implemented
