@@ -46,22 +46,12 @@ vtkStandardNewMacro(vtkCustomBoxRepresentation);
 //----------------------------------------------------------------------------
 vtkCustomBoxRepresentation::vtkCustomBoxRepresentation()
 {
-  // The initial state
-  this->InteractionState = vtkCustomBoxRepresentation::Outside;
-
-  // Handle size is in pixels for this widget
-  this->HandleSize = 5.0;
-
-  // Control orientation of normals
-  this->InsideOut = 0;
-  this->OutlineFaceWires = 0;
-  this->OutlineCursorWires = 1;
+  // in C++ constructors don't call virtual methods, so call our function
+  // to add to the ones created in the vtkBoxRepresentation constructor
+  vtkCustomBoxRepresentation::CreateDefaultProperties();
 
   //default to off
   this->PlaneMode = 0;
-
-  // Set up the initial properties
-  this->CreateDefaultProperties();
 
   // Create the plane normal
   this->ConeSource = vtkConeSource::New();
@@ -72,124 +62,6 @@ vtkCustomBoxRepresentation::vtkCustomBoxRepresentation()
   this->ConeActor = vtkActor::New();
   this->ConeActor->SetMapper(this->ConeMapper);
   this->ConeActor->SetProperty(this->NormalProperty);
-
-  // Construct the poly data representing the hex
-  this->HexPolyData = vtkPolyData::New();
-  this->HexMapper = vtkPolyDataMapper::New();
-  this->HexMapper->SetInput(HexPolyData);
-  this->HexActor = vtkActor::New();
-  this->HexActor->SetMapper(this->HexMapper);
-  this->HexActor->SetProperty(this->OutlineProperty);
-
-  // Construct initial points
-  this->Points = vtkPoints::New(VTK_DOUBLE);
-  this->Points->SetNumberOfPoints(15);//8 corners; 6 faces; 1 center
-  this->HexPolyData->SetPoints(this->Points);
-  
-  // Construct connectivity for the faces. These are used to perform
-  // the picking.
-  int i;
-  vtkIdType pts[4];
-  vtkCellArray *cells = vtkCellArray::New();
-  cells->Allocate(cells->EstimateSize(6,4));
-  pts[0] = 3; pts[1] = 0; pts[2] = 4; pts[3] = 7;
-  cells->InsertNextCell(4,pts);
-  pts[0] = 1; pts[1] = 2; pts[2] = 6; pts[3] = 5;
-  cells->InsertNextCell(4,pts);
-  pts[0] = 0; pts[1] = 1; pts[2] = 5; pts[3] = 4;
-  cells->InsertNextCell(4,pts);
-  pts[0] = 2; pts[1] = 3; pts[2] = 7; pts[3] = 6;
-  cells->InsertNextCell(4,pts);
-  pts[0] = 0; pts[1] = 3; pts[2] = 2; pts[3] = 1;
-  cells->InsertNextCell(4,pts);
-  pts[0] = 4; pts[1] = 5; pts[2] = 6; pts[3] = 7;
-  cells->InsertNextCell(4,pts);
-  this->HexPolyData->SetPolys(cells);
-  cells->Delete();
-  this->HexPolyData->BuildCells();
-  
-  // The face of the hexahedra
-  cells = vtkCellArray::New();
-  cells->Allocate(cells->EstimateSize(1,4));
-  cells->InsertNextCell(4,pts); //temporary, replaced later
-  this->HexFacePolyData = vtkPolyData::New();
-  this->HexFacePolyData->SetPoints(this->Points);
-  this->HexFacePolyData->SetPolys(cells);
-  this->HexFaceMapper = vtkPolyDataMapper::New();
-  this->HexFaceMapper->SetInput(HexFacePolyData);
-  this->HexFace = vtkActor::New();
-  this->HexFace->SetMapper(this->HexFaceMapper);
-  this->HexFace->SetProperty(this->FaceProperty);
-  cells->Delete();
-
-  // Create the outline for the hex
-  this->OutlinePolyData = vtkPolyData::New();
-  this->OutlinePolyData->SetPoints(this->Points);
-  this->OutlineMapper = vtkPolyDataMapper::New();
-  this->OutlineMapper->SetInput(this->OutlinePolyData);
-  this->HexOutline = vtkActor::New();
-  this->HexOutline->SetMapper(this->OutlineMapper);
-  this->HexOutline->SetProperty(this->OutlineProperty);
-  cells = vtkCellArray::New();
-  cells->Allocate(cells->EstimateSize(15,2));
-  this->OutlinePolyData->SetLines(cells);
-  cells->Delete();
-
-  // Create the outline
-  this->GenerateOutline();
-
-  // Create the handles
-  this->Handle = new vtkActor* [7];
-  this->HandleMapper = new vtkPolyDataMapper* [7];
-  this->HandleGeometry = new vtkSphereSource* [7];
-  for (i=0; i<7; i++)
-    {
-    this->HandleGeometry[i] = vtkSphereSource::New();
-    this->HandleGeometry[i]->SetThetaResolution(16);
-    this->HandleGeometry[i]->SetPhiResolution(8);
-    this->HandleMapper[i] = vtkPolyDataMapper::New();
-    this->HandleMapper[i]->SetInput(this->HandleGeometry[i]->GetOutput());
-    this->Handle[i] = vtkActor::New();
-    this->Handle[i]->SetMapper(this->HandleMapper[i]);
-    }
-  
-  // Define the point coordinates
-  double bounds[6];
-  bounds[0] = -0.5;
-  bounds[1] = 0.5;
-  bounds[2] = -0.5;
-  bounds[3] = 0.5;
-  bounds[4] = -0.5;
-  bounds[5] = 0.5;
-  // Points 8-14 are down by PositionHandles();
-  this->BoundingBox = vtkBox::New();
-  this->PlaceWidget(bounds);
-
-  //Manage the picking stuff
-  this->HandlePicker = vtkCellPicker::New();
-  this->HandlePicker->SetTolerance(0.001);
-  for (i=0; i<7; i++)
-    {
-    this->HandlePicker->AddPickList(this->Handle[i]);
-    }
-  this->HandlePicker->PickFromListOn();
-
-  this->HexPicker = vtkCellPicker::New();
-  this->HexPicker->SetTolerance(0.001);
-  this->HexPicker->AddPickList(HexActor);
-  this->HexPicker->PickFromListOn();
-  
-  this->CurrentHandle = NULL;
-
-  // Internal data memebers for performance
-  this->Transform = vtkTransform::New();
-  this->PlanePoints = vtkPoints::New(VTK_DOUBLE);
-  this->PlanePoints->SetNumberOfPoints(6);
-  this->PlaneNormals = vtkDoubleArray::New();
-  this->PlaneNormals->SetNumberOfComponents(3);
-  this->PlaneNormals->SetNumberOfTuples(6);
-  this->Matrix = vtkMatrix4x4::New();
-
   //
   this->GenerateConnectedCells = 1;
   this->SetPlaneMode(0);
@@ -232,69 +104,16 @@ void vtkCustomBoxRepresentation::SetPlaneMode(int planemode)
   this->Modified();
 }
 
-
 //----------------------------------------------------------------------------
 void vtkCustomBoxRepresentation::ComputeNormals()
 {
-  double *pts =
-     static_cast<vtkDoubleArray *>(this->Points->GetData())->GetPointer(0);
-  double *p0 = pts;
-  double *px = pts + 3*1;
-  double *py = pts + 3*3;
-  double *pz = pts + 3*4;
-  int i;
-  
-  for (i=0; i<3; i++)
-    {
-    this->N[0][i] = p0[i] - px[i];
-    this->N[2][i] = p0[i] - py[i];
-    this->N[4][i] = p0[i] - pz[i];
-    }
-  vtkMath::Normalize(this->N[0]);
-  vtkMath::Normalize(this->N[2]);
-  vtkMath::Normalize(this->N[4]);
-  for (i=0; i<3; i++)
-    {
-    this->N[1][i] = -this->N[0][i];
-    this->N[3][i] = -this->N[2][i];
-    this->N[5][i] = -this->N[4][i];
-    }
+  vtkBoxRepresentation::ComputeNormals();
   this->ConeSource->SetDirection(this->N[5]);
-
 }
 
 //----------------------------------------------------------------------------
 void vtkCustomBoxRepresentation::CreateDefaultProperties()
 {
-  // Handle properties
-  this->HandleProperty = vtkProperty::New();
-  this->HandleProperty->SetColor(1,1,1);
-
-  this->SelectedHandleProperty = vtkProperty::New();
-  this->SelectedHandleProperty->SetColor(1,0,0);
-
-  // Face properties
-  this->FaceProperty = vtkProperty::New();
-  this->FaceProperty->SetColor(1,1,1);
-  this->FaceProperty->SetOpacity(0.0);
-
-  this->SelectedFaceProperty = vtkProperty::New();
-  this->SelectedFaceProperty->SetColor(1,1,0);
-  this->SelectedFaceProperty->SetOpacity(0.25);
-  
-  // Outline properties
-  this->OutlineProperty = vtkProperty::New();
-  this->OutlineProperty->SetRepresentationToWireframe();
-  this->OutlineProperty->SetAmbient(1.0);
-  this->OutlineProperty->SetAmbientColor(1.0,1.0,1.0);
-  this->OutlineProperty->SetLineWidth(2.0);
-
-  this->SelectedOutlineProperty = vtkProperty::New();
-  this->SelectedOutlineProperty->SetRepresentationToWireframe();
-  this->SelectedOutlineProperty->SetAmbient(1.0);
-  this->SelectedOutlineProperty->SetAmbientColor(0.0,1.0,0.0);
-  this->SelectedOutlineProperty->SetLineWidth(2.0);
-
   // Normal properties
   this->NormalProperty = vtkProperty::New();
   this->NormalProperty->SetColor(1,1,1);
@@ -303,8 +122,47 @@ void vtkCustomBoxRepresentation::CreateDefaultProperties()
   this->SelectedNormalProperty = vtkProperty::New();
   this->SelectedNormalProperty->SetColor(1,0,0);
   this->NormalProperty->SetLineWidth(2);
-
 }
+
+//----------------------------------------------------------------------------
+void vtkCustomBoxRepresentation::PlaceWidget(double bds[6])
+{
+  int i;
+  double bounds[6], center[3];
+  
+  this->AdjustBounds(bds,bounds,center);
+  
+  this->Points->SetPoint(0, bounds[0], bounds[2], bounds[4]);
+  this->Points->SetPoint(1, bounds[1], bounds[2], bounds[4]);
+  this->Points->SetPoint(2, bounds[1], bounds[3], bounds[4]);
+  this->Points->SetPoint(3, bounds[0], bounds[3], bounds[4]);
+  this->Points->SetPoint(4, bounds[0], bounds[2], bounds[5]);
+  this->Points->SetPoint(5, bounds[1], bounds[2], bounds[5]);
+  this->Points->SetPoint(6, bounds[1], bounds[3], bounds[5]);
+  this->Points->SetPoint(7, bounds[0], bounds[3], bounds[5]);
+
+  if (this->PlaneMode) {
+    this->FlattenToPlane();
+    bounds[4] = bounds[5] = (bounds[4] + bounds[5])/2.0;
+    double epsilion = ((bounds[3]-bounds[2])+(bounds[1]-bounds[0]))/1000.0;
+    bounds[4] -= epsilion;
+    bounds[5] += epsilion;
+  }
+
+  for (i=0; i<6; i++)
+    {
+    this->InitialBounds[i] = bounds[i];
+    }
+  this->InitialLength = sqrt((bounds[1]-bounds[0])*(bounds[1]-bounds[0]) +
+                             (bounds[3]-bounds[2])*(bounds[3]-bounds[2]) +
+                             (bounds[5]-bounds[4])*(bounds[5]-bounds[4]));
+
+  this->PositionHandles();
+  this->ComputeNormals();
+  this->ValidPick = 1; //since we have set up widget
+  this->SizeHandles();
+}
+
 //----------------------------------------------------------------------------
 #define BOXWIDGET_XMY(x,y,z) \
   z[0] = x[0] - y[0]; \
@@ -326,7 +184,7 @@ void vtkCustomBoxRepresentation::CreateDefaultProperties()
   r[0] = a*x[0] + b*y[0] + c*z[0]; \
   r[1] = a*x[1] + b*y[1] + c*z[1]; \
   r[2] = a*x[2] + b*y[2] + c*z[2]; 
-#define BOXWIDGET_AVERAGE(a,b,c) \
+#define VTK_AVERAGE(a,b,c) \
   c[0] = (a[0] + b[0])/2.0; \
   c[1] = (a[1] + b[1])/2.0; \
   c[2] = (a[2] + b[2])/2.0;
@@ -482,7 +340,7 @@ void vtkCustomBoxRepresentation::SetOBB(double o[12])
   BOXWIDGET_AXPY(1.0, v0v4, x3, x7);
 
   // compute new centre by midpoint of p0,p6
-  BOXWIDGET_AVERAGE(x0,x6,bc);
+  VTK_AVERAGE(x0,x6,bc);
   //
   this->PositionHandles();
   if (this->PlaneMode) {
@@ -548,57 +406,10 @@ void vtkCustomBoxRepresentation::GetPoint3(double xyz[3])
   xyz[0] = p[0]; xyz[1] = p[1]; xyz[2] = p[2];
 }
 //----------------------------------------------------------------------------
-void vtkCustomBoxRepresentation::PlaceWidget(double bds[6])
-{
-  int i;
-  double bounds[6], center[3];
-  
-  this->AdjustBounds(bds,bounds,center);
-  
-  this->Points->SetPoint(0, bounds[0], bounds[2], bounds[4]);
-  this->Points->SetPoint(1, bounds[1], bounds[2], bounds[4]);
-  this->Points->SetPoint(2, bounds[1], bounds[3], bounds[4]);
-  this->Points->SetPoint(3, bounds[0], bounds[3], bounds[4]);
-  this->Points->SetPoint(4, bounds[0], bounds[2], bounds[5]);
-  this->Points->SetPoint(5, bounds[1], bounds[2], bounds[5]);
-  this->Points->SetPoint(6, bounds[1], bounds[3], bounds[5]);
-  this->Points->SetPoint(7, bounds[0], bounds[3], bounds[5]);
-
-  if (this->PlaneMode) {
-    this->FlattenToPlane();
-    bounds[4] = bounds[5] = (bounds[4] + bounds[5])/2.0;
-    double epsilion = ((bounds[3]-bounds[2])+(bounds[1]-bounds[0]))/1000.0;
-    bounds[4] -= epsilion;
-    bounds[5] += epsilion;
-  }
-
-  for (i=0; i<6; i++)
-    {
-    this->InitialBounds[i] = bounds[i];
-    }
-  this->InitialLength = sqrt((bounds[1]-bounds[0])*(bounds[1]-bounds[0]) +
-                             (bounds[3]-bounds[2])*(bounds[3]-bounds[2]) +
-                             (bounds[5]-bounds[4])*(bounds[5]-bounds[4]));
-
-  this->PositionHandles();
-  this->ComputeNormals();
-  this->ValidPick = 1; //since we have set up widget
-  this->SizeHandles();
-}
-
-//----------------------------------------------------------------------------
 void vtkCustomBoxRepresentation::ReleaseGraphicsResources(vtkWindow *w)
 {
+  vtkBoxRepresentation::ReleaseGraphicsResources(w);
   this->ConeActor->ReleaseGraphicsResources(w);
-  this->HexActor->ReleaseGraphicsResources(w);
-  this->HexOutline->ReleaseGraphicsResources(w);
-  this->HexFace->ReleaseGraphicsResources(w);
-  // render the handles
-  for (int j=0; j<7; j++)
-    {
-    this->Handle[j]->ReleaseGraphicsResources(w);
-    }
-
 }
 
 //----------------------------------------------------------------------------
@@ -681,47 +492,10 @@ int vtkCustomBoxRepresentation::HasTranslucentPolygonalGeometry()
 //----------------------------------------------------------------------------
 void vtkCustomBoxRepresentation::PositionHandles()
 {
-  double *pts =
-     static_cast<vtkDoubleArray *>(this->Points->GetData())->GetPointer(0);
-  double *p0 = pts;
-  double *p1 = pts + 3*1;
-  double *p2 = pts + 3*2;
-  double *p3 = pts + 3*3;
-  //double *p4 = pts + 3*4;
-  double *p5 = pts + 3*5;
-  double *p6 = pts + 3*6;
-  double *p7 = pts + 3*7;
-  double x[3];
-
-  BOXWIDGET_AVERAGE(p0,p7,x);
-  this->Points->SetPoint(8, x);
-  BOXWIDGET_AVERAGE(p1,p6,x);
-  this->Points->SetPoint(9, x);
-  BOXWIDGET_AVERAGE(p0,p5,x);
-  this->Points->SetPoint(10, x);
-  BOXWIDGET_AVERAGE(p2,p7,x);
-  this->Points->SetPoint(11, x);
-  BOXWIDGET_AVERAGE(p1,p3,x);
-  this->Points->SetPoint(12, x);
-  BOXWIDGET_AVERAGE(p5,p7,x);
-  this->Points->SetPoint(13, x);
-  BOXWIDGET_AVERAGE(p0,p6,x);
-  this->Points->SetPoint(14, x);
-
-  int i;
-  for (i = 0; i < 7; ++i)
-    {
-    this->HandleGeometry[i]->SetCenter(this->Points->GetPoint(8+i));
-    }
-
+  vtkBoxRepresentation::PositionHandles();
   this->ConeSource->SetCenter(this->Points->GetPoint(13));
-
-  this->Points->GetData()->Modified();
-  this->HexFacePolyData->Modified();
-  this->HexPolyData->Modified();
-  this->GenerateOutline();
 }
-#undef BOXWIDGET_AVERAGE
+#undef VTK_AVERAGE
 
 //----------------------------------------------------------------------------
 void vtkCustomBoxRepresentation::HandlesOn()
@@ -739,14 +513,11 @@ void vtkCustomBoxRepresentation::HandlesOn()
 //----------------------------------------------------------------------------
 void vtkCustomBoxRepresentation::SizeHandles()
 {
+  vtkBoxRepresentation::SizeHandles();
   double *center 
     = static_cast<vtkDoubleArray *>(this->Points->GetData())->GetPointer(3*14);
   double radius =
       this->vtkWidgetRepresentation::SizeHandlesInPixels(1.5,center);
-  for(int i=0; i<7; i++)
-    {
-    this->HandleGeometry[i]->SetRadius(radius);
-    }
   this->ConeSource->SetHeight(2.0*radius);
   this->ConeSource->SetRadius(2.0*radius);
 }
@@ -755,70 +526,4 @@ void vtkCustomBoxRepresentation::SizeHandles()
 void vtkCustomBoxRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
-
-  double *bounds=this->InitialBounds;
-  os << indent << "Initial Bounds: "
-     << "(" << bounds[0] << "," << bounds[1] << ") "
-     << "(" << bounds[2] << "," << bounds[3] << ") " 
-     << "(" << bounds[4] << "," << bounds[5] << ")\n";
-
-  if ( this->HandleProperty )
-    {
-    os << indent << "Handle Property: " << this->HandleProperty << "\n";
-    }
-  else
-    {
-    os << indent << "Handle Property: (none)\n";
-    }
-  if ( this->SelectedHandleProperty )
-    {
-    os << indent << "Selected Handle Property: " 
-       << this->SelectedHandleProperty << "\n";
-    }
-  else
-    {
-    os << indent << "SelectedHandle Property: (none)\n";
-    }
-
-  if ( this->FaceProperty )
-    {
-    os << indent << "Face Property: " << this->FaceProperty << "\n";
-    }
-  else
-    {
-    os << indent << "Face Property: (none)\n";
-    }
-  if ( this->SelectedFaceProperty )
-    {
-    os << indent << "Selected Face Property: " 
-       << this->SelectedFaceProperty << "\n";
-    }
-  else
-    {
-    os << indent << "Selected Face Property: (none)\n";
-    }
-
-  if ( this->OutlineProperty )
-    {
-    os << indent << "Outline Property: " << this->OutlineProperty << "\n";
-    }
-  else
-    {
-    os << indent << "Outline Property: (none)\n";
-    }
-  if ( this->SelectedOutlineProperty )
-    {
-    os << indent << "Selected Outline Property: " 
-       << this->SelectedOutlineProperty << "\n";
-    }
-  else
-    {
-    os << indent << "Selected Outline Property: (none)\n";
-    }
-
-  os << indent << "Outline Face Wires: "
-     << (this->OutlineFaceWires ? "On\n" : "Off\n");
-  os << indent << "Outline Cursor Wires: "
-     << (this->OutlineCursorWires ? "On\n" : "Off\n");
-  os << indent << "Inside Out: " << (this->InsideOut ? "On\n" : "Off\n");
 }
