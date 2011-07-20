@@ -74,10 +74,11 @@ int vtkSamplingGridGenerator::RequiredDataType()
   return vtkRegularGridSource::RequiredDataType();
 }
 //----------------------------------------------------------------------------
+/*
 int vtkSamplingGridGenerator::ComputeInformation(
-  vtkInformation *vtkNotUsed(request),
+  vtkInformation *request,
   vtkInformationVector **inputVector,
-  vtkInformationVector *vtkNotUsed(outputVector))
+  vtkInformationVector *outputVector)
 {
   vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
   
@@ -86,7 +87,7 @@ int vtkSamplingGridGenerator::ComputeInformation(
 
   double bounds[6], lengths[3], zerovec[3] = {0.0, 0.0, 0.0};
   vtkImplicitFunction *cf = this->GetCutFunction();
-  if (cf && cf->IsA("vtkPlane")) {
+  if (inData && cf && cf->IsA("vtkPlane")) {
     vtkPlane *plane = vtkPlane::SafeDownCast(cf);
     //
     inData->GetBounds(bounds);
@@ -103,9 +104,9 @@ int vtkSamplingGridGenerator::ComputeInformation(
     if (pts->GetNumberOfPoints()>0) pts->GetPoint(0,this->origin);
     else this->Box->GetOrigin(this->origin);
     if (pts->GetNumberOfPoints()>1) pts->GetPoint(1,p1);
-    else memcpy(p1, this->origin, 3*sizeof(double));
+    else memcpy(p1, this->Point1, 3*sizeof(double));
     if (pts->GetNumberOfPoints()>2) pts->GetPoint(2,p2);
-    else memcpy(p2, this->origin, 3*sizeof(double));
+    else memcpy(p2, this->Point2, 3*sizeof(double));
     //
     vtkMath::Subtract(p1, this->origin, this->axesvectors[0]);
     vtkMath::Subtract(p2, this->origin, this->axesvectors[1]);
@@ -114,13 +115,13 @@ int vtkSamplingGridGenerator::ComputeInformation(
       lengths[i] = sqrt(vtkMath::Distance2BetweenPoints(zerovec, axesvectors[i]));
     }
   }
-  else if (cf && cf->IsA("vtkBox")) {
+  else if (inData && cf && cf->IsA("vtkBox")) {
     // Get origin, p1, p2 from implicit box
     vtkBox *iBox = vtkBox::SafeDownCast(cf);
     iBox->GetBounds(bounds);
     inData->GetBounds(bounds);
     vtkBoundingBox box(bounds);
-//    box.Inflate(this->Delta);
+    box.Inflate(this->Delta);
     vtkAbstractTransform *trans = iBox->GetTransform();
     vtkAbstractTransform *itrans = trans->GetInverse();
 
@@ -146,6 +147,9 @@ int vtkSamplingGridGenerator::ComputeInformation(
     lengths[2] = vtkMath::Norm(axesvectors[2]);
 //    trans->TransformPoint(lengths,lengths);
     //
+  }
+  else {
+    return vtkRegularGridSource::ComputeInformation(request, inputVector, outputVector);
   }
   //
   // Define sampling box...
@@ -175,10 +179,8 @@ int vtkSamplingGridGenerator::ComputeInformation(
       this->Dimension[i] = 1;
     }
   }
-  for (int i=0; i<3; i++) {
-    this->centre[i] = this->origin[i] + o2[i]/2.0;
-  }
   //
   return 1;
 }
 //----------------------------------------------------------------------------
+*/

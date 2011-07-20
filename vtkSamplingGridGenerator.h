@@ -42,7 +42,7 @@ class VTK_EXPORT vtkSamplingGridGenerator : public vtkRegularGridSource {
     // Description:
     // Standard Type-Macro
     static vtkSamplingGridGenerator *New();
-    vtkTypeRevisionMacro(vtkSamplingGridGenerator, vtkDataSetAlgorithm);
+    vtkTypeRevisionMacro(vtkSamplingGridGenerator, vtkRegularGridSource);
 
     // Description
     // Specify the implicit function to perform the cutting.
@@ -55,9 +55,9 @@ class VTK_EXPORT vtkSamplingGridGenerator : public vtkRegularGridSource {
 
     virtual int RequiredDataType();
 
-    virtual int ComputeInformation(vtkInformation *,
-                                   vtkInformationVector **,
-                                   vtkInformationVector *);
+    //virtual int ComputeInformation(vtkInformation *,
+    //                               vtkInformationVector **,
+    //                               vtkInformationVector *);
 
     //  
     // Implicit Function for cutting

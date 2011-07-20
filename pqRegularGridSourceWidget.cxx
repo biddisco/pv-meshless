@@ -39,11 +39,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqServer.h"
 #include "pqServerManagerModel.h"
 #include "pqSMAdaptor.h"
+#include "pqBoxWidget.h"
+#include "pqImplicitPlaneWidget.h"
+#include "pqSMAdaptor.h"
 
 #include <QDoubleValidator>
 #include "ui_pqRegularGridSourceWidget.h"
 
 #include "vtkSMPropertyLink.h"
+#include "vtkSMProxyManager.h"
+#include "vtkSMInputProperty.h"
 #include <vtkSMProxyProperty.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMNewWidgetRepresentationProxy.h>
@@ -147,6 +152,9 @@ pqRegularGridSourceWidget::pqRegularGridSourceWidget(vtkSMProxy* refProxy, vtkSM
   PVBOXWIDGET_TRIGGER_UPDATE(resolutionY);
   PVBOXWIDGET_TRIGGER_UPDATE(resolutionZ);
 
+  connect(this->Implementation->WidgetMode,
+    SIGNAL(currentIndexChanged(int)), this, SLOT(onWidgetModeChanged(int)));  
+
   QObject::connect(this->Implementation->show3DWidget,
     SIGNAL(toggled(bool)), this, SLOT(setWidgetVisible(bool)));
 
@@ -169,14 +177,42 @@ pqRegularGridSourceWidget::pqRegularGridSourceWidget(vtkSMProxy* refProxy, vtkSM
     SIGNAL(clicked()), this, SLOT(onUseCameraNormal()));
   connect(this->Implementation->resetBounds,
     SIGNAL(clicked()), this, SLOT(resetBounds()));
-  connect(this->Implementation->WidgetMode,
-    SIGNAL(currentIndexChanged(int)), this, SLOT(onWidgetModeChanged(int)));  
 
   pqServerManagerModel* smmodel =
     pqApplicationCore::instance()->getServerManagerModel();
   //
   this->createWidget(smmodel->findServer(refProxy->GetConnectionID()));
 
+  QObject::connect(this->boxWidget, SIGNAL(widgetVisibilityChanged(bool)),
+    this, SLOT(onWidgetVisibilityChanged(bool)));
+
+  QObject::connect(this->planeWidget, SIGNAL(widgetVisibilityChanged(bool)),
+    this, SLOT(onWidgetVisibilityChanged(bool)));
+
+
+  //vtkSMSourceProxy* input = NULL;
+  //vtkSMInputProperty* ivp = vtkSMInputProperty::SafeDownCast(
+  //  refProxy->GetProperty("Input"));
+  //int output_port = 0;
+  //if (ivp && ivp->GetNumberOfProxies())
+  //  {
+  //  vtkSMProxy* pxy = ivp->GetProxy(0);
+  //  input = vtkSMSourceProxy::SafeDownCast(pxy);
+  //  output_port =ivp->GetOutputPortForConnection(0);
+  //  }
+  //else
+  //  {
+  //  input = vtkSMSourceProxy::SafeDownCast(refProxy);
+  //  }
+  //pqSMAdaptor::setInputProperty(wProxy->GetProperty("Input"), input, 0);
+  //vtkSMInputProperty* ivp2 = vtkSMInputProperty::SafeDownCast(
+  //  wProxy->GetProperty("Input"));
+//  ivp2->SetInputConnection(0, input, 0); 
+
+  //this->boxWidget->setView(this->renderView());
+  //this->boxWidget->setWidgetVisible(1);
+  //this->boxWidget->showWidget();
+/*
   //
   //
   //
@@ -189,7 +225,7 @@ pqRegularGridSourceWidget::pqRegularGridSourceWidget(vtkSMProxy* refProxy, vtkSM
   link->AddLinkedProperty(widget, "OriginInfo", vtkSMPropertyLink::OUTPUT);
   this->Implementation->PropertyLinks.push_back(link);
   link->Delete();
-
+*/
 }
 //-----------------------------------------------------------------------------
 pqRegularGridSourceWidget::~pqRegularGridSourceWidget()
@@ -198,17 +234,55 @@ pqRegularGridSourceWidget::~pqRegularGridSourceWidget()
 }
 
 //-----------------------------------------------------------------------------
+void pqRegularGridSourceWidget::setView(pqView* pqview)
+{ 
+  Superclass::setView(pqview);
+  this->boxWidget->setView(pqview);
+  this->planeWidget->setView(pqview);
+}
+
+//-----------------------------------------------------------------------------
+void pqRegularGridSourceWidget::setWidgetVisible(bool visible)
+{
+  Superclass::setWidgetVisible(visible);
+  this->boxWidget->setWidgetVisible(visible);
+  this->planeWidget->setWidgetVisible(visible);
+}
+/*
+//-----------------------------------------------------------------------------
+void pqRegularGridSourceWidget::showWidget()
+{
+  this->setWidgetVisible(true);
+  this->boxWidget->setWidgetVisible(true);
+  this->planeWidget->setWidgetVisible(true);
+}
+
+//-----------------------------------------------------------------------------
+void pqRegularGridSourceWidget::hideWidget()
+{
+  this->setWidgetVisible(false);
+  this->boxWidget->setWidgetVisible(false);
+  this->planeWidget->setWidgetVisible(false);
+}
+*/
+//-----------------------------------------------------------------------------
 void pqRegularGridSourceWidget::createWidget(pqServer* server)
 {
-  vtkSMNewWidgetRepresentationProxy* widget = 
-    pqApplicationCore::instance()->get3DWidgetFactory()->
-    get3DWidget("CustomBoxWidgetRepresentation", server);
-  this->setWidgetProxy(widget);
-  widget->UpdateVTKObjects();
-  widget->UpdatePropertyInformation();
+  this->boxWidget = new pqBoxWidget(this->getReferenceProxy(),this->getControlledProxy());
+  this->Implementation->boxwidgetholder->addWidget(this->boxWidget);
+
+  this->planeWidget = new pqImplicitPlaneWidget(this->getReferenceProxy(),this->getControlledProxy());
+  this->Implementation->planewidgetholder->addWidget(this->planeWidget);
+
+//  vtkSMNewWidgetRepresentationProxy* widget = 
+//   pqApplicationCore::instance()->get3DWidgetFactory()->
+//    get3DWidget("CustomBoxWidgetRepresentation", server);
+  this->setWidgetProxy(this->boxWidget->getWidgetProxy());
+//  widget->UpdateVTKObjects();
+//  widget->UpdatePropertyInformation();
 
   // Now bind the GUI controls to the 3D widget.
-
+/*
   PVBOXWIDGET_LINK(positionX, "Position", 0);
   PVBOXWIDGET_LINK(positionY, "Position", 1);
   PVBOXWIDGET_LINK(positionZ, "Position", 2);
@@ -224,7 +298,7 @@ void pqRegularGridSourceWidget::createWidget(pqServer* server)
   PVBOXWIDGET_LINK(resolutionX, "Resolution", 0);
   PVBOXWIDGET_LINK(resolutionY, "Resolution", 1);
   PVBOXWIDGET_LINK(resolutionZ, "Resolution", 2);
-
+*/
 //  PVBOXWIDGET_LINK(normalX, "NormalInfo", 0);
 //  PVBOXWIDGET_LINK(normalY, "NormalInfo", 1);
 //  PVBOXWIDGET_LINK(normalZ, "NormalInfo", 2);
@@ -242,8 +316,12 @@ void pqRegularGridSourceWidget::accept()
 void pqRegularGridSourceWidget::onWidgetVisibilityChanged(bool visible)
 {
   this->Implementation->show3DWidget->blockSignals(true);
+  this->boxWidget->blockSignals(true);
+  this->planeWidget->blockSignals(true);
   this->Implementation->show3DWidget->setChecked(visible);
   this->Implementation->show3DWidget->blockSignals(false);
+  this->boxWidget->blockSignals(false);
+  this->planeWidget->blockSignals(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -257,7 +335,7 @@ void pqRegularGridSourceWidget::resetBounds(double bounds[6])
 
   vtkSMNewWidgetRepresentationProxy* widget = this->getWidgetProxy();
   vtkSMPropertyHelper(widget, "PlaceWidget").Set(bounds, 6);
-  widget->UpdateVTKObjects();
+  widget->InvokeCommand("PlaceWidget");
   widget->UpdatePropertyInformation();
   //
   // reset the Transform 
@@ -270,6 +348,9 @@ void pqRegularGridSourceWidget::resetBounds(double bounds[6])
   widget->UpdatePropertyInformation();
   this->setModified();
   this->render();
+
+  this->boxWidget->resetBounds(bounds);
+  this->planeWidget->resetBounds(bounds);
 }
 //-----------------------------------------------------------------------------
 void pqRegularGridSourceWidget::resetBounds()
@@ -305,6 +386,7 @@ void pqRegularGridSourceWidget::UpdatePlanePoints()
 //-----------------------------------------------------------------------------
 void pqRegularGridSourceWidget::ComputePlanePoints()
 {
+return;
   vtkSMNewWidgetRepresentationProxy* widget = this->getWidgetProxy();
   if (!widget)
   {
@@ -473,6 +555,22 @@ void pqRegularGridSourceWidget::onComputeOBB()
 //-----------------------------------------------------------------------------
 void pqRegularGridSourceWidget::onWidgetModeChanged(int index)
 {
+  this->Implementation->stackedWidget->setCurrentIndex(index);
+  if (index==0) {
+    this->boxWidget->hideWidget();
+//    this->setWidgetProxy(this->planeWidget->getWidgetProxy());
+    this->planeWidget->setWidgetVisible(1);
+    this->planeWidget->showWidget();
+    this->planeWidget->select();
+  } 
+  else {
+    this->planeWidget->hideWidget();
+//    this->setWidgetProxy(this->boxWidget->getWidgetProxy());
+    this->boxWidget->setWidgetVisible(1);
+    this->boxWidget->showWidget();
+    this->boxWidget->select();
+  }
+/*
   vtkSMNewWidgetRepresentationProxy* widget = this->getWidgetProxy();
   if (index==0) {
     int planemode = 1;
@@ -486,4 +584,5 @@ void pqRegularGridSourceWidget::onWidgetModeChanged(int index)
   widget->UpdatePropertyInformation();
   this->render();
   this->setModified();
+*/
 }

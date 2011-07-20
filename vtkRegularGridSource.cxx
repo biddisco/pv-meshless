@@ -43,6 +43,10 @@
 //
 #include "vtkBoundsExtentTranslator.h"
 //
+#include <set>
+#include <algorithm>
+#include <functional>
+//
 vtkCxxRevisionMacro(vtkRegularGridSource, "$Revision: 1.4 $");
 vtkStandardNewMacro(vtkRegularGridSource);
 //----------------------------------------------------------------------------
@@ -73,9 +77,9 @@ vtkRegularGridSource::vtkRegularGridSource(void) {
   this->Resolution[2]           = 0;
   this->GenerateConnectedCells  = 0;
   this->UseAutoPlacement        = 0;
-  this->Dimension[0]            = 1;
-  this->Dimension[1]            = 1;
-  this->Dimension[2]            = 1;
+  this->WholeDimension[0]       = 1;
+  this->WholeDimension[1]       = 1;
+  this->WholeDimension[2]       = 1;
 }
 //----------------------------------------------------------------------------
 void vtkRegularGridSource::TagDataSet(vtkDataSet *output, char *name)
@@ -84,17 +88,17 @@ void vtkRegularGridSource::TagDataSet(vtkDataSet *output, char *name)
   // if needed when probing mesh based data
   //
   double norm[3];
-  vtkMath::Cross(axesvectors[0], axesvectors[1], norm);
-  double sx = vtkMath::Norm(axesvectors[0]);
-  double sy = vtkMath::Norm(axesvectors[1]);
+  vtkMath::Cross(this->axesvectors[0], this->axesvectors[1], norm);
+  double sx = vtkMath::Norm(this->axesvectors[0]);
+  double sy = vtkMath::Norm(this->axesvectors[1]);
 
   // array format is #Label X Y Z Nx Ny Nz X_size Y_size
   vtkSmartPointer<vtkVariantArray> row = vtkSmartPointer<vtkVariantArray>::New();
   row->SetName(name);
   row->InsertNextValue(vtkVariant("Gui Generated Probe"));
-  row->InsertNextValue(vtkVariant(this->centre[0]));
-  row->InsertNextValue(vtkVariant(this->centre[1]));
-  row->InsertNextValue(vtkVariant(this->centre[2]));
+//  row->InsertNextValue(vtkVariant(this->centre[0]));
+//  row->InsertNextValue(vtkVariant(this->centre[1]));
+//  row->InsertNextValue(vtkVariant(this->centre[2]));
   row->InsertNextValue(vtkVariant(norm[0]));
   row->InsertNextValue(vtkVariant(norm[1]));
   row->InsertNextValue(vtkVariant(norm[2]));
@@ -119,42 +123,13 @@ int vtkRegularGridSource::FillInputPortInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
-double *vtkRegularGridSource::GetNormal()
-{
-  double v0v1[3] = {this->Point1[0]-this->Origin[0], 
-                    this->Point1[1]-this->Origin[1], 
-                    this->Point1[2]-this->Origin[2] };
-  double v0v2[3] = {this->Point2[0]-this->Origin[0], 
-                    this->Point2[1]-this->Origin[1], 
-                    this->Point2[2]-this->Origin[2] };
-  vtkMath::Cross(v0v1, v0v2, this->normal);
-  vtkMath::Normalize(this->normal);
-  return this->normal;
-}
-//----------------------------------------------------------------------------
-void vtkRegularGridSource::GetNormal(double &n1, double &n2, double &n3)
-{
-  this->GetNormal();
-  n1 = this->normal[0];
-  n2 = this->normal[1];
-  n3 = this->normal[2];
-}
-//----------------------------------------------------------------------------
-void vtkRegularGridSource::GetNormal(double n[3])
-{
-  this->GetNormal();
-  n[0] = this->normal[0];
-  n[1] = this->normal[1];
-  n[2] = this->normal[2];
-}
-//----------------------------------------------------------------------------
 int vtkRegularGridSource::RequiredDataType()
 {
   if (!this->GenerateConnectedCells) return VTK_POLY_DATA;
   //
-  if (this->Dimension[2]==1) {
-//    return VTK_POLY_DATA;
-  }
+  //if (this->PieceDimension[2]==1) {
+  //  return VTK_POLY_DATA;
+  //}
   return VTK_STRUCTURED_GRID;
 }
 //----------------------------------------------------------------------------
@@ -187,6 +162,7 @@ int vtkRegularGridSource::RequestDataObject(
   }
   return 1;
 }
+/*
 //----------------------------------------------------------------------------
 int vtkRegularGridSource::RequestUpdateExtent(
   vtkInformation* vtkNotUsed(request),
@@ -207,30 +183,105 @@ int vtkRegularGridSource::RequestUpdateExtent(
 //  }
   return 1;
 }
+*/
 //----------------------------------------------------------------------------
-int vtkRegularGridSource::ComputeInformation(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *vtkNotUsed(outputVector))
+int vtkRegularGridSource::RequestInformation(
+  vtkInformation* request,
+  vtkInformationVector** inputVector,
+  vtkInformationVector* outputVector)
 {
-  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
-  
-  vtkDataSet *inData = inInfo ? vtkDataSet::SafeDownCast
-    (inInfo->Get(vtkDataObject::DATA_OBJECT())) : NULL;
+  this->ComputeInformation(request, inputVector, outputVector);
+  //
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  //
+//  outInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(), VTK_PIECES_EXTENT);
+#ifdef VTK_USE_MPI
+  vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
+    vtkMultiProcessController::GetGlobalController()->GetCommunicator());
+  int maxpieces = communicator->GetNumberOfProcesses();
+#else
+  int maxpieces = 1;
+#endif
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), 
+    0, this->WholeDimension[0]-1, 
+    0, this->WholeDimension[1]-1, 
+    0, this->WholeDimension[2]-1 );
+//  outInfo->Set(vtkStreamingDemandDrivenPipeline::UNRESTRICTED_UPDATE_EXTENT(), 1);
+	outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),maxpieces);
+  outInfo->Set(vtkDataObject::ORIGIN(), this->origin, 3);
+  outInfo->Set(vtkDataObject::SPACING(), this->spacing, 3);
 
+  //
+  std::cout << "RI WHOLE_EXTENT {";
+  for (int i=0; i<3; i++) std::cout << WholeDimension[i] << (i<2 ? "," : "}");
+  std::cout << std::endl;
+
+  return 1;
+}
+//----------------------------------------------------------------------------
+int dominantAxis(double vec[3]) {
+  if (vec[0]>vec[1] && vec[0]>vec[2]) return 0;
+  if (vec[1]>vec[0] && vec[1]>vec[2]) return 1;
+  if (vec[2]>vec[0] && vec[2]>vec[1]) return 2;
+  return -1;
+}
+//----------------------------------------------------------------------------
+int missingAxis(int axis[3]) {
+  std::set<int> present;
+  for (int i=0; i<3; i++) present.insert(axis[i]);
+  for (int i=0; i<3; i++) if (present.find(i)==present.end()) return i;
+  return -1;
+}
+//----------------------------------------------------------------------------
+// @TODO Check this, delta not included
+void vtkRegularGridSource::ComputeAxesFromPoints(double lengths[3], bool inflate) 
+{
+  double tempaxes[3][3], templengths[3];
+  int axes[3];
+  for (int i=0; i<3; i++) { 
+    this->origin[i]  = this->Origin[i];
+    tempaxes[0][i] = this->Point1[i] - this->Origin[i];
+    tempaxes[1][i] = this->Point2[i] - this->Origin[i];
+    tempaxes[2][i] = this->Point3[i] - this->Origin[i];
+  }
+  // we sort the axes to be as close as we can to {X,Y,Z} because the Extents 
+  // are always ordered this way. (Not valid when non axis-aligned).
+  for (int i=0; i<3; i++) {
+    axes[i] = dominantAxis(tempaxes[i]);
+    templengths[i] = sqrt(vtkMath::Norm(tempaxes[i]));
+  }
+  for (int i=0; i<3; i++) {
+    if (axes[i]!=-1) {
+      this->axesvectors[axes[i]][0] = tempaxes[i][0];
+      this->axesvectors[axes[i]][1] = tempaxes[i][1];
+      this->axesvectors[axes[i]][2] = tempaxes[i][2];
+      lengths[axes[i]] = templengths[i];
+    }
+    else {
+      int missing = missingAxis(axes);
+      this->axesvectors[missing][0] = 0.0;
+      this->axesvectors[missing][1] = 0.0;
+      this->axesvectors[missing][2] = 0.0;
+      lengths[missing] = 0.0;
+    }
+  }
+}
+//----------------------------------------------------------------------------
+void vtkRegularGridSource::ComputeAxesFromBounds(vtkDataSet *inputData, double lengths[3], bool inflate)
+{
   //
   // Define box...
   //
-  double bounds[6], lengths[3], zerovec[3] = {0.0, 0.0, 0.0};
-  if (inData && this->UseAutoPlacement) {
-    inData->GetBounds(bounds);
+  vtkBoundingBox box;
+  double bounds[6];
+  inputData->GetBounds(bounds);
+  box.SetBounds(bounds);
 #ifdef VTK_USE_MPI
-    vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
-      vtkMultiProcessController::GetGlobalController()->GetCommunicator());
-    MPI_Comm mpiComm = MPI_COMM_NULL;
-    if (communicator) {
-      mpiComm = *(communicator->GetMPIComm()->GetHandle());
-    }    
+  vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
+    vtkMultiProcessController::GetGlobalController()->GetCommunicator());
+  MPI_Comm mpiComm = MPI_COMM_NULL;
+  if (communicator) {
+    mpiComm = *(communicator->GetMPIComm()->GetHandle());
     double bmin[3], bmn[3] = {bounds[0], bounds[2], bounds[4]};
     double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
     MPI_Allreduce(bmn, bmin, 3, MPI_DOUBLE, MPI_MIN, mpiComm);
@@ -238,42 +289,47 @@ int vtkRegularGridSource::ComputeInformation(
     vtkBoundingBox box;
     box.SetMinPoint(bmin);
     box.SetMaxPoint(bmax);
-#else
-    vtkBoundingBox box(bounds);
+  }
 #endif
-
+  if (inflate) {
     box.Inflate(this->Delta);
-    box.GetLengths(lengths);
-    box.GetBounds(bounds);
-    this->origin[0] = bounds[0];
-    this->origin[1] = bounds[2];
-    this->origin[2] = bounds[4];
-    axesvectors[0][0] = axesvectors[1][0] = axesvectors[2][0] = 0.0;
-    axesvectors[0][1] = axesvectors[1][1] = axesvectors[2][1] = 0.0;
-    axesvectors[0][2] = axesvectors[1][2] = axesvectors[2][2] = 0.0;
-    axesvectors[0][0] += lengths[0];
-    axesvectors[1][1] += lengths[1];
-    axesvectors[2][2] += lengths[2];
+  }
+  box.GetMinPoint(this->origin[0], this->origin[1], this->origin[2]);
+  box.GetLengths(lengths);
+  //
+  this->axesvectors[0][0] = this->axesvectors[1][0] = this->axesvectors[2][0] = 0.0;
+  this->axesvectors[0][1] = this->axesvectors[1][1] = this->axesvectors[2][1] = 0.0;
+  this->axesvectors[0][2] = this->axesvectors[1][2] = this->axesvectors[2][2] = 0.0;
+  this->axesvectors[0][0] += lengths[0];
+  this->axesvectors[1][1] += lengths[1];
+  this->axesvectors[2][2] += lengths[2];
+}
+//----------------------------------------------------------------------------
+int vtkRegularGridSource::ComputeInformation(
+  vtkInformation *vtkNotUsed(request),
+  vtkInformationVector **inputVector,
+  vtkInformationVector *vtkNotUsed(outputVector))
+{
+  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+  vtkDataSet  *inputData = inInfo ? vtkDataSet::SafeDownCast
+    (inInfo->Get(vtkDataObject::DATA_OBJECT())) : NULL;
+  //
+  double lengths[3];
+  //
+  if (inputData && this->UseAutoPlacement) {
+    this->ComputeAxesFromBounds(inputData, lengths, true);
   }
   else {
-    for (int i=0; i<3; i++) { // @TODO Check this, delta not included
-      this->origin[i]  = this->Origin[i];
-      axesvectors[0][i] = this->Point1[i] - this->Origin[i];
-      axesvectors[1][i] = this->Point2[i] - this->Origin[i];
-      axesvectors[2][i] = this->Point3[i] - this->Origin[i];
-    }
-    for (int i=0; i<3; i++) {
-      lengths[i] = sqrt(vtkMath::Distance2BetweenPoints(zerovec, axesvectors[i]));
-    }
+    this->ComputeAxesFromPoints(lengths, true);
   }
+
   //
   // Define sampling box...
+  // This represents the complete box which may be distributed over N pieces
+  // Hence we compute WholeDimension (=WholeExtent+1)
   //
   double o2[3] = {0.0, 0.0, 0.0};
   for (int i=0; i<3; i++) {
-    if (this->Resolution[i]>1) {
-      for (int j=0; j<3; j++) o2[j] += axesvectors[i][j];
-    }
     if (this->Spacing[i]<=0.0 && this->Resolution[i]>1) {
       this->scaling[i] = 1.0/(this->Resolution[i]-1);
       this->spacing[i] = lengths[i]*this->scaling[i];
@@ -288,53 +344,48 @@ int vtkRegularGridSource::ComputeInformation(
       }
     }
     if (this->scaling[i]>0.0 && this->spacing[i]>1E-8) {
-      this->Dimension[i] = vtkMath::Round(1.0/this->scaling[i] + 0.5);
+      this->WholeDimension[i] = vtkMath::Round(1.0/this->scaling[i] + 0.5);
     }
     else {
-      this->Dimension[i] = 1;
+      this->WholeDimension[i] = 1;
     }
   }
-  for (int i=0; i<3; i++) {
-    this->centre[i] = this->origin[i] + o2[i]/2.0;
-  }
-  //
   return 1;
 }
 //----------------------------------------------------------------------------
-#define REGULARGRID_ISAXPY(a,x1,x2,y,z) \
-  a[0] = (z[0] - y[0])/(x1[0]*x2[0]); \
-  a[1] = (z[1] - y[1])/(x1[1]*x2[1]); \
-  a[2] = (z[2] - y[2])/(x1[2]*x2[2]);
+#define REGULARGRID_ISAXPY(a,s,x2,y,z) \
+  a[0] = (s[0]*x2[0])>0 ? (z[0] - y[0])/(s[0]*x2[0]) : 0; \
+  a[1] = (s[1]*x2[1])>0 ? (z[1] - y[1])/(s[1]*x2[1]) : 0; \
+  a[2] = (s[2]*x2[2])>0 ? (z[2] - y[2])/(s[2]*x2[2]) : 0;
 
 // only valid for axis aligned grids
-void vtkRegularGridSource::BoundsToExtent(double *bounds, int *extent) 
+void vtkRegularGridSource::BoundsToExtent(double *bounds, int *extent, int updatePiece) 
 {
-  double minvec[3] = {bounds[0], bounds[2], bounds[4]};
-  double maxvec[3] = {bounds[1], bounds[3], bounds[5]};
-  double updateExtentLo[3],updateExtentHi[3];
   double axesvec[3] = {this->axesvectors[0][0], this->axesvectors[1][1], this->axesvectors[2][2]};
+  vtkBoundingBox processRegion(bounds);
+  vtkBoundingBox dataRegion;
+  dataRegion.SetMinPoint(this->origin);
+  dataRegion.SetMaxPoint(this->origin[0]+axesvec[0],
+                         this->origin[1]+axesvec[1],
+                         this->origin[2]+axesvec[2]);
+  //
+  if (!dataRegion.IntersectBox(processRegion)) {
+    for (int i=0; i<3; i++) { extent[i*2  ] = 0; }
+    for (int i=0; i<3; i++) { extent[i*2+1] = -1; }
+    return;
+  }
+  const double *minvec = dataRegion.GetMinPoint();
+  const double *maxvec = dataRegion.GetMaxPoint();
+  //
+  double updateExtentLo[3],updateExtentHi[3];
   REGULARGRID_ISAXPY(updateExtentLo, this->scaling, axesvec, this->origin, minvec);
   REGULARGRID_ISAXPY(updateExtentHi, this->scaling, axesvec, this->origin, maxvec);
   for (int i=0; i<3; i++) { extent[i*2  ] = static_cast<int>(updateExtentLo[i]+0.5); }
   for (int i=0; i<3; i++) { extent[i*2+1] = static_cast<int>(updateExtentHi[i]+0.5); }
-}
-//----------------------------------------------------------------------------
-int vtkRegularGridSource::RequestInformation(
-  vtkInformation* request,
-  vtkInformationVector** inputVector,
-  vtkInformationVector* outputVector)
-{
-  this->ComputeInformation(request, inputVector, outputVector);
   //
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), 
-    0, this->Dimension[0]-1, 
-    0, this->Dimension[1]-1, 
-    0, this->Dimension[2]-1 );
-  // Make sure these are correctly set
-  outInfo->Set(vtkDataObject::ORIGIN(), this->origin, 3);
-  outInfo->Set(vtkDataObject::SPACING(), this->spacing, 3);
-  return 1;
+  std::cout << updatePiece << "Setting Extent to {";
+  for (int i=0; i<6; i++) std::cout << extent[i] << (i<5 ? "," : "}");
+  std::cout << std::endl;
 }
 //----------------------------------------------------------------------------
 int vtkRegularGridSource::RequestData(
@@ -357,11 +408,10 @@ int vtkRegularGridSource::RequestData(
       break;
   }
   //
-  this->ComputeInformation(request, inputVector, outputVector);
-  int outUpdateExt[6];
-  //
   vtkInformation *inInfo = inputVector[0] ? inputVector[0]->GetInformationObject(0) : NULL;
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  //
+  int outUpdateExt[6];
   //
   vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
     inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR())) : NULL;
@@ -369,7 +419,7 @@ int vtkRegularGridSource::RequestData(
   if (bet) {
     int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
     double *bounds = bet->GetBoundsForPiece(updatePiece);
-    this->BoundsToExtent(bounds,outUpdateExt);
+    this->BoundsToExtent(bounds,outUpdateExt,updatePiece);
   }
   else {
     outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), outUpdateExt);
@@ -422,14 +472,12 @@ int vtkRegularGridSource::RequestData(
   }
   else if (outGrid) {
     outGrid->SetExtent(outUpdateExt);
-    outGrid->SetWholeExtent(0, this->Dimension[0]-1, 
-                            0, this->Dimension[1]-1, 
-                            0, this->Dimension[2]-1);
     outGrid->SetPoints(newpoints);
   }
-  if (this->Dimension[2]==1) {
+  if (this->WholeDimension[2]==1) {
     this->TagDataSet(output, "ImplicitPlaneData");
     //
+/*
     vtkSmartPointer<vtkFloatArray> normals = vtkSmartPointer<vtkFloatArray>::New();
     normals->SetNumberOfComponents(3);
     normals->SetNumberOfTuples(totalpoints);
@@ -439,6 +487,7 @@ int vtkRegularGridSource::RequestData(
       normals->SetTuple(i, normal);
     }
     output->GetPointData()->SetNormals(normals);
+*/
   }
   return 1;
 }

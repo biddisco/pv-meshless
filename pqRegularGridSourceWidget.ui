@@ -1,183 +1,222 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>pqRegularGridSourceWidget</class>
- <widget class="QWidget" name="pqRegularGridSourceWidget" >
-  <property name="geometry" >
+ <widget class="QWidget" name="pqRegularGridSourceWidget">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>317</width>
-    <height>309</height>
+    <height>399</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" >
+  <layout class="QVBoxLayout">
    <item>
-    <layout class="QGridLayout" >
-     <property name="spacing" >
-      <number>2</number>
-     </property>
-     <item row="4" column="0" >
-      <widget class="QLabel" name="label_7" >
-       <property name="text" >
-        <string>Rotate</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1" >
-      <widget class="pqLineEdit" name="rotationX" />
-     </item>
-     <item row="4" column="2" >
-      <widget class="pqLineEdit" name="rotationY" />
-     </item>
-     <item row="4" column="3" >
-      <widget class="pqLineEdit" name="rotationZ" />
-     </item>
-     <item row="5" column="0" >
-      <widget class="QLabel" name="label_8" >
-       <property name="text" >
-        <string>Scale</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1" >
-      <widget class="pqLineEdit" name="scaleX" />
-     </item>
-     <item row="5" column="2" >
-      <widget class="pqLineEdit" name="scaleY" />
-     </item>
-     <item row="5" column="3" >
-      <widget class="pqLineEdit" name="scaleZ" />
-     </item>
-     <item row="1" column="0" >
-      <widget class="QLabel" name="labelOrigin" >
-       <property name="text" >
-        <string>Centre</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1" >
-      <widget class="pqLineEdit" name="positionX" />
-     </item>
-     <item row="1" column="2" >
-      <widget class="pqLineEdit" name="positionY" />
-     </item>
-     <item row="1" column="3" >
-      <widget class="pqLineEdit" name="positionZ" />
-     </item>
-     <item row="2" column="0" >
-      <widget class="QLabel" name="labelNormal" >
-       <property name="text" >
-        <string>Normal</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1" >
-      <widget class="pqLineEdit" name="normalX" />
-     </item>
-     <item row="2" column="2" >
-      <widget class="pqLineEdit" name="normalY" />
-     </item>
-     <item row="2" column="3" >
-      <widget class="pqLineEdit" name="normalZ" />
-     </item>
-     <item row="0" column="0" >
-      <widget class="QCheckBox" name="show3DWidget" >
-       <property name="text" >
-        <string>Show Widget</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="3" >
-      <widget class="QComboBox" name="WidgetMode" >
-       <property name="currentIndex" >
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="0" column="1">
+      <widget class="QComboBox" name="WidgetMode">
+       <property name="currentIndex">
         <number>1</number>
        </property>
        <item>
-        <property name="text" >
+        <property name="text">
          <string>Plane</string>
         </property>
        </item>
        <item>
-        <property name="text" >
+        <property name="text">
          <string>Box</string>
         </property>
        </item>
       </widget>
      </item>
-     <item row="0" column="2" >
-      <widget class="QLabel" name="label" >
-       <property name="text" >
-        <string>Mode</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="2" >
-      <widget class="pqLineEdit" name="resolutionY" />
-     </item>
-     <item row="7" column="1" >
-      <widget class="pqLineEdit" name="resolutionX" />
-     </item>
-     <item row="7" column="3" >
-      <widget class="pqLineEdit" name="resolutionZ" />
-     </item>
-     <item row="7" column="0" >
-      <widget class="QLabel" name="label_9" >
-       <property name="text" >
-        <string>Resolution</string>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Grid type</string>
        </property>
       </widget>
      </item>
     </layout>
    </item>
    <item>
-    <layout class="QGridLayout" >
-     <property name="margin" >
+    <widget class="QStackedWidget" name="stackedWidget">
+     <property name="currentIndex">
       <number>0</number>
      </property>
-     <property name="spacing" >
+     <widget class="QWidget" name="page_2">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <layout class="QGridLayout" name="planewidgetholder"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="page">
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <layout class="QGridLayout" name="boxwidgetholder"/>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <layout class="QGridLayout">
+     <property name="spacing">
+      <number>2</number>
+     </property>
+     <item row="4" column="1">
+      <widget class="pqLineEdit" name="rotationX"/>
+     </item>
+     <item row="4" column="2">
+      <widget class="pqLineEdit" name="rotationY"/>
+     </item>
+     <item row="4" column="3">
+      <widget class="pqLineEdit" name="rotationZ"/>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>Scale</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="pqLineEdit" name="scaleX"/>
+     </item>
+     <item row="5" column="2">
+      <widget class="pqLineEdit" name="scaleY"/>
+     </item>
+     <item row="5" column="3">
+      <widget class="pqLineEdit" name="scaleZ"/>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="labelOrigin">
+       <property name="text">
+        <string>Centre</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="pqLineEdit" name="positionX"/>
+     </item>
+     <item row="1" column="2">
+      <widget class="pqLineEdit" name="positionY"/>
+     </item>
+     <item row="1" column="3">
+      <widget class="pqLineEdit" name="positionZ"/>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="labelNormal">
+       <property name="text">
+        <string>Normal</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="pqLineEdit" name="normalX"/>
+     </item>
+     <item row="2" column="2">
+      <widget class="pqLineEdit" name="normalY"/>
+     </item>
+     <item row="2" column="3">
+      <widget class="pqLineEdit" name="normalZ"/>
+     </item>
+     <item row="0" column="0">
+      <widget class="QCheckBox" name="show3DWidget">
+       <property name="text">
+        <string>Show Widget</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Mode</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="2">
+      <widget class="pqLineEdit" name="resolutionY"/>
+     </item>
+     <item row="7" column="1">
+      <widget class="pqLineEdit" name="resolutionX"/>
+     </item>
+     <item row="7" column="3">
+      <widget class="pqLineEdit" name="resolutionZ"/>
+     </item>
+     <item row="7" column="0">
+      <widget class="QLabel" name="label_9">
+       <property name="text">
+        <string>Resolution</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>Rotate</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QGridLayout">
+     <property name="margin">
       <number>0</number>
      </property>
-     <item row="0" column="1" >
-      <widget class="QPushButton" name="resetBounds" >
-       <property name="text" >
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="resetBounds">
+       <property name="text">
         <string>Reset Bounds</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="0" >
-      <widget class="QPushButton" name="useXNormal" >
-       <property name="text" >
+     <item row="0" column="0">
+      <widget class="QPushButton" name="useXNormal">
+       <property name="text">
         <string>&amp;X Normal</string>
        </property>
       </widget>
      </item>
-     <item row="2" column="0" >
-      <widget class="QPushButton" name="useZNormal" >
-       <property name="text" >
+     <item row="2" column="0">
+      <widget class="QPushButton" name="useZNormal">
+       <property name="text">
         <string>&amp;Z Normal</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="0" >
-      <widget class="QPushButton" name="useYNormal" >
-       <property name="text" >
+     <item row="1" column="0">
+      <widget class="QPushButton" name="useYNormal">
+       <property name="text">
         <string>&amp;Y Normal</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="1" >
-      <widget class="QPushButton" name="OBB" >
-       <property name="text" >
-        <string>Fit OBB</string>
+     <item row="2" column="1">
+      <widget class="QPushButton" name="useCameraNormal">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Camera Normal</string>
        </property>
       </widget>
      </item>
-     <item row="2" column="1" >
-      <widget class="QPushButton" name="useCameraNormal" >
-       <property name="text" >
-        <string>Camera Normal</string>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="OBB">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Fit OBB</string>
        </property>
       </widget>
      </item>

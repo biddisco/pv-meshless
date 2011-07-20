@@ -1,19 +1,14 @@
 <ServerManagerConfiguration>
 
-  <!-- ================================================================ -->
-  <!-- RegularGridSource                                                -->
-  <!-- Source version                                                   -->
-  <!-- ================================================================ -->
-
   <ProxyGroup name="sources">
 
-    <SourceProxy name="RegularGridSource"
-                 class="vtkRegularGridSource"
-                 label="RegularGridSource">
-      <Documentation
-         long_help="This filter Generates a grid of points inside a volume"
-         short_help="Generate volume points">
-      </Documentation>
+    <!-- ================================================================ -->
+    <!-- SamplingGridFilter                                               -->
+    <!-- Filter version of vtkSamplingGridGenerator                       -->
+    <!-- ================================================================ -->
+    <SourceProxy name="SamplingGridSource"
+                 class="vtkSamplingGridGenerator"
+                 label="Sampling Grid">
 
       <InputProperty
          name="Input"
@@ -169,21 +164,32 @@
         </Documentation>
       </DoubleVectorProperty>
 
-      <Property name="ComputeOBB"
-                command="ComputeOBB">
-      </Property>
-
       <Hints>
-        <Property name="UseAutoPlacement" show="0"/>
-        <!-- We must remap Origin (of widget) to Centre (of plane) -->
-        <PropertyGroup type="RegularGridSource" label="Widget">
-        <!--<Property function="OriginInfo" name="Origin" />-->
-        <!--<Property function="Resolution" name="Resolution" />-->
-        </PropertyGroup>
+        <Property name="Origin" show="1"/>
+        <Property name="Normal" show="0"/>
+        <Property name="Point1" show="1"/>
+        <Property name="Point2" show="1"/>
+        <Property name="Point3" show="1"/>
       </Hints>
 
-      <!-- End RegularGridSource -->
     </SourceProxy>
 
   </ProxyGroup>
+
+  <ProxyGroup name="filters">
+
+    <!-- ================================================================ -->
+    <!-- SamplingGridFilter                                               -->
+    <!-- Filter version of vtkSamplingGridGenerator                       -->
+    <!-- ================================================================ -->
+    <SourceProxy name="SamplingGridFilter"
+                 class="vtkSamplingGridGenerator"
+                 base_proxygroup="sources"
+                 base_proxyname="SamplingGridSource"
+                 label="Sampling Grid">
+
+    </SourceProxy>
+
+  </ProxyGroup>
+
 </ServerManagerConfiguration>
