@@ -402,6 +402,9 @@ struct vtkPPF_datainfo {
 int vtkParticlePartitionFilter::GatherDataTypeInfo(vtkPointSet *input)
 {
 #ifdef VTK_USE_MPI
+  if (this->UpdateNumPieces==1) {
+      return input->GetPoints()->GetDataType();
+  }
   std::vector< int > datatypes(this->UpdateNumPieces, -1);
   int datatype = -1;
   if (input->GetPoints()) {
@@ -493,20 +496,22 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   inputdataset->GetBounds(bounds);
   double bmin[3], bmn[3] = {bounds[0], bounds[2], bounds[4]};
   double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
-  MPI_Allreduce(bmn, bmin, 3, MPI_DOUBLE, MPI_MIN, mpiComm);
-  MPI_Allreduce(bmx, bmax, 3, MPI_DOUBLE, MPI_MAX, mpiComm);
   this->BoxList.clear();
   this->BoxListWithGhostRegion.clear();
   if (this->UpdateNumPieces==1) {
     output->ShallowCopy(inputdataset);
     vtkBoundingBox box;
-    box.SetMinPoint(bmin);
-    box.SetMaxPoint(bmax);
+    box.SetMinPoint(bmn);
+    box.SetMaxPoint(bmx);
     this->BoxList.push_back(box);
     // we add a ghost cell region to our boxes
     box.Inflate(this->GhostCellOverlap);
     this->BoxListWithGhostRegion.push_back(box);
     return 1;
+  }
+  else {
+    MPI_Allreduce(bmn, bmin, 3, MPI_DOUBLE, MPI_MIN, mpiComm);
+    MPI_Allreduce(bmx, bmax, 3, MPI_DOUBLE, MPI_MAX, mpiComm);
   }
 
   vtkStreamingDemandDrivenPipeline::SafeDownCast(
