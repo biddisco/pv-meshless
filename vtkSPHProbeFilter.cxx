@@ -189,10 +189,9 @@ void vtkSPHProbeFilter::SetProbe(vtkDataObject *probe)
 //----------------------------------------------------------------------------
 vtkDataObject *vtkSPHProbeFilter::GetProbe()
 {
-  if (this->GetNumberOfInputConnections(1) < 1)
-    {
+  if (this->GetNumberOfInputConnections(1) < 1) {
     return NULL;
-    }
+  }
   
   return this->GetExecutive()->GetInputData(1, 0);
 }
@@ -248,7 +247,8 @@ int vtkSPHProbeFilter::OutputType(vtkDataSet *probepts)
 vtkSmartPointer<vtkDataSet> vtkSPHProbeFilter::NewOutput(vtkDataSet *probepts) 
 {
   int outputType = this->OutputType(probepts);
-  vtkSmartPointer<vtkDataSet> newoutput = vtkDataSet::SafeDownCast(vtkDataObjectTypes::NewDataObject(outputType));
+  vtkSmartPointer<vtkDataSet> newoutput = 
+    vtkDataSet::SafeDownCast(vtkDataObjectTypes::NewDataObject(outputType));
   newoutput->Delete(); // dec ref count
   return newoutput;
 }
@@ -289,10 +289,8 @@ int vtkSPHProbeFilter::RequestDataObject(
     newOutput = vtkDataObjectTypes::NewDataObject(outputType);
     newOutput->SetPipelineInformation(info);
     newOutput->Delete();
-//    this->GetOutputPortInformation(0)->Set(
-//      vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
     this->GetOutputPortInformation(0)->Set(
-      vtkDataObject::DATA_EXTENT_TYPE(), VTK_PIECES_EXTENT);
+      vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
   }
   return 1;
 }
