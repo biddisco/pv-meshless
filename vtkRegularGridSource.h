@@ -84,6 +84,10 @@ class VTK_EXPORT vtkRegularGridSource : public vtkDataSetAlgorithm {
     vtkSetVector3Macro(Point3, double);
     vtkGetVector3Macro(Point3, double);
 
+    // Description
+    // Get the Normal
+    virtual double *GetNormal();
+
     // Description:
     // Specify the point spacing on the X/Y/Z axis
     vtkSetVector3Macro(Spacing, double);

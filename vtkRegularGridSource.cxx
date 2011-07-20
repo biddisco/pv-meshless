@@ -54,6 +54,11 @@ vtkStandardNewMacro(vtkRegularGridSource);
   z[0] = a*x[0] + y[0]; \
   z[1] = a*x[1] + y[1]; \
   z[2] = a*x[2] + y[2]; 
+
+#define REGULARGRID_ISAXPY(a,s,x2,y,z) \
+  a[0] = (s[0]*x2[0])>0 ? (z[0] - y[0])/(s[0]*x2[0]) : 0; \
+  a[1] = (s[1]*x2[1])>0 ? (z[1] - y[1])/(s[1]*x2[1]) : 0; \
+  a[2] = (s[2]*x2[2])>0 ? (z[2] - y[2])/(s[2]*x2[2]) : 0;
 // --------------------------------------------------------------------------------------
 vtkRegularGridSource::vtkRegularGridSource(void) {
   this->Spacing[0]              = 0.0;
@@ -123,13 +128,23 @@ int vtkRegularGridSource::FillInputPortInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
+double *vtkRegularGridSource::GetNormal()
+{
+  double v0v1[3] = {this->Point1[0]-this->Origin[0], 
+                    this->Point1[1]-this->Origin[1], 
+                    this->Point1[2]-this->Origin[2] };
+  double v0v2[3] = {this->Point2[0]-this->Origin[0], 
+                    this->Point2[1]-this->Origin[1], 
+                    this->Point2[2]-this->Origin[2] };
+  vtkMath::Cross(v0v1, v0v2, this->normal);
+  vtkMath::Normalize(this->normal);
+  return this->normal;
+}
+//----------------------------------------------------------------------------
 int vtkRegularGridSource::RequiredDataType()
 {
   if (!this->GenerateConnectedCells) return VTK_POLY_DATA;
   //
-  //if (this->PieceDimension[2]==1) {
-  //  return VTK_POLY_DATA;
-  //}
   return VTK_STRUCTURED_GRID;
 }
 //----------------------------------------------------------------------------
@@ -353,11 +368,6 @@ int vtkRegularGridSource::ComputeInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
-#define REGULARGRID_ISAXPY(a,s,x2,y,z) \
-  a[0] = (s[0]*x2[0])>0 ? (z[0] - y[0])/(s[0]*x2[0]) : 0; \
-  a[1] = (s[1]*x2[1])>0 ? (z[1] - y[1])/(s[1]*x2[1]) : 0; \
-  a[2] = (s[2]*x2[2])>0 ? (z[2] - y[2])/(s[2]*x2[2]) : 0;
-
 // only valid for axis aligned grids
 void vtkRegularGridSource::BoundsToExtent(double *bounds, int *extent, int updatePiece) 
 {
@@ -477,7 +487,6 @@ int vtkRegularGridSource::RequestData(
   if (this->WholeDimension[2]==1) {
     this->TagDataSet(output, "ImplicitPlaneData");
     //
-/*
     vtkSmartPointer<vtkFloatArray> normals = vtkSmartPointer<vtkFloatArray>::New();
     normals->SetNumberOfComponents(3);
     normals->SetNumberOfTuples(totalpoints);
@@ -487,7 +496,6 @@ int vtkRegularGridSource::RequestData(
       normals->SetTuple(i, normal);
     }
     output->GetPointData()->SetNormals(normals);
-*/
   }
   return 1;
 }
