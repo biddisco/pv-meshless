@@ -750,6 +750,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
       this->BoxListWithGhostRegion.push_back(box);
     }
   }
+  this->ExtentTranslator->InitWholeBounds();
   this->LocalBox = &this->BoxListWithGhostRegion[this->UpdatePiece];
 
   //

@@ -14,6 +14,7 @@
 =========================================================================*/
 #include "vtkBoundsExtentTranslator.h"
 #include "vtkObjectFactory.h"
+#include "vtkBoundingBox.h"
 
 vtkStandardNewMacro(vtkBoundsExtentTranslator);
 
@@ -79,6 +80,22 @@ void vtkBoundsExtentTranslator::SetBoundsForPiece(int piece, double* bounds)
 }
 
 //----------------------------------------------------------------------------
+void vtkBoundsExtentTranslator::InitWholeBounds()
+{
+  vtkBoundingBox wholeBounds(&this->BoundsTable[0]);
+  for (int p=1; p<this->GetNumberOfPieces(); p++) {
+    wholeBounds.AddBounds(&this->BoundsTable[p*6]);
+  }
+  wholeBounds.GetBounds(WholeBounds);
+}
+
+//----------------------------------------------------------------------------
+double *vtkBoundsExtentTranslator::GetWholeBounds()
+{
+  return this->WholeBounds;
+}
+
+//----------------------------------------------------------------------------
 void vtkBoundsExtentTranslator::GetBoundsForPiece(int piece, double* bounds)
 {
   if ((piece*6)>this->BoundsTable.size() || (piece < 0))
@@ -122,6 +139,11 @@ int vtkBoundsExtentTranslator::PieceToExtent()
 }
 
 //----------------------------------------------------------------------------
+#define BOUNDSEXTENT_ISAXPY(a,s,l,y,z) \
+  a[0] = s[0]>0 ? (z[0] - y[0])/s[0] : 0; \
+  a[1] = s[1]>0 ? (z[1] - y[1])/s[1] : 0; \
+  a[2] = s[2]>0 ? (z[2] - y[2])/s[2] : 0;
+//----------------------------------------------------------------------------
 int vtkBoundsExtentTranslator::PieceToExtentThreadSafe(int piece, int numPieces, 
                                                  int ghostLevel, 
                                                  int *wholeExtent, 
@@ -129,7 +151,28 @@ int vtkBoundsExtentTranslator::PieceToExtentThreadSafe(int piece, int numPieces,
                                                  int splitMode, 
                                                  int byPoints)
 {
-  memcpy(resultExtent, wholeExtent, sizeof(int)*6);   
+  double spacing[3], scaling[3], lengths[3];
+  vtkBoundingBox wholebounds(this->GetWholeBounds());
+  vtkBoundingBox piecebounds(this->GetBoundsForPiece(piece));
+  wholebounds.GetLengths(lengths);
+  const double *origin = wholebounds.GetMinPoint();
+  double dims[3] = {
+    wholeExtent[1]-wholeExtent[0], 
+    wholeExtent[3]-wholeExtent[2], 
+    wholeExtent[5]-wholeExtent[4], 
+  };
+
+  for (int i=0; i<3; i++) {
+    scaling[i] = (dims[i]>0.0) ? lengths[i]/dims[i] : 0.0;
+  }
+
+  const double *minpt = piecebounds.GetMinPoint();
+  const double *maxpt = piecebounds.GetMaxPoint();
+
+  for (int i=0; i<3; i++) {
+    resultExtent[i*2+0] = scaling[i]>0 ? static_cast<int>(0.5+(minpt[i]-origin[i])/scaling[i]) : 0;
+    resultExtent[i*2+1] = scaling[i]>0 ? static_cast<int>(0.5+(maxpt[i]-origin[i])/scaling[i]) : 0;
+  }
   return 1;
 }
 

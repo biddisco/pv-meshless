@@ -33,19 +33,18 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
   
   static vtkBoundsExtentTranslator* New();
-  
-  // Description:
 
-  // Set the number of pieces into which the whole extent will be
-  // split.  If this is 1 then the whole extent will be returned.  If
-  // this is more than the number of pieces in the table then the
-  // extra pieces will be empty data.  If this is more than one but
-  // less than the number of pieces in the table then only this many
-  // pieces will be returned (FIXME).
+  // Description:
+  // Set the number of pieces that will be stored.
+  // Executives set this and the value must match that set by the
+  // PartitionFilter that generated this data, otherwise failure
+  // is probable
   void SetNumberOfPieces(int pieces);
 
   // Description:
-  // Not supported by this subclass of vtkExtentTranslator.
+  // Used by executives to compute a structured extent.
+  // Only valid when a default Spacing has been set, otherwise
+  // all pieces return the WholeExtent
   int PieceToExtent();  
   int PieceToExtentByPoints();
   int PieceToExtentThreadSafe(int piece, int numPieces, 
@@ -59,10 +58,10 @@ public:
   virtual void SetBoundsForPiece(int piece, double* bounds);
   
   // Description:  
-  // Get the extent table entry for the given piece.  This is only for
-  // code that is setting up the table.  Extent translation should
-  // always be done through the PieceToExtent method.
-  virtual void GetBoundsForPiece(int piece, double* bounds);
+  // Get the bounds table entry for the given piece.  
+  // Structured Extents should be calculated using PieceToExtent
+  // (after a valid spacing has been set).
+  virtual void    GetBoundsForPiece(int piece, double *bounds);
   virtual double *GetBoundsForPiece(int piece);
   
   // Description:
@@ -70,12 +69,28 @@ public:
   vtkSetMacro(MaximumGhostDistance, double);
   vtkGetMacro(MaximumGhostDistance, double);
   
+  // Description:
+  // To convert a bounding box to a StructuredExtent, a spacing
+  // (between samples) is necessary - and the global bounds.
+  vtkSetVector3Macro(Spacing, double);
+  vtkGetVector3Macro(Spacing, double);
+
+  // Description:
+  // After setting all bounds, call this to compute the global/whole bounds
+  virtual void InitWholeBounds();
+
+  // Description:
+  // Returns the union of all bounds
+  virtual double *GetWholeBounds();
+
 protected:
-  vtkBoundsExtentTranslator();
+   vtkBoundsExtentTranslator();
   ~vtkBoundsExtentTranslator();
   
   // Store the extent table in a single array.  Every 6 values form an extent.
   std::vector<double> BoundsTable;
+  double WholeBounds[6];
+  double Spacing[3];
   double MaximumGhostDistance;
    
 private:
