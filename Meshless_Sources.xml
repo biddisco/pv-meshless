@@ -1,4 +1,5 @@
 <ParaViewSources>
-    <Source name="RegularGridSource" />
+  <Source name="RegularGridSource" />
+  <Source name="SamplingGridSource" />
 </ParaViewSources>
 

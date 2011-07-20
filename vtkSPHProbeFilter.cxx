@@ -289,8 +289,10 @@ int vtkSPHProbeFilter::RequestDataObject(
     newOutput = vtkDataObjectTypes::NewDataObject(outputType);
     newOutput->SetPipelineInformation(info);
     newOutput->Delete();
+//    this->GetOutputPortInformation(0)->Set(
+//      vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
     this->GetOutputPortInformation(0)->Set(
-      vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
+      vtkDataObject::DATA_EXTENT_TYPE(), VTK_PIECES_EXTENT);
   }
   return 1;
 }
@@ -308,16 +310,60 @@ int vtkSPHProbeFilter::RequestInformation(
     probePtsInfo = inputVector[1]->GetInformationObject(0);
     // be careful, our output extent is taken from the probe pts which is the 
     // second input
+/*
+  //
+  outInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(), VTK_PIECES_EXTENT);
+*/
+#ifdef VTK_USE_MPI
+    vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
+      vtkMultiProcessController::GetGlobalController()->GetCommunicator());
+    int maxpieces = communicator->GetNumberOfProcesses();
+#else
+    int maxpieces = 1;
+#endif
+	  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),maxpieces);
+//    outInfo->Set(vtkStreamingDemandDrivenPipeline::UNRESTRICTED_UPDATE_EXTENT(), 1);
+
+    int *wh = probePtsInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT());
     outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
                probePtsInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),
                6);
     outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
                probePtsInfo->Get(
                vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()));
+    if (probePtsInfo->Has(vtkStreamingDemandDrivenPipeline::UNRESTRICTED_UPDATE_EXTENT())) {
+//      outInfo->Set(vtkStreamingDemandDrivenPipeline::UNRESTRICTED_UPDATE_EXTENT(), 1);
+    }
+  outInfo->Set(vtkDataObject::ORIGIN(), probePtsInfo->Get(vtkDataObject::ORIGIN()),3);
+  outInfo->Set(vtkDataObject::SPACING(), probePtsInfo->Get(vtkDataObject::SPACING()),3);
   }
 
   return 1;
 }
+//----------------------------------------------------------------------------
+int vtkSPHProbeFilter::RequestUpdateExtent(
+  vtkInformation *request,
+  vtkInformationVector **inputVector,
+  vtkInformationVector *outputVector)
+{
+  // get the info objects
+  vtkInformation *dataInfo     = inputVector[0]->GetInformationObject(0);
+  vtkInformation *outInfo      = outputVector->GetInformationObject(0);
+  vtkInformation *probePtsInfo = NULL;
+  if (this->GetNumberOfInputPorts()>1 && this->GetNumberOfInputConnections(1)>0) {
+    probePtsInfo = inputVector[1]->GetInformationObject(0);
+    // be careful, our output extent is taken from the probe pts which is the 
+    // second input
+
+    int *wh = probePtsInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT());
+    outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+               probePtsInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),
+               6);
+    outInfo->Set(vtkStreamingDemandDrivenPipeline::UNRESTRICTED_UPDATE_EXTENT(), 1);
+  }
+  return 1;
+}
+
 //----------------------------------------------------------------------------
 int vtkSPHProbeFilter::RequestData(
   vtkInformation *vtkNotUsed(request),

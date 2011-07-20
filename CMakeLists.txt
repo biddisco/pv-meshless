@@ -114,6 +114,7 @@ IF(PARAVIEW_BUILD_QT_GUI)
   QT4_WRAP_UI(
     MESHLESS_UI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.ui
 #    ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.ui
   )
@@ -124,6 +125,8 @@ IF(PARAVIEW_BUILD_QT_GUI)
   QT4_WRAP_CPP(
     MESHLESS_MOC_SRCS 
       ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.h      
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridFilterPanel.h
       ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.h
       ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.h
   )
@@ -153,6 +156,34 @@ IF(PARAVIEW_BUILD_QT_GUI)
      "SPHManager"
     XML_GROUP 
      meshless_helpers
+  )
+
+  #--------------------------------------------------
+  # invoke macro that adds our Sampling grid panel
+  #--------------------------------------------------
+  ADD_PARAVIEW_OBJECT_PANEL(
+    MESHLESS_IFACE_O
+    MESHLESS_IFACE_SRCS_O
+    CLASS_NAME 
+      pqSamplingGridPanel
+    XML_NAME 
+     "SamplingGridSource"
+    XML_GROUP 
+     sources
+  )
+
+  #--------------------------------------------------
+  # invoke macro that adds our Sampling grid panel
+  #--------------------------------------------------
+  ADD_PARAVIEW_OBJECT_PANEL(
+    MESHLESS_IFACE_O2
+    MESHLESS_IFACE_SRCS_O2
+    CLASS_NAME 
+      pqSamplingGridFilterPanel
+    XML_NAME 
+     "SamplingGridFilter"
+    XML_GROUP 
+     filters
   )
 
   #--------------------------------------------------
@@ -215,6 +246,7 @@ ADD_PARAVIEW_PLUGIN(
 
   SERVER_MANAGER_XML 
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkRegularGridSource.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxWidget.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxRepresentation.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.xml
@@ -262,13 +294,17 @@ ADD_PARAVIEW_PLUGIN(
   GUI_INTERFACES 
     ${MESHLESS_IFACE_W}
     ${MESHLESS_IFACE_O}
+    ${MESHLESS_IFACE_O2}
     ${MESHLESS_IFACE_D}
   GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridFilterPanel.cxx
     ${MESHLESS_IFACE_SRCS_W}
     ${MESHLESS_IFACE_SRCS_O}
+    ${MESHLESS_IFACE_SRCS_O2}
     ${MESHLESS_IFACE_SRCS_D}
     ${MESHLESS_MOC_SRCS}
     ${MESHLESS_UI_SOURCES}

@@ -84,12 +84,6 @@ class VTK_EXPORT vtkRegularGridSource : public vtkDataSetAlgorithm {
     vtkSetVector3Macro(Point3, double);
     vtkGetVector3Macro(Point3, double);
 
-    // Description
-    // Get the Normal
-    virtual void GetNormal(double &n1, double &n2, double &n3);
-    virtual void GetNormal(double n[3]);
-    virtual double *GetNormal();
-
     // Description:
     // Specify the point spacing on the X/Y/Z axis
     vtkSetVector3Macro(Spacing, double);
@@ -138,12 +132,12 @@ class VTK_EXPORT vtkRegularGridSource : public vtkDataSetAlgorithm {
                                    vtkInformationVector**, 
                                    vtkInformationVector*);
     
-    // Description:
-    // This is called by the superclass.
-    // This is the method you should override.
-    virtual int RequestUpdateExtent(vtkInformation*,
-                                    vtkInformationVector**,
-                                    vtkInformationVector*);
+    //// Description:
+    //// This is called by the superclass.
+    //// This is the method you should override.
+    //virtual int RequestUpdateExtent(vtkInformation*,
+    //                                vtkInformationVector**,
+    //                                vtkInformationVector*);
 
     // Description:
     // This is called within ProcessRequest to when a request asks the
@@ -170,9 +164,11 @@ class VTK_EXPORT vtkRegularGridSource : public vtkDataSetAlgorithm {
                                    vtkInformationVector **,
                                    vtkInformationVector *);
 
-    virtual void BoundsToExtent(double *bounds, int *extent);
+    virtual void ComputeAxesFromBounds(vtkDataSet *inputData, double lengths[3], bool inflate);
+    virtual void ComputeAxesFromPoints(double lengths[3], bool inflate);
+    virtual void BoundsToExtent(double *bounds, int *extent, int updatePiece);
 
-    // properties
+    // properties which may be set by user
     double   Spacing[3];
     int      Resolution[3];
     double   Origin[3];
@@ -182,13 +178,14 @@ class VTK_EXPORT vtkRegularGridSource : public vtkDataSetAlgorithm {
     double   Delta;
     int      GenerateConnectedCells;
     int      UseAutoPlacement;
-    // internal
-    int      Dimension[3];
+
+    // internal values which may differ from above ones
+    int      WholeDimension[3];
     double   origin[3];
-    double   centre[3];
     double   axesvectors[3][3];
     double   scaling[3];
     double   spacing[3];
+
     // only for export, do not use
     double   normal[3];
 private:
