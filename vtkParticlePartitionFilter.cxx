@@ -432,8 +432,19 @@ int vtkParticlePartitionFilter::ExecuteInformation(
   vtkInformationVector** inputVector,
   vtkInformationVector* outputVector)
 {
+#ifdef VTK_USE_MPI
+  vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
+    vtkMultiProcessController::GetGlobalController()->GetCommunicator());
+  int maxpieces = communicator->GetNumberOfProcesses();
+#else
+  int maxpieces = 1;
+#endif
+
   vtkStreamingDemandDrivenPipeline::SafeDownCast(
     this->GetExecutive())->SetExtentTranslator(0, this->ExtentTranslator);
+  //
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), maxpieces);
   //
   return Superclass::ExecuteInformation(request, inputVector, outputVector);
 }
@@ -442,49 +453,39 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
                                  vtkInformationVector** inputVector,
                                  vtkInformationVector* outputVector)
 {
+  vtkInformation *outInfo = outputVector->GetInformationObject(0);
+  vtkPointSet     *output = vtkPointSet::GetData(outputVector,0);
+  vtkInformation  *inInfo = inputVector[0]->GetInformationObject(0);
+  vtkPointSet      *input = vtkPointSet::GetData(inputVector[0]);
+  //
+  this->UpdatePiece     = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  this->UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+  int ghostLevel        = inInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
+  std::cout << "Partition filter " << this->UpdatePiece << " Ghost level " << ghostLevel << std::endl;
+  //
 #ifdef VTK_USE_MPI
-  if (this->Controller) {
-    this->UpdatePiece     = this->Controller->GetLocalProcessId();
-    this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
-  }
-  else {
-    this->UpdatePiece     = 0;
-    this->UpdateNumPieces = 1;
-  }
   vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
   MPI_Comm mpiComm = MPI_COMM_NULL;
   if (communicator) {
     mpiComm = *(communicator->GetMPIComm()->GetHandle());
   }
 #else
-  this->UpdatePiece = 0;
-  this->UpdateNumPieces = 1;
   int mpiComm = 0;
 #endif
 
   vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
   timer->StartTimer();
 
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-
   // Get input
-  vtkPointSet *inputdataset = vtkPointSet::GetData(inputVector[0]);
-  vtkIdType       numPoints = inputdataset->GetNumberOfPoints();
-  vtkDataArray    *inPoints = numPoints>0 ? inputdataset->GetPoints()->GetData() : NULL;
+  vtkIdType       numPoints = input->GetNumberOfPoints();
+  vtkDataArray    *inPoints = numPoints>0 ? input->GetPoints()->GetData() : NULL;
   std::cout << "Partitioning on " << this->UpdatePiece << " Points Input : " << numPoints << std::endl;
 
-#ifdef VTK_USE_MPI
-  int updateLevel = static_cast<unsigned char>
-    (inputdataset->GetInformation()->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS()));
-  std::cout << "Partition filter " << this->UpdatePiece << " Ghost level " << updateLevel << std::endl;
-#endif
-
   // Setup output
-  vtkPolyData                    *output = vtkPolyData::GetData(outputVector);
   vtkSmartPointer<vtkPoints>   outPoints = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> vertices = vtkSmartPointer<vtkCellArray>::New();
   // if input had 0 points, make sure output is still setup correctly (float/double?)
-  int pointstype = this->GatherDataTypeInfo(inputdataset);
+  int pointstype = this->GatherDataTypeInfo(input);
   outPoints->SetDataType(pointstype);
   output->SetPoints(outPoints);
 
@@ -493,13 +494,13 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // rather than DBL_MAX/MIN etc used by zoltan (infinite extents)
   //
   double bounds[6];
-  inputdataset->GetBounds(bounds);
+  input->GetBounds(bounds);
   double bmin[3], bmn[3] = {bounds[0], bounds[2], bounds[4]};
   double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
   this->BoxList.clear();
   this->BoxListWithGhostRegion.clear();
   if (this->UpdateNumPieces==1) {
-    output->ShallowCopy(inputdataset);
+    output->ShallowCopy(input);
     vtkBoundingBox box;
     box.SetMinPoint(bmn);
     box.SetMaxPoint(bmx);
@@ -520,8 +521,8 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //
   // we make a temp copy of the input so we can add Ids if necessary
   //
-  vtkSmartPointer<vtkPointSet> input = inputdataset->NewInstance();
-  input->ShallowCopy(inputdataset);
+  vtkSmartPointer<vtkPointSet> inputCopy = input->NewInstance();
+  inputCopy->ShallowCopy(input);
 
   //
   // Global Ids
@@ -535,15 +536,15 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   } 
 
   vtkSmartPointer<vtkDataArray> Ids = NULL;
-  Ids = inputdataset->GetPointData()->GetArray(IdsName.c_str());
+  Ids = input->GetPointData()->GetArray(IdsName.c_str());
   if (!Ids) {
     // Try loading the global ids.
-    Ids = inputdataset->GetPointData()->GetGlobalIds();
+    Ids = input->GetPointData()->GetGlobalIds();
   }
   if (!Ids) {
     // Generate our own since none exist
     Ids = this->GenerateGlobalIds(numPoints, IdsName.c_str());
-    input->GetPointData()->AddArray(Ids);
+    inputCopy->GetPointData()->AddArray(Ids);
   }
   vtkIdTypeArray *IdArray = vtkIdTypeArray::SafeDownCast(Ids);
 
@@ -569,7 +570,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     return 0;
   }
 
-  mesh.Input                    = input;
+  mesh.Input                    = inputCopy;
   mesh.Output                   = output;
   mesh.InputGlobalIds           = IdArray->GetPointer(0);
   mesh.InputNumberOfLocalPoints = numPoints;
@@ -577,9 +578,9 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   mesh.OutputPoints             = outPoints;
   mesh.TotalSizePerId           = 0;
   mesh.OutPointCount            = 0;
-  mesh.NumberOfFields           = input->GetPointData()->GetNumberOfArrays();
+  mesh.NumberOfFields           = inputCopy->GetPointData()->GetNumberOfArrays();
   for (int i=0; i<mesh.NumberOfFields; i++) {
-    vtkDataArray *darray = input->GetPointData()->GetArray(i);
+    vtkDataArray *darray = inputCopy->GetPointData()->GetArray(i);
     mesh.InputArrayPointers.push_back(darray->GetVoidPointer(0));
     mesh.ArrayTypeSizes.push_back(darray->GetDataTypeSize());
     mesh.TotalSizePerId += darray->GetDataTypeSize();
@@ -870,15 +871,16 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   }
 
   //
-  // Create Vertices for each point
+  // If polydata create Vertices for each point
   //
-  vtkIdType *arraydata = vertices->WritePointer(mesh.OutPointCount, 2*mesh.OutPointCount);
-  for (int i=0; i<mesh.OutPointCount; i++) {
-    arraydata[i*2]   = 1;
-    arraydata[i*2+1] = i;
+  if (vtkPolyData::SafeDownCast(output)) {
+    vtkIdType *arraydata = vertices->WritePointer(mesh.OutPointCount, 2*mesh.OutPointCount);
+    for (int i=0; i<mesh.OutPointCount; i++) {
+      arraydata[i*2]   = 1;
+      arraydata[i*2+1] = i;
+    }
+    vtkPolyData::SafeDownCast(output)->SetVerts(vertices);
   }
-  output->SetVerts(vertices);
-
   //
   //*****************************************************************
   // Free the arrays allocated by Zoltan_LB_Partition, and free

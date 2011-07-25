@@ -137,11 +137,9 @@ class VTK_EXPORT vtkRegularGridSource : public vtkDataSetAlgorithm {
                                    vtkInformationVector*);
     
     //// Description:
-    //// This is called by the superclass.
-    //// This is the method you should override.
-    //virtual int RequestUpdateExtent(vtkInformation*,
-    //                                vtkInformationVector**,
-    //                                vtkInformationVector*);
+    virtual int RequestUpdateExtent(vtkInformation*,
+                                    vtkInformationVector**,
+                                    vtkInformationVector*);
 
     // Description:
     // This is called within ProcessRequest to when a request asks the

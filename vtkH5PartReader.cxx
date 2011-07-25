@@ -317,24 +317,11 @@ int vtkH5PartReader::RequestInformation(
   vtkInformationVector *outputVector)
 {
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
+  //
+  this->UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  this->UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+  //
   outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
-
-#ifdef VTK_USE_MPI
-  if (this->Controller)
-    {
-    this->UpdatePiece = this->Controller->GetLocalProcessId();
-    this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
-    }
-  else 
-    {
-    this->UpdatePiece = 0;
-    this->UpdateNumPieces = 1;
-    }
-#else
-  //this->UpdatePiece = this->Controller->GetLocalProcessId();
-  //this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
-#endif
-
   bool NeedToReadInformation = (FileModifiedTime>FileOpenedTime || !this->H5FileId);
 
   if (!this->OpenFile())
@@ -575,22 +562,10 @@ int vtkH5PartReader::RequestData(
   vtkInformationVector *outputVector)
 {
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
-  // get the ouptut
-  vtkPolyData *output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkPolyData     *output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
   //
-#ifdef VTK_USE_MPI
-  if (this->Controller &&
-      (this->UpdatePiece != this->Controller->GetLocalProcessId() ||
-       this->UpdateNumPieces != this->Controller->GetNumberOfProcesses()))
-  {
-    vtkDebugMacro(<< "Parallel failure, Id's not right (ignore)");
-    this->UpdatePiece = this->Controller->GetLocalProcessId();
-    this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
-  }
-#else
-  this->UpdatePiece = 0;
-  this->UpdateNumPieces =1;
-#endif
+  this->UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  this->UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   //
   typedef vtkstd::map< vtkstd::string, vtkstd::vector<vtkstd::string> > FieldMap;
   FieldMap scalarFields;

@@ -177,28 +177,31 @@ int vtkRegularGridSource::RequestDataObject(
   }
   return 1;
 }
-/*
+
 //----------------------------------------------------------------------------
 int vtkRegularGridSource::RequestUpdateExtent(
   vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector,
-  vtkInformationVector* vtkNotUsed(outputVector))
+  vtkInformationVector* outputVector)
 {
-//  if (!this->StructuredOutput) {
-    int numInputPorts = this->GetNumberOfInputPorts();
-    for (int i=0; i<numInputPorts; i++)
-      {
-      int numInputConnections = this->GetNumberOfInputConnections(i);
-      for (int j=0; j<numInputConnections; j++)
-        {
-        vtkInformation* inputInfo = inputVector[i]->GetInformationObject(j);
-        inputInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(), 1);
-        }
-      }
-//  }
+  // get the info objects
+  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+  vtkInformation *outInfo = outputVector->GetInformationObject(0);
+  //
+  int piece, numPieces, ghostLevels;
+  //
+  piece       = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  numPieces   = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+  ghostLevels = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
+  //
+  // Pass the piece request through
+  //
+  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), piece);
+  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
+  
   return 1;
 }
-*/
+
 //----------------------------------------------------------------------------
 int vtkRegularGridSource::RequestInformation(
   vtkInformation* request,
@@ -209,27 +212,19 @@ int vtkRegularGridSource::RequestInformation(
   //
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
   //
-//  outInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(), VTK_PIECES_EXTENT);
-#ifdef VTK_USE_MPI
-  vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
-    vtkMultiProcessController::GetGlobalController()->GetCommunicator());
-  int maxpieces = communicator->GetNumberOfProcesses();
-#else
-  int maxpieces = 1;
-#endif
+	int maxpieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), 
     0, this->WholeDimension[0]-1, 
     0, this->WholeDimension[1]-1, 
     0, this->WholeDimension[2]-1 );
-//  outInfo->Set(vtkStreamingDemandDrivenPipeline::UNRESTRICTED_UPDATE_EXTENT(), 1);
 	outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),maxpieces);
   outInfo->Set(vtkDataObject::ORIGIN(), this->origin, 3);
   outInfo->Set(vtkDataObject::SPACING(), this->spacing, 3);
 
   //
-  std::cout << "RI WHOLE_EXTENT {";
-  for (int i=0; i<3; i++) std::cout << WholeDimension[i] << (i<2 ? "," : "}");
-  std::cout << std::endl;
+  //std::cout << "RI WHOLE_EXTENT {";
+  //for (int i=0; i<3; i++) std::cout << WholeDimension[i] << (i<2 ? "," : "}");
+  //std::cout << std::endl;
 
   return 1;
 }
