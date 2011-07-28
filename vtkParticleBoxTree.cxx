@@ -33,7 +33,9 @@
 #include "vtkCellArray.h"
 #include "vtkPolyData.h"
 #include "vtkPoints.h"
-#include "vtkGenericCell.h"
+#include "vtkIdList.h"
+#include "vtkSmartPointer.h"
+#include "vtkBoundingBox.h"
 #include "vtkMath.h"
 #include "vtkPointData.h"
 //
@@ -108,54 +110,52 @@ bool vtkParticleBoxTree::StoreCellBounds()
 // so transform  ray origin before entering here.
 bool intersect_sphere(double o[3], double d[3], double r, double &t)
 {
-  //Compute A, B and C coefficients
-  float a = vtkMath::Dot(d,d);
-  float b = 2 * vtkMath::Dot(d, o);
-  float c = vtkMath::Dot(o,o) - (r * r);
+  // Compute A, B and C coefficients
+  double a = vtkMath::Dot(d,d);
+  double b = 2 * vtkMath::Dot(d, o);
+  double c = vtkMath::Dot(o,o) - (r * r);
 
   //Find discriminant
-  float disc = b * b - 4 * a * c;
+  double disc = b * b - 4 * a * c;
     
   // if discriminant is negative there are no real roots, so return 
   // false as ray misses sphere
-  if (disc < 0)
+  if (disc < 0) {
       return false;
-
+  }
   // compute q as described above
-  float distSqrt = sqrtf(disc);
-  float q;
-  if (b < 0)
+  double distSqrt = sqrtf(disc);
+  double q;
+  if (b < 0) {
       q = (-b - distSqrt)/2.0;
-  else
+  }
+  else {
       q = (-b + distSqrt)/2.0;
-
+  }
   // compute t0 and t1
-  float t0 = q / a;
-  float t1 = c / q;
+  double t0 = q / a;
+  double t1 = c / q;
 
   // make sure t0 is smaller than t1
-  if (t0 > t1)
-  {
+  if (t0 > t1) {
     // if t0 is bigger than t1 swap them around
-    float temp = t0;
+    double temp = t0;
     t0 = t1;
     t1 = temp;
   }
 
   // if t1 is less than zero, the object is in the ray's negative direction
   // and consequently the ray misses the sphere
-  if (t1 < 0)
+  if (t1 < 0) {
     return false;
-
+  }
   // if t0 is less than zero, the intersection point is at t1
-  if (t0 < 0)
-  {
+  if (t0 < 0) {
     t = t1;
     return true;
   }
   // else the intersection point is at t0
-  else
-  {
+  else {
     t = t0;
     return true;
   }
@@ -217,7 +217,7 @@ class _box {
       level = l;
   };
 };
-
+/*
 typedef std::vector<_box> boxlist;
 typedef std::stack<BSPNode*, std::vector<BSPNode*> > nodestack;
 //---------------------------------------------------------------------------
@@ -251,54 +251,15 @@ void vtkParticleBoxTree::GenerateRepresentation(int level, vtkPolyData *pd)
     this->AddBox(pd, bl[i].bounds, bl[i].level);
   }
 }
-//---------------------------------------------------------------------------
-void vtkParticleBoxTree::GenerateRepresentationLeafs(vtkPolyData *pd)
-{
-  GenerateRepresentation(-1,pd);
-}
-//---------------------------------------------------------------------------
-void vtkParticleBoxTree::GenerateRepresentationParticles(vtkPolyData *pd)
-{
-  /*
-  //
-  this->BuildLocatorIfNeeded();
-  //
-  nodestack ns;
-  BSPNode   *node;
-  ns.push(mRoot);
-  double closestPoint[3], dist2;
-  int subId;
-  //
-  while (!ns.empty())  {
-    node = ns.top();
-    ns.pop();
-    if (node->mChild[0]) { // this must be a parent node    
-      if (node->mChild[0]->Inside(x)) ns.push(node->mChild[0]);
-      if (node->mChild[1] && node->mChild[1]->Inside(x)) ns.push(node->mChild[1]);
-      if (node->mChild[2]->Inside(x)) ns.push(node->mChild[2]);
-    }
-    else { // a leaf, so test the cells
-      for (int i=0; i<node->num_cells; i++) {
-        int cell_ID = node->sorted_cell_lists[0][i];
-        //
-        if (vtkModifiedBSPTree_Inside(CellBounds[cell_ID], x)) {
-          this->DataSet->GetCell(cell_ID, cell);
-          if (cell->EvaluatePosition(x, closestPoint, subId, pcoords, dist2, weights)==1) {
-            return cell_ID;
-          }
-//          if (dist2<tol2) return cell_ID;
-        }
-      }
-    }
-  }
-  return -1;
 */
-}
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 void vtkParticleBoxTree::AddBox(vtkPolyData *pd, double *bounds, int level)
 {
   vtkPoints      *pts = pd->GetPoints();
   vtkCellArray *lines = pd->GetLines();
+  vtkIntArray *levels = vtkIntArray::SafeDownCast(pd->GetPointData()->GetArray(0));
   double x[3];
   vtkIdType cells[8], ids[2];
   //
@@ -343,11 +304,11 @@ void vtkParticleBoxTree::AddBox(vtkPolyData *pd, double *bounds, int level)
   lines->InsertNextCell(2,ids);
   ids[0] = cells[3]; ids[1] = cells[7];
   lines->InsertNextCell(2,ids);
-  vtkDataArray *da;
-  if (da=pd->GetPointData()->GetArray("Level")) {
-      for (int i=0; i<8; i++) {
-          da->InsertNextTuple1(level);
-      }
+  //
+  // Colour boxes by scalar if array present
+  //
+  for (int i=0; levels && i<8; i++) {
+    levels->InsertNextTuple1(level);
   }
 }
 //---------------------------------------------------------------------------
@@ -356,3 +317,18 @@ void vtkParticleBoxTree::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os,indent);
 }
 //----------------------------------------------------------------------------
+void vtkParticleBoxTree::GenerateRepresentation(int level, vtkPolyData *pd)
+{
+  vtkCellTreeLocator::GenerateRepresentation(level, pd);
+  //
+  vtkSmartPointer<vtkIdList> cells = vtkSmartPointer<vtkIdList>::New();
+  double bounds[6] = {0.472, 0.48, 0.515, 0.52, 0.494, 0.50};
+  this->FindCellsWithinBounds(bounds, cells);
+  
+  // For each cell, add the bbox to our polydata
+  vtkIdType s = cells->GetNumberOfIds();
+  for (int i=0; i<s; i++) {
+    vtkIdType c = cells->GetId(i);
+    AddBox(pd, this->CellBounds[c], 20);
+  }
+}

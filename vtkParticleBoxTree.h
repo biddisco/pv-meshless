@@ -29,14 +29,14 @@
 #ifndef _vtkParticleBoxTree_h
 #define _vtkParticleBoxTree_h
 
-#include "vtkModifiedBSPTree.h"
+#include "vtkCellTreeLocator.h"
 class vtkDataArray;
 
-class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
+class VTK_EXPORT vtkParticleBoxTree : public vtkCellTreeLocator {
   public:
     // Description:
     // Standard Type-Macro
-    vtkTypeMacro(vtkParticleBoxTree,vtkModifiedBSPTree);
+    vtkTypeRevisionMacro(vtkParticleBoxTree,vtkCellTreeLocator);
     void PrintSelf(ostream& os, vtkIndent indent);
 
     // Description:
