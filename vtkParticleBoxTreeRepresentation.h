@@ -35,8 +35,9 @@
 #define _vtkBarPolyGenerator_h
 
 #include "vtkPolyDataAlgorithm.h"
+#include "vtkSmartPointer.h"
 
-class vtkImageData;
+class vtkParticleBoxTree;
 
 class VTK_EXPORT vtkParticleBoxTreeRepresentation : public vtkPolyDataAlgorithm {
   public:
@@ -47,6 +48,18 @@ class VTK_EXPORT vtkParticleBoxTreeRepresentation : public vtkPolyDataAlgorithm 
     // Description:
     // Create an instance of vtkParticleBoxTreeRepresentation
     static vtkParticleBoxTreeRepresentation *New();
+
+    vtkSetMacro(Level, int);
+    vtkGetMacro(Level, int);
+
+    vtkSetMacro(MaxDepth, int);
+    vtkGetMacro(MaxDepth, int);
+
+    vtkSetMacro(MaxCellsPerNode, int);
+    vtkGetMacro(MaxCellsPerNode, int);
+    
+    vtkSetMacro(ParticleSize, double);
+    vtkGetMacro(ParticleSize, double);    
 
   protected:
      vtkParticleBoxTreeRepresentation(void);
@@ -61,6 +74,13 @@ class VTK_EXPORT vtkParticleBoxTreeRepresentation : public vtkPolyDataAlgorithm 
                             vtkInformationVector* outputVector);
     //
     virtual int FillInputPortInformation(int port, vtkInformation* info);
+
+    int    Level;
+    int    MaxDepth;
+    int    MaxCellsPerNode;
+    double ParticleSize;
+  
+    vtkSmartPointer<vtkParticleBoxTree> BSPTree;
 
 private:
   // Not implemented.

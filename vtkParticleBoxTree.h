@@ -29,14 +29,14 @@
 #ifndef _vtkParticleBoxTree_h
 #define _vtkParticleBoxTree_h
 
-#include "vtkModifiedBSPTree.h"
+#include "vtkCellTreeLocator.h"
 class vtkDataArray;
 
-class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
+class VTK_EXPORT vtkParticleBoxTree : public vtkCellTreeLocator {
   public:
     // Description:
     // Standard Type-Macro
-    vtkTypeRevisionMacro(vtkParticleBoxTree,vtkModifiedBSPTree);
+    vtkTypeRevisionMacro(vtkParticleBoxTree,vtkCellTreeLocator);
     void PrintSelf(ostream& os, vtkIndent indent);
 
     // Description:
@@ -61,19 +61,9 @@ class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
     // one usually specifies an 'H' smoothing length array
     virtual void SetParticleSizeArray(vtkDataArray*);
     vtkGetObjectMacro(ParticleSizeArray, vtkDataArray);
+
+    void GenerateRepresentation(int level, vtkPolyData *pd);
     
-    // Description:
-    // Generate BBox representation of Nth level
-    virtual void GenerateRepresentation(int level, vtkPolyData *pd);
-
-    // Description:
-    // Generate BBox representation of all leaf nodes
-    virtual void GenerateRepresentationLeafs(vtkPolyData *pd);
-
-    // Description:
-    // Generate BBox representation of all particles stored in the tree
-    virtual void GenerateRepresentationParticles(vtkPolyData *pd);
-
   protected:
    vtkParticleBoxTree();
   ~vtkParticleBoxTree();
@@ -88,9 +78,6 @@ class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
   virtual int IntersectCellInternal(vtkIdType cell_ID, double p1[3], double p2[3], 
     double tol, double &t, double ipt[3], double pcoords[3], int &subId);
 //ETX
-
-  // Used internally when generating representation of nodes/particles
-  void AddBox(vtkPolyData *pd, double *bounds);
 
   double ParticleSize;
   vtkDataArray *ParticleSizeArray;
