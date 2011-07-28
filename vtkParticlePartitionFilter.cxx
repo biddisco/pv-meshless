@@ -435,7 +435,7 @@ int vtkParticlePartitionFilter::ExecuteInformation(
 #ifdef VTK_USE_MPI
   vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
     vtkMultiProcessController::GetGlobalController()->GetCommunicator());
-  int maxpieces = communicator->GetNumberOfProcesses();
+  int maxpieces = communicator ? communicator->GetNumberOfProcesses() : 1;
 #else
   int maxpieces = 1;
 #endif
