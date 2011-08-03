@@ -51,6 +51,27 @@
 #include <float.h>
 #include <numeric>
 //----------------------------------------------------------------------------
+#define JB_DEBUG__
+#if defined JB_DEBUG__
+#define OUTPUTTEXT(a) std::cout <<(a); std::cout.flush();
+
+  #undef vtkDebugMacro
+  #define vtkDebugMacro(a)  \
+  { \
+    if (this->UpdatePiece>=0) { \
+      vtkOStreamWrapper::EndlType endl; \
+      vtkOStreamWrapper::UseEndl(endl); \
+      vtkOStrStreamWrapper vtkmsg; \
+      vtkmsg << "P(" << this->UpdatePiece << "): " a << "\n"; \
+      OUTPUTTEXT(vtkmsg.str()); \
+      vtkmsg.rdbuf()->freeze(0); \
+    } \
+  }
+
+  #undef  vtkErrorMacro
+  #define vtkErrorMacro(a) vtkDebugMacro(a)  
+#endif
+//----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkParticlePartitionFilter);
 vtkCxxSetObjectMacro(vtkParticlePartitionFilter, Controller, vtkMultiProcessController);
 
@@ -383,8 +404,8 @@ vtkSmartPointer<vtkIdTypeArray> vtkParticlePartitionFilter::GenerateGlobalIds(vt
   vtkstd::partial_sum(PointsPerProcess.begin(), PointsPerProcess.end(), PartialSum.begin()+1);
 
   vtkIdType initialValue = PartialSum[this->UpdatePiece];
-  std::cout << "Id filter rank " << this->UpdatePiece << " Using offset " << initialValue << std::endl;
-  for (int i=0; i<PartialSum.size(); i++) { std::cout << PartialSum[i] << " " ; } std::cout << std::endl;
+//  vtkDebugMacro(<< "Id filter rank " << this->UpdatePiece << " Using offset " << initialValue);
+//  for (int i=0; i<PartialSum.size(); i++) { vtkDebugMacro(<<PartialSum[i] << " " ; } vtkDebugMacro(<<std::endl;
   //
   Ids->SetNumberOfValues(N);
   for (vtkIdType id=0; id<N; id++) {
@@ -461,7 +482,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   this->UpdatePiece     = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
   this->UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   int ghostLevel        = inInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
-  std::cout << "Partition filter " << this->UpdatePiece << " Ghost level " << ghostLevel << std::endl;
+  vtkDebugMacro(<<"Partition filter " << this->UpdatePiece << " Ghost level " << ghostLevel);
   //
 #ifdef VTK_USE_MPI
   vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
@@ -479,7 +500,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // Get input
   vtkIdType       numPoints = input->GetNumberOfPoints();
   vtkDataArray    *inPoints = numPoints>0 ? input->GetPoints()->GetData() : NULL;
-  std::cout << "Partitioning on " << this->UpdatePiece << " Points Input : " << numPoints << std::endl;
+  vtkDebugMacro(<<"Partitioning on " << this->UpdatePiece << " Points Input : " << numPoints);
 
   // Setup output
   vtkSmartPointer<vtkPoints>   outPoints = vtkSmartPointer<vtkPoints>::New();
@@ -596,8 +617,8 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   zz = Zoltan_Create(mpiComm); 
 
   // we don't need any debug info
-  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "2");
-  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "2");
+  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
 
   // Method for subdivision
   Zoltan_Set_Param(zz, "LB_APPROACH", "REPARTITION");
@@ -645,11 +666,11 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   Zoltan_Set_Obj_List_Fn(zz,   get_object_list,       &mesh);
   Zoltan_Set_Num_Geom_Fn(zz,   get_num_geometry,      &mesh);
   if (pointstype==VTK_FLOAT) {
-    std::cout << "Using float data pointers " << std::endl;
+    vtkDebugMacro(<<"Using float data pointers ");
     Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list<float>, &mesh);
   }
   else if (pointstype==VTK_DOUBLE) {
-    std::cout << "Using double data pointers " << std::endl;
+    vtkDebugMacro(<<"Using double data pointers ");
     Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list<double>, &mesh);
   }
 
@@ -714,11 +735,11 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     exit(0);
   }
 
-  std::cout << "Partitioning complete on " << this->UpdatePiece << 
+  vtkDebugMacro(<<"Partitioning complete on " << this->UpdatePiece << 
     " pack_count : " << pack_count <<
     " size_count : " << size_count <<
     " unpack_count : " << unpack_count 
-    << std::endl;
+   );
 
   MPI_Barrier(mpiComm);
   Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
@@ -864,11 +885,11 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //
   //
   //
-  std::cout << "Process " << this->UpdatePiece << " Points Output : " << mesh.OutPointCount << std::endl;
-  for (int i=0; i<mesh.NumberOfFields; i++) {
-    vtkDataArray *darray = output->GetPointData()->GetArray(i);
-    std::cout << "Process " << this->UpdatePiece << " Array Output : " << darray->GetNumberOfTuples() << std::endl;
-  }
+  vtkDebugMacro(<<"Process " << this->UpdatePiece << " Points Output : " << mesh.OutPointCount);
+//  for (int i=0; i<mesh.NumberOfFields; i++) {
+//    vtkDataArray *darray = output->GetPointData()->GetArray(i);
+//    vtkDebugMacro(<<"Process " << this->UpdatePiece << " Array Output : " << darray->GetNumberOfTuples());
+//  }
 
   //
   // If polydata create Vertices for each point
@@ -887,13 +908,10 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // the storage allocated for the Zoltan structure.
   //*****************************************************************
   //
-
   Zoltan_Destroy(&zz);
 
-  //
+  this->Controller->Barrier();
   timer->StopTimer();
-  if (this->UpdatePiece==0) { 
-    std::cout << "Particle partitioning : " << timer->GetElapsedTime() << " seconds\n";
-  }
+  vtkDebugMacro(<<"Particle partitioning : " << timer->GetElapsedTime() << " seconds");
   return 1;
 }

@@ -59,10 +59,31 @@
   #include "vtkMPIController.h"
   #include "vtkMPICommunicator.h"
 #endif
-
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSPHProbeFilter);
 vtkCxxSetObjectMacro(vtkSPHProbeFilter, SPHManager, vtkSPHManager);
+//----------------------------------------------------------------------------
+#define JB_DEBUG__
+#if defined JB_DEBUG__
+
+  #define OUTPUTTEXT(a) std::cout <<(a); std::cout.flush();
+
+  #undef vtkDebugMacro
+  #define vtkDebugMacro(a)  \
+  { \
+    if (this->UpdatePiece>=0) { \
+      vtkOStreamWrapper::EndlType endl; \
+      vtkOStreamWrapper::UseEndl(endl); \
+      vtkOStrStreamWrapper vtkmsg; \
+      vtkmsg << "P(" << this->UpdatePiece << "): " a << "\n"; \
+      OUTPUTTEXT(vtkmsg.str()); \
+      vtkmsg.rdbuf()->freeze(0); \
+    } \
+  }
+
+  #undef  vtkErrorMacro
+  #define vtkErrorMacro(a) vtkDebugMacro(a)  
+#endif
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -146,6 +167,8 @@ vtkSPHProbeFilter::vtkSPHProbeFilter()
   //
   this->SPHManager                  = vtkSPHManager::New();
   this->ModifiedNumber              = 0;
+  this->UpdatePiece                 = 0;
+  this->UpdateNumPieces             = 1;
 }
 
 //----------------------------------------------------------------------------
@@ -305,8 +328,8 @@ int vtkSPHProbeFilter::RequestInformation(
   vtkInformation *outInfo      = outputVector->GetInformationObject(0);
   vtkInformation *probePtsInfo = NULL;
   //
-  int UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-  int UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+  this->UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  this->UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   //
   if (this->GetNumberOfInputPorts()>1 && this->GetNumberOfInputConnections(1)>0) {
     probePtsInfo = inputVector[1]->GetInformationObject(0);
@@ -653,14 +676,12 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
   //
   // for debug in parallel
   //
-  int UpdatePiece     = 0;
-  int UpdateNumPieces = 1;
   vtkMPICommunicator *com = NULL;
   vtkMPIController   *con = vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController());
   if (con) {
     com = vtkMPICommunicator::SafeDownCast(con->GetCommunicator());
-    UpdatePiece     = com ? com->GetLocalProcessId() : 0;
-    UpdateNumPieces = com ? com->GetNumberOfProcesses() : 1;
+    this->UpdatePiece     = com ? com->GetLocalProcessId() : 0;
+    this->UpdateNumPieces = com ? com->GetNumberOfProcesses() : 1;
   }
 #endif
   
@@ -687,7 +708,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
     if (ghostdata[i]==0) nonGhost++;
   }
 #ifdef VTK_USE_MPI
-  std::cout << "Probe " << UpdatePiece << " non ghost N = " << nonGhost << " from total " << G << std::endl;
+  vtkDebugMacro(<< "Non ghost N = " << nonGhost << " from total " << G);
 #endif
 
   // 
@@ -865,12 +886,6 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
     outId++;
   }
 
-
-#ifdef VTK_USE_MPI
-  std::cout << "Probe filter " << UpdatePiece << " exported N = " << outId << std::endl;
-  if (com) com->Barrier();
-#endif
-
   // Add Grad and Shepard arrays
   if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
     outPD->AddArray(GradArray);
@@ -879,8 +894,10 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
       outPD->AddArray(ComputedDensity);
     }
   }
+
 #ifdef VTK_USE_MPI
-  std::cout << "Probe filter complete on " << UpdatePiece << std::endl;
+  if (com) com->Barrier();
+  vtkDebugMacro(<< "Probe filter complete : exported N = " << outId);
 #endif
   return 1;
 }
