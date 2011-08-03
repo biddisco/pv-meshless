@@ -186,6 +186,10 @@ protected:
 
   int                ModifiedNumber;
 
+  // Parallel support
+  int                UpdatePiece;
+  int                UpdateNumPieces;
+
 //BTX
   Kernel            *KernelFunction;
 //ETX

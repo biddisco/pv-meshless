@@ -132,18 +132,17 @@ hid_t H5PartGetDiskShape(H5PartFile *f, hid_t dataset)
   return space;
 }
 //----------------------------------------------------------------------------
-// #define JB_DEBUG__
-
+#define JB_DEBUG__
 #ifdef JB_DEBUG__
   #define OUTPUTTEXT(a) std::cout << (a) << std::endl; std::cout.flush();
 
     #undef vtkDebugMacro
     #define vtkDebugMacro(a)  \
     { \
-      vtkOStreamWrapper::EndlType endl; \
-      vtkOStreamWrapper::UseEndl(endl); \
-      vtkOStrStreamWrapper vtkmsg; \
       if (this->UpdatePiece>=0) { \
+        vtkOStreamWrapper::EndlType endl; \
+        vtkOStreamWrapper::UseEndl(endl); \
+        vtkOStrStreamWrapper vtkmsg; \
         vtkmsg << "P(" << this->UpdatePiece << "): " a << "\n"; \
         OUTPUTTEXT(vtkmsg.str()); \
         vtkmsg.rdbuf()->freeze(0); \
