@@ -17,16 +17,18 @@ public:
      * Calculates the kernel value for the given distance of two particles. 
      */
     virtual double w(double distance) const;
-    virtual double w(double h, double distance);
+    virtual double w(double h, double distance) const;
 
     /**
      * Calculates the kernel derivation for the given distance of two particles. 
      */
     virtual Vector gradW(double distance, const Vector& distanceVector) const;
-    virtual Vector gradW(double h, double distance, const Vector& distanceVector);
+    virtual Vector gradW(double h, double distance, const Vector& distanceVector) const;
 
     /** return the maximum distance at which this kernel is non zero */
     virtual double maxDistance() const;
+
+    /** return the multiplier between smoothing length and max cutoff distance */
     virtual double getDilationFactor() const { return 3.0; }
 
 private:

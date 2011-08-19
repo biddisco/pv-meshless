@@ -28,7 +28,7 @@ KernelQuadratic::KernelQuadratic(int dim, double smoothingLength)
 //----------------------------------------------------------------------------
 double KernelQuadratic::w(double distance) const
 {
-  double Q = distance * Hinverse;
+  double Q = distance * this->Hinverse;
   if (Q<2.0) {
     return this->factorW * ((1.0/4.0)*Q*Q - Q + 1.0);
   }
@@ -37,15 +37,13 @@ double KernelQuadratic::w(double distance) const
   }
 }
 //----------------------------------------------------------------------------
-double
-KernelQuadratic::w(double h, double distance)
+double KernelQuadratic::w(double h, double distance) const
 {
-  this->Hinverse = 1.0/h;
-  this->factorW = norm * pow(this->Hinverse, this->dim);
-  double Q = distance * this->Hinverse;
-
+  double Hinverse = 1.0/h;
+  double factorW = norm * pow(Hinverse, this->dim);
+  double Q = distance * Hinverse;
   if (Q<2.0) {
-    return this->factorW * ((1.0/4.0)*Q*Q - Q + 1.0);
+    return factorW * ((1.0/4.0)*Q*Q - Q + 1.0);
   }
   else {
     return 0.0;
@@ -55,7 +53,7 @@ KernelQuadratic::w(double h, double distance)
 Vector 
 KernelQuadratic::gradW(double distance, const Vector& distanceVector) const
 {
-  double Q = distance * Hinverse;
+  double Q = distance * this->Hinverse;
   if (Q==0.0) {
     return Vector(0.0);
   }
@@ -66,14 +64,16 @@ KernelQuadratic::gradW(double distance, const Vector& distanceVector) const
 }
 //----------------------------------------------------------------------------
 Vector 
-KernelQuadratic::gradW(double h, double distance, const Vector& distanceVector)
+KernelQuadratic::gradW(double h, double distance, const Vector& distanceVector) const
 {
-  double Q = distance / h;
+  double Hinverse = 1.0/h;
+  double factorGradW = norm * pow(Hinverse, this->dim+1);
+  double Q = distance * Hinverse;
   if (Q==0.0) {
     return Vector(0.0);
   }
   else if (Q<2.0) {
-    return this->factorGradW * ((1.0/2.0)*Q - 1.0) * distanceVector;
+    return factorGradW * ((1.0/2.0)*Q - 1.0) * distanceVector;
   }
   return Vector(0.0);
 }

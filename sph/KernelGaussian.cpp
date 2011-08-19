@@ -27,48 +27,41 @@ KernelGaussian::w(double distance) const
 }
 //----------------------------------------------------------------------------
 double
-KernelGaussian::w(double h, double distance)
+KernelGaussian::w(double h, double distance) const
 {
-  this->Hinverse   = 1.0/h;
-  double normedDist = distance*this->Hinverse;
-  this->factorW = norm * pow(this->Hinverse, this->dim);
+  double Hinverse = 1.0/h;
+  double factorW = norm * pow(Hinverse, this->dim);
+  double Q = distance * Hinverse;
 
-  //!!! fit this, so that the kernel is steady (use an h dependant offset)
-  return factorW * exp(-normedDist * normedDist);
+  return factorW * exp(-Q*Q);
 }
 //----------------------------------------------------------------------------
 Vector
 KernelGaussian::gradW(double distance, const Vector& distanceVector) const
 {
-  // dist/smoothingLength is often needed
-  double normedDist = distance * this->Hinverse;
-  //!!! check this due to the fitting offset
-  if (distance != 0.0)
+  double Q = distance * this->Hinverse;
+  if (Q != 0.0)
   {
-      return factorGradW * exp(-normedDist * normedDist) * distanceVector;
+    return factorGradW * exp(-Q * Q) * distanceVector;
   }
-  else
-  {
-      // for distance == 0, the distanceVector is a null vector
-      return distanceVector;
+  else {
+    return Vector(0.0);
   }
 }
 //----------------------------------------------------------------------------
-Vector KernelGaussian::gradW(double h, double distance, const Vector& distanceVector)
+Vector KernelGaussian::gradW(double h, double distance, const Vector& distanceVector) const
 {
-  this->Hinverse   = 1.0/h;
-  double normedDist = distance*this->Hinverse;
-  this->factorGradW = - 2.0 * pow(this->Hinverse, this->dim+1) / pow(M_PI, static_cast<double>(dim) / 2.0);
+  double Hinverse = 1.0/h;
+  double factorGradW = - 2.0 * pow(Hinverse, this->dim+1) / pow(M_PI, static_cast<double>(dim) / 2.0);
+  double Q = distance * Hinverse;
 
   //!!! check this due to the fitting offset
   if (distance != 0.0)
   {
-      return factorGradW * exp(-normedDist * normedDist) * distanceVector;
+    return factorGradW * exp(-Q * Q) * distanceVector;
   }
-  else
-  {
-      // for distance == 0, the distanceVector is a null vector
-      return distanceVector;
+  else {
+    return Vector(0.0);
   }
 }
 //----------------------------------------------------------------------------

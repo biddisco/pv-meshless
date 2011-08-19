@@ -1,9 +1,12 @@
 #include <iostream>
 #include <vector>
+#include "KernelBox.h"
+#include "KernelCusp.h"
+#include "KernelGaussian.h"
+#include "KernelQuadratic.h"
 #include "KernelSpline3rdOrder.h"
 #include "KernelSpline5thOrder.h"
-#include "KernelQuadratic.h"
-#include "KernelCusp.h"
+#include "KernelWendland.h"
 
 
 /// Simpson integradion rule
@@ -22,7 +25,7 @@ double SimpsonIntegration(const std::vector<double> &y,
 /// Integrade a kernel in 3D
 double IntegralOfKernel(const Kernel& ker) {
   const double supportlength = ker.maxDistance();
-  const int npoint = 1000;
+  const int npoint = 5000;
   std::vector<double> x;
   std::vector<double> y;
   for (int i = 0; i<npoint; i++) {
@@ -37,20 +40,34 @@ double IntegralOfKernel(const Kernel& ker) {
 int main() {
   const double eps = 1e-4;
   const int ndim = 2;
-  const double smootinglength = 1.0/3.0;
-  double s  = IntegralOfKernel(KernelSpline5thOrder(ndim, smootinglength));
+  const double smoothinglength = 1.0/3.0;
+  double s;
+  //
+  s  = IntegralOfKernel(KernelBox(ndim, smoothinglength));
   if ( fabs(s - 1.0) > eps) {
     return EXIT_FAILURE;
   }
-  s  = IntegralOfKernel(KernelQuadratic(ndim, smootinglength));
+  s  = IntegralOfKernel(KernelCusp(ndim, smoothinglength));
   if ( fabs(s - 1.0) > eps) {
     return EXIT_FAILURE;
   }
-  s  = IntegralOfKernel(KernelSpline3rdOrder(ndim, smootinglength));
+  s  = IntegralOfKernel(KernelGaussian(ndim, smoothinglength));
   if ( fabs(s - 1.0) > eps) {
     return EXIT_FAILURE;
   }
-  s  = IntegralOfKernel(KernelQuadratic(ndim, smootinglength));
+  s  = IntegralOfKernel(KernelQuadratic(ndim, smoothinglength));
+  if ( fabs(s - 1.0) > eps) {
+    return EXIT_FAILURE;
+  }
+  s  = IntegralOfKernel(KernelSpline3rdOrder(ndim, smoothinglength));
+  if ( fabs(s - 1.0) > eps) {
+    return EXIT_FAILURE;
+  }
+  s  = IntegralOfKernel(KernelSpline5thOrder(ndim, smoothinglength));
+  if ( fabs(s - 1.0) > eps) {
+    return EXIT_FAILURE;
+  }
+  s  = IntegralOfKernel(KernelWendland(ndim, smoothinglength));
   if ( fabs(s - 1.0) > eps) {
     return EXIT_FAILURE;
   }

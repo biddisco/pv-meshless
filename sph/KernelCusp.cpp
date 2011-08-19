@@ -1,7 +1,7 @@
 #include "KernelCusp.h"
 
 //----------------------------------------------------------------------------
-KernelCusp::KernelCusp(unsigned long group, int dim, double smoothingLength)
+KernelCusp::KernelCusp(int dim, double smoothingLength)
     : Kernel(dim, smoothingLength)
 {
   // initialize the auxiliary factors
@@ -40,17 +40,24 @@ double KernelCusp::w(double distance) const
         double aux = 1.0 - Q;
         return factorW * aux * aux;
     }
-    // dist is bigger then the kernel.
-    // Normaly, we should have tested this before, 
-    // so the kernel will only be called for interacting particle pairs!
-    // (that's the reason we put this condition past the others)
-    else
-    {
-#       if RUN >= RUNALL
-            cout << "WARNING: Called kernel for distance > smoothing length!\n";
-#       endif
+    else {
         return 0.0;
     }
+}
+//----------------------------------------------------------------------------
+double KernelCusp::w(double h, double distance) const
+{
+  // dist/smoothingLength is often needed
+  double Q = distance * 1.0/h;
+  // determine, were we are
+  if (Q <= 1.0)
+  {
+    double aux = 1.0 - Q;
+    return factorW * aux * aux;
+  }
+  else {
+    return 0.0;
+  }
 }
 //----------------------------------------------------------------------------
 Vector
@@ -75,6 +82,18 @@ KernelCusp::gradW(double distance, const Vector& distanceVector) const
     {
         return Vector(0.0);
     }
+}
+//----------------------------------------------------------------------------
+Vector KernelCusp::gradW(double h, double distance, const Vector& distanceVector) const
+{
+  double normedDist = distance * 1.0/h;
+  if ((normedDist <= 1.0) && (distance != 0.0))
+  {
+    return (factorGradW * (Hinverse - 1.0 / distance)) * distanceVector;
+  }
+  else {
+    return Vector(0.0);
+  }
 }
 //----------------------------------------------------------------------------
 double KernelCusp::maxDistance() const

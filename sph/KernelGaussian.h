@@ -49,7 +49,7 @@ class VTK_EXPORT KernelGaussian : public Kernel
      * The used formula is Speith (3.126).
      */
     virtual double w(double distance) const;
-    virtual double w(double h, double distance);
+    virtual double w(double h, double distance) const;
 
     /**
      * Calculates the kernel derivation for the given distance of two particles. 
@@ -58,10 +58,13 @@ class VTK_EXPORT KernelGaussian : public Kernel
      * Be careful: grad W is antisymmetric in r (3.25)!.
      */
     virtual Vector gradW(double distance, const Vector& distanceVector) const;
-    virtual Vector gradW(double h, double distance, const Vector& distanceVector);
+    virtual Vector gradW(double h, double distance, const Vector& distanceVector) const;
 
     /** return the maximum distance at which this kernel is non zero */
     virtual double maxDistance() const;
+
+    /** return the multiplier between smoothing length and max cutoff distance */
+    virtual double getDilationFactor() const { return 5.0; }
 
 private:
 

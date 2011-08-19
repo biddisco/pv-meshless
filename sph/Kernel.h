@@ -27,11 +27,11 @@ class VTK_EXPORT Kernel
     virtual double w(double distance) const = 0;
 
     /** Calculates the kernel value at the given distance using a variable h value */
-    virtual double w(double h, double distance) = 0;
+    virtual double w(double h, double distance) const = 0;
 
     /** Calculates the kernel derivative at the given distance using a variable h value */
     virtual Vector gradW(double distance, const Vector& distanceVector) const = 0;
-    virtual Vector gradW(double h, double distance, const Vector& distanceVector) = 0;
+    virtual Vector gradW(double h, double distance, const Vector& distanceVector) const = 0;
 
     /** return the multiplier between smoothing length and max cutoff distance */
     virtual double getDilationFactor() const { return 2.0; }
