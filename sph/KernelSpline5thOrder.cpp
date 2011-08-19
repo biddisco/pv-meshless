@@ -43,30 +43,28 @@ double KernelSpline5thOrder::w(double distance) const
   }
 }
 //----------------------------------------------------------------------------
-double KernelSpline5thOrder::w(double h, double distance)
+double KernelSpline5thOrder::w(double h, double distance) const
 {
-  this->Hinverse = 1.0/h;
-  this->factorW = norm * pow(this->Hinverse, this->dim);
-  double Q = distance * this->Hinverse;
-
+  double Hinverse = 1.0/h;
+  double factorW = norm * pow(Hinverse, this->dim);
+  double Q = distance * Hinverse;
   if (Q<1.0) {
-    return this->factorW *(pow(3.0-Q,5) - 6.0*pow(2.0-Q,5) + 15.0*pow(1.0-Q,5));
+    return factorW *(pow(3.0-Q,5) - 6.0*pow(2.0-Q,5) + 15.0*pow(1.0-Q,5));
   }
   else if (Q<2.0) {
-    return this->factorW *(pow(3.0-Q,5) - 6.0*pow(2.0-Q,5));
+    return factorW *(pow(3.0-Q,5) - 6.0*pow(2.0-Q,5));
   }
   else if (Q<3.0) {
-    return this->factorW *(pow(3.0-Q,5));
+    return factorW *(pow(3.0-Q,5));
   }
   else {
     return 0.0;
   }
 }
 //----------------------------------------------------------------------------
-Vector 
-KernelSpline5thOrder::gradW(double distance, const Vector& distanceVector) const
+Vector KernelSpline5thOrder::gradW(double distance, const Vector& distanceVector) const
 {
-  double Q = distance * Hinverse;
+  double Q = distance * this->Hinverse;
   if (Q==0.0) {
     return Vector(0.0);
   }
@@ -85,23 +83,22 @@ KernelSpline5thOrder::gradW(double distance, const Vector& distanceVector) const
 }
 //----------------------------------------------------------------------------
 Vector 
-KernelSpline5thOrder::gradW(double h, double distance, const Vector& distanceVector)
+KernelSpline5thOrder::gradW(double h, double distance, const Vector& distanceVector) const
 {
-  this->Hinverse = 1.0/h;
-  this->factorGradW = norm * pow(this->Hinverse, this->dim+1);
-  double Q = distance * this->Hinverse;
-
+  double Hinverse = 1.0/h;
+  double factorGradW = norm * pow(Hinverse, this->dim+1);
+  double Q = distance * Hinverse;
   if (Q==0.0) {
     return Vector(0.0);
   }
   else if (Q<1.0) {
-    return this->factorGradW * (-5.0*pow(3.0-Q,4) + 30.0*pow(2.0-Q,4) + 75.0*pow(1.0-Q,4)) * distanceVector;
+    return factorGradW * (-5.0*pow(3.0-Q,4) + 30.0*pow(2.0-Q,4) + 75.0*pow(1.0-Q,4)) * distanceVector;
   }
   else if (Q<2.0) {
-    return this->factorGradW * (-5.0*pow(3.0-Q,4) + 30.0*pow(2.0-Q,4)) * distanceVector;
+    return factorGradW * (-5.0*pow(3.0-Q,4) + 30.0*pow(2.0-Q,4)) * distanceVector;
   }
   else if (Q<3.0) {
-    return this->factorGradW * (-5.0*pow(3.0-Q,4)) * distanceVector;
+    return factorGradW * (-5.0*pow(3.0-Q,4)) * distanceVector;
   }
   else {
     return Vector(0.0);
