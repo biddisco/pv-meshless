@@ -102,8 +102,13 @@ public:
   void CreateProxy() {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
     this->SPHProxy.TakeReference(pm->NewProxy("meshless_helpers", "SPHManager"));
-    this->pqSPHProxy = new pqProxy("meshless_helpers", "SPHManager", SPHProxy, 0, 0);
-    this->SPHProxy->UpdatePropertyInformation();
+    if (this->SPHProxy) {
+      this->pqSPHProxy = new pqProxy("meshless_helpers", "SPHManager", SPHProxy, 0, 0);
+      this->SPHProxy->UpdatePropertyInformation();
+    }
+    else {
+      vtkGenericWarningMacro(<<"Failed to create proxy, check plugin loaded on server");
+    }
   }
 
   void DeleteProxy() {
