@@ -417,8 +417,37 @@ vtkSmartPointer<vtkIdTypeArray> vtkParticlePartitionFilter::GenerateGlobalIds(vt
 //----------------------------------------------------------------------------
 struct vtkPPF_datainfo {
   int  datatype;
-  vtkPPF_datainfo() : datatype(-1){};
+  int  numC;
+  char name[64];
+  vtkPPF_datainfo() : datatype(-1), numC(-1) {};
 };
+//----------------------------------------------------------------------------
+bool vtkParticlePartitionFilter::GatherDataArrayInfo(vtkDataArray *data, 
+  int &datatype, std::string &dataname, int &numComponents)
+{
+#ifdef VTK_USE_MPI
+  std::vector< vtkPPF_datainfo > datatypes(this->UpdateNumPieces);
+  if (data) {
+    ((vtkPPF_datainfo*)&datatypes[this->UpdatePiece])->datatype = data->GetDataType();
+    ((vtkPPF_datainfo*)&datatypes[this->UpdatePiece])->numC     = data->GetNumberOfComponents();
+    strncpy(((vtkPPF_datainfo*)&datatypes[this->UpdatePiece])->name, data->GetName(), 64);
+  }
+  vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(
+    this->Controller->GetCommunicator()); 
+  int result = com->AllGather((char*)MPI_IN_PLACE, (char*)&datatypes[0], sizeof(vtkPPF_datainfo));
+  for (int i=0; i<this->UpdateNumPieces; i++) {
+    vtkPPF_datainfo &newdata = datatypes[i];
+    if (newdata.datatype!=-1) {
+      datatype = newdata.datatype;
+      numComponents = newdata.numC;
+      dataname = newdata.name;
+    }
+  }
+  return (result == 1) ;
+#else
+  return 1;
+#endif
+}
 //----------------------------------------------------------------------------
 int vtkParticlePartitionFilter::GatherDataTypeInfo(vtkPointSet *input)
 {
@@ -474,6 +503,10 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
                                  vtkInformationVector** inputVector,
                                  vtkInformationVector* outputVector)
 {
+  pack_count = 0;
+  size_count = 0;
+  unpack_count = 0;
+  //
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   vtkPointSet     *output = vtkPointSet::GetData(outputVector,0);
   vtkInformation  *inInfo = inputVector[0]->GetInformationObject(0);
@@ -545,30 +578,6 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   vtkSmartPointer<vtkPointSet> inputCopy = input->NewInstance();
   inputCopy->ShallowCopy(input);
 
-  //
-  // Global Ids
-  //
-  std::string IdsName;
-  if (this->IdChannelArray) {
-    IdsName = this->IdChannelArray;
-  }
-  if (IdsName.empty() || IdsName==std::string("Not available")) {
-    IdsName = "PointIds";
-  } 
-
-  vtkSmartPointer<vtkDataArray> Ids = NULL;
-  Ids = input->GetPointData()->GetArray(IdsName.c_str());
-  if (!Ids) {
-    // Try loading the global ids.
-    Ids = input->GetPointData()->GetGlobalIds();
-  }
-  if (!Ids) {
-    // Generate our own since none exist
-    Ids = this->GenerateGlobalIds(numPoints, IdsName.c_str());
-    inputCopy->GetPointData()->AddArray(Ids);
-  }
-  vtkIdTypeArray *IdArray = vtkIdTypeArray::SafeDownCast(Ids);
-
   //--------------------------------------------------------------
   // Use Zoltan library to re-partition the particles in parallel
   //--------------------------------------------------------------
@@ -593,15 +602,64 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
 
   mesh.Input                    = inputCopy;
   mesh.Output                   = output;
-  mesh.InputGlobalIds           = IdArray->GetPointer(0);
   mesh.InputNumberOfLocalPoints = numPoints;
   mesh.InputPointData           = inPoints ? inPoints->GetVoidPointer(0) : NULL;
   mesh.OutputPoints             = outPoints;
   mesh.TotalSizePerId           = 0;
   mesh.OutPointCount            = 0;
-  mesh.NumberOfFields           = inputCopy->GetPointData()->GetNumberOfArrays();
+
+  //
+  // if a process has zero points, we need to make dummy point data arrays to allow 
+  // space for when data gets sent in from other processes in the zoltan unpack function 
+  //
+  int NumberOfFields = inputCopy->GetPointData()->GetNumberOfArrays();
+  this->Controller->AllReduce(&NumberOfFields, &mesh.NumberOfFields, 1, vtkCommunicator::MAX_OP);
   for (int i=0; i<mesh.NumberOfFields; i++) {
-    vtkDataArray *darray = inputCopy->GetPointData()->GetArray(i);
+    vtkSmartPointer<vtkDataArray> darray = inputCopy->GetPointData()->GetArray(i);
+    //
+    int correctType = -1, numComponents = -1;
+    std::string correctName;
+    this->GatherDataArrayInfo(darray, correctType, correctName, numComponents);
+    if (!darray) {
+      vtkDebugMacro(<<"NULL data found, used MPI_Gather to find :" 
+        << " DataType " << correctType
+        << " Name " << correctName.c_str()
+        << " NumComponents " << numComponents);
+      darray.TakeReference(vtkDataArray::CreateDataArray(correctType));
+      darray->SetNumberOfComponents(numComponents);
+      darray->SetName(correctName.c_str());
+      inputCopy->GetPointData()->AddArray(darray);
+    }
+  }
+
+  //
+  // Global Ids : always do them after other point arrays 
+  //
+  std::string IdsName;
+  if (this->IdChannelArray) {
+    IdsName = this->IdChannelArray;
+  }
+  if (IdsName.empty() || IdsName==std::string("Not available")) {
+    IdsName = "PointIds";
+  } 
+
+  vtkSmartPointer<vtkDataArray> Ids = NULL;
+  Ids = input->GetPointData()->GetArray(IdsName.c_str());
+  if (!Ids) {
+    // Try loading the global ids.
+    Ids = input->GetPointData()->GetGlobalIds();
+  }
+  if (!Ids) {
+    // Generate our own since none exist
+    Ids = this->GenerateGlobalIds(numPoints, IdsName.c_str());
+    inputCopy->GetPointData()->AddArray(Ids);
+    // and increment the mesh field count
+    mesh.NumberOfFields++;
+  }
+  mesh.InputGlobalIds = vtkIdTypeArray::SafeDownCast(Ids)->GetPointer(0);
+
+  for (int i=0; i<mesh.NumberOfFields; i++) {
+    vtkSmartPointer<vtkDataArray> darray = inputCopy->GetPointData()->GetArray(i);
     mesh.InputArrayPointers.push_back(darray->GetVoidPointer(0));
     mesh.ArrayTypeSizes.push_back(darray->GetDataTypeSize());
     mesh.TotalSizePerId += darray->GetDataTypeSize();

@@ -83,7 +83,8 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
      vtkParticlePartitionFilter();
     ~vtkParticlePartitionFilter();
 
-    int GatherDataTypeInfo(vtkPointSet *input);
+    int  GatherDataTypeInfo(vtkPointSet *input);
+    bool GatherDataArrayInfo(vtkDataArray *data, int &datatype, std::string &dataname, int &numComponents);
 
     // Override to specify support for vtkPointSet input type.
     virtual int FillInputPortInformation(int port, vtkInformation* info);
