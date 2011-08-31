@@ -144,16 +144,12 @@ int vtkBoundsExtentTranslator::PieceToExtent()
   a[1] = s[1]>0 ? (z[1] - y[1])/s[1] : 0; \
   a[2] = s[2]>0 ? (z[2] - y[2])/s[2] : 0;
 //----------------------------------------------------------------------------
-int vtkBoundsExtentTranslator::PieceToExtentThreadSafe(int piece, int numPieces, 
-                                                 int ghostLevel, 
-                                                 int *wholeExtent, 
-                                                 int *resultExtent, 
-                                                 int splitMode, 
-                                                 int byPoints)
+int vtkBoundsExtentTranslator::BoundsToExtentThreadSafe(
+  double *bounds, int *wholeExtent, int *resultExtent)
 {
-  double spacing[3], scaling[3], lengths[3];
+  double scaling[3], lengths[3];
   vtkBoundingBox wholebounds(this->GetWholeBounds());
-  vtkBoundingBox piecebounds(this->GetBoundsForPiece(piece));
+  vtkBoundingBox piecebounds(bounds);
   wholebounds.GetLengths(lengths);
   const double *origin = wholebounds.GetMinPoint();
   double dims[3] = {
@@ -175,4 +171,14 @@ int vtkBoundsExtentTranslator::PieceToExtentThreadSafe(int piece, int numPieces,
   }
   return 1;
 }
+//----------------------------------------------------------------------------
+int vtkBoundsExtentTranslator::PieceToExtentThreadSafe(
+  int piece, int numPieces, 
+  int ghostLevel, int *wholeExtent, 
+  int *resultExtent, int splitMode, 
+  int byPoints)
+{
+  return this->BoundsToExtentThreadSafe(this->GetBoundsForPiece(piece), wholeExtent, resultExtent);
+}
+
 

@@ -47,6 +47,8 @@ public:
   // all pieces return the WholeExtent
   int PieceToExtent();  
   int PieceToExtentByPoints();
+  int BoundsToExtentThreadSafe(
+      double *bounds, int *wholeExtent, int *resultExtent);
   int PieceToExtentThreadSafe(int piece, int numPieces, 
                               int ghostLevel, int *wholeExtent, 
                               int *resultExtent, int splitMode, 

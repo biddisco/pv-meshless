@@ -31,7 +31,7 @@
 class vtkIdTypeArray;
 class vtkPointLocator;
 class vtkDataSet;
-class vtkPointSet;
+class vtkDataSet;
 class vtkIdList;
 class vtkTimerLog;
 //BTX
@@ -121,12 +121,12 @@ protected:
   bool InitializeVariables(vtkDataSet *data);
 
   // main execution of loop over probe points
-  bool ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, vtkDataSet *output);
+  bool ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output);
 
   // kernel specific functions
   void   InitializeKernelCoefficients();
   double GetMaxKernelCutoffDistance();
-  void   KernelCompute(double x[3], vtkPointSet *source, 
+  void   KernelCompute(double x[3], vtkDataSet *source, 
     vtkIdList *NearestPoints, double *gradW, double &totalmass, double &maxDistance);
 
   //

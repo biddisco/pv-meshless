@@ -261,6 +261,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractDataOverTime.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkImageSamplerSource.xml
     ${TRILINOS_XML}
     ${HDF5_XML}
     ${TIPSY_XML}
@@ -282,6 +283,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkImageSamplerSource.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractValueFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.cxx

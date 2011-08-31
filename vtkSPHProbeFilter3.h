@@ -36,7 +36,7 @@
 #define __vtkSPHProbeFilter3_h
 
 #include "vtkSPHProbeFilter.h"
-
+class vtkPointSet;
 class vtkImplicitFunction;
 
 class VTK_EXPORT vtkSPHProbeFilter3 : public vtkSPHProbeFilter
