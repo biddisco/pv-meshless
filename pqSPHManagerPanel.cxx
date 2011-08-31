@@ -160,8 +160,10 @@ void pqSPHManagerPanel::LoadSettings()
   this->UI->DefaultDensity->setText(settings->value("DefaultDensity", 1000.0).toString());
   // DefaultParticleSideLength
   this->UI->DefaultParticleSideLength->setText(settings->value("DefaultParticleSideLength", 0.18333).toString());
+  // Limit Max Neighbours
+  this->UI->LimitSearchByNeighbourCount->setChecked(settings->value("LimitSearchByNeighbourCount", 0).toBool());
   // Max Neighbours
-  this->UI->MaximumNeighbours->setText(settings->value("MaximumNeighbours", 64).toString());
+  this->UI->MaximumNeighbours->setText(settings->value("MaximumNeighbours", 64).toString()); 
   settings->endGroup();
 }
 //----------------------------------------------------------------------------
@@ -181,6 +183,8 @@ void pqSPHManagerPanel::SaveSettings()
   settings->setValue("DefaultDensity", this->UI->DefaultDensity->text());
   // DefaultParticleSideLength
   settings->setValue("DefaultParticleSideLength", this->UI->DefaultParticleSideLength->text());
+  // Limit Max Neighbours
+  settings->setValue("LimitSearchByNeighbourCount", this->UI->LimitSearchByNeighbourCount->isChecked());
   // Max Neighbours
   settings->setValue("MaximumNeighbours", this->UI->MaximumNeighbours->text());
   //
