@@ -24,7 +24,7 @@
         </ProxyGroupDomain>
         <DataTypeDomain name="input_type">
           <DataType value="vtkDataSet"/>
-          <DataType value="vtkCompositeDataSet"/>
+          <!--          <DataType value="vtkCompositeDataSet"/> -->
         </DataTypeDomain>
         <InputArrayDomain name="input_array"/>
         <Documentation>
@@ -178,7 +178,7 @@
         </ProxyGroupDomain>
         <DataTypeDomain name="input_type">
           <DataType value="vtkDataSet"/>
-          <DataType value="vtkCompositeDataSet"/>
+<!--          <DataType value="vtkCompositeDataSet"/> -->
         </DataTypeDomain>
         <Documentation>
           This property specifies the dataset whose geometry will be used in determining positions to probe.

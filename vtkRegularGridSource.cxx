@@ -417,6 +417,11 @@ int vtkRegularGridSource::RequestData(
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
   //
   int outUpdateExt[6];
+  int outWholeExt[6] = {
+    0, this->WholeDimension[0]-1, 
+    0, this->WholeDimension[1]-1, 
+    0, this->WholeDimension[2]-1 };
+  //
   //
   vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
     inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR())) : NULL;
@@ -424,7 +429,8 @@ int vtkRegularGridSource::RequestData(
   if (bet) {
     int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
     double *bounds = bet->GetBoundsForPiece(updatePiece);
-    this->BoundsToExtent(bounds,outUpdateExt,updatePiece);
+//    this->BoundsToExtent(bounds,outUpdateExt,updatePiece);
+    bet->BoundsToExtentThreadSafe(bounds, outWholeExt,outUpdateExt); 
   }
   else {
     outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), outUpdateExt);

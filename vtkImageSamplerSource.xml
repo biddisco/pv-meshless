@@ -1,0 +1,67 @@
+<ServerManagerConfiguration>
+
+  <ProxyGroup name="filters">
+
+    <!-- ================================================================ -->
+    <!-- SamplingGridFilter                                               -->
+    <!-- Filter version of vtkSamplingGridGenerator                       -->
+    <!-- ================================================================ -->
+    <SourceProxy name="ImageGridSampler"
+                 class="vtkImageSamplerSource"
+                 label="Image Sampling Grid">
+
+      <InputProperty
+         name="Input"
+         command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array" optional="1"/>
+      </InputProperty>
+
+      <DoubleVectorProperty
+         name="Spacing"
+         command="SetSpacing"
+         number_of_elements="3"
+         animateable="1"
+         default_values="0.0 0.0 0.0" >
+        <Documentation>
+          When the spacing along an axis is Zero, the Resolution will be used to compute the spacing.
+          If the spacing is non zero, it will override the Resolution setting.
+          Note that when Resolution is used, the points will exactly fit in the box, when spacing is used, there may be small gaps at the edges.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+         name="Resolution"
+         command="SetResolution"
+         number_of_elements="3"
+         animateable="1"
+         default_values="32 32 32" >
+        <Documentation>
+          When the spacing along an axis is Zero, the Resolution will be used to compute the spacing.
+          If the spacing is non zero, it will override the Resolution setting.
+          Note that when Resolution is used, the points will exactly fit in the box, when spacing is used, there may be small gaps at the edges.
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+         name="Delta"
+         command="SetDelta"
+         number_of_elements="1"
+         animateable="1"
+         default_values="0.0005" >
+        <Documentation>
+          Add some increment to each axis when defining the box
+        </Documentation>
+      </DoubleVectorProperty>
+
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

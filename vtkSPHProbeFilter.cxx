@@ -28,12 +28,12 @@
 #include "vtkPointData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkPointLocator.h"
-#include "vtkPointSet.h"
+#include "vtkDataSet.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkCompositeDataIterator.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkStructuredGrid.h"
-#include "vtkPointSet.h"
+#include "vtkDataSet.h"
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkMath.h"
@@ -286,11 +286,11 @@ int vtkSPHProbeFilter::RequestDataObject(
     info->Get(vtkDataObject::DATA_OBJECT()));
   //
   vtkInformation     *probePtsInfo = NULL;
-  vtkPointSet            *probepts = NULL;
+  vtkDataSet            *probepts = NULL;
   vtkMultiBlockDataSet *mbprobepts = NULL;
   if (this->GetNumberOfInputPorts()>1 && this->GetNumberOfInputConnections(1)>0) {
     probePtsInfo = inputVector[1]->GetInformationObject(0);
-    probepts = vtkPointSet::SafeDownCast(
+    probepts = vtkDataSet::SafeDownCast(
       probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
     mbprobepts = vtkMultiBlockDataSet::SafeDownCast(
       probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -393,7 +393,7 @@ int vtkSPHProbeFilter::RequestData(
   vtkInformation *dataInfo = inputVector[0]->GetInformationObject(0);
   vtkInformation *outInfo  = outputVector->GetInformationObject(0);
   //
-  vtkPointSet *particles = vtkPointSet::SafeDownCast(
+  vtkDataSet *particles = vtkDataSet::SafeDownCast(
     dataInfo->Get(vtkDataObject::DATA_OBJECT()));
   vtkDataSet *output = vtkDataSet::SafeDownCast(
     outInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -401,11 +401,11 @@ int vtkSPHProbeFilter::RequestData(
     outInfo->Get(vtkDataObject::DATA_OBJECT()));
   //
   vtkInformation     *probePtsInfo = NULL;
-  vtkPointSet            *probepts = NULL;
+  vtkDataSet            *probepts = NULL;
   vtkMultiBlockDataSet *mbprobepts = NULL;
   if (this->GetNumberOfInputPorts()>1 && this->GetNumberOfInputConnections(1)>0) {
     probePtsInfo = inputVector[1]->GetInformationObject(0);
-    probepts = vtkPointSet::SafeDownCast(
+    probepts = vtkDataSet::SafeDownCast(
       probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
     mbprobepts = vtkMultiBlockDataSet::SafeDownCast(
       probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -446,7 +446,7 @@ int vtkSPHProbeFilter::RequestData(
     //
     for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
     {
-      vtkPointSet *probepts = vtkPointSet::SafeDownCast(iter->GetCurrentDataObject());
+      vtkDataSet *probepts = vtkDataSet::SafeDownCast(iter->GetCurrentDataObject());
       vtkStdString name = mbprobepts->GetMetaData(iter)->Get(vtkCompositeDataSet::NAME());
       //
       if (probepts) {
@@ -511,7 +511,7 @@ double vtkSPHProbeFilter::GetMaxKernelCutoffDistance()
 }
 //----------------------------------------------------------------------------
 void vtkSPHProbeFilter::KernelCompute(
-  double x[3], vtkPointSet *data, vtkIdList *NearestPoints, 
+  double x[3], vtkDataSet *data, vtkIdList *NearestPoints, 
   double *gradW, double &totalmass, double &maxDistance)
 {
   int N = NearestPoints->GetNumberOfIds();
@@ -631,7 +631,7 @@ bool vtkSPHProbeFilter::InitializeVariables(vtkDataSet *data)
   return true;
 }
 //----------------------------------------------------------------------------
-bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, vtkDataSet *output)
+bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output)
 {
   vtkIdType ptId, N;
   double x[3];
@@ -727,6 +727,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkPointSet *data, vtkPointSet *probepts, 
 //    output->CopyInformation( probepts );
     vtkSmartPointer<vtkPoints> newPts = vtkSmartPointer<vtkPoints>::New();
     newPts->SetNumberOfPoints(this->NumOutputPoints);
+
     vtkPointSet::SafeDownCast(output)->SetPoints(newPts);
     vtkIdType outId = 0;
     for (vtkIdType i=0; i<numInputPoints; i++) {

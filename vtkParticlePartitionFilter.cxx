@@ -41,6 +41,7 @@
 #include "vtkTimerLog.h"
 #include "vtkIdTypeArray.h"
 #include "vtkBoundingBox.h"
+#include "vtkMath.h"
 //
 #include "vtkBoundsExtentTranslator.h"
 //
@@ -549,26 +550,33 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //
   double bounds[6];
   input->GetBounds(bounds);
-  double bmin[3], bmn[3] = {bounds[0], bounds[2], bounds[4]};
-  double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
   this->BoxList.clear();
   this->BoxListWithGhostRegion.clear();
   if (this->UpdateNumPieces==1) {
     output->ShallowCopy(input);
-    vtkBoundingBox box;
-    box.SetMinPoint(bmn);
-    box.SetMaxPoint(bmx);
+    vtkBoundingBox box(bounds);
     this->BoxList.push_back(box);
     // we add a ghost cell region to our boxes
     box.Inflate(this->GhostCellOverlap);
     this->BoxListWithGhostRegion.push_back(box);
     return 1;
   }
-  else {
-    MPI_Allreduce(bmn, bmin, 3, MPI_DOUBLE, MPI_MIN, mpiComm);
-    MPI_Allreduce(bmx, bmax, 3, MPI_DOUBLE, MPI_MAX, mpiComm);
-  }
 
+  double bmin[3] = {bounds[0], bounds[2], bounds[4]};
+  double bmax[3] = {bounds[1], bounds[3], bounds[5]};
+  if (!vtkMath::AreBoundsInitialized(bounds)) {
+    bmin[0] = bmin[1] = bmin[2] = VTK_DOUBLE_MAX;
+    bmax[0] = bmax[1] = bmax[2] = VTK_DOUBLE_MIN;
+  }
+  if (this->Controller) {
+    double globalMins[3], globalMaxes[3];
+    this->Controller->AllReduce(bmin, globalMins,  3, vtkCommunicator::MIN_OP);
+    this->Controller->AllReduce(bmax, globalMaxes, 3, vtkCommunicator::MAX_OP);
+    bmin[0] = globalMins[0];  bmax[0] = globalMaxes[0];
+    bmin[1] = globalMins[1];  bmax[1] = globalMaxes[1];
+    bmin[2] = globalMins[2];  bmax[2] = globalMaxes[2];
+  }
+  
   vtkStreamingDemandDrivenPipeline::SafeDownCast(
     this->GetExecutive())->SetExtentTranslator(0, this->ExtentTranslator);
 

@@ -1,7 +1,8 @@
 <ParaViewFilters>
   <Category name="Meshless" menu_label="&amp;Meshless">
     <Filter name="RegularGridSampler" />
-    <Filter name="SamplingGridFilter" />  
+    <Filter name="SamplingGridFilter" />
+    <Filter name="ImageGridSampler" />
     <Filter name="SPHProbeFilterCustom" />
     <Filter name="SPHProbeFilterPoint" />
     <Filter name="SPHProbeFilterLine" />
