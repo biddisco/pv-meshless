@@ -78,6 +78,8 @@ public:
       this->SPHProxy = NULL;
       delete this->SPHManagerPanel;
       delete this->pqSPHProxy;
+      this->SPHManagerPanel = NULL;
+      this->pqSPHProxy = NULL;
     }
   }
 
@@ -192,15 +194,6 @@ pqSPHManagerDockWindow::pqSPHManagerDockWindow(QWidget* p) : QDockWidget("SPH Ma
     this, SLOT(serverAdded(pqServer *)));
 
   this->serverAdded(pqActiveObjects::instance().activeServer());
-  //
-#if PARAVIEW_VERSION_MAJOR==3 && PARAVIEW_VERSION_MINOR==10
-  #ifndef VTK_USE_MPI
-    this->init();
-  #endif
-#else
-  // we might be wanting parallel support
-  this->init();
-#endif
 }
 //----------------------------------------------------------------------------
 pqSPHManagerDockWindow::~pqSPHManagerDockWindow()
