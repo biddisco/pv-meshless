@@ -1,0 +1,197 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- Filters                                                          -->
+  <!-- ================================================================ -->
+  <ProxyGroup name="filters">
+
+    <!-- ================================================================ -->
+    <!-- Probe filter main interface - base proxy                         -->
+    <!-- ================================================================ -->
+    <SourceProxy
+      name="SPHImageResampler"
+      label="SPH Image Resampler"
+      class="vtkSPHImageResampler">
+      <Documentation
+         short_help="SPH probe resampling directly to an image">
+      </Documentation>
+
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array"/>
+        <Documentation>
+          This property specifies the dataset from which to obtain probe values.
+        </Documentation>
+      </InputProperty>
+
+      <DoubleVectorProperty
+         name="Spacing"
+         command="SetSpacing"
+         number_of_elements="3"
+         animateable="1"
+         default_values="0.0 0.0 0.0" >
+        <Documentation>
+          When the spacing along an axis is Zero, the Resolution will be used to compute the spacing.
+          If the spacing is non zero, it will override the Resolution setting.
+          Note that when Resolution is used, the points will exactly fit in the box, when spacing is used, there may be small gaps at the edges.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+         name="Resolution"
+         command="SetResolution"
+         number_of_elements="3"
+         animateable="1"
+         default_values="32 32 32" >
+        <Documentation>
+          When the spacing along an axis is Zero, the Resolution will be used to compute the spacing.
+          If the spacing is non zero, it will override the Resolution setting.
+          Note that when Resolution is used, the points will exactly fit in the box, when spacing is used, there may be small gaps at the edges.
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+         name="Delta"
+         command="SetDelta"
+         number_of_elements="1"
+         animateable="1"
+         default_values="0.0005" >
+        <Documentation>
+          Add some increment to each axis when defining the box
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <StringVectorProperty
+        name="VolumeScalars"
+        command="SetVolumeScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="Volume"
+        default_regex_delimiter=","
+        default_regex="^[Vv][Oo][Ll][Uu][Mm][Ee]$,.*[Vv][Oo][Ll]"
+        label="Volume Scalar Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle volumes if present
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="HScalars"
+        command="SetHScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="H"
+        default_regex_delimiter=","
+        default_regex="^[Hh]$,.*[Ss][Mm][Oo][Oo][Tt][Hh],.*[Hh]$"
+        label="H (smoothing length) Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle smoothing lengths if present
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="MassScalars"
+        command="SetMassScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="Mass"
+        default_regex_delimiter=","
+        default_regex="^[Mm][Aa][Ss][Ss]$,.*[Mm][Aa][Ss][Ss],.*[Mm]$"
+        label="Mass Scalar Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle masses if present
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="DensityScalars"
+        command="SetDensityScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="Density"
+        default_regex_delimiter=","
+        default_regex="^[Dd][Ee][Nn][Ss][Ii][Tt][Yy]$,^[Rr][Hh][Oo]$,.*[Dd][Ee][Nn][Ss][Ii][Tt][Yy],.*_[Rr][Hh][Oo],.*[Rr][Hh][Oo]"
+        label="Density Scalar Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for particle densities if present
+        </Documentation>
+      </StringVectorProperty>
+
+      
+      <IntVectorProperty
+         name="ComputeDensityFromNeighbourVolume"
+         command="SetComputeDensityFromNeighbourVolume"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="ModifiedNumber"
+         command="SetModifiedNumber"
+         number_of_elements="1"
+         default_values="0" >
+      </IntVectorProperty>
+
+      <!--
+      <Hints>
+        <Property name="ModifiedNumber" show="0"/>
+      </Hints>
+
+      <ProxyProperty
+        command="SetSPHManager"
+        name="SPHManager">
+      </ProxyProperty>
+
+      -->
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

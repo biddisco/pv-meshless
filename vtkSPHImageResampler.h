@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project:   RPD
-  Module:    $RCSfile: vtkImageSamplerSource.h,v $
+  Module:    $RCSfile: vtkSPHImageResampler.h,v $
   Date:      $Date: 2004/02/06 07:31:49 $
   Version:   $Revision: 1.2 $
 
@@ -14,10 +14,10 @@
   found in the file Copyright.txt supplied with the software.
 
 =========================================================================*/
-// .NAME vtkImageSamplerSource - Generate points in a box-like volume
+// .NAME vtkSPHImageResampler - Generate points in a box-like volume
 //
 // .SECTION Description
-// vtkImageSamplerSource creates points along a regular grid
+// vtkSPHImageResampler creates points along a regular grid
 // in3 dimensions. The grid is defined by the X/Y/Z Spacing fields
 // and a supplied bounding volume. In general the bounding volume
 // is taken from a supplied input dataset.
@@ -25,17 +25,24 @@
 // .SECTION See Also
 // vtkGeneratePointsFilter
 
-#ifndef _vtkImageSamplerSource_h
-#define _vtkImageSamplerSource_h
+#ifndef _vtkSPHImageResampler_h
+#define _vtkSPHImageResampler_h
 
+#include "vtkToolkits.h"     // For VTK_USE_MPI 
 #include "vtkImageAlgorithm.h"
+#include "vtkSmartPointer.h"
 
-class VTK_EXPORT vtkImageSamplerSource : public vtkImageAlgorithm {
+class vtkSPHManager;
+class vtkSPHProbeFilter;
+class vtkMultiProcessController;
+
+
+class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
   public:
     // Description:
     // Standard Type-Macro
-    static vtkImageSamplerSource *New();
-    vtkTypeRevisionMacro(vtkImageSamplerSource, vtkImageAlgorithm);
+    static vtkSPHImageResampler *New();
+    vtkTypeRevisionMacro(vtkSPHImageResampler, vtkImageAlgorithm);
 
     // Description:
     // Specify the point spacing on the X/Y/Z axis
@@ -54,17 +61,67 @@ class VTK_EXPORT vtkImageSamplerSource : public vtkImageAlgorithm {
     vtkSetMacro(Delta, double);
     vtkGetMacro(Delta, double);
 
+    // Description:
+    // Set/Get the SPH manager that will look after Kernel parameters
+    void SetSPHManager(vtkSPHManager *SPHManager);
+    vtkGetObjectMacro(SPHManager, vtkSPHManager);
+
+    // Description:
+    // if VolumeScalars are provided (per particle), then the kernel
+    // summation term m/rho uses the array provided and the parameters
+    // (DensityScalars, DefaultDensity, MassScalars) are ignored.
+    vtkSetStringMacro(VolumeScalars);
+    vtkGetStringMacro(VolumeScalars);
+
+    // Description:
+    // For a variable-h simulation, an h-array must be supplied
+    // this determines the kernel cutoff on a per-particle basis.
+    vtkSetStringMacro(HScalars);
+    vtkGetStringMacro(HScalars);
+
+    // Description:
+    // if each particle has a density value, specify the array name here.
+    // if not specified then the value of DefaultDensity will be used
+    vtkSetStringMacro(DensityScalars);
+    vtkGetStringMacro(DensityScalars);
+
+    // Description:
+    // if each particle has a mass value, specify the array name here.
+    // if not specified then the value of mass will be computed from particle size
+    // and density etc.
+    vtkSetStringMacro(MassScalars);
+    vtkGetStringMacro(MassScalars);
+
+    // Description:
+    // When enabled (and mass is present), the density for each sample point is 
+    // computed by smoothing the mass and using the volume from the sphere 
+    // which surrounds all N neighbours
+    vtkSetMacro(ComputeDensityFromNeighbourVolume,int);
+    vtkGetMacro(ComputeDensityFromNeighbourVolume,int);
+    vtkBooleanMacro(ComputeDensityFromNeighbourVolume,int);
+
+    // overridden to handle SPHManager changes
+    unsigned long GetMTime();
+
+    vtkSetMacro(ModifiedNumber,int);
+    vtkGetMacro(ModifiedNumber,int);
+
+//BTX
+    // Description:
+    // Set/Get the controller use in compositing (set to
+    // the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+    vtkGetObjectMacro(Controller, vtkMultiProcessController);
+//ETX
 
   protected:
-    vtkImageSamplerSource();
+    vtkSPHImageResampler();
 
     // Pipeline mechanism
     virtual int FillInputPortInformation(int port, vtkInformation *info);
     virtual int FillOutputPortInformation(int port, vtkInformation* info);
-
-    // Description:
-    // A utility function to help us decide what type of data to export
-    virtual int RequiredDataType();
 
     // Description:
     // This is called within ProcessRequest when a request asks for 
@@ -80,18 +137,6 @@ class VTK_EXPORT vtkImageSamplerSource : public vtkImageAlgorithm {
     virtual int RequestUpdateExtent(vtkInformation*,
                                     vtkInformationVector**,
                                     vtkInformationVector*);
-
-    // Description:
-    // This is called within ProcessRequest to when a request asks the
-    // algorithm to create empty output data objects. This typically happens
-    // early on in the execution of the pipeline. The default behavior is to 
-    // create an output DataSet of the same type as the input for each 
-    // output port. This method can be overridden to change the output 
-    // data type of an algorithm. This happens in the third pass of the 
-    // pipeline execution.
-    virtual int RequestDataObject(vtkInformation* request, 
-                                  vtkInformationVector** inputVector, 
-                                  vtkInformationVector* outputVector);
     
     // Description:
     // This is called within ProcessRequest when a request asks the algorithm
@@ -107,7 +152,6 @@ class VTK_EXPORT vtkImageSamplerSource : public vtkImageAlgorithm {
                                    vtkInformationVector *);
 
     virtual void ComputeAxesFromBounds(vtkDataSet *inputData, double lengths[3], bool inflate);
-    virtual void BoundsToExtent(double *bounds, int *extent, int updatePiece);
 
     // properties
     double   GlobalOrigin[3];
@@ -121,9 +165,25 @@ class VTK_EXPORT vtkImageSamplerSource : public vtkImageAlgorithm {
     double   scaling[3];
     double   spacing[3];
 
+    //  
+    // SPHManager
+    //
+    vtkSPHManager *SPHManager;
+    vtkSmartPointer<vtkSPHProbeFilter> SPHProbe;
+    vtkMultiProcessController         *Controller;
+    //      
+    // SPH Mode
+    //
+    char              *HScalars;
+    char              *VolumeScalars;
+    char              *MassScalars;
+    char              *DensityScalars;
+    int                ModifiedNumber;
+    int                ComputeDensityFromNeighbourVolume;
+
 private:
-  vtkImageSamplerSource(const vtkImageSamplerSource&);  // Not implemented.
-  void operator=(const vtkImageSamplerSource&);  // Not implemented.
+  vtkSPHImageResampler(const vtkSPHImageResampler&);  // Not implemented.
+  void operator=(const vtkSPHImageResampler&);  // Not implemented.
 };
 
 #endif

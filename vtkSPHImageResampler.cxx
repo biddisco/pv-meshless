@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project:   RPD
-  Module:    $RCSfile: vtkImageSamplerSource.cpp,v $
+  Module:    $RCSfile: vtkSPHImageResampler.cpp,v $
   Date:      $Date: 2002/12/30 22:27:27 $
   Version:   $Revision: 1.2 $
 
@@ -14,7 +14,7 @@
   found in the file Copyright.txt supplied with the software.
 
 =========================================================================*/
-#include "vtkImageSamplerSource.h"
+#include "vtkSPHImageResampler.h"
 //
 #include "vtkToolkits.h" // For VTK_USE_MPI
 #ifdef VTK_USE_MPI
@@ -35,20 +35,21 @@
 #include "vtkImageData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkBoundingBox.h"
-#include "vtkVariantArray.h"
 #include "vtkMath.h"
 #include "vtkSmartPointer.h"
-#include "vtkOBBTree.h"
 #include "vtkExtentTranslator.h"
 //
 #include "vtkBoundsExtentTranslator.h"
+#include "vtkSPHProbeFilter.h"
 //
 #include <set>
 #include <algorithm>
 #include <functional>
 //
-vtkCxxRevisionMacro(vtkImageSamplerSource, "$Revision: 1.4 $");
-vtkStandardNewMacro(vtkImageSamplerSource);
+vtkCxxRevisionMacro(vtkSPHImageResampler, "$Revision: 1.4 $");
+vtkStandardNewMacro(vtkSPHImageResampler);
+vtkCxxSetObjectMacro(vtkSPHImageResampler, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkSPHImageResampler, SPHManager, vtkSPHManager);
 //----------------------------------------------------------------------------
 #define REGULARGRID_SAXPY(a,x,y,z) \
   z[0] = a*x[0] + y[0]; \
@@ -60,7 +61,7 @@ vtkStandardNewMacro(vtkImageSamplerSource);
   a[1] = (s[1]*x2[1])>0 ? (z[1] - y[1])/(s[1]*x2[1]) : 0; \
   a[2] = (s[2]*x2[2])>0 ? (z[2] - y[2])/(s[2]*x2[2]) : 0;
 // --------------------------------------------------------------------------------------
-vtkImageSamplerSource::vtkImageSamplerSource(void) {
+vtkSPHImageResampler::vtkSPHImageResampler(void) {
   this->GlobalOrigin[0]         = 0.0;
   this->GlobalOrigin[1]         = 0.0;
   this->GlobalOrigin[2]         = 0.0;
@@ -77,10 +78,30 @@ vtkImageSamplerSource::vtkImageSamplerSource(void) {
   this->WholeDimension[0]       = 1;
   this->WholeDimension[1]       = 1;
   this->WholeDimension[2]       = 1;
+  //
+  this->DensityScalars              = NULL;
+  this->MassScalars                 = NULL;
+  this->VolumeScalars               = NULL;
+  this->HScalars                    = NULL;
+  this->ModifiedNumber              = 0;
+  this->ComputeDensityFromNeighbourVolume = 0;
+  //
+  this->Controller              = NULL;
+  this->SetController(vtkMultiProcessController::GetGlobalController());
+  //
+  this->SPHManager = vtkSPHManager::New();
+  this->SPHProbe   = vtkSmartPointer<vtkSPHProbeFilter>::New();
 }
-
 //----------------------------------------------------------------------------
-int vtkImageSamplerSource::FillOutputPortInformation(
+unsigned long vtkSPHImageResampler::GetMTime()
+{
+  unsigned long mtime = this->Superclass::GetMTime();
+  unsigned long sm_mtime = this->SPHManager->GetMTime();
+  mtime = mtime > sm_mtime? mtime : sm_mtime;
+  return mtime;
+}
+//----------------------------------------------------------------------------
+int vtkSPHImageResampler::FillOutputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
   // now add our info
@@ -88,49 +109,15 @@ int vtkImageSamplerSource::FillOutputPortInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
-int vtkImageSamplerSource::FillInputPortInformation(
+int vtkSPHImageResampler::FillInputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
-  info->Set(vtkAlgorithm::INPUT_IS_OPTIONAL(), 1);
   return 1;
 }
 
 //----------------------------------------------------------------------------
-int vtkImageSamplerSource::RequiredDataType()
-{
-  return VTK_IMAGE_DATA;
-}
-//----------------------------------------------------------------------------
-int vtkImageSamplerSource::RequestDataObject(
-  vtkInformation *, 
-  vtkInformationVector  **vtkNotUsed(inputVector), 
-  vtkInformationVector *outputVector)
-{
-  vtkInformation* info = outputVector->GetInformationObject(0);
-  vtkDataSet *output = vtkDataSet::SafeDownCast(
-    info->Get(vtkDataObject::DATA_OBJECT()));
-  bool ok = (output!=NULL);
-  //
-  ok = (ok && output->GetDataObjectType()==this->RequiredDataType());
-  //
-  vtkDataSet *newOutput = NULL;
-  if (!ok) {
-    switch (this->RequiredDataType()) {
-      case VTK_IMAGE_DATA:
-        newOutput = vtkImageData::New();
-        break;
-    }
-    newOutput->SetPipelineInformation(info);
-    newOutput->Delete();
-    this->GetOutputPortInformation(0)->Set(
-      vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
-  }
-  return 1;
-}
-
-//----------------------------------------------------------------------------
-int vtkImageSamplerSource::RequestUpdateExtent(
+int vtkSPHImageResampler::RequestUpdateExtent(
   vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector,
   vtkInformationVector* outputVector)
@@ -150,12 +137,12 @@ int vtkImageSamplerSource::RequestUpdateExtent(
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), piece);
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
   std::cout << "Imagesampler (" << piece << ") set num pieces to " << numPieces << std::endl;
-  
+  //  
   return 1;
 }
 
 //----------------------------------------------------------------------------
-int vtkImageSamplerSource::RequestInformation(
+int vtkSPHImageResampler::RequestInformation(
   vtkInformation* request,
   vtkInformationVector** inputVector,
   vtkInformationVector* outputVector)
@@ -181,7 +168,7 @@ int vtkImageSamplerSource::RequestInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
-void vtkImageSamplerSource::ComputeAxesFromBounds(vtkDataSet *inputData, double lengths[3], bool inflate)
+void vtkSPHImageResampler::ComputeAxesFromBounds(vtkDataSet *inputData, double lengths[3], bool inflate)
 {
   //
   // Define box...
@@ -212,7 +199,7 @@ void vtkImageSamplerSource::ComputeAxesFromBounds(vtkDataSet *inputData, double 
   box.GetLengths(lengths);
 }
 //----------------------------------------------------------------------------
-int vtkImageSamplerSource::ComputeInformation(
+int vtkSPHImageResampler::ComputeInformation(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **inputVector,
   vtkInformationVector *vtkNotUsed(outputVector))
@@ -258,48 +245,13 @@ int vtkImageSamplerSource::ComputeInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
-// only valid for axis aligned grids
-void vtkImageSamplerSource::BoundsToExtent(double *bounds, int *extent, int updatePiece) 
-{
-  double axesvec[3] = {1,1,1};
-  vtkBoundingBox processRegion(bounds);
-  vtkBoundingBox dataRegion;
-  dataRegion.SetMinPoint(this->GlobalOrigin);
-  dataRegion.SetMaxPoint(this->GlobalOrigin[0]+axesvec[0],
-                         this->GlobalOrigin[1]+axesvec[1],
-                         this->GlobalOrigin[2]+axesvec[2]);
-  //
-  if (!dataRegion.IntersectBox(processRegion)) {
-    for (int i=0; i<3; i++) { extent[i*2  ] = 0; }
-    for (int i=0; i<3; i++) { extent[i*2+1] = -1; }
-    return;
-  }
-  const double *minvec = dataRegion.GetMinPoint();
-  const double *maxvec = dataRegion.GetMaxPoint();
-  //
-  double updateExtentLo[3],updateExtentHi[3];
-  REGULARGRID_ISAXPY(updateExtentLo, this->scaling, axesvec, this->GlobalOrigin, minvec);
-  REGULARGRID_ISAXPY(updateExtentHi, this->scaling, axesvec, this->GlobalOrigin, maxvec);
-  for (int i=0; i<3; i++) { extent[i*2  ] = static_cast<int>(updateExtentLo[i]+0.5); }
-  for (int i=0; i<3; i++) { extent[i*2+1] = static_cast<int>(updateExtentHi[i]+0.5); }
-  //
-  std::cout << updatePiece << "Setting Extent to {";
-  for (int i=0; i<6; i++) std::cout << extent[i] << (i<5 ? "," : "}");
-  std::cout << std::endl;
-}
-//----------------------------------------------------------------------------
-int vtkImageSamplerSource::RequestData(
+int vtkSPHImageResampler::RequestData(
   vtkInformation *request,
   vtkInformationVector **inputVector,
   vtkInformationVector *outputVector)
 {
-  vtkImageData *outGrid = NULL;
-  //
-  switch (this->RequiredDataType()) {
-    case VTK_IMAGE_DATA:
-      outGrid = this->GetOutput();
-      break;
-  }
+  vtkImageData *outImage = this->GetOutput();
+  vtkDataSet      *input = vtkDataSet::SafeDownCast(this->GetInput());
   //
   vtkInformation *inInfo = inputVector[0] ? inputVector[0]->GetInformationObject(0) : NULL;
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
@@ -316,8 +268,6 @@ int vtkImageSamplerSource::RequestData(
   if (bet) {
     int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
     double *bounds = bet->GetBoundsForPiece(updatePiece);
-    // which one is right!
-//    this->BoundsToExtent(bounds,outUpdateExt,updatePiece);
     bet->BoundsToExtentThreadSafe(bounds, outWholeExt,outUpdateExt); 
     std::cout << "Image sampler " << updatePiece << " Setting Extent to {";
     for (int i=0; i<6; i++) std::cout << outUpdateExt[i] << (i<5 ? "," : "}");
@@ -331,9 +281,22 @@ int vtkImageSamplerSource::RequestData(
                 1+outUpdateExt[3]-outUpdateExt[2], 
                 1+outUpdateExt[5]-outUpdateExt[4]};
   //
-  outGrid->SetWholeExtent(outWholeExt);
-  outGrid->SetExtent(outUpdateExt);
-  outGrid->SetOrigin(this->GlobalOrigin);
-  outGrid->SetSpacing(this->spacing);
+  outImage->SetWholeExtent(outWholeExt);
+  outImage->SetExtent(outUpdateExt);
+  outImage->SetOrigin(this->GlobalOrigin);
+  outImage->SetSpacing(this->spacing);
+  //
+  // Now resample the input data onto the generated grid
+  //
+  this->SPHProbe->SetSPHManager(this->SPHManager);
+  this->SPHProbe->SetDensityScalars(this->DensityScalars);
+  this->SPHProbe->SetMassScalars(this->MassScalars);
+  this->SPHProbe->SetVolumeScalars(this->VolumeScalars);
+  this->SPHProbe->SetHScalars(this->HScalars);
+  this->SPHProbe->SetComputeDensityFromNeighbourVolume(this->ComputeDensityFromNeighbourVolume);
+  this->SPHProbe->InitializeVariables(input);
+  this->SPHProbe->InitializeKernelCoefficients();
+  this->SPHProbe->ProbeMeshless(input, outImage, outImage);
+  //
   return 1;
 }
