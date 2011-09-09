@@ -716,7 +716,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   // 
   this->NumOutputPoints = (nonGhost==0) ? probepts->GetNumberOfPoints() : nonGhost;
   vtkIdType numInputPoints = probepts->GetNumberOfPoints();
-
+/*
   if (this->NumOutputPoints==numInputPoints) {
     // Copy the probe structure to the output
     output->CopyStructure( probepts );
@@ -758,7 +758,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   else {
     vtkErrorMacro(<<"Unsupported data type with Ghost Cells found");
   }
-
+*/
   //
   // Allocate storage for output PointData
   //

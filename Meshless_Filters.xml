@@ -3,6 +3,7 @@
     <Filter name="RegularGridSampler" />
     <Filter name="SamplingGridFilter" />
     <Filter name="ImageGridSampler" />
+    <Filter name="SPHImageResampler" />
     <Filter name="SPHProbeFilterCustom" />
     <Filter name="SPHProbeFilterPoint" />
     <Filter name="SPHProbeFilterLine" />
