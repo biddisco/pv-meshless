@@ -98,6 +98,16 @@ public:
   vtkSetMacro(ModifiedNumber,int);
   vtkGetMacro(ModifiedNumber,int);
 
+  // Setup of variables prior to main probing routine
+  bool   InitializeVariables(vtkDataSet *data);
+
+  // kernel specific functions
+  void   InitializeKernelCoefficients();
+  double GetMaxKernelCutoffDistance();
+
+  // main execution of loop over probe points
+  bool ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output);
+
 protected:
    vtkSPHProbeFilter();
   ~vtkSPHProbeFilter();
@@ -117,15 +127,6 @@ protected:
   virtual int OutputType(vtkDataSet *probepts);
 //ETX
 
-  // Setup of variables prior to main probing routine
-  bool InitializeVariables(vtkDataSet *data);
-
-  // main execution of loop over probe points
-  bool ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output);
-
-  // kernel specific functions
-  void   InitializeKernelCoefficients();
-  double GetMaxKernelCutoffDistance();
   void   KernelCompute(double x[3], vtkDataSet *source, 
     vtkIdList *NearestPoints, double *gradW, double &totalmass, double &maxDistance);
 
