@@ -149,7 +149,8 @@ int vtkSPHImageResampler::RequestInformation(
 {
   this->ComputeInformation(request, inputVector, outputVector);
   //
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+  vtkInformation *outInfo = outputVector->GetInformationObject(0);
   //
 	int maxpieces = -1;//outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), 
@@ -160,10 +161,13 @@ int vtkSPHImageResampler::RequestInformation(
   outInfo->Set(vtkDataObject::ORIGIN(), this->GlobalOrigin, 3);
   outInfo->Set(vtkDataObject::SPACING(), this->spacing, 3);
 
-  //
-  //std::cout << "RI WHOLE_EXTENT {";
-  //for (int i=0; i<3; i++) std::cout << WholeDimension[i] << (i<2 ? "," : "}");
-  //std::cout << std::endl;
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(),
+    inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR()));
+
+  // put back the default extent translator
+//  vtkExtentTranslator* translator = vtkExtentTranslator::New();
+//  outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), translator);
+//  translator->Delete();
 
   return 1;
 }
