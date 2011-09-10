@@ -14,7 +14,7 @@
 =========================================================================*/
 // .NAME vtkBoundsExtentTranslator - Extent translation through lookup table.
 // .SECTION Description
-// vtkBoundsExtentTranslator provides a vtkExtentTranslator that is
+// vtkBoundsExtentTranslator provides a vtkPVExtentTranslator that is
 // programmed with a specific extent corresponding to each piece
 // number.  Readers can provide this to an application to allow the
 // pipeline to execute using the same piece breakdown that is provided
@@ -23,13 +23,13 @@
 #ifndef __vtkBoundsExtentTranslator_h
 #define __vtkBoundsExtentTranslator_h
 
-#include "vtkExtentTranslator.h"
+#include "vtkPVExtentTranslator.h"
 #include <vector>
 
-class VTK_EXPORT vtkBoundsExtentTranslator : public vtkExtentTranslator
+class VTK_EXPORT vtkBoundsExtentTranslator : public vtkPVExtentTranslator
 {
 public:
-  vtkTypeMacro(vtkBoundsExtentTranslator,vtkExtentTranslator);
+  vtkTypeMacro(vtkBoundsExtentTranslator,vtkPVExtentTranslator);
   void PrintSelf(ostream& os, vtkIndent indent);
   
   static vtkBoundsExtentTranslator* New();
@@ -39,17 +39,17 @@ public:
   // Executives set this and the value must match that set by the
   // PartitionFilter that generated this data, otherwise failure
   // is probable
-  void SetNumberOfPieces(int pieces);
+  virtual void SetNumberOfPieces(int pieces);
 
   // Description:
   // Used by executives to compute a structured extent.
   // Only valid when a default Spacing has been set, otherwise
   // all pieces return the WholeExtent
-  int PieceToExtent();  
-  int PieceToExtentByPoints();
-  int BoundsToExtentThreadSafe(
+  virtual int PieceToExtent();  
+  virtual int PieceToExtentByPoints();
+  virtual int BoundsToExtentThreadSafe(
       double *bounds, int *wholeExtent, int *resultExtent);
-  int PieceToExtentThreadSafe(int piece, int numPieces, 
+  virtual int PieceToExtentThreadSafe(int piece, int numPieces, 
                               int ghostLevel, int *wholeExtent, 
                               int *resultExtent, int splitMode, 
                               int byPoints);
