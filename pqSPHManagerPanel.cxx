@@ -208,7 +208,7 @@ void pqSPHManagerPanel::ModifyGUIFilters()
     for (QList<pqPipelineSource*>::Iterator it=sources.begin(); it!=sources.end(); it++) {
       pqPipelineSource *source = *it;
       std::string xmlName = source->getProxy()->GetXMLName();
-      if (xmlName.find("SPHProbe")!=xmlName.npos) {
+      if (xmlName.find("vtkSPH")!=xmlName.npos) {
 //        source->getProxy()->MarkAllPropertiesAsModified();
         vtkSMPropertyHelper modified(source->getProxy(), "ModifiedNumber");
         modified.UpdateValueFromServer();
