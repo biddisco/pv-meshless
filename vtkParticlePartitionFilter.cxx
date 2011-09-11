@@ -450,16 +450,17 @@ bool vtkParticlePartitionFilter::GatherDataArrayInfo(vtkDataArray *data,
 #endif
 }
 //----------------------------------------------------------------------------
-int vtkParticlePartitionFilter::GatherDataTypeInfo(vtkPointSet *input)
+int vtkParticlePartitionFilter::GatherDataTypeInfo(vtkDataSet *input)
 {
+  vtkPointSet *pInput = vtkPointSet::SafeDownCast(input);
 #ifdef VTK_USE_MPI
   if (this->UpdateNumPieces==1) {
-      return input->GetPoints()->GetDataType();
+      return pInput->GetPoints()->GetDataType();
   }
   std::vector< int > datatypes(this->UpdateNumPieces, -1);
   int datatype = -1;
-  if (input->GetPoints()) {
-    datatypes[this->UpdatePiece] = input->GetPoints()->GetDataType();
+  if (pInput->GetPoints()) {
+    datatypes[this->UpdatePiece] = pInput->GetPoints()->GetDataType();
   }
   vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator()); 
   int result = com->AllGather((int*)MPI_IN_PLACE, (int*)&datatypes[0], 1);
@@ -474,11 +475,32 @@ int vtkParticlePartitionFilter::GatherDataTypeInfo(vtkPointSet *input)
   }
   return datatype;
 #else
-  return input->GetPoints()->GetDataType();
+  return pInput->GetPoints()->GetDataType();
 #endif
 }
+//-------------------------------------------------------------------------
+int vtkParticlePartitionFilter::RequestUpdateExtent(
+  vtkInformation *vtkNotUsed(request),
+  vtkInformationVector **inputVector,
+  vtkInformationVector *outputVector)
+{
+  // get the info objects
+  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+  vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+  int piece, numPieces;
+  piece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  numPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+
+  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), piece);
+  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),
+              numPieces);
+  inInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(), 1);
+
+  return 1;
+}
 //----------------------------------------------------------------------------
-int vtkParticlePartitionFilter::ExecuteInformation(
+int vtkParticlePartitionFilter::RequestInformation(
   vtkInformation* request,
   vtkInformationVector** inputVector,
   vtkInformationVector* outputVector)
@@ -491,13 +513,20 @@ int vtkParticlePartitionFilter::ExecuteInformation(
   int maxpieces = 1;
 #endif
 
-  vtkStreamingDemandDrivenPipeline::SafeDownCast(
-    this->GetExecutive())->SetExtentTranslator(0, this->ExtentTranslator);
+  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+  vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), this->ExtentTranslator);
   //
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), maxpieces);
+//  outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(),
+//               inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR()));
   //
-  return Superclass::ExecuteInformation(request, inputVector, outputVector);
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
+  //
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+               inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),
+               6);
+  return 1;
 }
 //----------------------------------------------------------------------------
 int vtkParticlePartitionFilter::RequestData(vtkInformation*,
@@ -559,6 +588,11 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     // we add a ghost cell region to our boxes
     box.Inflate(this->GhostCellOverlap);
     this->BoxListWithGhostRegion.push_back(box);
+    this->ExtentTranslator->SetNumberOfPieces(1);
+    // Copy the bounds to our piece to bounds translator
+    this->ExtentTranslator->SetBoundsForPiece(0, bounds);
+    this->ExtentTranslator->InitWholeBounds();
+    //
     return 1;
   }
 
@@ -577,9 +611,6 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     bmin[2] = globalMins[2];  bmax[2] = globalMaxes[2];
   }
   
-  vtkStreamingDemandDrivenPipeline::SafeDownCast(
-    this->GetExecutive())->SetExtentTranslator(0, this->ExtentTranslator);
-
   //
   // we make a temp copy of the input so we can add Ids if necessary
   //
