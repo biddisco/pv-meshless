@@ -27,7 +27,7 @@
 #ifndef __vtkParticlePartitionFilter_h
 #define __vtkParticlePartitionFilter_h
 
-#include "vtkPointSetAlgorithm.h" // superclass
+#include "vtkDataObjectAlgorithm.h" // superclass
 #include "vtkBoundingBox.h"
 #include <vector>
 #include "zoltan.h"
@@ -38,11 +38,11 @@ class vtkPoints;
 class vtkIdTypeArray;
 class vtkBoundsExtentTranslator;
 
-class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
+class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
 {
   public:
     static vtkParticlePartitionFilter *New();
-    vtkTypeMacro(vtkParticlePartitionFilter,vtkPointSetAlgorithm);
+    vtkTypeMacro(vtkParticlePartitionFilter,vtkDataObjectAlgorithm);
     void PrintSelf(ostream& os, vtkIndent indent);
 
     // Description:
@@ -83,7 +83,7 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
      vtkParticlePartitionFilter();
     ~vtkParticlePartitionFilter();
 
-    int  GatherDataTypeInfo(vtkPointSet *input);
+    int  GatherDataTypeInfo(vtkDataSet *input);
     bool GatherDataArrayInfo(vtkDataArray *data, int &datatype, std::string &dataname, int &numComponents);
 
     // Override to specify support for vtkPointSet input type.
@@ -94,7 +94,11 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkPointSetAlgorithm
 		  vtkInformation* info);
 
     // Description:
-    virtual int ExecuteInformation(vtkInformation*, 
+    virtual int RequestInformation(vtkInformation*,
+                            vtkInformationVector**,
+                            vtkInformationVector*);
+    // Description:
+    virtual int RequestUpdateExtent(vtkInformation*, 
                                    vtkInformationVector**, 
                                    vtkInformationVector*);
     

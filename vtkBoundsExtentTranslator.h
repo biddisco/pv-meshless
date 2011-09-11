@@ -39,17 +39,17 @@ public:
   // Executives set this and the value must match that set by the
   // PartitionFilter that generated this data, otherwise failure
   // is probable
-  void SetNumberOfPieces(int pieces);
+  virtual void SetNumberOfPieces(int pieces);
 
   // Description:
   // Used by executives to compute a structured extent.
   // Only valid when a default Spacing has been set, otherwise
   // all pieces return the WholeExtent
-  int PieceToExtent();  
-  int PieceToExtentByPoints();
-  int BoundsToExtentThreadSafe(
+  virtual int PieceToExtent();  
+  virtual int PieceToExtentByPoints();
+  virtual int BoundsToExtentThreadSafe(
       double *bounds, int *wholeExtent, int *resultExtent);
-  int PieceToExtentThreadSafe(int piece, int numPieces, 
+  virtual int PieceToExtentThreadSafe(int piece, int numPieces, 
                               int ghostLevel, int *wholeExtent, 
                               int *resultExtent, int splitMode, 
                               int byPoints);
