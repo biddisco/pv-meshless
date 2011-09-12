@@ -426,6 +426,7 @@ int vtkSPHProbeFilter::RequestData(
       this->InitializeKernelCoefficients();
     }
     this->ProbeMeshless(particles, probepts, output);
+    this->InitOutput(particles, probepts, output);
     vtkStructuredGrid *grid = vtkStructuredGrid::SafeDownCast(probepts);
     if (grid) {
       int dims[3];
@@ -457,6 +458,7 @@ int vtkSPHProbeFilter::RequestData(
         }
         bool nonempty = this->ProbeMeshless(particles, probepts, newOutput);
         if (nonempty) {
+          this->InitOutput(particles, probepts, newOutput);
           mboutput->SetBlock(block, newOutput);
           mboutput->GetMetaData(block++)->Set(vtkCompositeDataSet::NAME(), name.c_str());
         }
@@ -716,49 +718,6 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   // 
   this->NumOutputPoints = (nonGhost==0) ? probepts->GetNumberOfPoints() : nonGhost;
   vtkIdType numInputPoints = probepts->GetNumberOfPoints();
-/*
-  if (this->NumOutputPoints==numInputPoints) {
-    // Copy the probe structure to the output
-    output->CopyStructure( probepts );
-    output->CopyInformation( probepts );
-  }
-  else if (vtkPointSet::SafeDownCast(output)) {
-//    output->CopyStructure( probepts );
-//    output->CopyInformation( probepts );
-    vtkSmartPointer<vtkPoints> newPts = vtkSmartPointer<vtkPoints>::New();
-    newPts->SetNumberOfPoints(this->NumOutputPoints);
-
-    vtkPointSet::SafeDownCast(output)->SetPoints(newPts);
-    vtkIdType outId = 0;
-    for (vtkIdType i=0; i<numInputPoints; i++) {
-      if (ghostdata[i]==0) {
-        newPts->SetPoint(outId++, probepts->GetPoint(i));
-      }
-    }
-    //
-    // Create Vertices for each point (assumption of point probing)
-    //
-    vtkSmartPointer<vtkCellArray> verts = vtkSmartPointer<vtkCellArray>::New();
-    verts->Allocate(this->NumOutputPoints);
-    for (vtkIdType c=0; c<this->NumOutputPoints; c++) {
-      verts->InsertNextCell(1, &c);
-    }
-    vtkPolyData *polydata = vtkPolyData::SafeDownCast(output);
-    if (polydata) {
-      polydata->SetVerts(verts);
-      polydata->SetLines(NULL);
-      polydata->SetPolys(NULL);
-      polydata->SetStrips(NULL);
-    }
-    vtkUnstructuredGrid *grid = vtkUnstructuredGrid::SafeDownCast(output);
-    if (grid) {
-      grid->SetCells(VTK_VERTEX, verts);
-    }
-  }
-  else {
-    vtkErrorMacro(<<"Unsupported data type with Ghost Cells found");
-  }
-*/
   //
   // Allocate storage for output PointData
   //
@@ -901,4 +860,70 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   vtkDebugMacro(<< "Probe filter complete : exported N = " << outId);
 #endif
   return 1;
+}
+
+//----------------------------------------------------------------------------
+bool vtkSPHProbeFilter::InitOutput(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output)
+{
+  vtkIdType numInputPoints = probepts->GetNumberOfPoints();
+
+  unsigned char *ghostdata = 0;
+  vtkDataArray* ghostarray = 0;
+  vtkIdType G = 0, nonGhost = 0;
+  if (probepts->GetPointData()) {
+    ghostarray = probepts->GetPointData()->GetArray("vtkGhostLevels");
+  }
+  // we don't need this check, we'll take any datatype for ghost flags
+  if ( (!ghostarray) || (ghostarray->GetDataType() != VTK_UNSIGNED_CHAR) || (ghostarray->GetNumberOfComponents() != 1)) {
+    vtkDebugMacro("No appropriate ghost levels field available.");
+  }
+  else {
+    G = ghostarray->GetNumberOfTuples();
+    ghostdata=static_cast<vtkUnsignedCharArray *>(ghostarray)->GetPointer(0);
+  }
+  for (vtkIdType i=0; ghostdata!=NULL && i<G; i++) {
+    if (ghostdata[i]==0) nonGhost++;
+  }
+
+  if (this->NumOutputPoints==numInputPoints) {
+    // Copy the probe structure to the output
+    output->CopyStructure( probepts );
+    output->CopyInformation( probepts );
+  }
+  else if (vtkPointSet::SafeDownCast(output)) {
+    vtkSmartPointer<vtkPoints> newPts = vtkSmartPointer<vtkPoints>::New();
+    newPts->SetNumberOfPoints(this->NumOutputPoints);
+
+    vtkPointSet::SafeDownCast(output)->SetPoints(newPts);
+    vtkIdType outId = 0;
+    for (vtkIdType i=0; i<numInputPoints; i++) {
+      if (ghostdata[i]==0) {
+        newPts->SetPoint(outId++, probepts->GetPoint(i));
+      }
+    }
+    //
+    // Create Vertices for each point (assumption of point probing)
+    //
+    vtkSmartPointer<vtkCellArray> verts = vtkSmartPointer<vtkCellArray>::New();
+    verts->Allocate(this->NumOutputPoints);
+    for (vtkIdType c=0; c<this->NumOutputPoints; c++) {
+      verts->InsertNextCell(1, &c);
+    }
+    vtkPolyData *polydata = vtkPolyData::SafeDownCast(output);
+    if (polydata) {
+      polydata->SetVerts(verts);
+      polydata->SetLines(NULL);
+      polydata->SetPolys(NULL);
+      polydata->SetStrips(NULL);
+    }
+    vtkUnstructuredGrid *grid = vtkUnstructuredGrid::SafeDownCast(output);
+    if (grid) {
+      grid->SetCells(VTK_VERTEX, verts);
+    }
+  }
+  else {
+    vtkErrorMacro(<<"Unsupported data type with Ghost Cells found");
+    return false;
+  }
+  return true;
 }
