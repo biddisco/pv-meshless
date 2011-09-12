@@ -107,6 +107,7 @@ public:
 
   // main execution of loop over probe points
   bool ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output);
+  bool InitOutput(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output);
 
 protected:
    vtkSPHProbeFilter();
