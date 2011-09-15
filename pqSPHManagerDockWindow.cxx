@@ -273,6 +273,8 @@ void pqSPHManagerDockWindow::init()
 //----------------------------------------------------------------------------
 void pqSPHManagerDockWindow::serverAdded(pqServer *server)
 {
+  this->init();
+  this->accept();
 }
 //----------------------------------------------------------------------------
 void pqSPHManagerDockWindow::StartRemovingServer(pqServer *server)
