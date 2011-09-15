@@ -191,6 +191,7 @@ void vtkImageSamplerSource::ComputeAxesFromBounds(vtkDataSet *inputData, double 
   inputData->GetBounds(bounds);
   box.SetBounds(bounds);
   //
+#ifdef VTK_USE_MPI
   vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
     vtkMultiProcessController::GetGlobalController()->GetCommunicator());
   if (communicator)
@@ -205,6 +206,7 @@ void vtkImageSamplerSource::ComputeAxesFromBounds(vtkDataSet *inputData, double 
     bounds[4] = globalMins[2];  bounds[5] = globalMaxes[2];
     box.SetBounds(bounds);
   }
+#endif
   if (inflate) {
     box.Inflate(this->Delta);
   }
