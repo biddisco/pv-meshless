@@ -679,7 +679,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     IdsName = this->IdChannelArray;
   }
   if (IdsName.empty() || IdsName==std::string("Not available")) {
-    IdsName = "PointIds";
+    IdsName = "PPF_PointIds";
   } 
 
   vtkSmartPointer<vtkDataArray> Ids = NULL;
