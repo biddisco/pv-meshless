@@ -13,7 +13,6 @@
 #include "vtkIntArray.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkDistributedDataFilter.h"
-#include "vtkMultiProcessController.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkSmartPointer.h"
@@ -419,7 +418,6 @@ int vtkTipsyReader::RequestInformation(
     this->NumberOfTimeSteps = this->Finder->GetNumberOfTimeSteps();
   }
 
-
 	return 1;
 }
 //----------------------------------------------------------------------------
@@ -514,7 +512,7 @@ int vtkTipsyReader::RequestData(vtkInformation*,
 
   // get this->UpdatePiece information
   this->UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-	this->UpdateNumPieces =outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+	this->UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
 
   // reset counter before reading
   this->ParticleIndex = 0;
