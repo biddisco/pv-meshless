@@ -68,6 +68,10 @@ vtkTipsyReader::vtkTipsyReader()
   this->Velocity    = NULL;
   //
   this->Finder      = NULL;
+  this->NumberOfTimeSteps        = 0;
+  this->TimeStep                 = 0;
+  this->ActualTimeStep           = 0;
+  this->TimeStepTolerance        = 1E-6;
 }
 
 //----------------------------------------------------------------------------
@@ -121,7 +125,7 @@ vtkstd::vector<unsigned long> vtkTipsyReader::ReadMarkedParticleIndices(
  		}
 	else
 		{
-		unsigned long mfIndex,mfBodies,mfGas,mfStar,mfDark,numBodies;
+		unsigned long mfIndex,mfBodies,mfGas,mfStar,mfDark;
 		// first line of the mark file is of a different format:
 		// intNumBodies intNumGas intNumStars
 		if(markInFile >> mfBodies >> mfGas >> mfStar)
@@ -418,6 +422,19 @@ int vtkTipsyReader::RequestInformation(
 
 	return 1;
 }
+//----------------------------------------------------------------------------
+class TipsyTimeToleranceCheck: public std::binary_function<double, double, bool>
+{
+public:
+  TipsyTimeToleranceCheck(double tol) { this->tolerance = tol; }
+  double tolerance;
+  //
+    result_type operator()(first_argument_type a, second_argument_type b) const
+    {
+      bool result = (fabs(a-b)<=(this->tolerance));
+      return (result_type)result;
+    }
+};
 /*
 * Reads a file, optionally only the marked particles from the file, 
 * in the following order:
@@ -434,10 +451,53 @@ int vtkTipsyReader::RequestInformation(
 int vtkTipsyReader::RequestData(vtkInformation*,
 	vtkInformationVector**,vtkInformationVector* outputVector)
 {
+  // Get output information
+	vtkInformation* outInfo = outputVector->GetInformationObject(0);
+
+  // get the output polydata
+  vtkPolyData *output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkSmartPointer<vtkPolyData> tipsyReadInitialOutput = vtkSmartPointer<vtkPolyData>::New();
+
+  //
+  // Get the TimeStep Requested from the information if present
+  //
+  this->TimeOutOfRange = 0;
+  this->ActualTimeStep = this->TimeStep;
+  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
+    {
+    double requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())[0];
+    this->ActualTimeStep = vtkstd::find_if(
+      this->TimeStepValues.begin(), this->TimeStepValues.end(),
+      vtkstd::bind2nd( TipsyTimeToleranceCheck( this->TimeStepTolerance ), requestedTimeValue ))
+      - this->TimeStepValues.begin();
+    //
+    if (requestedTimeValue<this->TimeStepValues.front() || requestedTimeValue>this->TimeStepValues.back())
+      {
+      this->TimeOutOfRange = 1;
+      }
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &requestedTimeValue, 1);
+    }
+  else
+    {
+    double timevalue[1];
+    unsigned int index = this->ActualTimeStep;
+    if (index<this->TimeStepValues.size())
+      {
+      timevalue[0] = this->TimeStepValues[index];
+      }
+    else
+      {
+      timevalue[0] = this->TimeStepValues[0];
+      }
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &timevalue[0], 1);
+    }
+
+  std::string FilenameForTimestep = this->Finder->GenerateFileName(this->ActualTimeStep);
+
   //
 	// Make sure we have a file to read.
   //
-  if(!this->FileName)
+  if(FilenameForTimestep.size()==0)
 	  {
     vtkErrorMacro("A FileName must be specified.");
     return 0;
@@ -445,19 +505,12 @@ int vtkTipsyReader::RequestData(vtkInformation*,
 
 	// Open the tipsy standard file and abort if there is an error.
 	ifTipsy tipsyInfile;
-  tipsyInfile.open(this->FileName,"standard");
+  tipsyInfile.open(FilenameForTimestep.c_str(),"standard");
   if (!tipsyInfile.is_open()) 
 		{
 	  vtkErrorMacro("Error opening file " << this->FileName);
 	  return 0;	
     }
-
-  // Get output information
-	vtkInformation* outInfo = outputVector->GetInformationObject(0);
-
-  // get the output polydata
-  vtkPolyData *output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
-  vtkSmartPointer<vtkPolyData> tipsyReadInitialOutput = vtkSmartPointer<vtkPolyData>::New();
 
   // get this->UpdatePiece information
   this->UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());

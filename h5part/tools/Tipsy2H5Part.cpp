@@ -125,7 +125,7 @@ int main(int argc, char **argv)
   writer->SetFileModeToReadWrite();
   for (int i=0; i<N; i++) {
     std::cout << "Converting TimeStep " << i << std::endl;
-//    reader->SetTimeValue(timesteps[i]);
+    reader->SetTimeStep(i);
     reader->Update();
     vtkPointSet *output = reader->GetOutput();
     if (output) {

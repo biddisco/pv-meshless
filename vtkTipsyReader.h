@@ -53,6 +53,12 @@ public:
   vtkSetMacro(DistributeDataOn,int);
   vtkGetMacro(DistributeDataOn,int);
 
+
+  // Description:
+  // Get/Set the time step (integer, not real time value) to read
+  vtkSetMacro(TimeStep,int);
+  vtkGetMacro(TimeStep,int);
+
   // Description:
   // Get the number of timesteps in the file
   vtkGetMacro(NumberOfTimeSteps,int);
@@ -96,7 +102,6 @@ protected:
   char   *MarkFileName;
   char   *FileName;
   int     DistributeDataOn;
-  int     NumberOfTimeSteps;
   
   //
   int RequestInformation(vtkInformation*,  vtkInformationVector**,
@@ -179,8 +184,14 @@ private:
   void AllocateAllTipsyVariableArrays(vtkIdType numBodies,
     vtkPolyData* output);
 
+  // used for getting time steps/files
   FileSeriesFinder         *Finder;
   vtkstd::vector<double>    TimeStepValues;
+  int                       NumberOfTimeSteps;
+  int                       TimeStep;
+  int                       ActualTimeStep;
+  double                    TimeStepTolerance;
+  int                       TimeOutOfRange;
 //ETX
 
 };
