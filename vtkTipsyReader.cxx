@@ -19,13 +19,9 @@
 #include "vtkSmartPointer.h"
 #include "vtkDataArraySelection.h"
 #include <cmath>
+#include <assert.h>
 
-// RRU stuff taken from vtkPCosmoReader 
-#include "CosmoDefinition.h"
-#include "Partition.h"
-#include "ParticleExchange.h"
-#include "ParticleDistribute.h"
-
+#include "FileSeriesFinder.h"
 
 vtkCxxRevisionMacro(vtkTipsyReader, "$Revision: 1.0 $");
 vtkStandardNewMacro(vtkTipsyReader);
@@ -70,6 +66,8 @@ vtkTipsyReader::vtkTipsyReader()
   this->Metals      = NULL;
   this->Tform       = NULL;
   this->Velocity    = NULL;
+  //
+  this->Finder      = NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -89,6 +87,12 @@ void vtkTipsyReader::PrintSelf(ostream& os, vtkIndent indent)
      << (this->FileName ? this->FileName : "(none)") << "\n"
 		 << indent << "MarkFileName: "
 		 << (this->MarkFileName ? this->MarkFileName : "(none)") << "\n";
+}
+
+//----------------------------------------------------------------------------
+void vtkTipsyReader::GetTimeStepValues(std::vector<double> &steps)
+{
+  steps = this->TimeStepValues;
 }
 
 //----------------------------------------------------------------------------
@@ -146,7 +150,7 @@ vtkstd::vector<unsigned long> vtkTipsyReader::ReadMarkedParticleIndices(
 				// closing file
 				markInFile.close();
 				// read file successfully
-				vtkDebugMacro("Read " << numBodies<< " marked point indices.");
+				// vtkDebugMacro("Read " << numBodies<< " marked point indices.");
 				}	
 	 		}
 		}
@@ -285,6 +289,7 @@ vtkIdType vtkTipsyReader::ReadGasParticle(vtkPolyData* output,
   if (this->Temperature) this->Temperature->SetTuple1(id, g.temp);
   if (this->Hsmooth)     this->Hsmooth->SetTuple1(id, g.hsmooth);
   if (this->Metals)      this->Metals->SetTuple1(id, g.metals);
+	if (this->Type)      this->Type->SetTuple1(id, 0.0);
 	return id;
 }
 
@@ -296,14 +301,17 @@ vtkIdType vtkTipsyReader::ReadStarParticle(vtkPolyData* output,
   if (this->EPS)    this->EPS->SetTuple1(id, s.eps);
   if (this->Metals) this->Metals->SetTuple1(id, s.metals);
   if (this->Tform)  this->Tform->SetTuple1(id, s.tform);
+	if (this->Type)      this->Type->SetTuple1(id, 2.0);
 	return id;
 }
+
 //----------------------------------------------------------------------------	
 vtkIdType vtkTipsyReader::ReadDarkParticle(vtkPolyData* output,
 	TipsyDarkParticle& d)
 {
  	vtkIdType id=this->ReadBaseParticle(output,d);
   if (this->EPS) this->EPS->SetTuple1(id, d.eps);
+	if (this->Type)      this->Type->SetTuple1(id, 1.0);
 	return id;
 }
 		
@@ -371,6 +379,10 @@ void vtkTipsyReader::AllocateAllTipsyVariableArrays(vtkIdType numBodies,
     this->Tform = AllocateDataArray(output,"tform",1,numBodies);
   else 
     this->Tform = NULL;
+	if (this->GetPointArrayStatus("Type"))
+    this->Type = AllocateDataArray(output,"type",1,numBodies);
+  else 
+    this->Type = NULL;
 }
 //----------------------------------------------------------------------------
 int vtkTipsyReader::RequestInformation(
@@ -391,7 +403,18 @@ int vtkTipsyReader::RequestInformation(
   this->PointDataArraySelection->AddArray("Temperature");
   this->PointDataArraySelection->AddArray("Metals");
   this->PointDataArraySelection->AddArray("Tform");
+	this->PointDataArraySelection->AddArray("Type");
   this->PointDataArraySelection->AddArray("Velocity");
+
+  if (!this->Finder) {   
+    this->Finder = new FileSeriesFinder();
+    this->Finder->SetPrefixRegEx("(.*\\.)");
+    this->Finder->SetTimeRegEx("([0-9]+)");
+    this->Finder->Scan(this->FileName);
+    this->Finder->GetTimeValues(this->TimeStepValues);
+    this->NumberOfTimeSteps = this->Finder->GetNumberOfTimeSteps();
+  }
+
 
 	return 1;
 }
@@ -448,7 +471,7 @@ int vtkTipsyReader::RequestData(vtkInformation*,
 	// Next considering whether to read in a mark file, 
 	// and if so whether that reading was a success 
 	vtkstd::vector<unsigned long> markedParticleIndices;
-	if(strcmp(this->MarkFileName,"")!=0)
+	if(this->MarkFileName && strcmp(this->MarkFileName,"")!=0)
 		{
 		// Reading only marked particles
 		// Make sure we are not running in parallel, this filter does not work in 
@@ -475,6 +498,7 @@ int vtkTipsyReader::RequestData(vtkInformation*,
 	else 
 		{
 		//reading only marked particles
+		assert(this->UpdateNumPieces==1);
 		vtkDebugMacro("Reading only the marked points in file: " \
 				<< this->MarkFileName << " from file " << this->FileName);
 		this->ReadMarkedParticles(markedParticleIndices, tipsyHeader,tipsyInfile, tipsyReadInitialOutput);	
@@ -489,15 +513,9 @@ int vtkTipsyReader::RequestData(vtkInformation*,
 		    vtkSmartPointer<vtkDistributedDataFilter>::New();
 		d3->AddInput(tipsyReadInitialOutput);
 		d3->UpdateInformation();
-		vtkStreamingDemandDrivenPipeline* exec = \
-		 	static_cast<vtkStreamingDemandDrivenPipeline*>(d3->GetExecutive()); 	
-		// adds one ghostlevel
-		exec->SetUpdateExtent(exec->GetOutputInformation(0), this->UpdatePiece, this->UpdateNumPieces, 1); 
 		d3->Update();
 		// Changing output to output of d3
 	 	output->ShallowCopy(d3->GetOutput()); 
-		output->GetInformation()->Set(
-			vtkDataObject::DATA_NUMBER_OF_GHOST_LEVELS(), 1);
 
     // create new vertices because the D3 outputs UnstructuredGrid
     vtkIdType N = output->GetNumberOfPoints();
@@ -529,34 +547,13 @@ int vtkTipsyReader::RequestData(vtkInformation*,
   this->Temperature = NULL;
   this->Metals      = NULL;
   this->Tform       = NULL;
+	this->Type       = NULL;
   this->Velocity    = NULL;
   //
-
-
-  float RL = 90.140846;
-  float Overlap = 5;
-  int ReadMode = 1;
-  int CosmoFormat = 1;
-
-
-  // RRU code
-  // Initialize the partitioner which uses MPI Cartesian Topology
-  Partition::initialize();
-
-  // Construct the particle distributor, exchanger and halo finder
-  ParticleDistribute distribute;
-  ParticleExchange exchange;
-
-  // Initialize classes for reading, exchanging and calculating
-  distribute.setParameters(this->FileName, RL, "BLOCK");
-  exchange.setParameters(RL, Overlap);
-
-  distribute.initialize();
-  exchange.initialize();
-
-
  	return 1;
 }
+//----------------------------------------------------------------------------
+// Below : Boiler plate code to handle selection of point arrays
 //----------------------------------------------------------------------------
 const char* vtkTipsyReader::GetPointArrayName(int index)
 {

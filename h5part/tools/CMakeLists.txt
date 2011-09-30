@@ -84,3 +84,18 @@ INSTALL(
   FILES ${TOOL_CFG_FILES}
   DESTINATION bin/
 )
+
+#-----------------------------------------------
+# Create Tipsy conversion utility
+#-----------------------------------------------
+IF (USE_COSMO)
+  ADD_EXECUTABLE( 
+    Tipsy2H5Part 
+    Tipsy2H5Part.cpp 
+  )
+
+  TARGET_LINK_LIBRARIES(
+    Tipsy2H5Part 
+    ${TOOL_VTK_LIBS}
+  )
+ENDIF (USE_COSMO)

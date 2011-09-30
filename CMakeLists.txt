@@ -58,14 +58,6 @@ IF(USE_TRILINOS)
   ENDIF(${Trilinos_FOUND})
 ENDIF(USE_TRILINOS)
 
-#--------------------------------------------------
-# Build minimal H5Part lib for support
-#-----------------------------------------------
-IF(USE_HDF5)
-  ADD_SUBDIRECTORY(h5part)
-  SET(H5PART_LIBS H5Part)
-ENDIF(USE_HDF5)
-
 # --------------------------------------------------
 # Optional cosmo support 
 # --------------------------------------------------
@@ -94,6 +86,14 @@ IF(USE_COSMO)
   )
   SET(TIPSY_LIB TipsyLib Cosmo2)
 ENDIF (USE_COSMO)
+
+#--------------------------------------------------
+# Build minimal H5Part lib for support
+#-----------------------------------------------
+IF(USE_HDF5)
+  ADD_SUBDIRECTORY(h5part)
+  SET(H5PART_LIBS H5Part)
+ENDIF(USE_HDF5)
 
 #--------------------------------------------------
 # Set Definitions 
