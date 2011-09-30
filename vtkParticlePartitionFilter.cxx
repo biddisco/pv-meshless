@@ -493,8 +493,7 @@ int vtkParticlePartitionFilter::RequestUpdateExtent(
   numPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
 
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), piece);
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),
-              numPieces);
+  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
   inInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(), 1);
 
   return 1;
@@ -506,8 +505,8 @@ int vtkParticlePartitionFilter::RequestInformation(
   vtkInformationVector* outputVector)
 {
 #ifdef VTK_USE_MPI
-  vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
-    vtkMultiProcessController::GetGlobalController()->GetCommunicator());
+  vtkMPICommunicator *communicator = 
+    vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
   int maxpieces = communicator ? communicator->GetNumberOfProcesses() : 1;
 #else
   int maxpieces = 1;

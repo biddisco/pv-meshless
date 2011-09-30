@@ -1,6 +1,5 @@
-// Ensight2H5Part -p1 H:\ParticleData\granulair\RibbonBlender\RibbonBlender.case
-// Ensight2H5Part "C:\Data\vatech\RESULTS\fluidSPH.case"
-// Ensight2H5Part H:\ParticleData\vevey\deflector\FLUID.case
+// cd C:\cmakebuild\pv-meshless\bin\Debug
+// "C:\Program Files\MPICH2\bin\mpiexec" -localonly -n 2 c:\cmakebuild\plugins\bin\Debug\Tipsy2H5Part.exe -o C:\data\corbett -f C:\data\corbett\b1.00300.d0-1000.std
 
 #include <iostream>
 #include <fstream>
@@ -31,6 +30,9 @@
 
 #include "vtkTipsyReader.h"
 #include "vtkH5PartWriter.h"
+#include "vtkParticlePartitionFilter.h"
+#include "vtkSPHProbeFilter.h"
+#include "vtkSPHManager.h"
 
 //----------------------------------------------------------------------------
 int main(int argc, char **argv)
@@ -43,7 +45,8 @@ int main(int argc, char **argv)
   controller->Initialize(&argc, &argv, 1);
   int rank = controller->GetLocalProcessId();
   int numProcs = controller->GetNumberOfProcesses();
-
+  vtkMultiProcessController::SetGlobalController(controller);
+  vtkAlgorithm::SetDefaultExecutivePrototype(vtkStreamingDemandDrivenPipeline::New());
   //
   //
   //
@@ -55,7 +58,11 @@ int main(int argc, char **argv)
       << "[-o specify an output directory] " << vtkstd::endl << "\t"
       << "[-t ascii time file name] " << vtkstd::endl << "\t"
       << "-f file.vtm|vtp" << vtkstd::endl;
+    //
+    char c;
+    std::cin >> c;
   }
+  MPI_Barrier(*vtkMPICommunicator::SafeDownCast(controller->GetCommunicator())->GetMPIComm()->GetHandle());
 
   //
   // Command line args
@@ -145,7 +152,12 @@ int main(int argc, char **argv)
   std::vector<double> timesteps;
   vtkSmartPointer<vtkTipsyReader> reader = vtkSmartPointer<vtkTipsyReader>::New();
   reader->SetFileName(vtksys::SystemTools::ConvertToUnixOutputPath(inputfile).c_str());
+  reader->DebugOff();
   vtkDemandDrivenPipeline* ddp = vtkDemandDrivenPipeline::SafeDownCast(reader->GetExecutive());
+  vtkSmartPointer<vtkInformation> execInfo = ddp->GetOutputInformation(0);
+  execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numProcs);
+  execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), rank);
+  if (rank==0) std::cout << "Setting piece " << rank << " of " << numProcs << std::endl;
   ddp->UpdateInformation();
 
   //
@@ -154,6 +166,29 @@ int main(int argc, char **argv)
   reader->GetTimeStepValues(timesteps);
   unsigned int N = static_cast<unsigned int>(timesteps.size());
   if (rank==0) std::cout << "Found " << N << " TimeSteps " << std::endl;
+
+  vtkSmartPointer<vtkParticlePartitionFilter> partitioner = vtkSmartPointer<vtkParticlePartitionFilter>::New();
+  partitioner->SetController(controller);
+  partitioner->SetGhostCellOverlap(0.01);
+  partitioner->SetInputConnection(reader->GetOutputPort());
+
+  vtkSmartPointer<vtkSPHManager> manager = vtkSmartPointer<vtkSPHManager>::New();
+  manager->SetInterpolationMethodToKernel();  
+  manager->SetLimitSearchByNeighbourCount(1);  
+  manager->SetMaximumNeighbours(16);
+  manager->SetMaximumRadius(0.01);
+  manager->SetKernelTypeToCubicSpline();
+  manager->SetKernelDimension(3);
+  manager->SetDefaultParticleSideLength(0.01);
+  manager->SetDefaultDensity(1);
+  manager->SetHCoefficient(1.5); 
+
+  vtkSmartPointer<vtkSPHProbeFilter> sph = vtkSmartPointer<vtkSPHProbeFilter>::New();
+  sph->SetInputConnection(partitioner->GetOutputPort());
+  sph->SetProbeConnection(partitioner->GetOutputPort());
+  sph->SetComputeDensityFromNeighbourVolume(1);
+  sph->SetSPHManager(manager);
+  sph->SetMassScalars("mass");
 
   //
   // Setup writer
@@ -169,19 +204,26 @@ int main(int argc, char **argv)
     if (rank==0) std::cout << "Converting TimeStep " << i << std::endl;
     reader->SetTimeStep(i);
     //
-    vtkSmartPointer<vtkInformation> execInfo = reader->GetExecutive()->GetOutputInformation(0);
-    execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numProcs);
-    execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), rank);
-    if (rank==0) std::cout << "Setting TipsyReader piece " << rank << " of " << numProcs << std::endl;
-    //
-    reader->Update();
-    vtkPointSet *output = reader->GetOutput();
+    vtkDataSet *output = sph->GetOutput();
     if (output) {
+      std::cout << "Setting piece information " << rank << " of " << numProcs << std::endl;
+      vtkStreamingDemandDrivenPipeline *sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(writer->GetExecutive());
+      vtkSmartPointer<vtkInformation> execInfo = sddp->GetOutputInformation(0);    
+      //
       writer->SetTimeStep(i);
       writer->SetTimeValue(timesteps[i]);
-      writer->SetInput(output);
+      writer->SetInputConnection(sph->GetOutputPort());
+      //
+      // To get parallel writing correct, we need to make sure that piece
+      // information is passed upstream. first update information,
+      // then set piece update extent, 
+      //
       if (!no_write) {
-        writer->Write();
+        // no piece info set yet, assumes infor is not piece dependent
+        sddp->UpdateInformation();
+        sddp->SetUpdateExtent(0, rank, numProcs, 0);
+        // this calls writer->Write(); with correct piece
+        sddp->Update();
       }
       writer->CloseFile();
     }

@@ -70,7 +70,7 @@ IF(USE_COSMO)
   # Build minimal Cosmo lib for support
   #--------------------------------------------------
   
-  ADD_SUBDIRECTORY(cosmo)
+#  ADD_SUBDIRECTORY(cosmo)
   #--------------------------------------------------
   # Tipsy reader uses code from Doug Potter's Tipsy lib.
   #--------------------------------------------------
@@ -78,13 +78,14 @@ IF(USE_COSMO)
   
   SET(TIPSY_XML
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTipsyReader.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.xml
+#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.xml
   )
   SET(TIPSY_CXX
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTipsyReader.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.cxx
+#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.cxx
   )
-  SET(TIPSY_LIB TipsyLib Cosmo2)
+  SET(TIPSY_LIB TipsyLib ) 
+  # Cosmo2)
 ENDIF (USE_COSMO)
 
 #--------------------------------------------------
