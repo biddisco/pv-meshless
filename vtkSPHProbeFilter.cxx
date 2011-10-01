@@ -736,11 +736,14 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   ShepardArray->SetName("ShepardCoeff");
   ShepardArray->SetNumberOfTuples(this->NumOutputPoints);
   //
-  vtkSmartPointer<vtkFloatArray> ComputedDensity;
+  vtkSmartPointer<vtkFloatArray> SmoothedDensity,SmoothedRadius;
   if (this->ComputeDensityFromNeighbourVolume) {
-    ComputedDensity = vtkSmartPointer<vtkFloatArray>::New();
-    ComputedDensity->SetName("ComputedDensity");
-    ComputedDensity->SetNumberOfTuples(this->NumOutputPoints);
+    SmoothedDensity = vtkSmartPointer<vtkFloatArray>::New();
+    SmoothedDensity->SetName("SmoothedDensity");
+    SmoothedDensity->SetNumberOfTuples(this->NumOutputPoints);
+    SmoothedRadius = vtkSmartPointer<vtkFloatArray>::New();
+    SmoothedRadius->SetName("SmoothedRadius");
+    SmoothedRadius->SetNumberOfTuples(this->NumOutputPoints);
   }
 
   // Nearest Neighbours list setup
@@ -794,15 +797,6 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
         double grad[3], totalmass, maxDistance;
         this->KernelCompute(x, data, NearestPoints, grad, totalmass, maxDistance);
         double gradmag = vtkMath::Norm(grad);
-/*
-// NULL COMPUTATION
-        outPD->NullPoint(outId);
-        ShepardArray->SetValue(outId, 0.0);
-        GradArray->SetValue(outId, 0.0);
-        if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
-          ComputedDensity->SetValue(outId, 0.0);
-        }
-*/
         // Interpolate the point scalar/field data
         outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
         // set our extra computed values
@@ -812,10 +806,18 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
         if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
           double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
           if (volume>0.0) {
-            ComputedDensity->SetValue(outId, totalmass/volume);
+            // smoothed density, using totla mass in whole neighbourhood
+            double smootheddensity = totalmass/volume;
+            // actual mass of this particle from input data
+            double mass = this->MassDataF ? this->MassDataF[ptId] : this->MassDataD[ptId];
+            // computed radius based on smoothed density and actual mass
+            double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
+            SmoothedDensity->SetValue(outId, smootheddensity);
+            SmoothedRadius->SetValue(outId, smoothedradius);
           }
           else {
-            ComputedDensity->SetValue(outId, 0.0);
+            SmoothedDensity->SetValue(outId, 0.0);
+            SmoothedRadius->SetValue(outId, 0.0);
           }
         }
       }
@@ -831,7 +833,8 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
         // becasue Cal_Weights_ShepardMethod only calculates weights.
         outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
         if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
-          ComputedDensity->SetValue(outId, 0.0);
+          SmoothedDensity->SetValue(outId, 0.0);
+          SmoothedRadius->SetValue(outId, 0.0);
         }
       }
     }
@@ -840,7 +843,8 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
       ShepardArray->SetValue(outId, 0.0);
       GradArray->SetValue(outId, 0.0);
       if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
-        ComputedDensity->SetValue(outId, 0.0);
+        SmoothedDensity->SetValue(outId, 0.0);
+        SmoothedRadius->SetValue(outId, 0.0);
       }
     }
     outId++;
@@ -851,7 +855,8 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     outPD->AddArray(GradArray);
     outPD->AddArray(ShepardArray);
     if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
-      outPD->AddArray(ComputedDensity);
+      outPD->AddArray(SmoothedDensity);
+      outPD->AddArray(SmoothedRadius);
     }
   }
 

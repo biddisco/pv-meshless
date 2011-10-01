@@ -59,8 +59,8 @@ int main(int argc, char **argv)
       << "[-t ascii time file name] " << vtkstd::endl << "\t"
       << "-f file.vtm|vtp" << vtkstd::endl;
     //
-    char c;
-    std::cin >> c;
+//    char c;
+//    std::cin >> c;
   }
   MPI_Barrier(*vtkMPICommunicator::SafeDownCast(controller->GetCommunicator())->GetMPIComm()->GetHandle());
 
