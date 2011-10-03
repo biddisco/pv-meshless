@@ -132,8 +132,21 @@
          default_values="0" >
         <BooleanDomain name="bool"/>
         <Documentation>
+          For astrophysics dataset to compute the smoothed density from N neighbours
         </Documentation>
       </IntVectorProperty>
+
+      <IntVectorProperty
+         name="PassScalars"
+         command="SetPassScalars"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          When ComputeDensityFromNeighbourVolume is enabled, this option skips smoothing of input scalars and they are passed through unchanged
+        </Documentation>
+      </IntVectorProperty>
+      
 
       <IntVectorProperty
          name="ModifiedNumber"

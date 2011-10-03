@@ -187,6 +187,7 @@ int main(int argc, char **argv)
   sph->SetInputConnection(partitioner->GetOutputPort());
   sph->SetProbeConnection(partitioner->GetOutputPort());
   sph->SetComputeDensityFromNeighbourVolume(1);
+  sph->SetPassScalars(1);
   sph->SetSPHManager(manager);
   sph->SetMassScalars("mass");
 
