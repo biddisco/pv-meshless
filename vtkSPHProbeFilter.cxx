@@ -799,40 +799,41 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
       N = KERNEL_MAX_NEIGHBOURS;
     }
     
-    // compute the interpolated scalar value(s)
     if (N>0) {
       if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
+        // Compute the weights (equivalent) for each nearest point
+        // also sum masses and find radius of neighbourhood
+        double grad[3], totalmass, maxDistance;
+        this->KernelCompute(x, data, NearestPoints, grad, totalmass, maxDistance);
+        
+        // If we are passing input scalars straight to output
         if (passdata) {
-          // Interpolate the point scalar/field data
           outPD->CopyData(pd, ptId, outId);
         }
         else {
-          // Compute the weights (equivalent) for each nearest point
-          double grad[3], totalmass, maxDistance;
-          this->KernelCompute(x, data, NearestPoints, grad, totalmass, maxDistance);
           double gradmag = vtkMath::Norm(grad);
           // Interpolate the point scalar/field data
           outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
           // set our extra computed values
           GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
           ShepardArray->SetValue(outId, this->ScaleCoefficient);
-          //
-          if (computesmootheddensity) {
-            double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
-            if (volume>0.0) {
-              // smoothed density, using total mass in whole neighbourhood
-              double smootheddensity = totalmass/volume;
-              // actual mass of this particle from input data
-              double mass = this->MassDataF ? this->MassDataF[ptId] : this->MassDataD[ptId];
-              // computed radius based on smoothed density and actual mass
-              double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
-              SmoothedDensity->SetValue(outId, smootheddensity);
-              SmoothedRadius->SetValue(outId, smoothedradius);
-            }
-            else {
-              SmoothedDensity->SetValue(outId, 0.0);
-              SmoothedRadius->SetValue(outId, 0.0);
-            }
+        }
+        // for astrophysics plots we might be computing a smoothed density
+        if (computesmootheddensity) {
+          double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
+          if (volume>0.0) {
+            // smoothed density, using total mass in whole neighbourhood
+            double smootheddensity = totalmass/volume;
+            // actual mass of this particle from input data
+            double mass = this->MassDataF ? this->MassDataF[ptId] : this->MassDataD[ptId];
+            // computed radius based on smoothed density and actual mass
+            double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
+            SmoothedDensity->SetValue(outId, smootheddensity);
+            SmoothedRadius->SetValue(outId, smoothedradius);
+          }
+          else {
+            SmoothedDensity->SetValue(outId, 0.0);
+            SmoothedRadius->SetValue(outId, 0.0);
           }
         }
       }
