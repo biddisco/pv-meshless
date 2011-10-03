@@ -196,7 +196,7 @@ int main(int argc, char **argv)
   //
   vtkSmartPointer<vtkH5PartWriter> writer = vtkSmartPointer<vtkH5PartWriter>::New();
   writer->SetFileName((char*)hdf5file.c_str());
-  writer->SetFileModeToWrite();
+  writer->SetFileModeToReadWrite();
   writer->SetController(controller);
   for (unsigned int i=0; i<N; i++) {
     vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
