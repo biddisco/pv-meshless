@@ -164,6 +164,7 @@ vtkSPHProbeFilter::vtkSPHProbeFilter()
   this->VolumeScalars               = NULL;
   this->HScalars                    = NULL;
   this->ComputeDensityFromNeighbourVolume = 0;
+  this->PassScalars                       = 0;
   //
   this->SPHManager                  = vtkSPHManager::New();
   this->ModifiedNumber              = 0;
@@ -725,23 +726,34 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   outPD = output->GetPointData();
   outPD->InterpolateAllocate(pd, this->NumOutputPoints, this->NumOutputPoints);
 
+  bool passdata = false;
+  bool computesmootheddensity = false;
+
   //
-  // we will add some new arrays to the point data as well as the interpolated ones.
+  // We may add some new arrays to the point data as well as the interpolated ones.
   //
-  vtkSmartPointer<vtkFloatArray> GradArray = vtkSmartPointer<vtkFloatArray>::New();
-  GradArray->SetName("GradW");
-  GradArray->SetNumberOfTuples(this->NumOutputPoints);
-  //
-  vtkSmartPointer<vtkFloatArray> ShepardArray = vtkSmartPointer<vtkFloatArray>::New();
-  ShepardArray->SetName("ShepardCoeff");
-  ShepardArray->SetNumberOfTuples(this->NumOutputPoints);
-  //
-  vtkSmartPointer<vtkFloatArray> ComputedDensity;
-  if (this->ComputeDensityFromNeighbourVolume) {
-    ComputedDensity = vtkSmartPointer<vtkFloatArray>::New();
-    ComputedDensity->SetName("ComputedDensity");
-    ComputedDensity->SetNumberOfTuples(this->NumOutputPoints);
+  vtkSmartPointer<vtkFloatArray> GradArray, ShepardArray;
+  vtkSmartPointer<vtkFloatArray> SmoothedDensity,SmoothedRadius;
+  if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
+    SmoothedDensity = vtkSmartPointer<vtkFloatArray>::New();
+    SmoothedDensity->SetName("SmoothedDensity");
+    SmoothedDensity->SetNumberOfTuples(this->NumOutputPoints);
+    SmoothedRadius = vtkSmartPointer<vtkFloatArray>::New();
+    SmoothedRadius->SetName("SmoothedRadius");
+    SmoothedRadius->SetNumberOfTuples(this->NumOutputPoints);
+    computesmootheddensity = true;
+    passdata = this->PassScalars;
   }
+  if (!passdata) {
+    GradArray = vtkSmartPointer<vtkFloatArray>::New();
+    GradArray->SetName("GradW");
+    GradArray->SetNumberOfTuples(this->NumOutputPoints);
+    //
+    ShepardArray = vtkSmartPointer<vtkFloatArray>::New();
+    ShepardArray->SetName("ShepardCoeff");
+    ShepardArray->SetNumberOfTuples(this->NumOutputPoints);
+  }
+  //
 
   // Nearest Neighbours list setup
   vtkSmartPointer<vtkIdList> NearestPoints = vtkSmartPointer<vtkIdList>::New();
@@ -787,35 +799,41 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
       N = KERNEL_MAX_NEIGHBOURS;
     }
     
-    // compute the interpolated scalar value(s)
     if (N>0) {
       if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
         // Compute the weights (equivalent) for each nearest point
+        // also sum masses and find radius of neighbourhood
         double grad[3], totalmass, maxDistance;
         this->KernelCompute(x, data, NearestPoints, grad, totalmass, maxDistance);
-        double gradmag = vtkMath::Norm(grad);
-/*
-// NULL COMPUTATION
-        outPD->NullPoint(outId);
-        ShepardArray->SetValue(outId, 0.0);
-        GradArray->SetValue(outId, 0.0);
-        if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
-          ComputedDensity->SetValue(outId, 0.0);
+        
+        // If we are passing input scalars straight to output
+        if (passdata) {
+          outPD->CopyData(pd, ptId, outId);
         }
-*/
-        // Interpolate the point scalar/field data
-        outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
-        // set our extra computed values
-        GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
-        ShepardArray->SetValue(outId, this->ScaleCoefficient);
-        //
-        if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
+        else {
+          double gradmag = vtkMath::Norm(grad);
+          // Interpolate the point scalar/field data
+          outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
+          // set our extra computed values
+          GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
+          ShepardArray->SetValue(outId, this->ScaleCoefficient);
+        }
+        // for astrophysics plots we might be computing a smoothed density
+        if (computesmootheddensity) {
           double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
           if (volume>0.0) {
-            ComputedDensity->SetValue(outId, totalmass/volume);
+            // smoothed density, using total mass in whole neighbourhood
+            double smootheddensity = totalmass/volume;
+            // actual mass of this particle from input data
+            double mass = this->MassDataF ? this->MassDataF[ptId] : this->MassDataD[ptId];
+            // computed radius based on smoothed density and actual mass
+            double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
+            SmoothedDensity->SetValue(outId, smootheddensity);
+            SmoothedRadius->SetValue(outId, smoothedradius);
           }
           else {
-            ComputedDensity->SetValue(outId, 0.0);
+            SmoothedDensity->SetValue(outId, 0.0);
+            SmoothedRadius->SetValue(outId, 0.0);
           }
         }
       }
@@ -828,10 +846,11 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
         ShepardArray->SetValue(outId, 0.0);
         GradArray->SetValue(outId, 0.0);
         // need to call this interpolation function 
-        // becasue Cal_Weights_ShepardMethod only calculates weights.
+        // because Cal_Weights_ShepardMethod only calculates weights.
         outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
-        if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
-          ComputedDensity->SetValue(outId, 0.0);
+        if (computesmootheddensity) {
+          SmoothedDensity->SetValue(outId, 0.0);
+          SmoothedRadius->SetValue(outId, 0.0);
         }
       }
     }
@@ -839,8 +858,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
       outPD->NullPoint(outId);
       ShepardArray->SetValue(outId, 0.0);
       GradArray->SetValue(outId, 0.0);
-      if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
-        ComputedDensity->SetValue(outId, 0.0);
+      if (computesmootheddensity) {
+        SmoothedDensity->SetValue(outId, 0.0);
+        SmoothedRadius->SetValue(outId, 0.0);
       }
     }
     outId++;
@@ -850,8 +870,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
     outPD->AddArray(GradArray);
     outPD->AddArray(ShepardArray);
-    if (this->ComputeDensityFromNeighbourVolume && this->MassScalars) {
-      outPD->AddArray(ComputedDensity);
+    if (computesmootheddensity) {
+      outPD->AddArray(SmoothedDensity);
+      outPD->AddArray(SmoothedRadius);
     }
   }
 
