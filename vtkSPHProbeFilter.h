@@ -85,12 +85,23 @@ public:
   vtkGetStringMacro(MassScalars);
 
   // Description:
-  // When enabled (and mass is present), the density for each sample point is 
-  // computed by smoothing the mass and using the volume from the sphere 
-  // which surrounds all N neighbours
+  // When enabled (and a mass array is supplied), the masses of all points inside
+  // the spherical volume enclosed by N neighbours is summed and the SmoothedDensity 
+  // is computed using this mass and the volume of the neighbourhood.
+  // A variable called SmoothedRadius is also output which is computed using the 
+  // SmoothedDensity and the original point mass. ((3/4)*(mass/SmoothedDensity))^0.333
   vtkSetMacro(ComputeDensityFromNeighbourVolume,int);
   vtkGetMacro(ComputeDensityFromNeighbourVolume,int);
   vtkBooleanMacro(ComputeDensityFromNeighbourVolume,int);
+
+  // Description:
+  // If ComputeDensityFromNeighbourVolume is enabled, then setting
+  // PassScalars to true will leave the original scalars unchanged, so
+  // that the filter can be used simply to add SmoothedDensity and SmoothedRadius
+  // fileds to an existing dataset. Priucipally intended for astrophysics data.
+  vtkSetMacro(PassScalars,int);
+  vtkGetMacro(PassScalars,int);
+  vtkBooleanMacro(PassScalars,int);
 
   // overridden to handle SPHManager changes
   unsigned long GetMTime();
@@ -149,6 +160,7 @@ protected:
 
   // Compute Density
   int    ComputeDensityFromNeighbourVolume;
+  int    PassScalars;
 
   // Shepard Mode
   int    LimitSearchByNeighbourCount;
