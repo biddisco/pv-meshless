@@ -113,7 +113,6 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
       std::vector<ZOLTAN_ID_TYPE> GlobalIds;
       std::vector<ZOLTAN_ID_TYPE> LocalIds;
       std::vector<int> Procs;
-      std::vector<int> Parts;
     } GhostPartition;
 
     typedef std::vector< std::vector<vtkIdType> > ListOfVectors;

@@ -31,8 +31,6 @@
 #include "vtkPolyData.h"
 #include "vtkDataSetAttributes.h"
 #include "vtkPointData.h"
-//#include "vtkFloatArray.h"
-//#include "vtkDoubleArray.h"
 #include "vtkCellArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -383,11 +381,10 @@ void vtkParticlePartitionFilter::FindOverlappingPoints(vtkPoints *pts, vtkIdType
       it!=this->BoxListWithGhostRegion.end(); ++it, ++proc) 
     {
       vtkBoundingBox &b = *it;
-      if (&b!=this->LocalBox && b.ContainsPoint(pt[0], pt[1], pt[2])) {
+      if (&b!=this->LocalBox && b.ContainsPoint(pt)) {
         ghostinfo.GlobalIds.push_back(IdArray->GetValue(i));
         ghostinfo.LocalIds.push_back(i);
         ghostinfo.Procs.push_back(proc);
-//        ghostinfo.Parts.push_back(proc);
       }
     }
   }
@@ -493,8 +490,7 @@ int vtkParticlePartitionFilter::RequestUpdateExtent(
   numPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
 
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), piece);
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),
-              numPieces);
+  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
   inInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(), 1);
 
   return 1;
@@ -506,8 +502,8 @@ int vtkParticlePartitionFilter::RequestInformation(
   vtkInformationVector* outputVector)
 {
 #ifdef VTK_USE_MPI
-  vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
-    vtkMultiProcessController::GetGlobalController()->GetCommunicator());
+  vtkMPICommunicator *communicator = 
+    vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
   int maxpieces = communicator ? communicator->GetNumberOfProcesses() : 1;
 #else
   int maxpieces = 1;
@@ -679,7 +675,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     IdsName = this->IdChannelArray;
   }
   if (IdsName.empty() || IdsName==std::string("Not available")) {
-    IdsName = "PointIds";
+    IdsName = "PPF_PointIds";
   } 
 
   vtkSmartPointer<vtkDataArray> Ids = NULL;
