@@ -22,6 +22,7 @@
   #include "vtkMPIController.h"
   #include "vtkMPICommunicator.h"
 #endif
+#include "vtkMultiProcessController.h"
 //
 #include "vtkObjectFactory.h"
 #include "vtkCellArray.h"
@@ -178,6 +179,7 @@ void vtkSPHImageResampler::ComputeAxesFromBounds(vtkDataSet *inputData, double l
   inputData->GetBounds(bounds);
   box.SetBounds(bounds);
   //
+#ifdef VTK_USE_MPI
   vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
     vtkMultiProcessController::GetGlobalController()->GetCommunicator());
   if (communicator)
@@ -192,6 +194,7 @@ void vtkSPHImageResampler::ComputeAxesFromBounds(vtkDataSet *inputData, double l
     bounds[4] = globalMins[2];  bounds[5] = globalMaxes[2];
     box.SetBounds(bounds);
   }
+#endif
   if (inflate) {
     box.Inflate(this->Delta);
   }
