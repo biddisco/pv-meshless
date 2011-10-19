@@ -742,7 +742,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     SmoothedRadius->SetName("SmoothedRadius");
     SmoothedRadius->SetNumberOfTuples(this->NumOutputPoints);
     computesmootheddensity = true;
-    passdata = this->PassScalars;
+    passdata = (this->PassScalars!=0);
   }
   if (!passdata) {
     GradArray = vtkSmartPointer<vtkFloatArray>::New();
