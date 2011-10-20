@@ -174,10 +174,6 @@ protected:
   char              *VolumeScalars;
   char              *MassScalars;
   char              *DensityScalars;
-  vtkDataArray      *MassArray;
-  vtkDataArray      *DensityArray;
-  vtkDataArray      *VolumeArray;
-  vtkDataArray      *HArray;
 
   // SPH Variables
   double             DefaultParticleSideLength;
@@ -186,11 +182,14 @@ protected:
   double             DefaultDensity;
   double             HCoefficient;
   double             weights[KERNEL_MAX_NEIGHBOURS];
-  float             *HData;
+  float             *HDataF;
+  double            *HDataD;
   float             *MassDataF;
   double            *MassDataD;
-  float             *DensityData;
-  float             *VolumeData;
+  float             *DensityDataF;
+  double            *DensityDataD;
+  float             *VolumeDataF;
+  double            *VolumeDataD;
 
   //
   double             ScaleCoefficient;
