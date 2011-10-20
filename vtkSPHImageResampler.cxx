@@ -40,6 +40,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkExtentTranslator.h"
 //
+#include "vtkPVExtentTranslator.h"
 #include "vtkBoundsExtentTranslator.h"
 #include "vtkSPHProbeFilter.h"
 //
@@ -66,9 +67,6 @@ vtkSPHImageResampler::vtkSPHImageResampler(void) {
   this->GlobalOrigin[0]         = 0.0;
   this->GlobalOrigin[1]         = 0.0;
   this->GlobalOrigin[2]         = 0.0;
-  this->LocalOrigin[0]          = 0.0;
-  this->LocalOrigin[1]          = 0.0;
-  this->LocalOrigin[2]          = 0.0;
   this->Spacing[0]              = 0.0;
   this->Spacing[1]              = 0.0;
   this->Spacing[2]              = 0.0;
@@ -277,7 +275,17 @@ int vtkSPHImageResampler::RequestData(
     std::cout << std::endl;
   }
   else {
-    outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), outUpdateExt);
+//    outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), outUpdateExt);
+    int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+    int updateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+    vtkSmartPointer<vtkPVExtentTranslator> translator = vtkSmartPointer<vtkPVExtentTranslator>::New();
+    outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), translator);
+    translator->SetWholeExtent(0,this->WholeDimension[0]-1,0,WholeDimension[1]-1,0,WholeDimension[2]-1);
+    translator->SetPiece(updatePiece);
+    translator->SetNumberOfPieces(updateNumPieces);
+    translator->SetGhostLevel(0);
+    translator->PieceToExtent();
+    translator->GetExtent(outUpdateExt);
   }
   //
   int dims[3]= {1+outUpdateExt[1]-outUpdateExt[0],
