@@ -155,7 +155,6 @@ class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
 
     // properties
     double   GlobalOrigin[3];
-    double   LocalOrigin[3];
     double   Spacing[3];
     int      Resolution[3];
     double   Delta;
