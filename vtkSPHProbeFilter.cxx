@@ -147,6 +147,23 @@ void Cal_Weights_ShepardMethod(double x[3], vtkDataSet *data, vtkIdList *Nearest
 }
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+void FloatOrDoubleArrayPointer(vtkDataArray *dataarray, float *&F, double *&D) {
+  if (dataarray && vtkFloatArray::SafeDownCast(dataarray)) {
+    F = vtkFloatArray::SafeDownCast(dataarray)->GetPointer(0);
+  }
+  if (dataarray && vtkDoubleArray::SafeDownCast(dataarray)) {
+    D = vtkDoubleArray::SafeDownCast(dataarray)->GetPointer(0);
+  }
+  //
+  if (dataarray && !F && !D) {
+    vtkGenericWarningMacro(<< dataarray->GetName() << "must be float or double");
+  }
+}
+//----------------------------------------------------------------------------
+#define FloatOrDouble(F, D, index) F ? F[index] : D[index]
+#define FloatOrDoubleorDefault(F, D, def, index) F ? F[index] : (D ? D[index] : def)
+#define FloatOrDoubleSet(F, D) ((F!=NULL) || (D!=NULL))
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 vtkSPHProbeFilter::vtkSPHProbeFilter()
 {
@@ -484,27 +501,26 @@ double vtkSPHProbeFilter::GetMaxKernelCutoffDistance()
   double kappa  = this->KernelFunction->getDilationFactor();
   double dpower = 1.0/this->KernelDimension;
   //
-  if (this->HData || this->MassDataF || this->MassDataD ||this->VolumeData) {
+  bool usingH = FloatOrDoubleSet(this->HDataF,this->HDataD);
+  bool usingM = FloatOrDoubleSet(this->MassDataF,this->MassDataD);
+  bool usingV = FloatOrDoubleSet(this->VolumeDataF,this->VolumeDataD);
+  bool usingR = FloatOrDoubleSet(this->DensityDataF,this->DensityDataD);
+  if (usingH || usingM || usingV || usingR) {
     for (vtkIdType index=0; index<this->NumInputParticles; index++) {
-      //
-      mass    = this->MassDataF ? this->MassDataF[index] : 
-               (this->MassDataD ? this->MassDataD[index] : this->DefaultParticleMass);
-      rho     = this->DensityData ? this->DensityData[index] : this->DefaultDensity;
-      //
-      if (this->HData) {
-        h      = this->HData[index];
-        cutoff = vtkstd::max(cutoff, h*kappa);
+      if (usingH) {
+        h = FloatOrDouble(this->HDataF, this->HDataD, index);
       }
-      else if (this->MassDataF || this->MassDataD) {
+      else if (usingV) {
+        volume = FloatOrDouble(this->VolumeDataF, this->VolumeDataD, index);
+        h      = vtkstd::pow(volume, dpower)*this->HCoefficient;
+      }
+      else if (usingM || usingR) {
+        mass   = FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
+        rho    = FloatOrDoubleorDefault(this->DensityDataF, this->DensityDataD, this->DefaultDensity, index);
         volume = mass/rho;
         h      = vtkstd::pow(volume, dpower)*this->HCoefficient;
-        cutoff = vtkstd::max(cutoff, h*kappa);
       }
-      else if (this->VolumeData) {
-        volume = this->VolumeData[index];
-        h      = vtkstd::pow(volume, dpower)*this->HCoefficient;
-        cutoff = vtkstd::max(cutoff, h*kappa);
-      }
+      cutoff = vtkstd::max(cutoff, h*kappa);
     }
   }
   else {
@@ -519,12 +535,16 @@ void vtkSPHProbeFilter::KernelCompute(
 {
   int N = NearestPoints->GetNumberOfIds();
   double *point;
-  double  shepard_coeff = 0;
+  double  shepard_coeff = 0.0;
   double  weight, volume, mass, rho, d, dr, h=0;
   double  dpower = 1.0/this->KernelDimension;
   Vector _gradW(0.0);
   maxDistance = 0.0;
   totalmass   = 0.0;
+  //
+  bool usingH = FloatOrDoubleSet(this->HDataF,this->HDataD);
+  bool usingM = FloatOrDoubleSet(this->MassDataF,this->MassDataD);
+  bool usingV = FloatOrDoubleSet(this->VolumeDataF,this->VolumeDataD);
   //
   for (int i=0; i<N; i++) {
     vtkIdType index = NearestPoints->GetId(i);
@@ -532,34 +552,38 @@ void vtkSPHProbeFilter::KernelCompute(
     d = sqrt(vtkMath::Distance2BetweenPoints(x, point));
     if (d>maxDistance) maxDistance=d;
     //
-    mass    = this->MassDataF ? this->MassDataF[index] : 
-             (this->MassDataD ? this->MassDataD[index] : this->DefaultParticleMass);
-    rho     = this->DensityData ? this->DensityData[index] : this->DefaultDensity;
+    weight = this->KernelFunction->w(d);
     //
-    totalmass += mass;
-    if (this->HData) {
-      h      = this->HData[index];
+    // each case must set a value for mass, volume, weight
+    //
+    if (usingH) {
+      h      = h = FloatOrDouble(this->HDataF, this->HDataD, index);
       dr     = h/this->HCoefficient;
       volume = dr*dr*dr;
-      weight = this->KernelFunction->w(h, d);
+      mass   = FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
     }
-    else if (this->MassDataF || this->MassDataD) {
+    else if (usingM) {
+      mass   = FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
+      rho    = FloatOrDoubleorDefault(this->DensityDataF, this->DensityDataD, this->DefaultDensity, index);
       volume = mass/rho;
       h      = vtkstd::pow(volume, dpower)*this->HCoefficient;
-      weight = this->KernelFunction->w(h, d);
     }
-    else if (this->VolumeData) {
-      volume = this->VolumeData[index];
+    else if (usingV) {
+      volume = FloatOrDouble(this->VolumeDataF, this->VolumeDataD, index);
       h      = vtkstd::pow(volume, dpower)*this->HCoefficient;
-      weight = this->KernelFunction->w(h, d);
+      mass   = FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
     }
     else {
+      mass   = FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
+      rho    = FloatOrDoubleorDefault(this->DensityDataF, this->DensityDataD, this->DefaultDensity, index);
       volume = mass/rho;
-      weight = this->KernelFunction->w(d);
     }
-
-    // 
-    // Weight and shepard  summation
+    //
+    // Mass sum for local density 
+    //
+    totalmass += mass;
+    //
+    // Weight and shepard summation
     //
     this->weights[i] = weight*volume;
     shepard_coeff   += this->weights[i];
@@ -601,36 +625,31 @@ bool vtkSPHProbeFilter::InitializeVariables(vtkDataSet *data)
   // Find the arrays to be used for Mass/Density
   // if not present, we will use default values based on particle size
   //
-  this->DensityData = NULL;
-  this->MassDataF   = NULL;
-  this->MassDataD   = NULL;
-  this->VolumeData  = NULL;
-  this->HData       = NULL;
+  this->DensityDataF = NULL;
+  this->DensityDataD = NULL;
+  this->MassDataF    = NULL;
+  this->MassDataD    = NULL;
+  this->VolumeDataF  = NULL;
+  this->VolumeDataD  = NULL;
+  this->HDataF       = NULL;
+  this->HDataD       = NULL;
   //
-  this->MassArray    = this->MassScalars ? 
+  vtkDataArray *MassArray = this->MassScalars ? 
     data->GetPointData()->GetArray(this->MassScalars) : NULL;
-  this->DensityArray = this->DensityScalars ?
-    data->GetPointData()->GetArray(this->DensityScalars) : NULL;
-  this->VolumeArray  = this->VolumeScalars ?
-    data->GetPointData()->GetArray(this->VolumeScalars) : NULL;
-  this->HArray       = this->HScalars ?
-    data->GetPointData()->GetArray(this->HScalars ) : NULL;
+  FloatOrDoubleArrayPointer(MassArray, this->MassDataF, this->MassDataD);
   //
-  if (MassArray && vtkFloatArray::SafeDownCast(MassArray)) {
-    this->MassDataF = vtkFloatArray::SafeDownCast(MassArray)->GetPointer(0);
-  }
-  if (MassArray && vtkDoubleArray::SafeDownCast(MassArray)) {
-    this->MassDataD = vtkDoubleArray::SafeDownCast(MassArray)->GetPointer(0);
-  }
-  if (DensityArray && vtkFloatArray::SafeDownCast(DensityArray)) {
-    this->DensityData = vtkFloatArray::SafeDownCast(DensityArray)->GetPointer(0);
-  }
-  if (VolumeArray && vtkFloatArray::SafeDownCast(VolumeArray)) {
-    this->VolumeData = vtkFloatArray::SafeDownCast(VolumeArray)->GetPointer(0);
-  }
-  if (HArray && vtkFloatArray::SafeDownCast(HArray)) {
-    this->HData = vtkFloatArray::SafeDownCast(HArray)->GetPointer(0);
-  }
+  vtkDataArray *DensityArray = this->DensityScalars ?
+    data->GetPointData()->GetArray(this->DensityScalars) : NULL;
+  FloatOrDoubleArrayPointer(DensityArray, this->DensityDataF, this->DensityDataD);
+  //
+  vtkDataArray *VolumeArray  = this->VolumeScalars ?
+    data->GetPointData()->GetArray(this->VolumeScalars) : NULL;
+  FloatOrDoubleArrayPointer(VolumeArray, this->VolumeDataF, this->VolumeDataD);
+  //
+  vtkDataArray *HArray = this->HScalars ?
+    data->GetPointData()->GetArray(this->HScalars ) : NULL;
+  FloatOrDoubleArrayPointer(HArray, this->HDataF, this->HDataD);
+  //
   return true;
 }
 //----------------------------------------------------------------------------
@@ -734,7 +753,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   //
   vtkSmartPointer<vtkFloatArray> GradArray, ShepardArray;
   vtkSmartPointer<vtkFloatArray> SmoothedDensity,SmoothedRadius;
-  if (this->ComputeDensityFromNeighbourVolume && this->MassArray) {
+  if (this->ComputeDensityFromNeighbourVolume && FloatOrDoubleSet(this->MassDataF,this->MassDataD)) {
     SmoothedDensity = vtkSmartPointer<vtkFloatArray>::New();
     SmoothedDensity->SetName("SmoothedDensity");
     SmoothedDensity->SetNumberOfTuples(this->NumOutputPoints);
@@ -825,7 +844,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
             // smoothed density, using total mass in whole neighbourhood
             double smootheddensity = totalmass/volume;
             // actual mass of this particle from input data
-            double mass = this->MassDataF ? this->MassDataF[ptId] : this->MassDataD[ptId];
+            double mass = FloatOrDouble(this->MassDataF,this->MassDataD, ptId);
             // computed radius based on smoothed density and actual mass
             double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
             SmoothedDensity->SetValue(outId, smootheddensity);
