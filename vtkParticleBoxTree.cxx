@@ -266,14 +266,16 @@ void vtkParticleBoxTree::GenerateRepresentation(int level, vtkPolyData *pd)
 {
   vtkCellTreeLocator::GenerateRepresentation(level, pd);
   //
+/*
   vtkSmartPointer<vtkIdList> cells = vtkSmartPointer<vtkIdList>::New();
   double bounds[6] = {0.472, 0.48, 0.515, 0.52, 0.494, 0.50};
   this->FindCellsWithinBounds(bounds, cells);
-  
+  AddBox(pd, bounds, 0);
   // For each cell, add the bbox to our polydata
   vtkIdType s = cells->GetNumberOfIds();
   for (int i=0; i<s; i++) {
     vtkIdType c = cells->GetId(i);
-    AddBox(pd, this->CellBounds[c], 20);
+    AddBox(pd, this->CellBounds[c], 0);
   }
+*/  
 }

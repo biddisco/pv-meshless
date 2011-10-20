@@ -15,15 +15,15 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-// .NAME vtkParticleBoxTree - Special BSP tree for particles with no size
+// .NAME vtkParticleBoxTree - Special BSP tree for dimensionless particles
 //
 // .SECTION Description
 // vtkParticleBoxTree is a BSP tree which takes particle data and
 // assumes a box size for each particle. The box size is either fixed
-// for all particles, or if supplied, a support radius with one entry
+// for all particles, or if supplied, a 'support radius' array with one entry
 // per particle can be used. Raytracing of simple points would 
-// normally produce no output, using this BSP tree enables a finite 
-// volume to be assigned to each particle and permits raycasting 
+// normally produce no output, using this tree enables a finite 
+// volume to be assigned to each particle and permits raycasting
 // operations to be performed on them.
 
 #ifndef _vtkParticleBoxTree_h
