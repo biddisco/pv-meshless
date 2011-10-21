@@ -50,7 +50,7 @@
 #include <float.h>
 #include <numeric>
 //----------------------------------------------------------------------------
-#define JB_DEBUG__
+//#define JB_DEBUG__
 #if defined JB_DEBUG__
 #define OUTPUTTEXT(a) std::cout <<(a); std::cout.flush();
 

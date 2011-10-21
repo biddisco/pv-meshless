@@ -33,20 +33,31 @@ IF (VTK_USE_PARALLEL AND VTK_USE_MPI)
   TARGET_LINK_LIBRARIES(TestH5PartParallelWriter
     pv_meshless 
     )
-  ADD_TEST(TestH5PartParallelWriter.cxx ${PROJECT_BINARY_DIR}/../bin/TestH5PartParallelWriter.cxx)
+  ADD_TEST(TestH5PartParallelWriter ${PROJECT_BINARY_DIR}/../bin/TestH5PartParallelWriter)
 ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 
 #--------------------------------------------------
 # Trilinos
 #--------------------------------------------------
-IF(${Trilinos_FOUND})
+IF (${Trilinos_FOUND})
 
   ADD_EXECUTABLE(TestParticlePartitionFilter TestParticlePartitionFilter.cxx)
   TARGET_LINK_LIBRARIES(TestParticlePartitionFilter
     pv_meshless 
     ${Trilinos_LIBRARIES}
     )
-  ADD_TEST(TestParticlePartitionFilter.cxx ${PROJECT_BINARY_DIR}/../bin/TestParticlePartitionFilter)
+  
+  ADD_TEST(
+    TestParticlePartitionFilter 
+    ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_POSTFLAGS} 
+      ${PROJECT_BINARY_DIR}/../bin/Debug/TestParticlePartitionFilter
+      -N 10000
+      -F temp.h5
+      -D ${PROJECT_BINARY_DIR}/Testing/Temporary
+      -T ${PROJECT_BINARY_DIR}/Testing/Temporary
+      -V ${PROJECT_SOURCE_DIR}/Testing/baseline/ParticlePartition.png
+      -R
+  )
 
   ADD_EXECUTABLE(TestSPHProbeParallel TestSPHProbeParallel.cxx)
   TARGET_LINK_LIBRARIES(TestSPHProbeParallel
