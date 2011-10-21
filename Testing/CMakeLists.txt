@@ -1,3 +1,10 @@
+#--------------------------------------------------
+# Tests here are added using the 
+# ADD_TEST(NAME ... COMMAND ...)
+# form and will only run when ctest is run using
+# ctest -C Release / ctest -C Debug / etc
+#--------------------------------------------------
+
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/vtkCSCSMeshless/sph)
 
 #--------------------------------------------------
@@ -48,13 +55,14 @@ IF (${Trilinos_FOUND})
     )
   
   ADD_TEST(
-    TestParticlePartitionFilter 
-    ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_POSTFLAGS} 
-      ${PROJECT_BINARY_DIR}/../bin/Debug/TestParticlePartitionFilter
+    NAME TestParticlePartitionFilter 
+    COMMAND 
+      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
+      $<TARGET_FILE:TestParticlePartitionFilter> 
       -N 10000
       -F temp.h5
-      -D ${PROJECT_BINARY_DIR}/Testing/Temporary
-      -T ${PROJECT_BINARY_DIR}/Testing/Temporary
+      -D ${PLUGIN_TEST_DIR}
+      -T ${PLUGIN_TEST_DIR}
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/ParticlePartition.png
       -R
   )
