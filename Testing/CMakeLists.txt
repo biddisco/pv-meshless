@@ -72,7 +72,32 @@ IF (${Trilinos_FOUND})
     pv_meshless 
     ${Trilinos_LIBRARIES}
     )
-  ADD_TEST(TestSPHProbeParallel.cxx ${PROJECT_BINARY_DIR}/../bin/TestSPHProbeParallel)
+    
+  ADD_TEST(
+    NAME TestSPHProbeSerial
+    COMMAND 
+      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
+      $<TARGET_FILE:TestSPHProbeParallel> 
+      -D "${PROJECT_SOURCE_DIR}/Testing/data"
+      -F AGN_subset.h5part
+      -T "${PLUGIN_TEST_DIR}"
+      -range "0.0310571 372.911"
+      -index "693"
+      -coord "0.492222 0.506363 0.486312"
+    )
+  
+  ADD_TEST(
+    NAME TestSPHProbeParallel
+    COMMAND 
+      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
+      $<TARGET_FILE:TestSPHProbeParallel> 
+      -D "${PROJECT_SOURCE_DIR}/Testing/data"
+      -F AGN_densitycheck.h5part
+      -T "${PLUGIN_TEST_DIR}"
+      -range "0.021967 1.77405e+008"
+      -index "625851"
+      -coord "0.567801 0.586049 0.559156"
+    )
   
 ENDIF(${Trilinos_FOUND})
 

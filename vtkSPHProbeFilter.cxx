@@ -661,6 +661,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   vtkPointData *pd, *outPD;
 
   vtkDebugMacro(<<"Probing data");
+  //
+  vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
+  timer->StartTimer();
 
   //
   // Locator optimization
@@ -895,10 +898,12 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     }
   }
 
+  timer->StopTimer();
+  double elapsed = timer->GetElapsedTime();
 #ifdef VTK_USE_MPI
   if (com) com->Barrier();
-  vtkDebugMacro(<< "Probe filter complete : exported N = " << outId);
 #endif
+  vtkDebugMacro(<< "Probe filter complete : exported N = " << outId << "\t Time : " << elapsed << " seconds" );
   return 1;
 }
 
