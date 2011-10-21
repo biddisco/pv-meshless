@@ -54,7 +54,7 @@ IF(USE_TRILINOS)
     LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS})
     SET(TRILINOS_CXX ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx)
     SET(TRILINOS_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml)
-    MESSAGE("Trilinos_LIBRARY_DIRS ${Trilinos_LIBRARY_DIRS}/${CMAKE_CFG_INTDIR}") 
+#    MESSAGE("Trilinos_LIBRARY_DIRS ${Trilinos_LIBRARY_DIRS}/${CMAKE_CFG_INTDIR}") 
   ENDIF(${Trilinos_FOUND})
 ENDIF(USE_TRILINOS)
 
@@ -341,6 +341,8 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/pv_meshless_configure.h.in
 # Testing
 #--------------------------------------------------
 IF (BUILD_TESTING)
+  SET(PLUGIN_TEST_DIR ${PROJECT_BINARY_DIR}/Testing/Temporary)
+  MAKE_DIRECTORY(${PLUGIN_TEST_DIR})
   ADD_SUBDIRECTORY(Testing)
 ENDIF (BUILD_TESTING)  
 
