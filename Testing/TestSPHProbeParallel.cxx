@@ -222,18 +222,29 @@ int main (int argc, char* argv[])
       polys->GetPoint(index,pos);
       std::cout << "Position of peak SmoothedDensity particle is {" << pos[0] << "," << pos[1] << "," << pos[2] << "}" << std::endl;
     }
-
-    if (index==vindex && 
-      std::abs(vmin-range[0])<1E-5 &&
-      std::abs(vmax-range[1])<1E-5 &&
-      std::abs(vpos[0]-pos[0])<1E-5 &&
-      std::abs(vpos[1]-pos[1])<1E-5 &&
-      std::abs(vpos[2]-pos[2])<1E-5)
-    {
-      retVal = 1;
-      std::cout << "values passed " << std::endl;
+    bool ok = true;
+    if (index!=vindex) {
+      ok = false;
+      std::cout << "index check failed " << std::endl;
     }
-    else retVal = 0;
+    if (std::abs(vmin-range[0])>1E-3 || std::abs(vmax-range[1])>1E-3) {
+      ok = false;
+      std::cout << "min/max check failed " << std::endl;
+      std::cout << "expected {" << vmin << ',' << vmax << "}" << std::endl;
+      std::cout << "got {" << range[0] << ',' << range[1] << "}" << std::endl;
+      std::cout << "err {" << std::abs(vmin-range[0]) << ',' << std::abs(vmax-range[1]) << "}" << std::endl;
+    }
+    if (std::abs(vpos[0]-pos[0])>1E-5 ||
+        std::abs(vpos[1]-pos[1])>1E-5 ||
+        std::abs(vpos[2]-pos[2])>1E-5)
+    {
+      ok = false;
+      std::cout << "position check failed " << std::endl;
+    }
+    if (ok) {
+      std::cout << "All checks passed " << std::endl;
+    }
+    retVal = ok;
   }
 
   delete []fullname;
