@@ -94,7 +94,7 @@ IF (${Trilinos_FOUND})
       -D "${PROJECT_SOURCE_DIR}/Testing/data"
       -F AGN_densitycheck.h5part
       -T "${PLUGIN_TEST_DIR}"
-      -range "0.021967 1.77405e+008"
+      -range "0.0219669789075851 177405216"
       -index "625851"
       -coord "0.567801 0.586049 0.559156"
     )
