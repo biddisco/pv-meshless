@@ -210,6 +210,7 @@ int main (int argc, char* argv[])
     polys->ShallowCopy(sphProbe->GetOutput());
     vtkDataArray *da = polys->GetPointData()->GetArray("SmoothedDensity");
     da->GetRange(range);
+    std::cout.precision(15);
     std::cout << "Min and Max of SmoothedDensity are {" << range[0] << "," << range[1] << "}" << std::endl;
     // 0.567804, 0.586049, 0.559157 
     for (vtkIdType i=0; i<da->GetNumberOfTuples(); i++) {

@@ -81,9 +81,9 @@ IF (${Trilinos_FOUND})
       -D "${PROJECT_SOURCE_DIR}/Testing/data"
       -F AGN_subset.h5part
       -T "${PLUGIN_TEST_DIR}"
-      -range "0.0310571 372.911"
+      -range "0.0310571286827326 372.910675048828"
       -index "693"
-      -coord "0.492222 0.506363 0.486312"
+      -coord "0.492221683263779 0.506363093852997 0.486311554908752"
     )
   
   ADD_TEST(
