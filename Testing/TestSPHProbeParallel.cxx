@@ -62,7 +62,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 //----------------------------------------------------------------------------
 std::string usage = "\n"\
@@ -228,16 +228,16 @@ int main (int argc, char* argv[])
       ok = false;
       std::cout << "index check failed " << std::endl;
     }
-    if (std::abs(vmin-range[0])>1E-3 || std::abs(vmax-range[1])>1E-3) {
+    if (std::fabs(vmin-range[0])>1E-3 || std::fabs(vmax-range[1])>1E-3) {
       ok = false;
       std::cout << "min/max check failed " << std::endl;
       std::cout << "expected {" << vmin << ',' << vmax << "}" << std::endl;
       std::cout << "got {" << range[0] << ',' << range[1] << "}" << std::endl;
       std::cout << "err {" << std::abs(vmin-range[0]) << ',' << std::abs(vmax-range[1]) << "}" << std::endl;
     }
-    if (std::abs(vpos[0]-pos[0])>1E-5 ||
-        std::abs(vpos[1]-pos[1])>1E-5 ||
-        std::abs(vpos[2]-pos[2])>1E-5)
+    if (std::fabs(vpos[0]-pos[0])>1E-5 ||
+        std::fabs(vpos[1]-pos[1])>1E-5 ||
+        std::fabs(vpos[2]-pos[2])>1E-5)
     {
       ok = false;
       std::cout << "position check failed " << std::endl;
