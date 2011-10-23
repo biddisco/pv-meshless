@@ -1,0 +1,26 @@
+Test project D:/cmakebuild/plugins
+    Start 1: TestKernel3D
+1/9 Test #1: TestKernel3D .....................   Passed    0.89 sec
+    Start 2: TestKernel2D
+2/9 Test #2: TestKernel2D .....................   Passed    0.38 sec
+    Start 3: TestCenterOfMassFilter
+3/9 Test #3: TestCenterOfMassFilter ...........   Passed    0.30 sec
+    Start 4: TestMomentsOfInertiaFilter
+4/9 Test #4: TestMomentsOfInertiaFilter .......   Passed    0.24 sec
+    Start 5: TestH5PartParallelWriter
+5/9 Test #5: TestH5PartParallelWriter .........   Passed    0.58 sec
+    Start 6: TestParticlePartitionFilter
+6/9 Test #6: TestParticlePartitionFilter ......   Passed    2.13 sec
+    Start 7: TestSPHProbeSerial
+7/9 Test #7: TestSPHProbeSerial ...............   Passed    2.30 sec
+    Start 8: TestSPHProbeParallel
+8/9 Test #8: TestSPHProbeParallel .............   Passed  3975.55 sec
+    Start 9: TestSplotchMapper
+9/9 Test #9: TestSplotchMapper ................   Passed   14.61 sec
+
+100% tests passed, 0 tests failed out of 9
+
+Total Test time (real) = 3999.48 sec
+
+d:\cmakebuild\plugins>
+
