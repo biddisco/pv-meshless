@@ -1,0 +1,213 @@
+branch 3.11
+66.48
+66.26
+65.91
+branch particletree
+69.54
+68.35
+68.08
+
+===============================================================================
+d:\cmakebuild\plugins>d:\cmakebuild\cmake\bin\Debug\ctest.exe -C Debug -E Large
+Test project D:/cmakebuild/plugins
+      Start  1: TestKernel3D
+ 1/13 Test  #1: TestKernel3D ........................   Passed    0.40 sec
+      Start  2: TestKernel2D
+ 2/13 Test  #2: TestKernel2D ........................   Passed    0.24 sec
+      Start  3: TestCenterOfMassFilter
+ 3/13 Test  #3: TestCenterOfMassFilter ..............   Passed    0.28 sec
+      Start  4: TestMomentsOfInertiaFilter
+ 4/13 Test  #4: TestMomentsOfInertiaFilter ..........   Passed    0.24 sec
+      Start  5: TestH5PartParallelWriter
+ 5/13 Test  #5: TestH5PartParallelWriter ............   Passed    0.51 sec
+      Start  6: TestParticlePartitionFilter
+ 6/13 Test  #6: TestParticlePartitionFilter .........   Passed    1.34 sec
+      Start  7: TestSPHProbeKernelSmallSerial
+ 7/13 Test  #7: TestSPHProbeKernelSmallSerial .......   Passed   23.72 sec
+      Start  8: TestSPHProbeShepardSmallSerial
+ 8/13 Test  #8: TestSPHProbeShepardSmallSerial ......   Passed    3.88 sec
+      Start  9: TestSPHProbeShepardSmallParallel2
+ 9/13 Test  #9: TestSPHProbeShepardSmallParallel2 ...   Passed    2.27 sec
+      Start 10: TestSPHProbeShepardSmallParallel4
+10/13 Test #10: TestSPHProbeShepardSmallParallel4 ...   Passed    1.61 sec
+      Start 11: TestSPHProbeKernelSmallParallel2
+11/13 Test #11: TestSPHProbeKernelSmallParallel2 ....   Passed   12.60 sec
+      Start 12: TestSPHProbeKernelSmallParallel4
+12/13 Test #12: TestSPHProbeKernelSmallParallel4 ....   Passed    6.86 sec
+      Start 13: TestSplotchMapper
+13/13 Test #13: TestSplotchMapper ...................   Passed    9.96 sec
+
+100% tests passed, 0 tests failed out of 13
+
+Total Test time (real) =  66.48 sec
+
+===============================================================================
+d:\cmakebuild\plugins>d:\cmakebuild\cmake\bin\Debug\ctest.exe -C Debug -E Large
+Test project D:/cmakebuild/plugins
+      Start  1: TestKernel3D
+ 1/13 Test  #1: TestKernel3D ........................   Passed    0.28 sec
+      Start  2: TestKernel2D
+ 2/13 Test  #2: TestKernel2D ........................   Passed    0.24 sec
+      Start  3: TestCenterOfMassFilter
+ 3/13 Test  #3: TestCenterOfMassFilter ..............   Passed    0.21 sec
+      Start  4: TestMomentsOfInertiaFilter
+ 4/13 Test  #4: TestMomentsOfInertiaFilter ..........   Passed    0.21 sec
+      Start  5: TestH5PartParallelWriter
+ 5/13 Test  #5: TestH5PartParallelWriter ............   Passed    0.36 sec
+      Start  6: TestParticlePartitionFilter
+ 6/13 Test  #6: TestParticlePartitionFilter .........   Passed    1.66 sec
+      Start  7: TestSPHProbeKernelSmallSerial
+ 7/13 Test  #7: TestSPHProbeKernelSmallSerial .......   Passed   23.78 sec
+      Start  8: TestSPHProbeShepardSmallSerial
+ 8/13 Test  #8: TestSPHProbeShepardSmallSerial ......   Passed    3.83 sec
+      Start  9: TestSPHProbeShepardSmallParallel2
+ 9/13 Test  #9: TestSPHProbeShepardSmallParallel2 ...   Passed    2.19 sec
+      Start 10: TestSPHProbeShepardSmallParallel4
+10/13 Test #10: TestSPHProbeShepardSmallParallel4 ...   Passed    1.53 sec
+      Start 11: TestSPHProbeKernelSmallParallel2
+11/13 Test #11: TestSPHProbeKernelSmallParallel2 ....   Passed   12.57 sec
+      Start 12: TestSPHProbeKernelSmallParallel4
+12/13 Test #12: TestSPHProbeKernelSmallParallel4 ....   Passed    6.90 sec
+      Start 13: TestSplotchMapper
+13/13 Test #13: TestSplotchMapper ...................   Passed    9.91 sec
+
+100% tests passed, 0 tests failed out of 13
+
+Total Test time (real) =  66.26 sec
+
+===============================================================================
+d:\cmakebuild\plugins>d:\cmakebuild\cmake\bin\Debug\ctest.exe -C Debug -E Large
+Test project D:/cmakebuild/plugins
+      Start  1: TestKernel3D
+ 1/13 Test  #1: TestKernel3D ........................   Passed    0.29 sec
+      Start  2: TestKernel2D
+ 2/13 Test  #2: TestKernel2D ........................   Passed    0.24 sec
+      Start  3: TestCenterOfMassFilter
+ 3/13 Test  #3: TestCenterOfMassFilter ..............   Passed    0.21 sec
+      Start  4: TestMomentsOfInertiaFilter
+ 4/13 Test  #4: TestMomentsOfInertiaFilter ..........   Passed    0.21 sec
+      Start  5: TestH5PartParallelWriter
+ 5/13 Test  #5: TestH5PartParallelWriter ............   Passed    0.36 sec
+      Start  6: TestParticlePartitionFilter
+ 6/13 Test  #6: TestParticlePartitionFilter .........   Passed    1.05 sec
+      Start  7: TestSPHProbeKernelSmallSerial
+ 7/13 Test  #7: TestSPHProbeKernelSmallSerial .......   Passed   23.63 sec
+      Start  8: TestSPHProbeShepardSmallSerial
+ 8/13 Test  #8: TestSPHProbeShepardSmallSerial ......   Passed    3.83 sec
+      Start  9: TestSPHProbeShepardSmallParallel2
+ 9/13 Test  #9: TestSPHProbeShepardSmallParallel2 ...   Passed    2.27 sec
+      Start 10: TestSPHProbeShepardSmallParallel4
+10/13 Test #10: TestSPHProbeShepardSmallParallel4 ...   Passed    1.65 sec
+      Start 11: TestSPHProbeKernelSmallParallel2
+11/13 Test #11: TestSPHProbeKernelSmallParallel2 ....   Passed   12.59 sec
+      Start 12: TestSPHProbeKernelSmallParallel4
+12/13 Test #12: TestSPHProbeKernelSmallParallel4 ....   Passed    6.95 sec
+      Start 13: TestSplotchMapper
+13/13 Test #13: TestSplotchMapper ...................   Passed   10.00 sec
+
+100% tests passed, 0 tests failed out of 13
+
+Total Test time (real) =  65.91 sec
+
+===============================================================================
+d:\cmakebuild\plugins>d:\cmakebuild\cmake\bin\Debug\ctest.exe -C Debug -E Large
+Test project D:/cmakebuild/plugins
+      Start  1: TestKernel3D
+ 1/13 Test  #1: TestKernel3D ........................   Passed    0.41 sec
+      Start  2: TestKernel2D
+ 2/13 Test  #2: TestKernel2D ........................   Passed    0.26 sec
+      Start  3: TestCenterOfMassFilter
+ 3/13 Test  #3: TestCenterOfMassFilter ..............   Passed    0.29 sec
+      Start  4: TestMomentsOfInertiaFilter
+ 4/13 Test  #4: TestMomentsOfInertiaFilter ..........   Passed    0.28 sec
+      Start  5: TestH5PartParallelWriter
+ 5/13 Test  #5: TestH5PartParallelWriter ............   Passed    0.46 sec
+      Start  6: TestParticlePartitionFilter
+ 6/13 Test  #6: TestParticlePartitionFilter .........   Passed    1.35 sec
+      Start  7: TestSPHProbeKernelSmallSerial
+ 7/13 Test  #7: TestSPHProbeKernelSmallSerial .......   Passed   25.25 sec
+      Start  8: TestSPHProbeShepardSmallSerial
+ 8/13 Test  #8: TestSPHProbeShepardSmallSerial ......   Passed    3.85 sec
+      Start  9: TestSPHProbeShepardSmallParallel2
+ 9/13 Test  #9: TestSPHProbeShepardSmallParallel2 ...   Passed    2.21 sec
+      Start 10: TestSPHProbeShepardSmallParallel4
+10/13 Test #10: TestSPHProbeShepardSmallParallel4 ...   Passed    1.59 sec
+      Start 11: TestSPHProbeKernelSmallParallel2
+11/13 Test #11: TestSPHProbeKernelSmallParallel2 ....   Passed   13.39 sec
+      Start 12: TestSPHProbeKernelSmallParallel4
+12/13 Test #12: TestSPHProbeKernelSmallParallel4 ....   Passed    7.60 sec
+      Start 13: TestSplotchMapper
+13/13 Test #13: TestSplotchMapper ...................   Passed    9.96 sec
+
+100% tests passed, 0 tests failed out of 13
+
+Total Test time (real) =  69.54 sec
+
+===============================================================================
+d:\cmakebuild\plugins>d:\cmakebuild\cmake\bin\Debug\ctest.exe -C Debug -E Large
+Test project D:/cmakebuild/plugins
+      Start  1: TestKernel3D
+ 1/13 Test  #1: TestKernel3D ........................   Passed    0.28 sec
+      Start  2: TestKernel2D
+ 2/13 Test  #2: TestKernel2D ........................   Passed    0.24 sec
+      Start  3: TestCenterOfMassFilter
+ 3/13 Test  #3: TestCenterOfMassFilter ..............   Passed    0.21 sec
+      Start  4: TestMomentsOfInertiaFilter
+ 4/13 Test  #4: TestMomentsOfInertiaFilter ..........   Passed    0.21 sec
+      Start  5: TestH5PartParallelWriter
+ 5/13 Test  #5: TestH5PartParallelWriter ............   Passed    0.35 sec
+      Start  6: TestParticlePartitionFilter
+ 6/13 Test  #6: TestParticlePartitionFilter .........   Passed    1.17 sec
+      Start  7: TestSPHProbeKernelSmallSerial
+ 7/13 Test  #7: TestSPHProbeKernelSmallSerial .......   Passed   25.05 sec
+      Start  8: TestSPHProbeShepardSmallSerial
+ 8/13 Test  #8: TestSPHProbeShepardSmallSerial ......   Passed    3.84 sec
+      Start  9: TestSPHProbeShepardSmallParallel2
+ 9/13 Test  #9: TestSPHProbeShepardSmallParallel2 ...   Passed    2.21 sec
+      Start 10: TestSPHProbeShepardSmallParallel4
+10/13 Test #10: TestSPHProbeShepardSmallParallel4 ...   Passed    1.50 sec
+      Start 11: TestSPHProbeKernelSmallParallel2
+11/13 Test #11: TestSPHProbeKernelSmallParallel2 ....   Passed   13.37 sec
+      Start 12: TestSPHProbeKernelSmallParallel4
+12/13 Test #12: TestSPHProbeKernelSmallParallel4 ....   Passed    7.38 sec
+      Start 13: TestSplotchMapper
+13/13 Test #13: TestSplotchMapper ...................   Passed    9.93 sec
+
+100% tests passed, 0 tests failed out of 13
+
+Total Test time (real) =  68.35 sec
+
+===============================================================================
+d:\cmakebuild\plugins>d:\cmakebuild\cmake\bin\Debug\ctest.exe -C Debug -E Large
+Test project D:/cmakebuild/plugins
+      Start  1: TestKernel3D
+ 1/13 Test  #1: TestKernel3D ........................   Passed    0.28 sec
+      Start  2: TestKernel2D
+ 2/13 Test  #2: TestKernel2D ........................   Passed    0.25 sec
+      Start  3: TestCenterOfMassFilter
+ 3/13 Test  #3: TestCenterOfMassFilter ..............   Passed    0.21 sec
+      Start  4: TestMomentsOfInertiaFilter
+ 4/13 Test  #4: TestMomentsOfInertiaFilter ..........   Passed    0.21 sec
+      Start  5: TestH5PartParallelWriter
+ 5/13 Test  #5: TestH5PartParallelWriter ............   Passed    0.35 sec
+      Start  6: TestParticlePartitionFilter
+ 6/13 Test  #6: TestParticlePartitionFilter .........   Passed    1.09 sec
+      Start  7: TestSPHProbeKernelSmallSerial
+ 7/13 Test  #7: TestSPHProbeKernelSmallSerial .......   Passed   25.04 sec
+      Start  8: TestSPHProbeShepardSmallSerial
+ 8/13 Test  #8: TestSPHProbeShepardSmallSerial ......   Passed    3.85 sec
+      Start  9: TestSPHProbeShepardSmallParallel2
+ 9/13 Test  #9: TestSPHProbeShepardSmallParallel2 ...   Passed    2.19 sec
+      Start 10: TestSPHProbeShepardSmallParallel4
+10/13 Test #10: TestSPHProbeShepardSmallParallel4 ...   Passed    1.52 sec
+      Start 11: TestSPHProbeKernelSmallParallel2
+11/13 Test #11: TestSPHProbeKernelSmallParallel2 ....   Passed   13.34 sec
+      Start 12: TestSPHProbeKernelSmallParallel4
+12/13 Test #12: TestSPHProbeKernelSmallParallel4 ....   Passed    7.16 sec
+      Start 13: TestSplotchMapper
+13/13 Test #13: TestSplotchMapper ...................   Passed    9.96 sec
+
+100% tests passed, 0 tests failed out of 13
+
+Total Test time (real) =  68.08 sec
+
