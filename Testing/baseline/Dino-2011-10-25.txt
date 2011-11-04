@@ -1,0 +1,68 @@
+=====================================================================
+C:\cmakebuild\cmake\bin\Debug\ctest -C Debug -E Parallel
+=====================================================================
+Test project C:/cmakebuild/plugins
+    Start 1: TestKernel3D
+1/7 Test #1: TestKernel3D .....................   Passed    0.20 sec
+    Start 2: TestKernel2D
+2/7 Test #2: TestKernel2D .....................   Passed    0.17 sec
+    Start 3: TestCenterOfMassFilter
+3/7 Test #3: TestCenterOfMassFilter ...........   Passed    0.16 sec
+    Start 4: TestMomentsOfInertiaFilter
+4/7 Test #4: TestMomentsOfInertiaFilter .......   Passed    0.16 sec
+    Start 5: TestParticlePartitionFilter
+5/7 Test #5: TestParticlePartitionFilter ......   Passed    1.25 sec
+    Start 6: TestSPHProbeSerial
+6/7 Test #6: TestSPHProbeSerial ...............   Passed    7.57 sec
+    Start 7: TestSplotchMapper
+7/7 Test #7: TestSplotchMapper ................   Passed   10.67 sec
+
+100% tests passed, 0 tests failed out of 7
+
+Total Test time (real) =  22.56 sec
+
+=====================================================================
+C:\cmakebuild\cmake\bin\Debug\ctest -C Debug -E Parallel
+=====================================================================
+Test project C:/cmakebuild/plugins
+    Start 1: TestKernel3D
+1/7 Test #1: TestKernel3D .....................   Passed    0.20 sec
+    Start 2: TestKernel2D
+2/7 Test #2: TestKernel2D .....................   Passed    0.17 sec
+    Start 3: TestCenterOfMassFilter
+3/7 Test #3: TestCenterOfMassFilter ...........   Passed    0.16 sec
+    Start 4: TestMomentsOfInertiaFilter
+4/7 Test #4: TestMomentsOfInertiaFilter .......   Passed    0.16 sec
+    Start 5: TestParticlePartitionFilter
+5/7 Test #5: TestParticlePartitionFilter ......   Passed    1.42 sec
+    Start 6: TestSPHProbeSerial
+6/7 Test #6: TestSPHProbeSerial ...............   Passed    7.52 sec
+    Start 7: TestSplotchMapper
+7/7 Test #7: TestSplotchMapper ................   Passed   10.50 sec
+
+100% tests passed, 0 tests failed out of 7
+
+Total Test time (real) =  22.56 sec
+
+=====================================================================
+C:\cmakebuild\cmake\bin\Debug\ctest -C Debug -E Parallel
+=====================================================================
+Test project C:/cmakebuild/plugins
+    Start 1: TestKernel3D
+1/7 Test #1: TestKernel3D .....................   Passed    0.20 sec
+    Start 2: TestKernel2D
+2/7 Test #2: TestKernel2D .....................   Passed    0.17 sec
+    Start 3: TestCenterOfMassFilter
+3/7 Test #3: TestCenterOfMassFilter ...........   Passed    0.16 sec
+    Start 4: TestMomentsOfInertiaFilter
+4/7 Test #4: TestMomentsOfInertiaFilter .......   Passed    0.16 sec
+    Start 5: TestParticlePartitionFilter
+5/7 Test #5: TestParticlePartitionFilter ......   Passed    1.36 sec
+    Start 6: TestSPHProbeSerial
+6/7 Test #6: TestSPHProbeSerial ...............   Passed    7.35 sec
+    Start 7: TestSplotchMapper
+7/7 Test #7: TestSplotchMapper ................   Passed   10.53 sec
+
+100% tests passed, 0 tests failed out of 7
+
+Total Test time (real) =  22.34 sec
