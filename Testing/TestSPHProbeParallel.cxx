@@ -15,6 +15,9 @@
   #include <sys/time.h>
 #endif
 
+#include "Testing/Cxx/vtkTestUtilities.h"
+#include "Testing/Cxx/vtkRegressionTestImage.h"
+//
 #include "vtkActor.h"
 #include "vtkAppendPolyData.h"
 #include "vtkCamera.h"
@@ -25,8 +28,6 @@
 #include "vtkParallelFactory.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper.h"
-#include "Testing/Cxx/vtkTestUtilities.h"
-#include "Testing/Cxx/vtkRegressionTestImage.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
@@ -45,14 +46,14 @@
 #include "vtkCellArray.h"
 #include "vtkFloatArray.h"
 #include "vtkTimerLog.h"
-#include "vtkBoundingBox.h"
-#include "vtkOutlineSource.h"
-#include "vtkParticlePartitionFilter.h"
 #include "vtkProcessIdScalars.h"
-#include "vtkXMLUnstructuredGridReader.h"
 #include "vtkSPHProbeFilter.h"
 #include "vtkSPHManager.h"
 #include "vtkParticleIdFilter.h"
+//
+#ifdef PV_MESHLESS_TRILINOS
+  #include "vtkParticlePartitionFilter.h"
+#endif
 //
 #include <vtksys/SystemTools.hxx>
 #include <sstream>
@@ -62,57 +63,34 @@
 #include <stdlib.h>
 #include <ctype.h>
 #define _USE_MATH_DEFINES
-#include <math.h>
-#include "zoltan.h"
+#include <cmath>
 
 //----------------------------------------------------------------------------
 std::string usage = "\n"\
-"\t-D path to use for temp h5part file \n" \
-"\t-F name to use for temp h5part file \n" \
-"\t-C collective IO for MPI/HDF write (default independent IO) \n" \
-"\t-N Generate exactly N points per process (no cube structure) \n" \
+"\t-D path to use for h5part file \n" \
+"\t-F name to use for h5part file \n" \
 "\t-R Render. Displays points using vtk renderwindow \n" \
-"\t-I Interactive (waits until user closes render window if -R selected) \n" \
-"\t-X delete h5part file on completion \n" \
-"\t\n" \
-"\tWIN32 mpi example   : mpiexec -n 4 -localonly TestH5PartParallelWriter.exe -D D:\\ -F sph-test.h5 -X\n"\
-"\tLinux mpich example : /project/csvis/biddisco/build/mpich2-1.0.7/bin/mpiexec -n 2 ./TestH5PartParallelWriter -D /project/csvis/hdf-scratch -C -N 1000000 -X\n" \
-"\tHorus Slurm example : mpirun -prot -srun mpirun -e DISPLAY=horus11:0 -e MPI_IB_CARD_ORDER=0:0 -e MPI_IB_MTU=1024 -e MPI_IC_ORDER=ibv:vapi:udapl:itapi:TCP -srun -N 10 -n 20 bin/TestH5PartParallelWriter -D /project/csvis/hdf-scratch -C -N 100000 -R -I -X\n";
+"\t-I Interactive (waits until user closes render window if -R selected) \n";
 
 
 //----------------------------------------------------------------------------
-double radius = 0.05;
-//----------------------------------------------------------------------------
-// Just pick a tag which is available
-static const int RMI_TAG=300; 
-//----------------------------------------------------------------------------
-struct ParallelArgs_tmp
+int main (int argc, char* argv[])
 {
-  int* retVal;
-  int    argc;
-  char** argv;
-};
-//----------------------------------------------------------------------------
-struct ParallelRMIArgs_tmp
-{
-  vtkMultiProcessController* Controller;
-};
-//----------------------------------------------------------------------------
-void SetStuffRMI(void *localArg, void* vtkNotUsed(remoteArg), 
-                    int vtkNotUsed(remoteArgLen), int vtkNotUsed(id))
-{ 
-  ParallelRMIArgs_tmp* args = (ParallelRMIArgs_tmp*)localArg;
-  vtkMultiProcessController* contrl = args->Controller;
-}
-//----------------------------------------------------------------------------
-// This will be called by all processes
-void MyMain( vtkMultiProcessController *controller, void *arg )
-{
+  int retVal = 1;
+
+  // This is here to avoid false leak messages from vtkDebugLeaks when
+  // using mpich. It appears that the root process which spawns all the
+  // main processes waits in MPI_Init() and calls exit() when
+  // the others are done, causing apparent memory leaks for any objects
+  // created before MPI_Init().
+  MPI_Init(&argc, &argv);
+  vtkSmartPointer<vtkMPIController> controller = vtkSmartPointer<vtkMPIController>::New();
+  controller->Initialize(&argc, &argv, 1);
+
   // Obtain the id of the running process and the total
   // number of processes
   vtkTypeInt64 myRank = controller->GetLocalProcessId();
   vtkTypeInt64 numProcs = controller->GetNumberOfProcesses();
-
   if (myRank==0) {
     std::cout << usage.c_str() << std::endl;
   }
@@ -121,269 +99,251 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   //--------------------------------------------------------------
   // command line params : Setup testing utilities/args etc
   //--------------------------------------------------------------
-  ParallelArgs_tmp* args = reinterpret_cast<ParallelArgs_tmp*>(arg);
   vtkSmartPointer<vtkTesting> test = vtkSmartPointer<vtkTesting>::New();
-  for (int c=1; c<args->argc; c++ ) {
-    test->AddArgument(args->argv[c]);
+  for (int c=1; c<argc; c++ ) {
+    test->AddArgument(argv[c]);
   }
   // Get test filename etc
   char *filename = vtkTestUtilities::GetArgOrEnvOrDefault(
-    "-F", args->argc, args->argv, "DUMMY_ENV_VAR", "temp.h5");
-  char* fullname = vtkTestUtilities::ExpandDataFileName(args->argc, args->argv, filename);
-  char *tempname = vtkTestUtilities::ExpandDataFileName(args->argc, args->argv, "temp.h5part");
+    "-F", argc, argv, "DUMMY_ENV_VAR", "temp.h5");
+  char* fullname = vtkTestUtilities::ExpandDataFileName(argc, argv, filename);
   if (myRank==0) {
-    std::cout << "Process Id : " << myRank << " FileName : " << fullname << " " << tempname << std::endl;
+    std::cout << "Process Id : " << myRank << " FileName : " << fullname << std::endl;
   }
 
+  //--------------------------------------------------------------
+  // File names/dirs
+  //--------------------------------------------------------------
+  char *n1 = vtkTestUtilities::GetArgOrEnvOrDefault("-neighbours", argc, argv, "", "");
+  int maxN;
+  bool fixNeighbours = false;
+  if (std::string(n1).size()) {
+    vtkstd::stringstream temp(n1);
+    temp >> maxN;
+    if (myRank==0) {
+      std::cout << "Fixed Neighbours      {" << maxN << "}" << std::endl;
+    }
+    fixNeighbours = true;
+  }
+  delete []n1;
+
+  //--------------------------------------------------------------
+  // Testing params
+  //--------------------------------------------------------------
+  char *n2 = vtkTestUtilities::GetArgOrEnvOrDefault("-particlesize", argc, argv, "", "");
+  double p_size;
+  bool fixRadius = false;
+  if (std::string(n2).size()) {
+    vtkstd::stringstream temp(n2);
+    temp >> p_size;
+    if (myRank==0) {
+      std::cout << "Particle Size         {" << p_size << "}" << std::endl;
+    }
+    fixRadius = true;
+  }
+  delete []n2;
+
+  char *m1 = vtkTestUtilities::GetArgOrEnvOrDefault("-scalar", argc, argv, "", "");
+  std::string scalarname;
+  if (std::string(m1).size()) {
+    vtkstd::stringstream temp(m1);
+    temp >> scalarname;
+    if (myRank==0) {
+      std::cout << "Testing Scalar array  {" << scalarname << "}" << std::endl;
+    }
+  }
+  delete []m1;
+
+  char *n4 = vtkTestUtilities::GetArgOrEnvOrDefault("-ghost_region", argc, argv, "", "");
+  double ghost = 0.0;
+  if (std::string(n4).size()) {
+    vtkstd::stringstream temp(n4);
+    temp >> ghost;
+    if (myRank==0) {
+      std::cout << "Ghost Region {" << ghost << "}" << std::endl;
+    }
+  }
+  delete []n4;
+
+  //--------------------------------------------------------------
+  // Valid test results
+  //--------------------------------------------------------------
+  char *v1 = vtkTestUtilities::GetArgOrEnvOrDefault("-value_range", argc, argv, "", "");
+  double vmin=0,vmax=0;
+  if (std::string(v1).size()) {
+    vtkstd::stringstream temp(v1);
+    temp >> vmin >> vmax;
+    if (myRank==0) {
+      std::cout << "Test Valid : value_range {" << vmin << ',' << vmax << "}" << std::endl;
+    }
+  }
+  delete []v1;
+
+  char *v2 = vtkTestUtilities::GetArgOrEnvOrDefault("-peak_position", argc, argv, "", "");
+  double vpos[3];
+  if (std::string(v2).size()) {
+    vtkstd::stringstream temp(v2);
+    temp >> vpos[0] >> vpos[1] >> vpos[2];
+    if (myRank==0) {
+      std::cout << "Test Valid : scalar_peak_position {" << vpos[0] << ',' << vpos[1] << "," << vpos[2] << "}" << std::endl;
+    }
+  }
+  delete []v2;
+
+  //--------------------------------------------------------------
+  // 
+  //--------------------------------------------------------------
+  if (!fixNeighbours && !fixRadius) {
+    std::cout << "Error : Test requires ParticleSize or Num Neighbours parameter " << std::endl;
+    return 1;
+  }
+  if (scalarname.size()==0) {
+    std::cout << "Error : no scalar name supplied " << std::endl;
+    return 1;
+  }
+  
+  //--------------------------------------------------------------
+  // Test
+  //--------------------------------------------------------------
   vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
   reader->SetFileName(fullname);
   reader->SetController(controller);
   reader->SetGenerateVertexCells(1);
-  reader->Update();
 
-  vtkSmartPointer<vtkParticleIdFilter> particleIds = vtkSmartPointer<vtkParticleIdFilter>::New();
-  particleIds->SetInputConnection(reader->GetOutputPort());
-  particleIds->SetIdsArrayName("PointIds");
-  particleIds->SetController(controller);
-//  particleIds->Update();
-//  std::cout << "particleIds has updated " <<std::endl;
-
+  vtkSmartPointer<vtkAlgorithm> algorithm = reader; 
+#ifdef PV_MESHLESS_TRILINOS
   vtkSmartPointer<vtkParticlePartitionFilter> partitioner = vtkSmartPointer<vtkParticlePartitionFilter>::New();
-  partitioner->SetInputConnection(particleIds->GetOutputPort());
-  partitioner->SetIdChannelArray("PointIds");
-  partitioner->SetGhostCellOverlap(radius/5.0);
+  partitioner->SetInputConnection(reader->GetOutputPort());
+  partitioner->SetGhostCellOverlap(ghost);
   partitioner->SetController(controller);
-//  partitioner->Update();
-//  std::cout << "partitioner has updated " <<std::endl;
+  algorithm = partitioner;
+#endif
 
   vtkSmartPointer<vtkSPHManager> sphManager = vtkSmartPointer<vtkSPHManager>::New();
-  sphManager->SetInterpolationMethodToKernel();
-  sphManager->SetHCoefficient(1.5);
-  sphManager->SetDefaultParticleSideLength(radius/5.0);
   sphManager->SetDefaultDensity(1000.0);
-  sphManager->SetKernelTypeToGaussian();
-  sphManager->SetKernelDimension(3);
-  sphManager->SetLimitSearchByNeighbourCount(1);
-  sphManager->SetMaximumNeighbours(32);
-  sphManager->SetMaximumRadius(radius/5.0); 
+  if (fixNeighbours) {
+    sphManager->SetInterpolationMethodToLinear();
+    sphManager->SetMaximumNeighbours(maxN);
+    sphManager->SetKernelDimension(3);
+    sphManager->SetDefaultParticleSideLength(0.0);
+    sphManager->SetHCoefficient(0.0);
+  }
+  else if (fixRadius) {
+    sphManager->SetInterpolationMethodToKernel();
+    sphManager->SetDefaultParticleSideLength(p_size);
+    sphManager->SetKernelTypeToCubicSpline();
+    sphManager->SetKernelDimension(3);
+    sphManager->SetHCoefficient(1.5);
+    sphManager->SetMaximumSearchRadius(p_size*1.5*5.0); 
+  }
 
   vtkSmartPointer<vtkSPHProbeFilter> sphProbe = vtkSmartPointer<vtkSPHProbeFilter>::New();
-  sphProbe->SetInputConnection(partitioner->GetOutputPort());
-  sphProbe->SetProbeConnection(partitioner->GetOutputPort());
+  sphProbe->SetInputConnection(algorithm->GetOutputPort());
+  sphProbe->SetProbeConnection(algorithm->GetOutputPort());
   sphProbe->SetSPHManager(sphManager);
   sphProbe->SetMassScalars("mass");
   sphProbe->SetComputeDensityFromNeighbourVolume(1);
-  sphProbe->Update();
-  std::cout << "sphProbe has updated " <<std::endl;
 
-  vtkSmartPointer<vtkProcessIdScalars> processId = vtkSmartPointer<vtkProcessIdScalars>::New();
-  processId->SetInputConnection(sphProbe->GetOutputPort());
-  processId->Update();
-  std::cout << "processId has updated " <<std::endl;
-
-  //*****************************************************************
-  // Visualize the mesh partitioning
-  //*****************************************************************
-
-  //--------------------------------------------------------------
-  // Create writer on all processes
-  //--------------------------------------------------------------
-  vtkSmartPointer<vtkH5PartWriter> writer = vtkSmartPointer<vtkH5PartWriter>::New();
-  writer->SetFileModeToWrite();
-  writer->SetFileName(tempname);
-  writer->SetInputConnection(processId->GetOutputPort());
-  writer->SetCollectiveIO(1);
-  writer->SetDisableInformationGather(1);
-  writer->SetVectorsWithStridedWrite(0);
-
-  controller->Barrier();
   //
   vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
   timer->StartTimer();
-
-  //if (numProcs>1 && myRank==0) {
-  //  char ch;  
-  //  std::cin >> ch;
-  //}
-
+  //
   //--------------------------------------------------------------
-  // Write in parallel
+  // Update in parallel:
+  // To get parallel operation correct, we need to make sure that piece
+  // information is passed upstream. first update information,
+  // then set piece update extent,
   //--------------------------------------------------------------
-  writer->SetTimeStep(0);
-  writer->SetTimeValue(0.0);
-  writer->Write();
+  std::cout << "Setting piece information " << myRank << " of " << numProcs << std::endl;
+  vtkStreamingDemandDrivenPipeline *sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(sphProbe->GetExecutive());
+  vtkSmartPointer<vtkInformation> execInfo = sddp->GetOutputInformation(0);
+  // no piece info set yet, assumes info is not piece dependent
+  sddp->SetUpdateExtent(0, myRank, numProcs, 0);
+  sddp->UpdateInformation();
+  sddp->Update();
 
-  // 
-  // make sure they have all finished writing before going on to the read part
   //
   timer->StopTimer();
-  writer->CloseFile();
   controller->Barrier();
-
-  double elapsed = timer->GetElapsedTime();
-  std::cout << "Process Id : " << myRank << " File Written in " << elapsed << " seconds" << std::endl;
-
-  //--------------------------------------------------------------
-  // processes 1-N doing nothing for now
-  //--------------------------------------------------------------
-  if (myRank != 0)
-    {
-    // If I am not the root process
-    ParallelRMIArgs_tmp args2;
-    args2.Controller = controller;
-
-    // We are not using any RMI's yet
-    controller->AddRMI(SetStuffRMI, (void *)&args2, RMI_TAG);
-    controller->ProcessRMIs();    
-    }
-
-  //--------------------------------------------------------------
-  // Read back all particles on process zero
-  //--------------------------------------------------------------
-  else
-    {
+  if (myRank==0) {
+    double elapsed = timer->GetElapsedTime();
     std::cout << std::endl;
     std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * " << std::endl;
-
-    // Read the file we just wrote on N processes
-    vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
-    // we want to read all the particles on this node, so don't use MPI/Parallel
-    reader->SetController(NULL);
-    reader->SetFileName(tempname);
-    reader->SetGenerateVertexCells(1);
-    reader->Update();
-    vtkTypeInt64 ReadPoints = reader->GetOutput()->GetNumberOfPoints();
-    std::cout << "Process Id : " << myRank << " Read : " << ReadPoints << std::endl;
+    std::cout << "Probe completed in " << elapsed << " seconds" << std::endl;
     std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * " << std::endl;
+  }
 
-    bool doRender = false;
-    if (test->IsFlagSpecified("-R")) {
-     std::cout << "Process Id : " << myRank << " Rendering" << std::endl;
-     doRender = true;
+  //--------------------------------------------------------------
+  // Fetch smoothed output
+  //--------------------------------------------------------------
+  vtkSmartPointer<vtkPolyData> polys = vtkSmartPointer<vtkPolyData>::New();
+  polys->ShallowCopy(sphProbe->GetOutput());
+  vtkPointData *pd = polys->GetPointData();
+  vtkDataArray *scalar_array = pd->GetArray(scalarname.c_str());
+  
+  //--------------------------------------------------------------
+  // 
+  //--------------------------------------------------------------
+  bool ok = true;
+  std::cout.precision(15);
+  
+  //--------------------------------------------------------------
+  // Collect results from parallel filters
+  //--------------------------------------------------------------
+  double scalar_range_local[2], scalar_range_global[2];
+  double scalar_pos[3];
+  //
+  scalar_array->GetRange(scalar_range_local);
+  controller->AllReduce(&scalar_range_local[0], &scalar_range_global[0], 1, vtkCommunicator::MIN_OP);
+  controller->AllReduce(&scalar_range_local[1], &scalar_range_global[1], 1, vtkCommunicator::MAX_OP);
+  if (myRank==0) {
+    std::cout << "Min and Max of SmoothedDensity are {" << scalar_range_global[0] << "," << scalar_range_global[1] << "}" << std::endl;
+  }
+  vtkIdType index = -1;
+  for (vtkIdType i=0; i<scalar_array->GetNumberOfTuples(); i++) {
+    if (scalar_array->GetTuple1(i)==scalar_range_global[1]) {
+      index = i;
+      break;
     }
-
-    if (doRender) {
-
-      // Display something to see if we got a good output
-      vtkSmartPointer<vtkPolyData> polys = vtkSmartPointer<vtkPolyData>::New();
-      polys->ShallowCopy(reader->GetOutput());
-      polys->GetPointData()->SetScalars(polys->GetPointData()->GetArray("ProcessId"));
-      std::cout << "Process Id : " << myRank << " Created vertices : " << polys->GetNumberOfPoints() << std::endl;
-      //
-      polys->PrintSelf(std::cout,vtkIndent(0));
-      //
-      vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-      vtkSmartPointer<vtkActor>                 actor = vtkSmartPointer<vtkActor>::New();
-      vtkSmartPointer<vtkRenderer>                ren = vtkSmartPointer<vtkRenderer>::New();
-      vtkSmartPointer<vtkRenderWindow>      renWindow = vtkSmartPointer<vtkRenderWindow>::New();
-      vtkSmartPointer<vtkRenderWindowInteractor> iren = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-      iren->SetRenderWindow(renWindow);
-      ren->SetBackground(0.1, 0.1, 0.1);
-      renWindow->SetSize( 400, 400);
-      mapper->SetInput(polys);
-      mapper->SetScalarRange(0,numProcs-1);
-      actor->SetMapper(mapper);
-      actor->GetProperty()->SetPointSize(2);
-      ren->AddActor(actor);
-      renWindow->AddRenderer(ren);
-      //
-      vtkSmartPointer<vtkPolyData> polys2 = vtkSmartPointer<vtkPolyData>::New();
-      polys2->CopyStructure(reader->GetOutput());
-      polys2->GetPointData()->ShallowCopy(reader->GetOutput()->GetPointData());
-      polys2->GetPointData()->SetScalars(polys2->GetPointData()->GetArray("ComputedDensity"));
-      //
-      vtkSmartPointer<vtkPolyDataMapper>       mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
-      vtkSmartPointer<vtkActor>                 actor2 = vtkSmartPointer<vtkActor>::New();
-      mapper2->SetInput(polys2);
-//      mapper2->SetInputConnection(reader->GetOutputPort(0));
-      mapper2->SetScalarRange(0,100);
-      mapper2->SetScalarModeToUsePointData();
-      actor2->SetMapper(mapper2);
-      actor2->GetProperty()->SetPointSize(2);
-      actor2->SetPosition(2.0*radius, 0.0, 0.0);
-      ren->AddActor(actor2);
-
-      //
-      // Display boxes for each partition
-      //
-      for (int i=0; i<numProcs; i++) {
-        vtkBoundingBox *box = partitioner->GetPartitionBoundingBox(i);
-        double bounds[6];
-        box->GetBounds(bounds);
-        vtkSmartPointer<vtkOutlineSource> boxsource = vtkSmartPointer<vtkOutlineSource>::New();
-        boxsource->SetBounds(bounds);
-        vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-        vtkSmartPointer<vtkActor>                 actor = vtkSmartPointer<vtkActor>::New();
-        mapper->SetInputConnection(boxsource->GetOutputPort());
-        actor->SetMapper(mapper);
-        ren->AddActor(actor);
-      }
-
-      std::cout << "Process Id : " << myRank << " About to Render" << std::endl;
-      renWindow->Render();
-
-      *(args->retVal) = 
-        vtkRegressionTester::Test(args->argc, args->argv, renWindow, 10);
-
-      if ( *(args->retVal) == vtkRegressionTester::DO_INTERACTOR)
-        {
-        iren->Start();
-        }
-      std::cout << "Process Id : " << myRank << " Rendered" << std::endl;
+  }
+  // Since we computed the density in parallel, only one process will find the peak value
+  // the others will have a -1 as the index of the peak.
+  if (index!=-1) {
+    std::cout << "Index of peak SmoothedDensity particle is " << index << " on process " << myRank << std::endl;
+    polys->GetPoint(index,scalar_pos);
+    std::cout << "Position of peak SmoothedDensity particle is {" << scalar_pos[0] << "," << scalar_pos[1] << "," << scalar_pos[2] << "}" << std::endl;
+    //
+    double tol_min = std::fabs(vmin/1000.0);
+    double tol_max = std::fabs(vmax/1000.0);
+    if (std::fabs(vmin-scalar_range_global[0])>tol_min || std::fabs(vmax-scalar_range_global[1])>tol_max) {
+      ok = false;
+      std::cout << "//--------------------------------------------------------------" << std::endl;
+      std::cout << "min/max check failed " << std::endl;
+      std::cout << "expected {" << vmin << ',' << vmax << "}" << std::endl;
+      std::cout << "got {" << scalar_range_global[0] << ',' << scalar_range_global[1] << "}" << std::endl;
+      std::cout << "err {" << std::abs(vmin-scalar_range_global[0]) << ',' << std::abs(vmax-scalar_range_global[1]) << "}" << std::endl;
+      std::cout << "//--------------------------------------------------------------" << std::endl;
     }
-
-    // Tell the other processors to stop processing RMIs.
-    for (int i = 1; i < numProcs; ++i)
+    if (std::fabs(vpos[0]-scalar_pos[0])>1E-5 ||
+        std::fabs(vpos[1]-scalar_pos[1])>1E-5 ||
+        std::fabs(vpos[2]-scalar_pos[2])>1E-5)
     {
-      controller->TriggerRMI(i, vtkMultiProcessController::BREAK_RMI_TAG); 
+      ok = false;
+      std::cout << "//--------------------------------------------------------------" << std::endl;
+      std::cout << "position check failed " << std::endl;
+      std::cout << "expected {" << vpos[0] << "," << vpos[1] << ',' << vpos[2] << "}" << std::endl;
+      std::cout << "got {" << scalar_pos[0] << "," << scalar_pos[1] << ',' << scalar_pos[2] << "}" << std::endl;
+      std::cout << "err {" << std::abs(scalar_pos[0]-vpos[0]) << ',' << std::abs(scalar_pos[1]-vpos[1]) << ',' << std::abs(scalar_pos[2]-vpos[2]) << "}" << std::endl;
+      std::cout << "//--------------------------------------------------------------" << std::endl;
     }
   }
-
-//  writer = NULL;
-
-  if (myRank==0 && test->IsFlagSpecified("-X")) {
-   std::cout << "Process Id : " << myRank << " About to Delete file" << std::endl;
-   vtksys::SystemTools::RemoveFile(fullname);
-  }
+ 
+  retVal = ok;
+  
   delete []fullname;
   delete []filename;
-}
-//----------------------------------------------------------------------------
-int main (int argc, char* argv[])
-{
-  // This is here to avoid false leak messages from vtkDebugLeaks when
-  // using mpich. It appears that the root process which spawns all the
-  // main processes waits in MPI_Init() and calls exit() when
-  // the others are done, causing apparent memory leaks for any objects
-  // created before MPI_Init().
-  MPI_Init(&argc, &argv);
-
-  // Note that this will create a vtkMPIController if MPI
-  // is configured, vtkThreadedController otherwise.
-  vtkMPIController* controller = vtkMPIController::New();
-
-  controller->Initialize(&argc, &argv, 1);
-
-  vtkParallelFactory* pf = vtkParallelFactory::New();
-  vtkObjectFactory::RegisterFactory(pf);
-  pf->Delete();
- 
-  // Added for regression test.
-  // ----------------------------------------------
-  int retVal = 1;
-  ParallelArgs_tmp args;
-  args.retVal = &retVal;
-  args.argc = argc;
-  args.argv = argv;
-  // ----------------------------------------------
-
-  controller->SetSingleMethod(MyMain, &args);
-  controller->SingleMethodExecute();
-
-  controller->Barrier();
   controller->Finalize();
-  controller->Delete();
 
-  return EXIT_SUCCESS; // !retVal;
+  return !retVal;
 }
 //----------------------------------------------------------------------------

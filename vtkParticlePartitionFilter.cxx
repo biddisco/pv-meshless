@@ -861,7 +861,8 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
       this->ExtentTranslator->SetBoundsForPiece(p, bounds);
       //
       // Add a ghost cell region to our boxes
-      box.Inflate(this->GhostCellOverlap);
+      double epsilon = box.GetDiagonalLength()/10000.0;
+      box.Inflate(this->GhostCellOverlap - epsilon);
       this->BoxListWithGhostRegion.push_back(box);
     }
   }
