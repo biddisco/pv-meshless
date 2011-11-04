@@ -1,0 +1,69 @@
+Test project /scratch/eiger/biddisco/build/pv-gl-plugins
+      Start  1: TestKernel3D
+ 1/14 Test  #1: TestKernel3D ........................   Passed    0.36 sec
+      Start  2: TestKernel2D
+ 2/14 Test  #2: TestKernel2D ........................   Passed    0.31 sec
+      Start  3: TestCenterOfMassFilter
+ 3/14 Test  #3: TestCenterOfMassFilter ..............   Passed    0.30 sec
+      Start  4: TestMomentsOfInertiaFilter
+ 4/14 Test  #4: TestMomentsOfInertiaFilter ..........   Passed    0.30 sec
+      Start  5: TestH5PartParallelWriter
+ 5/14 Test  #5: TestH5PartParallelWriter ............   Passed    0.45 sec
+      Start  6: TestParticlePartitionFilter
+ 6/14 Test  #6: TestParticlePartitionFilter .........   Passed  119.52 sec
+      Start  7: TestSPHProbeKernelSmallSerial
+ 7/14 Test  #7: TestSPHProbeKernelSmallSerial .......   Passed    4.65 sec
+      Start  8: TestSPHProbeShepardSmallSerial
+ 8/14 Test  #8: TestSPHProbeShepardSmallSerial ......   Passed    2.42 sec
+      Start  9: TestSPHProbeShepardSmallParallel2
+ 9/14 Test  #9: TestSPHProbeShepardSmallParallel2 ...   Passed    1.65 sec
+      Start 10: TestSPHProbeShepardSmallParallel4
+10/14 Test #10: TestSPHProbeShepardSmallParallel4 ...   Passed    1.62 sec
+      Start 11: TestSPHProbeKernelSmallParallel2
+11/14 Test #11: TestSPHProbeKernelSmallParallel2 ....   Passed    2.91 sec
+      Start 12: TestSPHProbeKernelSmallParallel4
+12/14 Test #12: TestSPHProbeKernelSmallParallel4 ....   Passed    2.16 sec
+      Start 13: TestSPHProbeShepardLarge
+13/14 Test #13: TestSPHProbeShepardLarge ............   Passed  1637.39 sec
+      Start 14: TestSplotchMapper
+14/14 Test #14: TestSplotchMapper ...................   Passed    2.26 sec
+
+100% tests passed, 0 tests failed out of 14
+
+Total Test time (real) = 1776.32 sec
+
+============================================================================
+Test project /scratch/eiger/biddisco/build/pv-gl-plugins
+      Start  1: TestKernel3D
+ 1/14 Test  #1: TestKernel3D ........................   Passed    0.36 sec
+      Start  2: TestKernel2D
+ 2/14 Test  #2: TestKernel2D ........................   Passed    0.29 sec
+      Start  3: TestCenterOfMassFilter
+ 3/14 Test  #3: TestCenterOfMassFilter ..............   Passed    0.30 sec
+      Start  4: TestMomentsOfInertiaFilter
+ 4/14 Test  #4: TestMomentsOfInertiaFilter ..........   Passed    0.29 sec
+      Start  5: TestH5PartParallelWriter
+ 5/14 Test  #5: TestH5PartParallelWriter ............   Passed    0.44 sec
+      Start  6: TestParticlePartitionFilter
+ 6/14 Test  #6: TestParticlePartitionFilter .........   Passed  118.50 sec
+      Start  7: TestSPHProbeKernelSmallSerial
+ 7/14 Test  #7: TestSPHProbeKernelSmallSerial .......   Passed    4.55 sec
+      Start  8: TestSPHProbeShepardSmallSerial
+ 8/14 Test  #8: TestSPHProbeShepardSmallSerial ......   Passed    2.33 sec
+      Start  9: TestSPHProbeShepardSmallParallel2
+ 9/14 Test  #9: TestSPHProbeShepardSmallParallel2 ...   Passed    1.65 sec
+      Start 10: TestSPHProbeShepardSmallParallel4
+10/14 Test #10: TestSPHProbeShepardSmallParallel4 ...   Passed    1.70 sec
+      Start 11: TestSPHProbeKernelSmallParallel2
+11/14 Test #11: TestSPHProbeKernelSmallParallel2 ....   Passed    2.88 sec
+      Start 12: TestSPHProbeKernelSmallParallel4
+12/14 Test #12: TestSPHProbeKernelSmallParallel4 ....   Passed    2.42 sec
+      Start 13: TestSPHProbeShepardLarge
+13/14 Test #13: TestSPHProbeShepardLarge ............   Passed  1566.64 sec
+      Start 14: TestSplotchMapper
+14/14 Test #14: TestSplotchMapper ...................   Passed    2.21 sec
+
+100% tests passed, 0 tests failed out of 14
+
+Total Test time (real) = 1704.61 sec
+
