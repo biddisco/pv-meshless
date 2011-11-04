@@ -81,11 +81,10 @@ vtkSPHManager::vtkSPHManager()
 
   // switch shepard/sph
   this->InterpolationMethod = POINT_INTERPOLATION_KERNEL;
+  this->MaximumSearchRadius = 0.0;
 
   // Shepard Mode
-  this->LimitSearchByNeighbourCount = 1;
-  this->MaximumNeighbours           = 128;
-  this->MaximumRadius               = 0.1;
+  this->MaximumNeighbours           = 32;
 
   // SPH Mode
   this->KernelType          = SPH_KERNEL_SPLINE_3RD;

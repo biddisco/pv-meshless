@@ -34,6 +34,7 @@ class vtkDataSet;
 class vtkDataSet;
 class vtkIdList;
 class vtkTimerLog;
+class vtkParticleBoxTree;
 //BTX
 class Kernel;
 //ETX
@@ -103,11 +104,21 @@ public:
   vtkGetMacro(PassScalars,int);
   vtkBooleanMacro(PassScalars,int);
 
+  // Description:
+  // When datasets become large, an acceleration structure may be requested
+  // which should speed up the resampling process.
+  vtkSetMacro(UseParticleTree,int);
+  vtkGetMacro(UseParticleTree,int);
+  vtkBooleanMacro(UseParticleTree,int);
+
   // overridden to handle SPHManager changes
   unsigned long GetMTime();
 
   vtkSetMacro(ModifiedNumber,int);
   vtkGetMacro(ModifiedNumber,int);
+
+  vtkSetMacro(TraversalAlgorithm,int);
+  vtkGetMacro(TraversalAlgorithm,int);
 
   // Setup of variables prior to main probing routine
   bool   InitializeVariables(vtkDataSet *data);
@@ -119,6 +130,12 @@ public:
   // main execution of loop over probe points
   bool ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output);
   bool InitOutput(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output);
+
+  enum TraversalAlgorithm
+    {
+    LINEAR_TRAVERSAL,
+    NEIGHBOURHOOD_TILED_TRAVERSAL,
+    };
 
 protected:
    vtkSPHProbeFilter();
@@ -139,8 +156,11 @@ protected:
   virtual int OutputType(vtkDataSet *probepts);
 //ETX
 
-  void   KernelCompute(double x[3], vtkDataSet *source, 
-    vtkIdList *NearestPoints, double *gradW, double &totalmass, double &maxDistance);
+  void KernelCompute(double x[3], vtkDataSet *data, 
+    vtkIdList *TestPoints, vtkIdList *NearestPoints, double *gradW, double &totalmass, double &maxDistance);
+
+  void ShepardCompute(double x[3], vtkDataSet *data, 
+    vtkIdList *NearestPoints, double &totalmass, double &maxDistance);
 
   //
   // Variables
@@ -163,9 +183,8 @@ protected:
   int    PassScalars;
 
   // Shepard Mode
-  int    LimitSearchByNeighbourCount;
   int    MaximumNeighbours;
-  double MaximumRadius;
+  double MaximumSearchRadius;
 
   // SPH Mode
   int                KernelType;
@@ -202,6 +221,14 @@ protected:
   // Parallel support
   int                UpdatePiece;
   int                UpdateNumPieces;
+
+  // Optimization
+  int                TraversalAlgorithm;
+  //
+  // Internal optimization
+  //
+  vtkSmartPointer<vtkParticleBoxTree> ParticleTree;
+  int                                 UseParticleTree;
 
 //BTX
   Kernel            *KernelFunction;

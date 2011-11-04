@@ -32,7 +32,10 @@
 class Kernel;
 //ETX
 
-#define KERNEL_MAX_NEIGHBOURS 256
+//
+// a 7x7x7 cube will have 343 points which is as many as we expect to ever usefully need.
+// this corresponds to a cube made from a point and 3 neighbours in each direction
+#define KERNEL_MAX_NEIGHBOURS 350
 
 class VTK_EXPORT vtkSPHManager : public vtkObject
 {
@@ -52,9 +55,9 @@ public:
   vtkSetMacro(InterpolationMethod, int);
   vtkGetMacro(InterpolationMethod, int);
   void SetInterpolationMethodToKernel() { 
-    this->SetKernelType(POINT_INTERPOLATION_KERNEL); }
+    this->SetInterpolationMethod(POINT_INTERPOLATION_KERNEL); }
   void SetInterpolationMethodToLinear() { 
-    this->SetKernelType(POINT_INTERPOLATION_SHEPARD); }
+    this->SetInterpolationMethod(POINT_INTERPOLATION_SHEPARD); }
 
   // Description:
   // if VolumeScalars are provided (per particle), then the kernel
@@ -150,21 +153,14 @@ public:
   vtkGetMacro(KernelDimension, int);
   
   // Description:
-  // Set to true to limit by MaximumNeighbours count,
-  // false to limit by radius
-  vtkSetMacro(LimitSearchByNeighbourCount, int);
-  vtkGetMacro(LimitSearchByNeighbourCount, int);
-  vtkBooleanMacro(LimitSearchByNeighbourCount, int);
-
+  // Set the Maximum radius when searching for neighbours
+  vtkSetMacro(MaximumSearchRadius, double);
+  vtkGetMacro(MaximumSearchRadius, double);
+  
   // Description:
   // Set the Maximum number of Neighbours to use in SHEPARD mode
   vtkSetMacro(MaximumNeighbours, int);
   vtkGetMacro(MaximumNeighbours, int);
-  
-  // Description:
-  // Set the Maximum radius to use in SHEPARD mode
-  vtkSetMacro(MaximumRadius, double);
-  vtkGetMacro(MaximumRadius, double);
   
 protected:
    vtkSPHManager();
@@ -172,11 +168,10 @@ protected:
 
   // switch shepard/sph
   int    InterpolationMethod;
+  double MaximumSearchRadius;
 
   // Shepard Mode
-  int    LimitSearchByNeighbourCount;
   int    MaximumNeighbours;
-  double MaximumRadius;
 
   // SPH Mode
   int                KernelType;
