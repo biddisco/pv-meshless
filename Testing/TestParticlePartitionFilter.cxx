@@ -56,8 +56,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#undef min
+#undef max
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <algorithm>
+#include <cmath>
 #include "zoltan.h"
 
 //----------------------------------------------------------------------------
@@ -69,6 +72,37 @@ std::string usage = "\n"\
 "\t-I Interactive (waits until user closes render window if -R selected) \n" \
 "\t-X delete h5part file on completion \n";
 
+class Random {
+  public:
+    unsigned int __seed;
+    Random(int seed) {
+      __seed = seed;
+    }
+
+    unsigned int getseed() {
+      return __seed;
+    }
+    void setseed(int seed) {
+        __seed = seed;
+    }
+    double nextNumber()
+    {
+      __seed = (__seed*9301+49297) % 233280;
+      return __seed / 233280.0;
+    }
+};
+//----------------------------------------------------------------------------
+#ifdef _WIN32
+void known_seed()
+{
+  srand(1);
+}
+#else
+void known_seed()
+{
+  srandom(12345);
+}
+#endif
 //----------------------------------------------------------------------------
 #ifdef _WIN32
 unsigned long int random_seed()
@@ -106,14 +140,16 @@ unsigned long int random_seed()
 //----------------------------------------------------------------------------
 void SpherePoints(int n, float radius, float X[]) {
   double x, y, z, w, t;
-  for(int i=0; i< n; i++ ) {
-    #ifdef WIN32
-     double r1 = double(rand())/RAND_MAX;
-     double r2 = double(rand())/RAND_MAX;
-    #else
-     double r1 = drand48();
-     double r2 = drand48();
-    #endif
+  Random r(12345);
+  double rmin=1E6, rmax=-1E6;
+  for(int i=0; i<n; i++ ) {
+    double r1 = r.nextNumber(); // double(rand())/RAND_MAX;
+    double r2 = r.nextNumber(); // double(rand())/RAND_MAX;
+    rmin = std::min(rmin, r1);
+    rmin = std::min(rmin, r2);
+    rmax = std::max(rmax, r1);
+    rmax = std::max(rmax, r2);
+//    std::cout << r1 << " " << r2 << std::endl;
     z = 2.0 * r1 - 1.0;
     t = 2.0 * M_PI * r2;
     w = radius * sqrt( 1 - z*z );
@@ -123,6 +159,7 @@ void SpherePoints(int n, float radius, float X[]) {
     X[3*i+1] = y;
     X[3*i+2] = z*radius;
   }
+//  std::cout << "min max " << rmin << " " << rmax << std::endl;
 }
 //----------------------------------------------------------------------------
 int main (int argc, char* argv[])
@@ -167,7 +204,7 @@ int main (int argc, char* argv[])
     std::cout << "Process Id : " << myRank << " FileName : " << fullname << std::endl;
   }
 
-  vtkTypeInt64 numPoints = 10000;
+  vtkTypeInt64 numPoints = 1000;
 
   char *number = vtkTestUtilities::GetArgOrEnvOrDefault(
     "-N", argc, argv, "DUMMY_ENV_VAR", "");
@@ -210,6 +247,9 @@ int main (int argc, char* argv[])
   //--------------------------------------------------------------
   double radius  = 500.0;
   const double a = 0.9;
+  
+
+  known_seed();
   SpherePoints(numPoints, radius*(1.5+myRank)/(numProcs+0.5), vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0));
   for (vtkIdType Id=0; Id<numPoints; Id++) {
     Ids->SetTuple1(Id, Id + myRank*numPoints);
