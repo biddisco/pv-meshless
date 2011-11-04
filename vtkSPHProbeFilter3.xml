@@ -50,7 +50,7 @@
           <Property name="DensityScalarsRegex"/>
           <Property name="LimitSearchByNeighbourCount"/>
           <Property name="MaximumNeighbours"/>
-          <Property name="MaximumRadius"/>
+          <Property name="MaximumSearchRadius"/>
         </ExposedProperties>
         </Proxy>
       </SubProxy>

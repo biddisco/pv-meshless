@@ -46,7 +46,11 @@
 #include "vtkDataObjectTypes.h"
 #include "vtkBoundingBox.h"
 #include "vtkCellArray.h"
+#include "vtkBitArray.h"
 //
+#include "vtkParticleBoxTree.h"
+//
+
 #include "KernelGaussian.h"
 #include "KernelWendland.h"
 #include "KernelQuadratic.h"
@@ -87,72 +91,16 @@ vtkCxxSetObjectMacro(vtkSPHProbeFilter, SPHManager, vtkSPHManager);
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-float Avg_Min_Distance_Between_Pts(vtkDataSet *input, double *Pt, 
-                        int numNeighbors, vtkIdList *NeighborArray)
-{
-  double xx[3];
-  double yy[3];
-  double t1 = 1.42383234E20;
-  double t2 = 0.0;
-  double tt;
-  for(int j = 0; j < numNeighbors; j++)
-  {
-    input->GetPoint(NeighborArray->GetId(j), xx);
-    t1 = 1.42383234E20;
-    for(int k = 0; k < numNeighbors; k++)
-    {  
-      if(j != k)
-      {
-        input->GetPoint(NeighborArray->GetId(k), yy);
-        tt = sqrt(vtkMath::Distance2BetweenPoints(xx, yy));
-        if(tt != 0.0)
-          if(t1 > tt)
-            t1 = tt;
-      }
-    }
-    t2 += t1;
-  }
-  //printf("avg distance = %f\n", t2 / (double) numNeighbors);
-
-  return (3.0 * t2 / (double)numNeighbors);
-}
-//----------------------------------------------------------------------------
-void Cal_Weights_ShepardMethod(double x[3], vtkDataSet *data, vtkIdList *NearestPoints, double *weights)
-{
-  int num_neighbors = NearestPoints->GetNumberOfIds();
-  double range = Avg_Min_Distance_Between_Pts(data, x, num_neighbors, NearestPoints);
-  double total_w = 0.0;
-
-  if (num_neighbors>0) {
-    for (int i = 0; i < num_neighbors; i++) {
-      vtkIdType index = NearestPoints->GetId(i);
-      double *point = data->GetPoint(index);
-        double d = vtkMath::Distance2BetweenPoints(point, x);
-      if (d!=0.0) {
-        weights[i] = 1.0 / d;
-        total_w += weights[i];
-      }
-    }
-    for (int i = 0; i < num_neighbors; i++) {
-      if(total_w != 0.0)
-        weights[i] = weights[i] / total_w;
-      else
-        weights[i] = 0.0;
-    }
-  }
-  else {
-    for (int i = 0; i < num_neighbors; i++)
-      weights[i] = 0.0;
-  }
-}
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 void FloatOrDoubleArrayPointer(vtkDataArray *dataarray, float *&F, double *&D) {
   if (dataarray && vtkFloatArray::SafeDownCast(dataarray)) {
     F = vtkFloatArray::SafeDownCast(dataarray)->GetPointer(0);
+    D = NULL;
   }
   if (dataarray && vtkDoubleArray::SafeDownCast(dataarray)) {
     D = vtkDoubleArray::SafeDownCast(dataarray)->GetPointer(0);
+    F = NULL;
   }
   //
   if (dataarray && !F && !D) {
@@ -182,11 +130,16 @@ vtkSPHProbeFilter::vtkSPHProbeFilter()
   this->HScalars                    = NULL;
   this->ComputeDensityFromNeighbourVolume = 0;
   this->PassScalars                       = 0;
+  this->MaximumSearchRadius               = 0.0;
+  this->ParticleTree                = NULL;
+  this->UseParticleTree             = 0;
   //
   this->SPHManager                  = vtkSPHManager::New();
   this->ModifiedNumber              = 0;
   this->UpdatePiece                 = 0;
   this->UpdateNumPieces             = 1;
+  this->TraversalAlgorithm          = vtkSPHProbeFilter::LINEAR_TRAVERSAL;
+//  this->TraversalAlgorithm          = vtkSPHProbeFilter::NEIGHBOURHOOD_TILED_TRAVERSAL;
 }
 
 //----------------------------------------------------------------------------
@@ -502,10 +455,10 @@ double vtkSPHProbeFilter::GetMaxKernelCutoffDistance()
   double dpower = 1.0/this->KernelDimension;
   //
   bool usingH = FloatOrDoubleSet(this->HDataF,this->HDataD);
-  bool usingM = FloatOrDoubleSet(this->MassDataF,this->MassDataD);
   bool usingV = FloatOrDoubleSet(this->VolumeDataF,this->VolumeDataD);
+  bool usingM = FloatOrDoubleSet(this->MassDataF,this->MassDataD);
   bool usingR = FloatOrDoubleSet(this->DensityDataF,this->DensityDataD);
-  if (usingH || usingM || usingV || usingR) {
+  if (usingH || usingV || (usingM && usingR)) {
     for (vtkIdType index=0; index<this->NumInputParticles; index++) {
       if (usingH) {
         h = FloatOrDouble(this->HDataF, this->HDataD, index);
@@ -514,7 +467,7 @@ double vtkSPHProbeFilter::GetMaxKernelCutoffDistance()
         volume = FloatOrDouble(this->VolumeDataF, this->VolumeDataD, index);
         h      = vtkstd::pow(volume, dpower)*this->HCoefficient;
       }
-      else if (usingM || usingR) {
+      else if (usingM && usingR) {
         mass   = FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
         rho    = FloatOrDoubleorDefault(this->DensityDataF, this->DensityDataD, this->DefaultDensity, index);
         volume = mass/rho;
@@ -526,14 +479,18 @@ double vtkSPHProbeFilter::GetMaxKernelCutoffDistance()
   else {
     cutoff = this->KernelFunction->maxDistance();
   }
+  if (this->MaximumSearchRadius>0.0 && this->MaximumSearchRadius<cutoff) {
+    vtkWarningMacro(<<"Kernel Cutoff radius of " << cutoff << " is being overridden by user setting of MaximumSearchRadius = " << this->MaximumSearchRadius);
+    cutoff = this->MaximumSearchRadius;
+  }
   return cutoff;
 }
 //----------------------------------------------------------------------------
 void vtkSPHProbeFilter::KernelCompute(
-  double x[3], vtkDataSet *data, vtkIdList *NearestPoints, 
+  double x[3], vtkDataSet *data, vtkIdList *TestPoints, vtkIdList *NearestPoints, 
   double *gradW, double &totalmass, double &maxDistance)
 {
-  int N = NearestPoints->GetNumberOfIds();
+  int N = TestPoints->GetNumberOfIds();
   double *point;
   double  shepard_coeff = 0.0;
   double  weight, volume, mass, rho, d, dr, h=0;
@@ -541,15 +498,21 @@ void vtkSPHProbeFilter::KernelCompute(
   Vector _gradW(0.0);
   maxDistance = 0.0;
   totalmass   = 0.0;
+  int validpoints = 0;
   //
   bool usingH = FloatOrDoubleSet(this->HDataF,this->HDataD);
-  bool usingM = FloatOrDoubleSet(this->MassDataF,this->MassDataD);
   bool usingV = FloatOrDoubleSet(this->VolumeDataF,this->VolumeDataD);
+  bool usingM = FloatOrDoubleSet(this->MassDataF,this->MassDataD);
+  bool usingR = FloatOrDoubleSet(this->DensityDataF,this->DensityDataD);
   //
+  double Dc = this->KernelFunction->maxDistance();
   for (int i=0; i<N; i++) {
-    vtkIdType index = NearestPoints->GetId(i);
+    vtkIdType index = TestPoints->GetId(i);
     point = data->GetPoint(index);
     d = sqrt(vtkMath::Distance2BetweenPoints(x, point));
+    if (d>Dc) {
+      continue;
+    }
     if (d>maxDistance) maxDistance=d;
     //
     weight = this->KernelFunction->w(d);
@@ -562,7 +525,7 @@ void vtkSPHProbeFilter::KernelCompute(
       volume = dr*dr*dr;
       mass   = FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
     }
-    else if (usingM) {
+    else if (usingM && usingR) {
       mass   = FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
       rho    = FloatOrDoubleorDefault(this->DensityDataF, this->DensityDataD, this->DefaultDensity, index);
       volume = mass/rho;
@@ -585,9 +548,8 @@ void vtkSPHProbeFilter::KernelCompute(
     //
     // Weight and shepard summation
     //
-    this->weights[i] = weight*volume;
-    shepard_coeff   += this->weights[i];
-
+    this->weights[validpoints] = weight*volume;
+    shepard_coeff             += this->weights[validpoints];
     //
     // Gradient vector
     //
@@ -599,12 +561,59 @@ void vtkSPHProbeFilter::KernelCompute(
     else {
       _gradW += this->KernelFunction->gradW(d, distanceVector);
     }
+    //
+    // Stop if we are using too many points
+    // 
+    NearestPoints->SetId(validpoints, index); 
+    if ((++validpoints)>=KERNEL_MAX_NEIGHBOURS) {
+      i=N;
+    }
   }
+  NearestPoints->SetNumberOfIds(validpoints); 
   gradW[0] = _gradW[0];
   gradW[1] = _gradW[1];
   gradW[2] = _gradW[2];
   this->ScaleCoefficient  = shepard_coeff;
   this->GradientMagnitude = _gradW.magnitude();
+}
+//----------------------------------------------------------------------------
+void vtkSPHProbeFilter::ShepardCompute(
+  double x[3], vtkDataSet *data, vtkIdList *NearestPoints, 
+  double &totalmass, double &maxDistance)
+{
+  int num_neighbors = NearestPoints->GetNumberOfIds();
+  double total_w = 0.0;
+  maxDistance = 0.0;
+  totalmass   = 0.0;
+  //
+  // compute weights using inverse distance squared
+  //
+  for (int i=0; i<num_neighbors; i++) {
+    vtkIdType index = NearestPoints->GetId(i);
+    double *point = data->GetPoint(index);
+    double d = vtkMath::Distance2BetweenPoints(point, x);
+    if (d!=0.0) {
+      this->weights[i] = 1.0 / d;
+    }
+    else {
+      this->weights[i] = 1E6;
+    }
+    total_w += this->weights[i];
+    // mass sum for local density (astro)
+    totalmass += FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
+    // distance to furthest point for volume calculation
+    if (d>maxDistance) maxDistance=d;
+  }
+  //
+  // Normalize
+  //
+  for (int i=0; i<num_neighbors; i++) {
+    if (total_w != 0.0)
+      this->weights[i] = this->weights[i] / total_w;
+    else
+      this->weights[i] = 0.0;
+  }
+  maxDistance = sqrt(maxDistance);
 }
 //----------------------------------------------------------------------------
 bool vtkSPHProbeFilter::InitializeVariables(vtkDataSet *data)
@@ -615,9 +624,11 @@ bool vtkSPHProbeFilter::InitializeVariables(vtkDataSet *data)
   this->HCoefficient                = this->SPHManager->GetHCoefficient();
   this->KernelType                  = this->SPHManager->GetKernelType();
   this->KernelDimension             = this->SPHManager->GetKernelDimension();
-  this->LimitSearchByNeighbourCount = this->SPHManager->GetLimitSearchByNeighbourCount();
   this->MaximumNeighbours           = this->SPHManager->GetMaximumNeighbours();
-  this->MaximumRadius               = this->SPHManager->GetMaximumRadius();
+  this->MaximumSearchRadius               = this->SPHManager->GetMaximumSearchRadius();
+  if (this->MaximumNeighbours>KERNEL_MAX_NEIGHBOURS) {
+    this->MaximumNeighbours = KERNEL_MAX_NEIGHBOURS;
+  }
   Vector::dim = this->KernelDimension;
 
   this->NumInputParticles = data->GetNumberOfPoints();
@@ -655,12 +666,14 @@ bool vtkSPHProbeFilter::InitializeVariables(vtkDataSet *data)
 //----------------------------------------------------------------------------
 bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output)
 {
-  vtkIdType ptId, N;
   double x[3];
   double bounds[6], cutoff; 
   vtkPointData *pd, *outPD;
 
   vtkDebugMacro(<<"Probing data");
+  //
+  vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
+  timer->StartTimer();
 
   //
   // Locator optimization
@@ -673,26 +686,11 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     bins[1] = (bounds[3]-bounds[2])/cutoff;
     bins[2] = (bounds[5]-bounds[4])/cutoff;
   }
-  else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD &&
-    !this->LimitSearchByNeighbourCount) 
-  {
-    //data->GetBounds(bounds);
-    //bins[3] = { (bounds[1]-bounds[0])/this->MaximumRadius,
-    //            (bounds[3]-bounds[2])/this->MaximumRadius,
-    //            (bounds[5]-bounds[4])/this->MaximumRadius };
-  }
   double total=bins[0]*bins[1]*bins[2];
   for (int i=0; i<3; i++) { 
     if (total>50E6 && bins[i]>100) bins[i]=100;
   }
   vtkDebugMacro(<<"Bins are  " << (int)bins[0] << " " << (int)bins[1] << " " << (int)bins[2]);
-
-  //
-  // initialize locator
-  //
-  this->Locator->SetDataSet(data);
-  this->Locator->SetDivisions((int)bins[0],(int)bins[1],(int)bins[2]);
-  this->Locator->BuildLocator();
 
 #ifdef VTK_USE_MPI
   //
@@ -775,15 +773,50 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   //
 
   // Nearest Neighbours list setup
+  vtkSmartPointer<vtkIdList> TestPoints = vtkSmartPointer<vtkIdList>::New();
   vtkSmartPointer<vtkIdList> NearestPoints = vtkSmartPointer<vtkIdList>::New();
+
+  TestPoints->Allocate(1000);
+  NearestPoints->Allocate(1000);
+
+  // Nearest Neighbours list setup
+  vtkSmartPointer<vtkBitArray> Visited = vtkSmartPointer<vtkBitArray>::New();
+  Visited->SetNumberOfTuples(numInputPoints);
+//  for (vtkIdType ptId=0; ptId<numInputPoints; ptId++) {
+//    Visited->SetValue(ptId, 0);
+//  }
 
   //
   // Loop over all probe points, interpolating particle data
   //
-  int abort=0;
+  int abort=0, abortdecision=0;;
   vtkIdType progressInterval=this->NumOutputPoints/20 + 1;
   vtkIdType outId = 0;
-  for (ptId=0; ptId<numInputPoints && !abort; ptId++) {
+  vtkIdType NeighbourCount= 0;
+  double grad[3] = {0,0,0}, totalmass, maxDistance;
+
+  //
+  // initialize locator
+  //
+  if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
+    this->Locator->SetDataSet(data);
+    this->Locator->SetDivisions((int)bins[0],(int)bins[1],(int)bins[2]);
+    this->Locator->BuildLocator();
+  }
+  else {
+/*
+    this->ParticleTree = vtkSmartPointer<vtkParticleBoxTree>::New();
+    this->ParticleTree->SetDataSet(data);
+    this->ParticleTree->SetCacheCellBounds(1);
+    this->ParticleTree->SetNumberOfCellsPerNode(8);
+    this->ParticleTree->SetParticleSize(cutoff*2.0);
+    this->ParticleTree->BuildLocator();
+*/
+    this->Locator->SetDataSet(data);
+    this->Locator->SetDivisions((int)bins[0],(int)bins[1],(int)bins[2]);
+    this->Locator->BuildLocator();
+  }
+  for (vtkIdType ptId=0; ptId<numInputPoints && !abort; ptId++) {
     if (ghostdata && ghostdata[ptId]>0) {
       continue;
     }
@@ -795,79 +828,77 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     // Get the xyz coordinate of the point in the probe dataset
     probepts->GetPoint(ptId, x);
 
+    TestPoints->Reset();
+    NearestPoints->Reset();
+    vtkIdType N;
     // get neighbours of this point
     if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
-      if (this->LimitSearchByNeighbourCount) {
-        this->Locator->FindClosestNPoints(this->MaximumNeighbours, x, NearestPoints);
-      }
-      else {
-        this->Locator->FindPointsWithinRadius(cutoff, x, NearestPoints);
+      this->Locator->FindPointsWithinRadius(cutoff, x, TestPoints);
+//      this->ParticleTree->FindCellsFast(x, TestPoints);
+      N = TestPoints->GetNumberOfIds();
+      if (N>KERNEL_MAX_NEIGHBOURS*2) {
+        if (++abortdecision >1000) {
+          vtkWarningMacro(<< "Too many large neighbour searches were found and calculation has been aborted to save time");
+          abort = 1;
+        }
       }
     }
     else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
-      if (this->LimitSearchByNeighbourCount) {
-        this->Locator->FindClosestNPoints(this->MaximumNeighbours, x, NearestPoints);
-      }
-      else {
-        this->Locator->FindPointsWithinRadius(this->MaximumRadius, x, NearestPoints);
-      }
-    }
-    N = NearestPoints->GetNumberOfIds();
-    if (N>KERNEL_MAX_NEIGHBOURS) {
-      NearestPoints->SetNumberOfIds(KERNEL_MAX_NEIGHBOURS);
-      N = KERNEL_MAX_NEIGHBOURS;
+      this->Locator->FindClosestNPoints(this->MaximumNeighbours, x, NearestPoints);
+      N = NearestPoints->GetNumberOfIds();
     }
     
+    //
+    // compute weights from neighbours
+    //
     if (N>0) {
+      // For local density calculation we need totalmass, maxDistance
+      // For gradients we need grad
       if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
-        // Compute the weights (equivalent) for each nearest point
-        // also sum masses and find radius of neighbourhood
-        double grad[3], totalmass, maxDistance;
-        this->KernelCompute(x, data, NearestPoints, grad, totalmass, maxDistance);
-        
-        // If we are passing input scalars straight to output
-        if (passdata) {
-          outPD->CopyData(pd, ptId, outId);
-        }
-        else {
-          double gradmag = vtkMath::Norm(grad);
-          // Interpolate the point scalar/field data
-          outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
-          // set our extra computed values
-          GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
-          ShepardArray->SetValue(outId, this->ScaleCoefficient);
-        }
-        // for astrophysics plots we might be computing a smoothed density
-        if (computesmootheddensity) {
-          double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
-          if (volume>0.0) {
-            // smoothed density, using total mass in whole neighbourhood
-            double smootheddensity = totalmass/volume;
-            // actual mass of this particle from input data
-            double mass = FloatOrDouble(this->MassDataF,this->MassDataD, ptId);
-            // computed radius based on smoothed density and actual mass
-            double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
-            SmoothedDensity->SetValue(outId, smootheddensity);
-            SmoothedRadius->SetValue(outId, smoothedradius);
-          }
-          else {
-            SmoothedDensity->SetValue(outId, 0.0);
-            SmoothedRadius->SetValue(outId, 0.0);
-          }
+        // KernelCompute will reject any testpoints that were outside the kernel radius
+        // the final list is placed in NearestPoints and should be used from here on
+        this->KernelCompute(x, data, TestPoints, NearestPoints, grad, totalmass, maxDistance);
+        // prevent weights array being mangled
+        if (NearestPoints->GetNumberOfIds()>KERNEL_MAX_NEIGHBOURS) {
+          NearestPoints->SetNumberOfIds(KERNEL_MAX_NEIGHBOURS);
         }
       }
       else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
-        // if Cal_Interpolation_ShepardMethod_All is called, 
-        // then please comment out outPD->InterpolatePoint(pd, ptId, NearestPoints, weights);
-        // because Cal_Interpolation_ShepardMethod_All calcualtes interpolations.       
-        //int inside = Cal_Interpolation_ShepardMethod_All(data, false, x, N, NearestPoints, ptId, outPD);
-        Cal_Weights_ShepardMethod(x, data, NearestPoints, this->weights);
-        ShepardArray->SetValue(outId, 0.0);
-        GradArray->SetValue(outId, 0.0);
-        // need to call this interpolation function 
-        // because Cal_Weights_ShepardMethod only calculates weights.
+        this->ShepardCompute(x, data, NearestPoints, totalmass, maxDistance);
+      }
+    }
+    //
+    // if weights wer calculated ok, do the interpolation
+    //
+    N=NearestPoints->GetNumberOfIds();
+    if (N>0) {
+      NeighbourCount += N;
+      // If we are only computing smoothed density and passing input scalars straight to output
+      if (passdata) {
+        outPD->CopyData(pd, ptId, outId);
+      }
+      else {
+        double gradmag = vtkMath::Norm(grad);
+        // Interpolate the point scalar/field data
         outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
-        if (computesmootheddensity) {
+        // set our extra computed values
+        GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
+        ShepardArray->SetValue(outId, this->ScaleCoefficient);
+      }
+      // for astrophysics plots we might be computing a smoothed density
+      if (computesmootheddensity) {
+        double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
+        if (volume>0.0) {
+          // smoothed density, using total mass in whole neighbourhood
+          double smootheddensity = totalmass/volume;
+          // actual mass of this particle from input data
+          double mass = FloatOrDouble(this->MassDataF,this->MassDataD, ptId);
+          // computed radius based on smoothed density and actual mass
+          double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
+          SmoothedDensity->SetValue(outId, smootheddensity);
+          SmoothedRadius->SetValue(outId, smoothedradius);
+        }
+        else {
           SmoothedDensity->SetValue(outId, 0.0);
           SmoothedRadius->SetValue(outId, 0.0);
         }
@@ -885,20 +916,162 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     outId++;
   }
 
+/*
+  if (this->TraversalAlgorithm==NEIGHBOURHOOD_TILED_TRAVERSAL) {
+    this->ParticleTree = vtkSmartPointer<vtkParticleBoxTree>::New();
+    this->ParticleTree->SetDataSet(data);
+    this->ParticleTree->SetCacheCellBounds(1);
+    this->ParticleTree->SetNumberOfCellsPerNode(8);
+    this->ParticleTree->SetParticleSize(cutoff);
+    this->ParticleTree->BuildLocator();
+
+    //
+    // initialize locator
+    //
+    this->Locator->SetDataSet(data);
+    this->Locator->SetDivisions((int)bins[0],(int)bins[1],(int)bins[2]);
+    this->Locator->BuildLocator();
+
+    for (vtkIdType ptId=0; ptId<numInputPoints && !abort; ptId++) {
+      if (ghostdata && ghostdata[ptId]>0) {
+        continue;
+      }
+      if ( !(ptId % progressInterval) ) {
+        this->UpdateProgress((double)ptId/numInputPoints);
+        abort = GetAbortExecute();
+      }
+
+      // Get the xyz coordinate of the point in the probe dataset
+      probepts->GetPoint(ptId, x);
+      
+      //
+      // NB. Inflate extends box on both sides, so we use 1/2
+      //
+//      double *bounds = this->ParticleTree->GetCellBounds(ptId);
+//      vtkBoundingBox box(bounds);
+//      box.Inflate(cutoff*0.5); 
+      SecondPoints->Reset();
+      NearestPoints->Reset();
+//      this->ParticleTree->FindCellsWithinBounds(box, NearestPoints); 
+      this->ParticleTree->FindCellsFast(x, NearestPoints);
+      this->Locator->FindPointsWithinRadius(cutoff, x, SecondPoints);
+
+//      vtkIdType N = 0;
+      vtkIdType N = SecondPoints->GetNumberOfIds();
+      //
+      if (N>KERNEL_MAX_NEIGHBOURS) {
+        SecondPoints->SetNumberOfIds(KERNEL_MAX_NEIGHBOURS);
+        N = KERNEL_MAX_NEIGHBOURS;
+      }
+
+      if (N>0) {
+        if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
+          // Compute the weights (equivalent) for each nearest point
+          // also sum masses and find radius of neighbourhood
+          double grad[3], totalmass, maxDistance;
+          this->KernelCompute(x, data, SecondPoints, grad, totalmass, maxDistance, N);
+        
+          // If we are passing input scalars straight to output
+          if (passdata) {
+            outPD->CopyData(pd, ptId, outId);
+            maxDistance = 0.01;
+            totalmass = 1E8;
+          }
+          else {
+            double gradmag = vtkMath::Norm(grad);
+            // Interpolate the point scalar/field data
+            outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
+            // set our extra computed values
+            GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
+            ShepardArray->SetValue(outId, this->ScaleCoefficient);
+          }
+          // for astrophysics plots we might be computing a smoothed density
+          if (computesmootheddensity) {
+            double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
+            if (volume>0.0) {
+              // smoothed density, using total mass in whole neighbourhood
+              double smootheddensity = totalmass/volume;
+              // actual mass of this particle from input data
+              double mass = FloatOrDouble(this->MassDataF,this->MassDataD, ptId);
+              // computed radius based on smoothed density and actual mass
+              double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
+              SmoothedDensity->SetValue(outId, smootheddensity);
+              SmoothedRadius->SetValue(outId, smoothedradius);
+            }
+            else {
+              SmoothedDensity->SetValue(outId, 0.0);
+              SmoothedRadius->SetValue(outId, 0.0);
+            }
+          }
+        }
+        else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
+          // if Cal_Interpolation_ShepardMethod_All is called, 
+          // then please comment out outPD->InterpolatePoint(pd, ptId, NearestPoints, weights);
+          // because Cal_Interpolation_ShepardMethod_All calcualtes interpolations.       
+          //int inside = Cal_Interpolation_ShepardMethod_All(data, false, x, N, NearestPoints, ptId, outPD);
+          Cal_Weights_ShepardMethod(x, data, NearestPoints, this->weights);
+          ShepardArray->SetValue(outId, 0.0);
+          GradArray->SetValue(outId, 0.0);
+          // need to call this interpolation function 
+          // because Cal_Weights_ShepardMethod only calculates weights.
+          outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
+          if (computesmootheddensity) {
+            SmoothedDensity->SetValue(outId, 0.0);
+            SmoothedRadius->SetValue(outId, 0.0);
+          }
+        }
+      }
+      else {
+        outPD->NullPoint(outId);
+        ShepardArray->SetValue(outId, 0.0);
+        GradArray->SetValue(outId, 0.0);
+        if (computesmootheddensity) {
+          SmoothedDensity->SetValue(outId, 0.0);
+          SmoothedRadius->SetValue(outId, 0.0);
+        }
+      }
+      outId++;
+    }
+*/
+
+  double averageneighbours = NeighbourCount/outId;
+  std::cout << "Average Neighbour count is " << averageneighbours << std::endl;
+
+  //
+  // Make sure arrays are valid if we aborted mid calculation
+  //
+  if (abort) {
+    for (vtkIdType ptId=outId; ptId<numInputPoints; ptId++) {
+      if (ghostdata && ghostdata[ptId]>0) {
+        continue;
+      }
+      outPD->NullPoint(outId);
+      ShepardArray->SetValue(outId, 0.0);
+      GradArray->SetValue(outId, 0.0);
+      if (computesmootheddensity) {
+        SmoothedDensity->SetValue(outId, 0.0);
+        SmoothedRadius->SetValue(outId, 0.0);
+      }
+      outId++;
+    }
+  }
+
   // Add Grad and Shepard arrays
   if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
     outPD->AddArray(GradArray);
     outPD->AddArray(ShepardArray);
-    if (computesmootheddensity) {
-      outPD->AddArray(SmoothedDensity);
-      outPD->AddArray(SmoothedRadius);
-    }
+  }
+  if (computesmootheddensity) {
+    outPD->AddArray(SmoothedDensity);
+    outPD->AddArray(SmoothedRadius);
   }
 
+  timer->StopTimer();
+  double elapsed = timer->GetElapsedTime();
 #ifdef VTK_USE_MPI
   if (com) com->Barrier();
-  vtkDebugMacro(<< "Probe filter complete : exported N = " << outId);
 #endif
+  vtkDebugMacro(<< "Probe filter complete : exported N = " << outId << "\t Time : " << elapsed << " seconds" );
   return 1;
 }
 

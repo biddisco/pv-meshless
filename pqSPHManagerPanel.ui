@@ -251,7 +251,7 @@ If Mass/Density arrays are present - the per particle values are used and finall
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>409</width>
+           <width>172</width>
            <height>124</height>
           </rect>
          </property>
@@ -388,21 +388,32 @@ If Mass/Density arrays are present - the per particle values are used and finall
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_7">
       <item>
-       <widget class="QCheckBox" name="LimitSearchByNeighbourCount">
-        <property name="text">
-         <string>Limit Maximum Neighbours</string>
-        </property>
-        <property name="autoExclusive">
-         <bool>true</bool>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="_16">
+        <item>
+         <widget class="QLabel" name="label_14">
+          <property name="text">
+           <string>Max Search Radius</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="MaximumSearchRadius">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="text">
+           <string>0.0</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
        <layout class="QHBoxLayout" name="_46">
         <item>
          <widget class="QLabel" name="label_45">
           <property name="text">
-           <string>Max Neighbours</string>
+           <string>Max Neighbours (Shepard)</string>
           </property>
          </widget>
         </item>
@@ -410,40 +421,6 @@ If Mass/Density arrays are present - the per particle values are used and finall
          <widget class="QLineEdit" name="MaximumNeighbours">
           <property name="text">
            <string>125</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="limit2">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Limit Neighbour Radius (Shepard only)</string>
-        </property>
-        <property name="autoExclusive">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="_16">
-        <item>
-         <widget class="QLabel" name="label_14">
-          <property name="text">
-           <string>Max Radius</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="MaximumRadius">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>0.0125</string>
           </property>
          </widget>
         </item>

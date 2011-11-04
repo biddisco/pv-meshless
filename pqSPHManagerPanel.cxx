@@ -92,9 +92,6 @@ pqSPHManagerPanel::pqSPHManagerPanel(pqProxy* proxy, QWidget* p) :
   connect(this->UI->InterpolationMethod,
     SIGNAL(currentIndexChanged(int)), this, SLOT(onPointMethodChanged(int)));
 
-  connect(this->UI->LimitSearchByNeighbourCount,
-    SIGNAL(toggled(bool)), this, SLOT(onLimitChanged(bool)));
-
   // inherited from pqNamedObjectPanel
   this->linkServerManagerProperties();
   
@@ -114,16 +111,9 @@ void pqSPHManagerPanel::onPointMethodChanged(int mode)
 {
   if (mode==0) {
     this->UI->SPHBox->setEnabled(1);
-    this->UI->LimitSearchByNeighbourCount->setAutoExclusive(0);
-    this->UI->limit2->setChecked(0);
-    this->UI->limit2->setEnabled(0);
-    this->UI->MaximumRadius->setEnabled(0);
   }
   else {
-    this->UI->LimitSearchByNeighbourCount->setAutoExclusive(1);
     this->UI->SPHBox->setEnabled(0);
-    this->UI->limit2->setEnabled(1);
-    this->UI->MaximumRadius->setEnabled(1);
   }
 }
 //-----------------------------------------------------------------------------
@@ -131,14 +121,12 @@ void pqSPHManagerPanel::onLimitChanged(bool checked)
 {
   if (checked) {
     this->UI->MaximumNeighbours->setEnabled(1);
-    this->UI->MaximumRadius->setEnabled(0);
-    this->UI->limit2->setChecked(0);
+    this->UI->MaximumSearchRadius->setEnabled(0);
   }
   else {
     this->UI->MaximumNeighbours->setEnabled(0);
-    this->UI->limit2->setChecked(1);
     if (this->UI->InterpolationMethod->currentIndex()==1) {
-      this->UI->MaximumRadius->setEnabled(1);
+      this->UI->MaximumSearchRadius->setEnabled(1);
     }
   }
 }
@@ -159,10 +147,10 @@ void pqSPHManagerPanel::LoadSettings()
   this->UI->DefaultDensity->setText(settings->value("DefaultDensity", 1000.0).toString());
   // DefaultParticleSideLength
   this->UI->DefaultParticleSideLength->setText(settings->value("DefaultParticleSideLength", 0.18333).toString());
-  // Limit Max Neighbours
-  this->UI->LimitSearchByNeighbourCount->setChecked(settings->value("LimitSearchByNeighbourCount", 0).toBool());
   // Max Neighbours
   this->UI->MaximumNeighbours->setText(settings->value("MaximumNeighbours", 64).toString()); 
+  // MaxSearchRadius
+  this->UI->MaximumSearchRadius->setText(settings->value("MaximumSearchRadius", 0.0).toString());
   settings->endGroup();
 }
 //----------------------------------------------------------------------------
@@ -182,11 +170,10 @@ void pqSPHManagerPanel::SaveSettings()
   settings->setValue("DefaultDensity", this->UI->DefaultDensity->text());
   // DefaultParticleSideLength
   settings->setValue("DefaultParticleSideLength", this->UI->DefaultParticleSideLength->text());
-  // Limit Max Neighbours
-  settings->setValue("LimitSearchByNeighbourCount", this->UI->LimitSearchByNeighbourCount->isChecked());
   // Max Neighbours
   settings->setValue("MaximumNeighbours", this->UI->MaximumNeighbours->text());
-  //
+  // MaxSearchRadius
+  settings->setValue("MaximumSearchRadius", this->UI->MaximumSearchRadius->text());
   settings->endGroup();
 }
 //-----------------------------------------------------------------------------
