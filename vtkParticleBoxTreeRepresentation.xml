@@ -30,7 +30,38 @@
           This property specifies the dataset to visualize
         </Documentation>
       </InputProperty>
-<!--
+
+      <IntVectorProperty
+        name="Level"
+        command="SetLevel"
+        number_of_elements="1"
+        default_values="-1">
+        <IntRangeDomain name="range" min="-1" max="32"/>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="MaxDepth"
+        command="SetMaxDepth"
+        number_of_elements="1"
+        default_values="32">
+        <IntRangeDomain name="range" min="1" max="32"/>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="MaxCellsPerNode"
+        command="SetMaxCellsPerNode"
+        number_of_elements="1"
+        default_values="32">
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+        name="ParticleSize"
+        command="SetParticleSize"
+        number_of_elements="1"
+        default_values="0.001">
+      </DoubleVectorProperty>
+
+      <!--
       <IntVectorProperty
         name="KernelType"
         command="SetKernelType"
@@ -46,16 +77,6 @@
         </EnumerationDomain>
       </IntVectorProperty>
 
-      <IntVectorProperty
-        name="KernelDimension"
-        command="SetKernelDimension"
-        number_of_elements="1"
-        default_values="3">
-        <EnumerationDomain name="enum">
-          <Entry value="2" text="2D" />
-          <Entry value="3" text="3D" />
-        </EnumerationDomain>
-      </IntVectorProperty>
 
       <DoubleVectorProperty
          name="HCoefficient"

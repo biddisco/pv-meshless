@@ -410,7 +410,7 @@ int vtkH5PartReader::RequestInformation(
 
   return 1;
 }
-
+//----------------------------------------------------------------------------
 int GetVTKDataType(int datatype)
 {
   if (H5Tequal(datatype,H5T_NATIVE_FLOAT))

@@ -804,17 +804,15 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     this->Locator->BuildLocator();
   }
   else {
-/*
     this->ParticleTree = vtkSmartPointer<vtkParticleBoxTree>::New();
     this->ParticleTree->SetDataSet(data);
     this->ParticleTree->SetCacheCellBounds(1);
     this->ParticleTree->SetNumberOfCellsPerNode(8);
     this->ParticleTree->SetParticleSize(cutoff*2.0);
     this->ParticleTree->BuildLocator();
-*/
-    this->Locator->SetDataSet(data);
-    this->Locator->SetDivisions((int)bins[0],(int)bins[1],(int)bins[2]);
-    this->Locator->BuildLocator();
+//    this->Locator->SetDataSet(data);
+//    this->Locator->SetDivisions((int)bins[0],(int)bins[1],(int)bins[2]);
+//    this->Locator->BuildLocator();
   }
   for (vtkIdType ptId=0; ptId<numInputPoints && !abort; ptId++) {
     if (ghostdata && ghostdata[ptId]>0) {
@@ -833,8 +831,8 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     vtkIdType N;
     // get neighbours of this point
     if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
-      this->Locator->FindPointsWithinRadius(cutoff, x, TestPoints);
-//      this->ParticleTree->FindCellsFast(x, TestPoints);
+//      this->Locator->FindPointsWithinRadius(cutoff, x, TestPoints);
+      this->ParticleTree->FindCellsFast(x, TestPoints);
       N = TestPoints->GetNumberOfIds();
       if (N>KERNEL_MAX_NEIGHBOURS*2) {
         if (++abortdecision >1000) {

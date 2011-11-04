@@ -15,28 +15,28 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-// .NAME vtkParticleBoxTree - Special BSP tree for particles with no size
+// .NAME vtkParticleBoxTree - Special BSP tree for dimensionless particles
 //
 // .SECTION Description
 // vtkParticleBoxTree is a BSP tree which takes particle data and
 // assumes a box size for each particle. The box size is either fixed
-// for all particles, or if supplied, a support radius with one entry
+// for all particles, or if supplied, a 'support radius' array with one entry
 // per particle can be used. Raytracing of simple points would 
-// normally produce no output, using this BSP tree enables a finite 
-// volume to be assigned to each particle and permits raycasting 
+// normally produce no output, using this tree enables a finite 
+// volume to be assigned to each particle and permits raycasting
 // operations to be performed on them.
 
 #ifndef _vtkParticleBoxTree_h
 #define _vtkParticleBoxTree_h
 
-#include "vtkModifiedBSPTree.h"
+#include "vtkCellTreeLocator.h"
 class vtkDataArray;
 
-class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
+class VTK_EXPORT vtkParticleBoxTree : public vtkCellTreeLocator {
   public:
     // Description:
     // Standard Type-Macro
-    vtkTypeRevisionMacro(vtkParticleBoxTree,vtkModifiedBSPTree);
+    vtkTypeRevisionMacro(vtkParticleBoxTree,vtkCellTreeLocator);
     void PrintSelf(ostream& os, vtkIndent indent);
 
     // Description:
@@ -51,8 +51,12 @@ class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
 
     // Description:
     // State the particle size as a fixed Box dimension - 
-    // the size is one axis of a cube shaped particle
-    // if a ParticleSize array is provided, this is ignored
+    // the size is one axis of a cube shaped particle.
+    // If a ParticleSizeArray is provided, values from the ParticleSizeArray
+    // will be used and the single ParticleSize value will be ignored.
+    // If using a Radius value, then set ParticleSize to 2x.Radius
+    // and each particle will be a box of 2x.Radius cubed volume.
+    // The value is used only for Spatial extent, bounding boxes etc.
     vtkSetMacro(ParticleSize,double);
     vtkGetMacro(ParticleSize,double);
 
@@ -61,18 +65,15 @@ class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
     // one usually specifies an 'H' smoothing length array
     virtual void SetParticleSizeArray(vtkDataArray*);
     vtkGetObjectMacro(ParticleSizeArray, vtkDataArray);
-    
-    // Description:
-    // Generate BBox representation of Nth level
-    virtual void GenerateRepresentation(int level, vtkPolyData *pd);
+
+    void GenerateRepresentation(int level, vtkPolyData *pd);
 
     // Description:
-    // Generate BBox representation of all leaf nodes
-    virtual void GenerateRepresentationLeafs(vtkPolyData *pd);
-
-    // Description:
-    // Generate BBox representation of all particles stored in the tree
-    virtual void GenerateRepresentationParticles(vtkPolyData *pd);
+    // Returns a pointer to the cell Bounds (double[6]) if CacheCellBounds
+    // is enabled at build time, otherwise returns NULL;
+    double *GetCellBounds(vtkIdType cellId) {
+      return this->CellBounds ? this->CellBounds[cellId] : NULL;
+    }
 
   protected:
    vtkParticleBoxTree();
@@ -88,9 +89,6 @@ class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
   virtual int IntersectCellInternal(vtkIdType cell_ID, double p1[3], double p2[3], 
     double tol, double &t, double ipt[3], double pcoords[3], int &subId);
 //ETX
-
-  // Used internally when generating representation of nodes/particles
-  void AddBox(vtkPolyData *pd, double *bounds);
 
   double ParticleSize;
   vtkDataArray *ParticleSizeArray;
