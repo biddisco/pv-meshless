@@ -62,7 +62,7 @@ IF (${Trilinos_FOUND})
   ADD_TEST(
     NAME TestParticlePartitionFilter 
     COMMAND 
-      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
+      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
       $<TARGET_FILE:TestParticlePartitionFilter> 
       -N 1000
       -F temp.h5
