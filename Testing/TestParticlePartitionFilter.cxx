@@ -14,6 +14,9 @@
   #include <sys/time.h>
 #endif
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+//
 #include "vtkActor.h"
 #include "vtkAppendPolyData.h"
 #include "vtkCamera.h"
@@ -56,12 +59,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <algorithm>
+//
+#include "zoltan.h"
 #undef min
 #undef max
-#define _USE_MATH_DEFINES
-#include <algorithm>
-#include <cmath>
-#include "zoltan.h"
 
 //----------------------------------------------------------------------------
 std::string usage = "\n"\
