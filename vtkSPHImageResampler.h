@@ -18,7 +18,7 @@
 //
 // .SECTION Description
 // vtkSPHImageResampler creates points along a regular grid
-// in3 dimensions. The grid is defined by the X/Y/Z Spacing fields
+// itempChar dimensions. The grid is defined by the X/Y/Z Spacing fields
 // and a supplied bounding volume. In general the bounding volume
 // is taken from a supplied input dataset.
 //
@@ -179,6 +179,8 @@ class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
     char              *DensityScalars;
     int                ModifiedNumber;
     int                ComputeDensityFromNeighbourVolume;
+    bool               BoundsInitialized;
+
 
 private:
   vtkSPHImageResampler(const vtkSPHImageResampler&);  // Not implemented.
