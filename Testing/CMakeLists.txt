@@ -208,12 +208,33 @@ IF (${Trilinos_FOUND})
         -T "${PLUGIN_TEST_DIR}"
         -particlesize 0.001
         -ghost_region 0.005
-        -massScalars "mass"
         -scalar ShepardCoeff
         -contour 0.5
         -densityScalars "FLUID_density"
         -imagetest 1
         -V ${PROJECT_SOURCE_DIR}/Testing/baseline/TestSPHImageResample-small-parallel-${N}.png
+    )
+  endforeach(N)
+ENDIF (${Trilinos_FOUND})
+    
+IF (${Trilinos_FOUND})
+  foreach(N 4)
+    ADD_TEST(
+      NAME TestSPHImageResample-large-parallel-${N}
+      COMMAND 
+        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+        $<TARGET_FILE:TestSPHProbeFilter> 
+        -D "${PROJECT_SOURCE_DIR}/Testing/data"
+        -F dam-17.h5part
+        -T "${PLUGIN_TEST_DIR}"
+        -particlesize 0.005
+        -ghost_region 0.01
+        -gridSpacing "0.0025 0.0025 0.0025"
+        -scalar ShepardCoeff
+        -contour 0.1
+        -densityScalars "FLUID_rho"
+        -imagetest 1
+        -V ${PROJECT_SOURCE_DIR}/Testing/baseline/TestSPHImageResample-large-parallel-${N}.png
     )
   endforeach(N)
 ENDIF (${Trilinos_FOUND})

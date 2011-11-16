@@ -2,6 +2,7 @@
 // mpiargs : -localonly -n 2 -env PATH D:\cmakebuild\pv-meshless\bin\debug;c:\bin
 // appcmd  : $(TargetPath)
 // appargs : "-D" "D:/Code/plugins/pv-meshless/Testing/data" "-F" "jet.h5part" "-T" "D:/cmakebuild/plugins/pv-meshless/Testing/Temporary" "-particlesize" "0.001" "-ghost_region" "0.005" "-massScalars" "mass" "-scalar" "ShepardCoeff" "-contour" "0.5" "-densityScalars" "FLUID_density" "-imagetest" "1" "-V" "D:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResampleSerial.png"
+// appargs : -D D:/Code/plugins/pv-meshless/Testing/data -F dam-17.h5part -T D:/cmakebuild/plugins/pv-meshless/Testing/Temporary -particlesize 0.005 -ghost_region 0.01 -gridSpacing 0.0025 0.0025 0.0025 -scalar ShepardCoeff -contour 0.1 -densityScalars FLUID_rho -imagetest 1 -V D:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-4.png
 // mpishim : C:\Program Files\Microsoft Visual Studio 9.0\Common7\IDE\Remote Debugger\x64\mpishim.exe
 
 #ifdef _WIN32
@@ -50,6 +51,7 @@
 #include "vtkSPHImageResampler.h"
 #include "vtkSPHManager.h"
 #include "vtkParticleIdFilter.h"
+#include "vtkStreamOutputWindow.h"
 //
 #ifdef PV_MESHLESS_TRILINOS
   #include "vtkParticlePartitionFilter.h"
@@ -112,6 +114,13 @@ int main (int argc, char* argv[])
   if (myRank==0) {
     std::cout << "Process Id : " << myRank << " FileName : " << fullname << std::endl;
   }
+
+  //
+  // Force the creation of our output window object
+  //
+  vtkSmartPointer<vtkStreamOutputWindow> outwin = vtkSmartPointer<vtkStreamOutputWindow>::New();
+  vtkOutputWindow::SetInstance(outwin);
+  outwin->SetOutputStream(&std::cout);
 
   //--------------------------------------------------------------
   // 
@@ -201,6 +210,18 @@ int main (int argc, char* argv[])
     temp >> contourVal;
     if (myRank==0) {
       std::cout << "Contour Value {" << contourVal << "}" << std::endl;
+    }
+  }
+  delete []tempChar;
+
+  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-gridSpacing", argc, argv, "", "");
+  double gridSpacing[3] = {0.0, 0.0, 0.0};
+  if (std::string(tempChar).size()) {
+    vtkstd::stringstream temp(tempChar);
+    temp >> gridSpacing[0] >> gridSpacing[1] >> gridSpacing[2];
+    gridSpacing[2] = gridSpacing[1] = gridSpacing[0];
+    if (myRank==0) {
+      std::cout << "Grid Spacing {" << gridSpacing[0] << ',' << gridSpacing[1] << "," << gridSpacing[2] << "}" << std::endl;
     }
   }
   delete []tempChar;
@@ -295,7 +316,12 @@ int main (int argc, char* argv[])
   if (ImageTest) {
     vtkSmartPointer<vtkSPHImageResampler> sphProbe = vtkSmartPointer<vtkSPHImageResampler>::New();
     sphProbe->SetInputConnection(data_algorithm->GetOutputPort());
-    sphProbe->SetResolution(32,64,32);
+    if (gridSpacing[0]>0.0) {
+      sphProbe->SetSpacing(gridSpacing);
+    }
+    else {
+      sphProbe->SetResolution(32,64,32);
+    }
     sphProbe->SetDelta(p_size);
     sphProbe->SetSPHManager(sphManager);
     if (massScalars.size()) {
@@ -324,9 +350,6 @@ int main (int argc, char* argv[])
   }
 
   //
-  vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
-  timer->StartTimer();
-  //
   //--------------------------------------------------------------
   // Update in parallel:
   // To get parallel operation correct, we need to make sure that piece
@@ -337,9 +360,23 @@ int main (int argc, char* argv[])
   vtkStreamingDemandDrivenPipeline *resample_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(resample_algorithm->GetExecutive());
   // no piece info set yet, assumes info is not piece dependent
   if (ImageTest) {
+    // We can't compute the extents of the image until we know the bounds of the data, 
+    // so update reader first.
+    vtkStreamingDemandDrivenPipeline *reader_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(reader->GetExecutive());
+    reader_sddp->UpdateDataObject();
+    reader_sddp->UpdateInformation();
+    reader_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
+    reader_sddp->Update();
+    //
     resample_sddp->UpdateDataObject();
     resample_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
   }
+  //
+  vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
+  timer->StartTimer();
+  //
+  // Update SPH Pipeline
+  //
   resample_sddp->UpdateInformation();
   resample_sddp->Update();
 
@@ -515,8 +552,8 @@ int main (int argc, char* argv[])
       mapper->SetScalarModeToUsePointFieldData();
       mapper->SetInterpolateScalarsBeforeMapping(0);
       mapper->SetUseLookupTableScalarRange(0);
-//      const char *array_name = "FLUID_pressure";
-      const char *array_name = "ProcessId";
+      const char *array_name = "FLUID_pressure";
+//      const char *array_name = "ProcessId";
       vtkDataArray *da = append->GetOutput()->GetPointData()->GetArray(array_name);
       mapper->SetScalarRange(da->GetRange());
       mapper->SelectColorArray(array_name);
