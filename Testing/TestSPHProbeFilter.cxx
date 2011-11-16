@@ -215,11 +215,11 @@ int main (int argc, char* argv[])
   delete []tempChar;
 
   tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-gridSpacing", argc, argv, "", "");
-  double gridSpacing[3] = {0.0, 0.0, 0.0};
+  double gridSpacing[3] = {0.005, 0.005, 0.005};
   if (std::string(tempChar).size()) {
     vtkstd::stringstream temp(tempChar);
-    temp >> gridSpacing[0] >> gridSpacing[1] >> gridSpacing[2];
-    gridSpacing[2] = gridSpacing[1] = gridSpacing[0];
+//    temp >> gridSpacing[0] >> gridSpacing[1] >> gridSpacing[2];
+//    gridSpacing[2] = gridSpacing[1] = gridSpacing[0];
     if (myRank==0) {
       std::cout << "Grid Spacing {" << gridSpacing[0] << ',' << gridSpacing[1] << "," << gridSpacing[2] << "}" << std::endl;
     }
