@@ -52,7 +52,6 @@ IF (${Trilinos_FOUND})
 
   ADD_EXECUTABLE(TestParticlePartitionFilter 
     TestParticlePartitionFilter.cxx
-#    R250.cxx
   )
   TARGET_LINK_LIBRARIES(TestParticlePartitionFilter
     pv_meshless 
@@ -77,115 +76,145 @@ ENDIF(${Trilinos_FOUND})
 #--------------------------------------------------
 # Test Probe Filter
 #--------------------------------------------------
-ADD_EXECUTABLE(TestSPHProbeParallel TestSPHProbeParallel.cxx)
-TARGET_LINK_LIBRARIES(TestSPHProbeParallel
+ADD_EXECUTABLE(TestSPHProbeFilter TestSPHProbeFilter.cxx)
+TARGET_LINK_LIBRARIES(TestSPHProbeFilter
   pv_meshless 
   ${Trilinos_LIBRARIES}
-  )
-    
+)
+          
+#--------------------------------------------------
+# Test Probe Filter : Kernel Mode
+# Serial / Parallel
+#--------------------------------------------------
 ADD_TEST(
-  NAME TestSPHProbeKernelSmallSerial
+  NAME TestSPHProbeKernel-small-serial
   COMMAND 
-    $<TARGET_FILE:TestSPHProbeParallel> 
+    $<TARGET_FILE:TestSPHProbeFilter> 
     -D "${PROJECT_SOURCE_DIR}/Testing/data"
     -F jet.h5part
     -T "${PLUGIN_TEST_DIR}"
     -particlesize 0.001
+    -massScalars "mass"
     -scalar ShepardCoeff
     -value_range "0.228203 1.1817"
     -peak_position "-0.163415 0.129112 0.00150253"
-  )
+)
   
+IF (${Trilinos_FOUND})
+  foreach(N 2;3;4)
+    ADD_TEST(
+      NAME TestSPHProbeKernel-small-parallel-${N}
+      COMMAND 
+        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+        $<TARGET_FILE:TestSPHProbeFilter> 
+        -D "${PROJECT_SOURCE_DIR}/Testing/data"
+        -F jet.h5part
+        -T "${PLUGIN_TEST_DIR}"
+        -ghost_region 0.002
+        -particlesize 0.001
+        -massScalars "mass"
+        -scalar ShepardCoeff
+        -value_range "0.228203 1.1817"
+        -peak_position "-0.163415 0.129112 0.00150253"
+    )
+  endforeach(N)
+ENDIF (${Trilinos_FOUND})
+    
+#--------------------------------------------------
+# Test Probe Filter : Shepard Mode
+# Serial / Parallel
+#--------------------------------------------------
 ADD_TEST(
-  NAME TestSPHProbeShepardSmallSerial
+  NAME TestSPHProbeShepard-small-serial
   COMMAND 
-    $<TARGET_FILE:TestSPHProbeParallel> 
+    $<TARGET_FILE:TestSPHProbeFilter> 
     -D "${PROJECT_SOURCE_DIR}/Testing/data"
     -F AGN_subset.h5part
     -T "${PLUGIN_TEST_DIR}"
     -neighbours 32
+    -massScalars "mass"
     -scalar SmoothedDensity
     -value_range "0.019823620095849 1565.79528808594"
     -peak_position "0.53753125667572 0.529183149337769 0.526147127151489"
-  )
-  
-#--------------------------------------------------
-# Test Probe Filter : Parallel
-#--------------------------------------------------
+)
+
 IF (${Trilinos_FOUND})
-  ADD_TEST(
-    NAME TestSPHProbeShepardSmallParallel2
-    COMMAND 
-      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 2
-      $<TARGET_FILE:TestSPHProbeParallel> 
-      -D "${PROJECT_SOURCE_DIR}/Testing/data"
-      -F AGN_subset.h5part
-      -T "${PLUGIN_TEST_DIR}"
-      -neighbours 32
-      -ghost_region 0.01
-      -scalar SmoothedDensity
-      -value_range "0.019823620095849 1565.79528808594"
-      -peak_position "0.53753125667572 0.529183149337769 0.526147127151489"
+  foreach(N 2;3;4)
+    ADD_TEST(
+      NAME TestSPHProbeShepard-small-parallel-${N}
+      COMMAND 
+        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+        $<TARGET_FILE:TestSPHProbeFilter> 
+        -D "${PROJECT_SOURCE_DIR}/Testing/data"
+        -F AGN_subset.h5part
+        -T "${PLUGIN_TEST_DIR}"
+        -neighbours 32
+        -ghost_region 0.01
+        -massScalars "mass"
+        -scalar SmoothedDensity
+        -value_range "0.019823620095849 1565.79528808594"
+        -peak_position "0.53753125667572 0.529183149337769 0.526147127151489"
     )
-  
-  ADD_TEST(
-    NAME TestSPHProbeShepardSmallParallel4
-    COMMAND 
-      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
-      $<TARGET_FILE:TestSPHProbeParallel> 
-      -D "${PROJECT_SOURCE_DIR}/Testing/data"
-      -F AGN_subset.h5part
-      -T "${PLUGIN_TEST_DIR}"
-      -neighbours 32
-      -ghost_region 0.01
-      -scalar SmoothedDensity
-      -value_range "0.019823620095849 1565.79528808594"
-      -peak_position "0.53753125667572 0.529183149337769 0.526147127151489"
-    )
-  
-  ADD_TEST(
-    NAME TestSPHProbeKernelSmallParallel2
-    COMMAND 
-      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 2
-      $<TARGET_FILE:TestSPHProbeParallel> 
-      -D "${PROJECT_SOURCE_DIR}/Testing/data"
-      -F jet.h5part
-      -T "${PLUGIN_TEST_DIR}"
-      -ghost_region 0.002
-      -particlesize 0.001
-      -scalar ShepardCoeff
-      -value_range "0.228203 1.1817"
-      -peak_position "-0.163415 0.129112 0.00150253"
-    )
-  
-  ADD_TEST(
-    NAME TestSPHProbeKernelSmallParallel4
-    COMMAND 
-      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
-      $<TARGET_FILE:TestSPHProbeParallel> 
-      -D "${PROJECT_SOURCE_DIR}/Testing/data"
-      -F jet.h5part
-      -T "${PLUGIN_TEST_DIR}"
-      -ghost_region 0.002
-      -particlesize 0.001
-      -scalar ShepardCoeff
-      -value_range "0.228203 1.1817"
-      -peak_position "-0.163415 0.129112 0.00150253"
-    )
+  endforeach(N)
   
   ADD_TEST(
     NAME TestSPHProbeShepardLarge
     COMMAND 
       ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
-      $<TARGET_FILE:TestSPHProbeParallel> 
+      $<TARGET_FILE:TestSPHProbeFilter> 
       -D "${PROJECT_SOURCE_DIR}/Testing/data"
       -F AGN_densitycheck.h5part
       -T "${PLUGIN_TEST_DIR}"
       -neighbours 32
       -ghost_region 0.01
+      -massScalars "mass"
       -scalar SmoothedDensity
       -value_range "0.0178490821272135 624893248"
       -peak_position "0.557741165161133 0.581159114837646 0.552553355693817"
-    )
+  )
     
 ENDIF (${Trilinos_FOUND})
+
+#--------------------------------------------------
+# Test Probe Filter : Image Resample + Kernel Mode
+# Serial / Parallel
+#--------------------------------------------------
+ADD_TEST(
+  NAME TestSPHImageResample-small-serial
+  COMMAND 
+    $<TARGET_FILE:TestSPHProbeFilter> 
+    -D "${PROJECT_SOURCE_DIR}/Testing/data"
+    -F jet.h5part
+    -T "${PLUGIN_TEST_DIR}"
+    -particlesize 0.001
+    -ghost_region 0.005
+    -massScalars "mass"
+    -scalar ShepardCoeff
+    -contour 0.5
+    -densityScalars "FLUID_density"
+    -imagetest 1
+    -V ${PROJECT_SOURCE_DIR}/Testing/baseline/TestSPHImageResample-small-serial.png
+)
+
+IF (${Trilinos_FOUND})
+  foreach(N 2;3;4)
+    ADD_TEST(
+      NAME TestSPHImageResample-small-parallel-${N}
+      COMMAND 
+        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+        $<TARGET_FILE:TestSPHProbeFilter> 
+        -D "${PROJECT_SOURCE_DIR}/Testing/data"
+        -F jet.h5part
+        -T "${PLUGIN_TEST_DIR}"
+        -particlesize 0.001
+        -ghost_region 0.005
+        -massScalars "mass"
+        -scalar ShepardCoeff
+        -contour 0.5
+        -densityScalars "FLUID_density"
+        -imagetest 1
+        -V ${PROJECT_SOURCE_DIR}/Testing/baseline/TestSPHImageResample-small-parallel-${N}.png
+    )
+  endforeach(N)
+ENDIF (${Trilinos_FOUND})
+    
