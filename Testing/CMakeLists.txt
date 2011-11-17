@@ -224,10 +224,10 @@ IF (${Trilinos_FOUND})
 ENDIF (${Trilinos_FOUND})
     
 IF (${Trilinos_FOUND})
-  foreach(resolution 0.01 0.005 0.0025)
+  foreach(resolution 0.05 0.01 0.005 0.0025)
     foreach(N 4 8 16 32 64)
       ADD_TEST(
-        NAME TestSPHImageResample-large-parallel-${N}-${resolution}
+        NAME TestSPHImageResample-large-parallel-${resolution}-${N}
         COMMAND 
           ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
           $<TARGET_FILE:TestSPHProbeFilter> 
@@ -241,7 +241,11 @@ IF (${Trilinos_FOUND})
           -contour 0.1
           -densityScalars "FLUID_rho"
           -imagetest 1
-          -V ${PROJECT_SOURCE_DIR}/Testing/baseline/TestSPHImageResample-large-parallel-${N}-${resolution}.png
+          -windowSize "1024 768"
+          -cameraPosition "3.92508375929083 -0.470409761751235 0.596415817759249"
+          -cameraFocus    "-2.02775364406982 2.726745716382 -0.509656384551184"
+          -cameraViewUp   "-0.11305097024463 0.130278141647241 0.98501121005585"
+          -V ${PROJECT_SOURCE_DIR}/Testing/baseline/TestSPHImageResample-large-parallel-${resolution}-${N}.png
       )
     endforeach(N)
   endforeach(resolution)
