@@ -10,6 +10,10 @@
 // "C:\Program Files\MPICH2\bin\mpiexec.exe" "-localonly" "-n" "4" "C:/cmakebuild/plugins/bin/Debug/TestSPHProbeFilter.exe" "-D" "C:/Code/plugins/pv-meshless/Testing/data" "-F" "dam-17.h5part" "-T" "C:/cmakebuild/plugins/pv-meshless/Testing/Temporary" "-particlesize" "0.005" "-ghost_region" "0.01" "-gridSpacing" "0.0025 0.0025 0.0025" "-scalar" "ShepardCoeff" "-contour" "0.1" "-densityScalars" "FLUID_rho" "-imagetest" "1" "-V" "C:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-4.png"
 // "C:\Program Files\MPICH2\bin\mpiexec.exe" "-localonly" "-n" "4" "C:/cmakebuild/plugins/bin/Debug/TestSPHProbeFilter.exe" "-D" "C:/Code/plugins/pv-meshless/Testing/data" "-F" "dam-17.h5part" "-T" "C:/cmakebuild/plugins/pv-meshless/Testing/Temporary" "-particlesize" "0.005" "-ghost_region" "0.01" "-gridSpacing" "0.0025 0.0025 0.0025" "-scalar" "ShepardCoeff" "-contour" "0.1" "-densityScalars" "FLUID_rho" "-imagetest" "1" "-V" "C:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-4.png"
 
+// Breno Extent debugging
+//
+// "C:\Program Files\MPICH2\bin\mpiexec.exe" "-localonly" "-n" "8" "D:/cmakebuild/plugins/bin/Debug/TestSPHProbeFilter.exe" 
+// -D D:/Code/plugins/pv-meshless/Testing/data -F dam-17.h5part -T D:/cmakebuild/plugins/pv-meshless/Testing/Temporary -particlesize 0.005 -ghost_region 0.01 -gridSpacing 0.01 0.01 0.01 -scalar ShepardCoeff -contour 0.1 -densityScalars FLUID_rho -imagetest 1 -V D:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-8-0.005.png -I
 #ifdef _WIN32
   #include <windows.h>
 #else 
@@ -75,11 +79,6 @@
 //----------------------------------------------------------------------------
 static const int ISO_OUTPUT_TAG=301;
 //----------------------------------------------------------------------------
-std::string usage = "\n"\
-"\t-D path to use for h5part file \n" \
-"\t-F name to use for h5part file \n" \
-"\t-R Render. Displays points using vtk renderwindow \n" \
-"\t-I Interactive (waits until user closes render window if -R selected) \n";
 
 //----------------------------------------------------------------------------
 template <typename T>
@@ -92,7 +91,8 @@ T GetParameter(const char *argstr, const char *message, int argc, char **argv, T
     vtkstd::stringstream temp(tempChar);
     temp >> newValue;
     if (rank==0) {
-      std::cout << message << "\t\t {" << newValue << "}" << std::endl;
+      std::cout.width(30);
+      std::cout << message << " {" << newValue << "}" << std::endl;
     }
     valueset = true;
   }
@@ -109,8 +109,13 @@ bool GetArrayParameter(const char *argstr, const char *message, T *data, int com
     vtkstd::stringstream temp(tempChar);
     for (int i=0; i<components; i++) temp >> data[i];
     if (rank==0) {
-      std::cout << message << "\t\t {";
-      for (int i=0; i<components; i++) std::cout << data[i] << (i==components) ? "}" : ",";
+      std::cout.width(30);
+      std::cout << message << " {";
+      std::cout.width(0);
+      for (int i=0; i<components; i++) {
+        std::cout << data[i];
+        (i==(components-1)) ? std::cout << "}" : std::cout << ",";
+      }
       std::cout << std::endl;
     }
     valueset = true;
@@ -131,13 +136,15 @@ int main (int argc, char* argv[])
   MPI_Init(&argc, &argv);
   vtkSmartPointer<vtkMPIController> controller = vtkSmartPointer<vtkMPIController>::New();
   controller->Initialize(&argc, &argv, 1);
-
+  
   // Obtain the id of the running process and the total
   // number of processes
   vtkTypeInt64 myRank = controller->GetLocalProcessId();
   vtkTypeInt64 numProcs = controller->GetNumberOfProcesses();
   if (myRank==0) {
-    std::cout << usage.c_str() << std::endl;
+//    char ch;
+//    std::cout << "Attach debugger" << std::endl;
+//    std::cin >> ch;
   }
   controller->Barrier();
 
@@ -193,6 +200,14 @@ int main (int argc, char* argv[])
   unused = GetArrayParameter<double>("-cameraFocus", "Camera Focus", cameraFocus, 3, argc, argv, myRank);
   unused = GetArrayParameter<double>("-cameraViewUp", "Camera ViewUp", cameraViewUp, 3, argc, argv, myRank);
 
+  gridSpacing[2] = gridSpacing[1] = gridSpacing[0];
+
+  if (myRank==0) {
+    std::cout << "//--------------------------------------------------------------" << std::endl;
+    std::cout << "//" << std::endl;
+    std::cout << "//--------------------------------------------------------------" << std::endl;
+  }
+  controller->Barrier();
   //--------------------------------------------------------------
   // 
   //--------------------------------------------------------------
@@ -213,18 +228,55 @@ int main (int argc, char* argv[])
   reader->SetController(controller);
   reader->SetGenerateVertexCells(1);
 
+  //--------------------------------------------------------------
+  // Update in parallel:
+  // To get parallel operation correct, we need to make sure that piece
+  // information is passed upstream. first update information,
+  // then set piece update extent,
+  //--------------------------------------------------------------
+
+  // We can't compute the extents of the image until we know the bounds of the data, 
+  // so update reader first.
+  vtkStreamingDemandDrivenPipeline *reader_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(reader->GetExecutive());
+  reader_sddp->UpdateDataObject();
+  reader_sddp->UpdateInformation();
+  std::cout << "Reader Information Updated " << myRank << " of " << numProcs << std::endl;
+  reader_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
+  reader_sddp->Update();
+  std::cout << "Reader Updated " << myRank << " of " << numProcs << std::endl;
+  controller->Barrier();
+
   vtkSmartPointer<vtkAlgorithm> data_algorithm = reader; 
 #ifdef PV_MESHLESS_TRILINOS
   //--------------------------------------------------------------
   // Parallel partition
   //--------------------------------------------------------------
+  std::cout << "Creating Partitioner " << myRank << " of " << numProcs << std::endl;
+  controller->Barrier();
   vtkSmartPointer<vtkParticlePartitionFilter> partitioner = vtkSmartPointer<vtkParticlePartitionFilter>::New();
   partitioner->SetInputConnection(reader->GetOutputPort());
   partitioner->SetGhostCellOverlap(ghost);
   partitioner->SetController(controller);
+  //
+  vtkStreamingDemandDrivenPipeline *partition_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(partitioner->GetExecutive());
+  partition_sddp->UpdateDataObject();
+  std::cout << "Partition DataObject Updated " << myRank << " of " << numProcs << std::endl;
+  controller->Barrier();
+  partition_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
+  partition_sddp->UpdateInformation();
+  std::cout << "Partition Information Updated " << myRank << " of " << numProcs << std::endl;
+  controller->Barrier();
+  std::cout << "Partition Update coming " << myRank << " of " << numProcs << std::endl;
+  controller->Barrier();
+  partition_sddp->Update();
+  std::cout << "Partition Updated " << myRank << " of " << numProcs << std::endl;
+  controller->Barrier();
+  //
   data_algorithm = partitioner;
 #endif
 
+  std::cout << "Creating SPHManager " << myRank << " of " << numProcs << std::endl;
+  controller->Barrier();
   vtkSmartPointer<vtkSPHManager> sphManager = vtkSmartPointer<vtkSPHManager>::New();
   sphManager->SetDefaultDensity(1000.0);
   if (fixNeighbours) {
@@ -249,6 +301,7 @@ int main (int argc, char* argv[])
     sphProbe->SetInputConnection(data_algorithm->GetOutputPort());
     if (gridSpacing[0]>0.0) {
       sphProbe->SetSpacing(gridSpacing);
+      sphProbe->SetResolution(0,0,0);
     }
     else {
       sphProbe->SetResolution(32,64,32);
@@ -281,45 +334,18 @@ int main (int argc, char* argv[])
   }
 
   //
-  //--------------------------------------------------------------
-  // Update in parallel:
-  // To get parallel operation correct, we need to make sure that piece
-  // information is passed upstream. first update information,
-  // then set piece update extent,
-  //--------------------------------------------------------------
-  // no piece info set yet, assumes info is not piece dependent
-  if (1 || ImageTest) {
-    // We can't compute the extents of the image until we know the bounds of the data, 
-    // so update reader first.
-    vtkStreamingDemandDrivenPipeline *reader_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(reader->GetExecutive());
-    reader_sddp->UpdateDataObject();
-    reader_sddp->UpdateInformation();
-    reader_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
-    reader_sddp->Update();
-  }
-  //
   vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
   timer->StartTimer();
-  //
-  vtkStreamingDemandDrivenPipeline *resample_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(resample_algorithm->GetExecutive());
-  if (1 || ImageTest) {
-    // We can't compute the extents of the image until we know the bounds of the data, 
-    // so update reader first.
-    vtkStreamingDemandDrivenPipeline *partition_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(data_algorithm->GetExecutive());
-    partition_sddp->UpdateDataObject();
-    partition_sddp->UpdateInformation();
-    partition_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
-    partition_sddp->Update();
-    std::cout << "Partition updated " << myRank << " of " << numProcs << std::endl;
-    //
-    std::cout << "Setting resample piece information " << myRank << " of " << numProcs << std::endl;
-    resample_sddp->UpdateDataObject();
-    resample_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
-  }
+
   //
   // Update SPH Pipeline
   //
+  vtkStreamingDemandDrivenPipeline *resample_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(resample_algorithm->GetExecutive());
+  std::cout << "Setting resample piece information " << myRank << " of " << numProcs << std::endl;
+  resample_sddp->UpdateDataObject();
   resample_sddp->UpdateInformation();
+  resample_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
+  controller->Barrier();
   resample_sddp->Update();
 
   //
@@ -337,7 +363,7 @@ int main (int argc, char* argv[])
   // Fetch smoothed output for testing results
   //--------------------------------------------------------------
   vtkDataSet *sph_results = vtkDataSet::SafeDownCast(resample_sddp->GetOutputData(0));
-  
+
   //--------------------------------------------------------------
   // 
   //--------------------------------------------------------------
@@ -435,6 +461,23 @@ int main (int argc, char* argv[])
     //
     vtkSmartPointer<vtkPolyData> contourData = vtkSmartPointer<vtkPolyData>::New();
     contourData->ShallowCopy(vis_sddp->GetOutputData(0));
+
+    //
+    // Release all the probing pipeline to free memory so that process zero
+    // is less likely to crash when collecting results.
+    //
+    partitioner->SetInputConnection(NULL);
+    resample_algorithm->SetInputConnection(NULL);
+    iso->SetInputConnection(NULL);
+    processId->SetInputConnection(NULL);
+    reader             = NULL;
+    partitioner        = NULL;
+    sphManager         = NULL;
+    resample_algorithm = NULL;
+    iso                = NULL;
+    processId          = NULL;
+    controller->Barrier();
+
     //
     // Rank >0 Send contour pieces to rank 0
     //
