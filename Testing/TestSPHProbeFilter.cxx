@@ -5,6 +5,11 @@
 // appargs : -D D:/Code/plugins/pv-meshless/Testing/data -F dam-17.h5part -T D:/cmakebuild/plugins/pv-meshless/Testing/Temporary -particlesize 0.005 -ghost_region 0.01 -gridSpacing 0.0025 0.0025 0.0025 -scalar ShepardCoeff -contour 0.1 -densityScalars FLUID_rho -imagetest 1 -V D:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-4.png
 // mpishim : C:\Program Files\Microsoft Visual Studio 9.0\Common7\IDE\Remote Debugger\x64\mpishim.exe
 
+// //breno
+// set path=c:\bin;d:\cmakebuild\pv-meshless\bin\release;d:\cmakebuild\cmake\bin\Debug
+// "C:\Program Files\MPICH2\bin\mpiexec.exe" "-localonly" "-n" "4" "C:/cmakebuild/plugins/bin/Debug/TestSPHProbeFilter.exe" "-D" "C:/Code/plugins/pv-meshless/Testing/data" "-F" "dam-17.h5part" "-T" "C:/cmakebuild/plugins/pv-meshless/Testing/Temporary" "-particlesize" "0.005" "-ghost_region" "0.01" "-gridSpacing" "0.0025 0.0025 0.0025" "-scalar" "ShepardCoeff" "-contour" "0.1" "-densityScalars" "FLUID_rho" "-imagetest" "1" "-V" "C:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-4.png"
+// "C:\Program Files\MPICH2\bin\mpiexec.exe" "-localonly" "-n" "4" "C:/cmakebuild/plugins/bin/Debug/TestSPHProbeFilter.exe" "-D" "C:/Code/plugins/pv-meshless/Testing/data" "-F" "dam-17.h5part" "-T" "C:/cmakebuild/plugins/pv-meshless/Testing/Temporary" "-particlesize" "0.005" "-ghost_region" "0.01" "-gridSpacing" "0.0025 0.0025 0.0025" "-scalar" "ShepardCoeff" "-contour" "0.1" "-densityScalars" "FLUID_rho" "-imagetest" "1" "-V" "C:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-4.png"
+
 #ifdef _WIN32
   #include <windows.h>
 #else 
@@ -76,7 +81,43 @@ std::string usage = "\n"\
 "\t-R Render. Displays points using vtk renderwindow \n" \
 "\t-I Interactive (waits until user closes render window if -R selected) \n";
 
-
+//----------------------------------------------------------------------------
+template <typename T>
+T GetParameter(const char *argstr, const char *message, int argc, char **argv, T defaultvalue, int rank, bool &valueset)
+{
+  char *tempChar = vtkTestUtilities::GetArgOrEnvOrDefault(argstr, argc, argv, "", "");
+  T newValue = defaultvalue;
+  valueset = false;
+  if (std::string(tempChar).size()) {
+    vtkstd::stringstream temp(tempChar);
+    temp >> newValue;
+    if (rank==0) {
+      std::cout << message << "\t\t {" << newValue << "}" << std::endl;
+    }
+    valueset = true;
+  }
+  delete []tempChar;
+  return newValue;
+}
+//----------------------------------------------------------------------------
+template <typename T>
+bool GetArrayParameter(const char *argstr, const char *message, T *data, int components, int argc, char **argv, int rank)
+{
+  char *tempChar = vtkTestUtilities::GetArgOrEnvOrDefault(argstr, argc, argv, "", "");
+  bool valueset = false;
+  if (std::string(tempChar).size()) {
+    vtkstd::stringstream temp(tempChar);
+    for (int i=0; i<components; i++) temp >> data[i];
+    if (rank==0) {
+      std::cout << message << "\t\t {";
+      for (int i=0; i<components; i++) std::cout << data[i] << (i==components) ? "}" : ",";
+      std::cout << std::endl;
+    }
+    valueset = true;
+  }
+  delete []tempChar;
+  return valueset;
+}
 //----------------------------------------------------------------------------
 int main (int argc, char* argv[])
 {
@@ -123,144 +164,34 @@ int main (int argc, char* argv[])
   outwin->SetOutputStream(&std::cout);
 
   //--------------------------------------------------------------
-  // 
-  //--------------------------------------------------------------
-  char *tempChar;
-
-  //--------------------------------------------------------------
-  // File names/dirs
-  //--------------------------------------------------------------
-  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-neighbours", argc, argv, "", "");
-  int maxN;
-  bool fixNeighbours = false;
-  if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
-    temp >> maxN;
-    if (myRank==0) {
-      std::cout << "Fixed Neighbours      {" << maxN << "}" << std::endl;
-    }
-    fixNeighbours = true;
-  }
-  delete []tempChar;
-
-  //--------------------------------------------------------------
   // Testing params
   //--------------------------------------------------------------
-  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-particlesize", argc, argv, "", "");
-  double p_size;
-  bool fixRadius = false;
-  if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
-    temp >> p_size;
-    if (myRank==0) {
-      std::cout << "Particle Size         {" << p_size << "}" << std::endl;
-    }
-    fixRadius = true;
-  }
-  delete []tempChar;
+  bool unused, fixNeighbours, fixRadius;
+  double gridSpacing[3] = {0.0, 0.0, 0.0};
+  double vminmax[2] = {0.0, 0.0};
+  double vpos[3] = {0.0, 0.0, 0.0};
+  double cameraPosition[3] = {0.0, 0.0, 0.0};
+  double cameraFocus[3] = {0.0, 1.0, 0.0};
+  double cameraViewUp[3] = {0.0, 0.0, 1.0};
 
-  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-scalar", argc, argv, "", "");
-  std::string scalarname;
-  if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
-    temp >> scalarname;
-    if (myRank==0) {
-      std::cout << "Testing Scalar array  {" << scalarname << "}" << std::endl;
-    }
-  }
-  delete []tempChar;
+  //
+  int            maxN = GetParameter<int>("-neighbours", "Fixed Neighbours", argc, argv, 0, myRank, fixNeighbours);
+  double particleSize = GetParameter<double>("-particlesize", "Particle Size", argc, argv, 0, myRank, fixRadius);
+  double        ghost = GetParameter<double>("-ghost_region", "Ghost Region", argc, argv, 0.0, myRank, unused);
+  double   contourVal = GetParameter<double>("-contour", "Contour Value", argc, argv, 0.0, myRank, unused);
+  bool      ImageTest = GetParameter<bool>("-imagetest", "ImageTest", argc, argv, 0, myRank, unused);
 
-  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-massScalars", argc, argv, "", "");
-  std::string massScalars;
-  if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
-    temp >> massScalars;
-    if (myRank==0) {
-      std::cout << "Mass Scalar array  {" << massScalars << "}" << std::endl;
-    }
-  }
-  delete []tempChar;
+  std::string     scalarname = GetParameter<std::string>("-scalar", "Testing Scalar array", argc, argv, "", myRank, unused);
+  std::string    massScalars = GetParameter<std::string>("-massScalars", "Mass Scalar array", argc, argv, "", myRank, unused);
+  std::string densityScalars = GetParameter<std::string>("-densityScalars", "Density Scalar array", argc, argv, "", myRank, unused);
 
-  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-densityScalars", argc, argv, "", "");
-  std::string densityScalars;
-  if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
-    temp >> densityScalars;
-    if (myRank==0) {
-      std::cout << "Density Scalar array  {" << densityScalars << "}" << std::endl;
-    }
-  }
-  delete []tempChar;
+  unused = GetArrayParameter<double>("-gridSpacing", "Grid Spacing", gridSpacing, 3, argc, argv, myRank);
+  unused = GetArrayParameter<double>("-value_range", "Test Valid : value_range", vminmax, 2, argc, argv, myRank);
+  unused = GetArrayParameter<double>("-peak_position", "Test Valid : scalar_peak_position", vpos, 3, argc, argv, myRank);
 
-  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-ghost_region", argc, argv, "", "");
-  double ghost = 0.0;
-  if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
-    temp >> ghost;
-    if (myRank==0) {
-      std::cout << "Ghost Region {" << ghost << "}" << std::endl;
-    }
-  }
-  delete []tempChar;
-
-  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-contour", argc, argv, "", "");
-  double contourVal = 0.0;
-  if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
-    temp >> contourVal;
-    if (myRank==0) {
-      std::cout << "Contour Value {" << contourVal << "}" << std::endl;
-    }
-  }
-  delete []tempChar;
-
-  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-gridSpacing", argc, argv, "", "");
-  double gridSpacing[3] = {0.005, 0.005, 0.005};
-  if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
-//    temp >> gridSpacing[0] >> gridSpacing[1] >> gridSpacing[2];
-//    gridSpacing[2] = gridSpacing[1] = gridSpacing[0];
-    if (myRank==0) {
-      std::cout << "Grid Spacing {" << gridSpacing[0] << ',' << gridSpacing[1] << "," << gridSpacing[2] << "}" << std::endl;
-    }
-  }
-  delete []tempChar;
-
-  //--------------------------------------------------------------
-  // Valid test results
-  //--------------------------------------------------------------
-  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-value_range", argc, argv, "", "");
-  double vmin=0,vmax=0;
-  if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
-    temp >> vmin >> vmax;
-    if (myRank==0) {
-      std::cout << "Test Valid : value_range {" << vmin << ',' << vmax << "}" << std::endl;
-    }
-  }
-  delete []tempChar;
-
-  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-peak_position", argc, argv, "", "");
-  double vpos[3];
-  if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
-    temp >> vpos[0] >> vpos[1] >> vpos[2];
-    if (myRank==0) {
-      std::cout << "Test Valid : scalar_peak_position {" << vpos[0] << ',' << vpos[1] << "," << vpos[2] << "}" << std::endl;
-    }
-  }
-  delete []tempChar;
-
-  tempChar = vtkTestUtilities::GetArgOrEnvOrDefault("-imagetest", argc, argv, "", "");
-  bool ImageTest = false;
-  if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
-    temp >> ImageTest;
-    if (myRank==0) {
-      std::cout << "ImageTest : " << ImageTest << std::endl;
-    }
-  }
-  delete []tempChar;
+  unused = GetArrayParameter<double>("-cameraPosition", "Camera Position", cameraPosition, 3, argc, argv, myRank);
+  unused = GetArrayParameter<double>("-cameraFocus", "Camera Focus", cameraFocus, 3, argc, argv, myRank);
+  unused = GetArrayParameter<double>("-cameraViewUp", "Camera ViewUp", cameraViewUp, 3, argc, argv, myRank);
 
   //--------------------------------------------------------------
   // 
@@ -308,8 +239,8 @@ int main (int argc, char* argv[])
     sphManager->SetKernelDimension(3);
     sphManager->SetKernelTypeToCubicSpline();
     sphManager->SetHCoefficient(1.5);
-    sphManager->SetDefaultParticleSideLength(p_size);
-    sphManager->SetMaximumSearchRadius(p_size*1.5*3.0); 
+    sphManager->SetDefaultParticleSideLength(particleSize);
+    sphManager->SetMaximumSearchRadius(particleSize*1.5*3.0); 
   }
 
   vtkSmartPointer<vtkAlgorithm> resample_algorithm; 
@@ -322,7 +253,7 @@ int main (int argc, char* argv[])
     else {
       sphProbe->SetResolution(32,64,32);
     }
-    sphProbe->SetDelta(p_size);
+    sphProbe->SetDelta(particleSize);
     sphProbe->SetSPHManager(sphManager);
     if (massScalars.size()) {
       sphProbe->SetMassScalars(massScalars.c_str());
@@ -356,10 +287,8 @@ int main (int argc, char* argv[])
   // information is passed upstream. first update information,
   // then set piece update extent,
   //--------------------------------------------------------------
-  std::cout << "Setting resample piece information " << myRank << " of " << numProcs << std::endl;
-  vtkStreamingDemandDrivenPipeline *resample_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(resample_algorithm->GetExecutive());
   // no piece info set yet, assumes info is not piece dependent
-  if (ImageTest) {
+  if (1 || ImageTest) {
     // We can't compute the extents of the image until we know the bounds of the data, 
     // so update reader first.
     vtkStreamingDemandDrivenPipeline *reader_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(reader->GetExecutive());
@@ -367,13 +296,26 @@ int main (int argc, char* argv[])
     reader_sddp->UpdateInformation();
     reader_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
     reader_sddp->Update();
-    //
-    resample_sddp->UpdateDataObject();
-    resample_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
   }
   //
   vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
   timer->StartTimer();
+  //
+  vtkStreamingDemandDrivenPipeline *resample_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(resample_algorithm->GetExecutive());
+  if (1 || ImageTest) {
+    // We can't compute the extents of the image until we know the bounds of the data, 
+    // so update reader first.
+    vtkStreamingDemandDrivenPipeline *partition_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(data_algorithm->GetExecutive());
+    partition_sddp->UpdateDataObject();
+    partition_sddp->UpdateInformation();
+    partition_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
+    partition_sddp->Update();
+    std::cout << "Partition updated " << myRank << " of " << numProcs << std::endl;
+    //
+    std::cout << "Setting resample piece information " << myRank << " of " << numProcs << std::endl;
+    resample_sddp->UpdateDataObject();
+    resample_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
+  }
   //
   // Update SPH Pipeline
   //
@@ -434,15 +376,15 @@ int main (int argc, char* argv[])
       sph_results->GetPoint(index,scalar_pos);
       std::cout << "Position of peak SmoothedDensity particle is {" << scalar_pos[0] << "," << scalar_pos[1] << "," << scalar_pos[2] << "}" << std::endl;
       //
-      double tol_min = std::fabs(vmin/1000.0);
-      double tol_max = std::fabs(vmax/1000.0);
-      if (std::fabs(vmin-scalar_range_global[0])>tol_min || std::fabs(vmax-scalar_range_global[1])>tol_max) {
+      double tol_min = std::fabs(vminmax[0]/1000.0);
+      double tol_max = std::fabs(vminmax[1]/1000.0);
+      if (std::fabs(vminmax[0]-scalar_range_global[0])>tol_min || std::fabs(vminmax[1]-scalar_range_global[1])>tol_max) {
         ok = false;
         std::cout << "//--------------------------------------------------------------" << std::endl;
         std::cout << "min/max check failed " << std::endl;
-        std::cout << "expected {" << vmin << ',' << vmax << "}" << std::endl;
+        std::cout << "expected {" << vminmax[0] << ',' << vminmax[1] << "}" << std::endl;
         std::cout << "got {" << scalar_range_global[0] << ',' << scalar_range_global[1] << "}" << std::endl;
-        std::cout << "err {" << std::abs(vmin-scalar_range_global[0]) << ',' << std::abs(vmax-scalar_range_global[1]) << "}" << std::endl;
+        std::cout << "err {" << std::abs(vminmax[0]-scalar_range_global[0]) << ',' << std::abs(vminmax[1]-scalar_range_global[1]) << "}" << std::endl;
         std::cout << "//--------------------------------------------------------------" << std::endl;
       }
       if (std::fabs(vpos[0]-scalar_pos[0])>1E-5 ||
@@ -552,8 +494,8 @@ int main (int argc, char* argv[])
       mapper->SetScalarModeToUsePointFieldData();
       mapper->SetInterpolateScalarsBeforeMapping(0);
       mapper->SetUseLookupTableScalarRange(0);
-      const char *array_name = "FLUID_pressure";
-//      const char *array_name = "ProcessId";
+//      const char *array_name = "FLUID_pressure";
+      const char *array_name = "ProcessId";
       vtkDataArray *da = append->GetOutput()->GetPointData()->GetArray(array_name);
       mapper->SetScalarRange(da->GetRange());
       mapper->SelectColorArray(array_name);
@@ -562,9 +504,9 @@ int main (int argc, char* argv[])
       ren->AddActor(actor);
       renWindow->AddRenderer(ren);
       //
-      ren->GetActiveCamera()->SetPosition(  -0.160102, 0.106656, -0.212755);
-      ren->GetActiveCamera()->SetFocalPoint(-0.160102, 0.106656,  0.023384);
-      ren->GetActiveCamera()->SetViewUp(0,1,0);
+      ren->GetActiveCamera()->SetPosition(cameraPosition);
+      ren->GetActiveCamera()->SetFocalPoint(cameraFocus);
+      ren->GetActiveCamera()->SetViewUp(cameraViewUp);
       ren->ResetCamera();
       //
       std::cout << "Process Id : " << myRank << " About to Render" << std::endl;

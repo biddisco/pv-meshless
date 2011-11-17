@@ -217,6 +217,7 @@ int vtkSPHImageResampler::ComputeInformation(
     return 0;
   }
   this->ComputeAxesFromBounds(inputData, lengths, true);
+  std::cout << "vtkSPHImageResampler::ComputeInformation BoundsInitialized " << BoundsInitialized << std::endl;
 
   if (this->BoundsInitialized) {
     //

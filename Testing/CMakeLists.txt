@@ -193,6 +193,9 @@ ADD_TEST(
     -contour 0.5
     -densityScalars "FLUID_density"
     -imagetest 1
+    -cameraPosition "-0.160102 0.106656 -0.212755"
+    -cameraFocus    "-0.160102 0.106656  0.023384"
+    -cameraViewUp   "0 1 0"
     -V ${PROJECT_SOURCE_DIR}/Testing/baseline/TestSPHImageResample-small-serial.png
 )
 
@@ -212,30 +215,35 @@ IF (${Trilinos_FOUND})
         -contour 0.5
         -densityScalars "FLUID_density"
         -imagetest 1
+        -cameraPosition "-0.160102 0.106656 -0.212755"
+        -cameraFocus    "-0.160102 0.106656  0.023384"
+        -cameraViewUp   "0 1 0"
         -V ${PROJECT_SOURCE_DIR}/Testing/baseline/TestSPHImageResample-small-parallel-${N}.png
     )
   endforeach(N)
 ENDIF (${Trilinos_FOUND})
     
 IF (${Trilinos_FOUND})
-  foreach(N 4)
-    ADD_TEST(
-      NAME TestSPHImageResample-large-parallel-${N}
-      COMMAND 
-        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
-        $<TARGET_FILE:TestSPHProbeFilter> 
-        -D "${PROJECT_SOURCE_DIR}/Testing/data"
-        -F dam-17.h5part
-        -T "${PLUGIN_TEST_DIR}"
-        -particlesize 0.005
-        -ghost_region 0.01
-        -gridSpacing "0.0025 0.0025 0.0025"
-        -scalar ShepardCoeff
-        -contour 0.1
-        -densityScalars "FLUID_rho"
-        -imagetest 1
-        -V ${PROJECT_SOURCE_DIR}/Testing/baseline/TestSPHImageResample-large-parallel-${N}.png
-    )
-  endforeach(N)
+  foreach(resolution 0.01 0.005 0.0025)
+    foreach(N 4 8 16 32 64)
+      ADD_TEST(
+        NAME TestSPHImageResample-large-parallel-${N}-${resolution}
+        COMMAND 
+          ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+          $<TARGET_FILE:TestSPHProbeFilter> 
+          -D "${PROJECT_SOURCE_DIR}/Testing/data"
+          -F dam-17.h5part
+          -T "${PLUGIN_TEST_DIR}"
+          -particlesize 0.005
+          -ghost_region 0.01
+          -gridSpacing "${resolution} ${resolution} ${resolution}"
+          -scalar ShepardCoeff
+          -contour 0.1
+          -densityScalars "FLUID_rho"
+          -imagetest 1
+          -V ${PROJECT_SOURCE_DIR}/Testing/baseline/TestSPHImageResample-large-parallel-${N}-${resolution}.png
+      )
+    endforeach(N)
+  endforeach(resolution)
 ENDIF (${Trilinos_FOUND})
     
