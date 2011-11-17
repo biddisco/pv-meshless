@@ -43,6 +43,9 @@ IF (VTK_USE_PARALLEL AND VTK_USE_MPI)
   ADD_TEST(TestH5PartParallelWriter ${PROJECT_BINARY_DIR}/../bin/TestH5PartParallelWriter)
 ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 
+set(SLURM_FLAGS "-rmk slurm" CACHE STRING "the command for slurm hydra interaction")
+string(REPLACE " " ";" SLURM_FLAGS ${SLURM_FLAGS})
+
 #--------------------------------------------------
 # Trilinos
 #--------------------------------------------------
@@ -61,7 +64,7 @@ IF (${Trilinos_FOUND})
   ADD_TEST(
     NAME TestParticlePartitionFilter 
     COMMAND 
-      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${SLURM_FLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
       $<TARGET_FILE:TestParticlePartitionFilter> 
       -N 1000
       -F temp.h5
@@ -105,7 +108,7 @@ IF (${Trilinos_FOUND})
     ADD_TEST(
       NAME TestSPHProbeKernel-small-parallel-${N}
       COMMAND 
-        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${SLURM_FLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
         $<TARGET_FILE:TestSPHProbeFilter> 
         -D "${PROJECT_SOURCE_DIR}/Testing/data"
         -F jet.h5part
@@ -143,7 +146,7 @@ IF (${Trilinos_FOUND})
     ADD_TEST(
       NAME TestSPHProbeShepard-small-parallel-${N}
       COMMAND 
-        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${SLURM_FLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
         $<TARGET_FILE:TestSPHProbeFilter> 
         -D "${PROJECT_SOURCE_DIR}/Testing/data"
         -F AGN_subset.h5part
@@ -160,7 +163,7 @@ IF (${Trilinos_FOUND})
   ADD_TEST(
     NAME TestSPHProbeShepardLarge
     COMMAND 
-      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
+      ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${SLURM_FLAGS} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
       $<TARGET_FILE:TestSPHProbeFilter> 
       -D "${PROJECT_SOURCE_DIR}/Testing/data"
       -F AGN_densitycheck.h5part
@@ -204,7 +207,7 @@ IF (${Trilinos_FOUND})
     ADD_TEST(
       NAME TestSPHImageResample-small-parallel-${N}
       COMMAND 
-        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${SLURM_FLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
         $<TARGET_FILE:TestSPHProbeFilter> 
         -D "${PROJECT_SOURCE_DIR}/Testing/data"
         -F jet.h5part
@@ -229,7 +232,7 @@ IF (${Trilinos_FOUND})
       ADD_TEST(
         NAME TestSPHImageResample-large-parallel-${N}-${resolution}
         COMMAND 
-          ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+          ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${SLURM_FLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
           $<TARGET_FILE:TestSPHProbeFilter> 
           -D "${PROJECT_SOURCE_DIR}/Testing/data"
           -F dam-17.h5part
