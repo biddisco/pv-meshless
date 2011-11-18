@@ -556,7 +556,7 @@ int main (int argc, char* argv[])
         ren->ResetCameraClippingRange();
       }
       else {
-        ren->ResetCamera();
+      ren->ResetCamera();
       }
       //
       std::cout << "Process Id : " << myRank << " About to Render" << std::endl;
