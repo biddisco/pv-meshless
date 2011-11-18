@@ -67,8 +67,7 @@
 vtkStandardNewMacro(vtkSPHProbeFilter);
 vtkCxxSetObjectMacro(vtkSPHProbeFilter, SPHManager, vtkSPHManager);
 //----------------------------------------------------------------------------
-// #define JB_DEBUG__
-#if defined JB_DEBUG__
+#if 0
 
   #define OUTPUTTEXT(a) std::cout <<(a); std::cout.flush();
 
