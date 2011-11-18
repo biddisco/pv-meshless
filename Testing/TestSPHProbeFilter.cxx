@@ -562,7 +562,7 @@ int main (int argc, char* argv[])
       std::cout << "Process Id : " << myRank << " About to Render" << std::endl;
       renWindow->Render();
       //
-      retVal = vtkRegressionTester::Test(argc, argv, renWindow, 10);
+      retVal = vtkRegressionTester::Test(argc, argv, renWindow, 25);
       if ( retVal == vtkRegressionTester::DO_INTERACTOR) {
         iren->Start();
       }
