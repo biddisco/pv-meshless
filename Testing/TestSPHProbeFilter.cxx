@@ -75,6 +75,21 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+#if 0
+  #define OUTPUTTEXT(a) std::cout << (a);
+
+  #undef vtkDebugMacro
+  #define vtkDebugMacro(a)  \
+  { \
+    vtkOStreamWrapper::EndlType endl; \
+    vtkOStreamWrapper::UseEndl(endl); \
+    vtkOStrStreamWrapper vtkmsg; \
+    vtkmsg << name << " : " a << endl; \
+    OUTPUTTEXT(vtkmsg.str()); \
+    vtkmsg.rdbuf()->freeze(0); \
+  }
+#endif
+
 //----------------------------------------------------------------------------
 static const int ISO_OUTPUT_TAG=301;
 //----------------------------------------------------------------------------
@@ -159,7 +174,8 @@ int main (int argc, char* argv[])
     "-F", argc, argv, "DUMMY_ENV_VAR", "temp.h5");
   char* fullname = vtkTestUtilities::ExpandDataFileName(argc, argv, filename);
   if (myRank==0) {
-    std::cout << "Process Id : " << myRank << " FileName : " << fullname << std::endl;
+    std::cout.width(30);
+    std::cout << "FileName" << " {" << fullname << "}" << std::endl;
   }
 
   //
@@ -215,11 +231,11 @@ int main (int argc, char* argv[])
   // 
   //--------------------------------------------------------------
   if (!fixNeighbours && !fixRadius) {
-    std::cout << "Error : Test requires ParticleSize or Num Neighbours parameter " << std::endl;
+    std::cerr << "Error : Test requires ParticleSize or Num Neighbours parameter " << std::endl;
     return 1;
   }
   if (scalarname.size()==0) {
-    std::cout << "Error : no scalar name supplied " << std::endl;
+    std::cerr << "Error : no scalar name supplied " << std::endl;
     return 1;
   }
   
@@ -243,10 +259,10 @@ int main (int argc, char* argv[])
   vtkStreamingDemandDrivenPipeline *reader_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(reader->GetExecutive());
   reader_sddp->UpdateDataObject();
   reader_sddp->UpdateInformation();
-  std::cout << "Reader Information Updated " << myRank << " of " << numProcs << std::endl;
+  vtkDebugMacro( "Reader Information Updated " << myRank << " of " << numProcs );
   reader_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
   reader_sddp->Update();
-  std::cout << "Reader Updated " << myRank << " of " << numProcs << std::endl;
+  vtkDebugMacro( "Reader Updated " << myRank << " of " << numProcs );
   controller->Barrier();
 
   vtkSmartPointer<vtkAlgorithm> data_algorithm = reader; 
@@ -254,7 +270,7 @@ int main (int argc, char* argv[])
   //--------------------------------------------------------------
   // Parallel partition
   //--------------------------------------------------------------
-  std::cout << "Creating Partitioner " << myRank << " of " << numProcs << std::endl;
+  vtkDebugMacro( "Creating Partitioner " << myRank << " of " << numProcs );
   controller->Barrier();
   vtkSmartPointer<vtkParticlePartitionFilter> partitioner = vtkSmartPointer<vtkParticlePartitionFilter>::New();
   partitioner->SetInputConnection(reader->GetOutputPort());
@@ -263,22 +279,22 @@ int main (int argc, char* argv[])
   //
   vtkStreamingDemandDrivenPipeline *partition_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(partitioner->GetExecutive());
   partition_sddp->UpdateDataObject();
-  std::cout << "Partition DataObject Updated " << myRank << " of " << numProcs << std::endl;
+  vtkDebugMacro( "Partition DataObject Updated " << myRank << " of " << numProcs );
   controller->Barrier();
   partition_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
   partition_sddp->UpdateInformation();
-  std::cout << "Partition Information Updated " << myRank << " of " << numProcs << std::endl;
+  vtkDebugMacro( "Partition Information Updated " << myRank << " of " << numProcs );
   controller->Barrier();
-  std::cout << "Partition Update coming " << myRank << " of " << numProcs << std::endl;
+  vtkDebugMacro( "Partition Update coming " << myRank << " of " << numProcs );
   controller->Barrier();
   partition_sddp->Update();
-  std::cout << "Partition Updated " << myRank << " of " << numProcs << std::endl;
+  vtkDebugMacro( "Partition Updated " << myRank << " of " << numProcs );
   controller->Barrier();
   //
   data_algorithm = partitioner;
 #endif
 
-  std::cout << "Creating SPHManager " << myRank << " of " << numProcs << std::endl;
+  vtkDebugMacro( "Creating SPHManager " << myRank << " of " << numProcs );
   controller->Barrier();
   vtkSmartPointer<vtkSPHManager> sphManager = vtkSmartPointer<vtkSPHManager>::New();
   sphManager->SetDefaultDensity(1000.0);
@@ -344,7 +360,7 @@ int main (int argc, char* argv[])
   // Update SPH Pipeline
   //
   vtkStreamingDemandDrivenPipeline *resample_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(resample_algorithm->GetExecutive());
-  std::cout << "Setting resample piece information " << myRank << " of " << numProcs << std::endl;
+  vtkDebugMacro( "Setting resample piece information " << myRank << " of " << numProcs );
   resample_sddp->UpdateDataObject();
   resample_sddp->UpdateInformation();
   resample_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
@@ -453,14 +469,14 @@ int main (int argc, char* argv[])
     //
     vtkStreamingDemandDrivenPipeline *vis_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(vis_algorithm->GetExecutive());
     // no piece info set yet, assumes info is not piece dependent
-    std::cout << "Setting viz piece information " << myRank << " of " << numProcs << std::endl;
+    vtkDebugMacro( "Setting viz piece information " << myRank << " of " << numProcs );
     vis_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
-    std::cout << "Viz UpdateInformation " << std::endl;
+    vtkDebugMacro( "Viz UpdateInformation " );
     vis_sddp->UpdateInformation();
-    std::cout << "Viz Update " << std::endl;
+    vtkDebugMacro( "Viz Update " );
     vis_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
     vis_sddp->Update();
-    std::cout << "Viz Done " << std::endl;
+    vtkDebugMacro( "Viz Done " );
     //
     vtkSmartPointer<vtkPolyData> contourData = vtkSmartPointer<vtkPolyData>::New();
     contourData->ShallowCopy(vis_sddp->GetOutputData(0));
@@ -488,7 +504,7 @@ int main (int argc, char* argv[])
       const char *array_name = "ProcessId";
       vtkDataArray *da = contourData->GetPointData()->GetArray(array_name);
       double *rg = da->GetRange();
-      std::cout << "Range (Sending) " << rg[0] << " " << rg[1] << std::endl;
+      vtkDebugMacro( "Range (Sending) " << rg[0] << " " << rg[1] );
       controller->Send(contourData, 0, ISO_OUTPUT_TAG);
     }
     //
@@ -516,7 +532,7 @@ int main (int argc, char* argv[])
         const char *array_name = "ProcessId";
         vtkDataArray *da = pd->GetPointData()->GetArray(array_name);
         double *rg = da->GetRange();
-        std::cout << "Range (Receive) " << rg[0] << " " << rg[1] << std::endl;
+        vtkDebugMacro( "Range (Receive) " << rg[0] << " " << rg[1] );
         //
         // Display boxes for each partition
         //
@@ -559,14 +575,14 @@ int main (int argc, char* argv[])
         ren->ResetCamera();
       }
       //
-      std::cout << "Process Id : " << myRank << " About to Render" << std::endl;
+      vtkDebugMacro( "Process Id : " << myRank << " About to Render" );
       renWindow->Render();
       //
       retVal = vtkRegressionTester::Test(argc, argv, renWindow, 25);
       if ( retVal == vtkRegressionTester::DO_INTERACTOR) {
         iren->Start();
       }
-      std::cout << "Process Id : " << myRank << " Rendered" << std::endl;
+      vtkDebugMacro( "Process Id : " << myRank << " Rendered" );
       ok = (retVal==vtkRegressionTester::PASSED);
     }
   }
