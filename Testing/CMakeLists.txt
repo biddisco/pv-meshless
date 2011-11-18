@@ -114,6 +114,7 @@ FOREACH(N 1;2;3;4)
     -T "${PLUGIN_TEST_DIR}"
     -testName ${test_name}
     -particlesize 0.001
+    -ghost_region 0.003
     -massScalars "mass"
     -scalar ShepardCoeff
     -value_range "0.228203 1.1817"
@@ -166,6 +167,7 @@ FOREACH(N 1;2;3;4)
           -T "${PLUGIN_TEST_DIR}"
           -testName ${test_name}
           -neighbours 32
+          -ghost_region 0.01
           -massScalars "mass"
           -scalar SmoothedDensity
           -value_range   "0.019823620095849 1565.79528808594"
@@ -198,7 +200,7 @@ FOREACH(N 1;2;3;4)
   ENDIF (${Trilinos_FOUND} AND N GREATER 1)
 ENDFOREACH(N)
   
-FOREACH(N 16;32;64)
+FOREACH(N 16;32;64;128;192)
   SET(test_name "TestSPHProbeShepard-densitycheck-P${N}")
     #
     # Parallel N>1
