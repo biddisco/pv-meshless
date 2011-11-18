@@ -106,7 +106,7 @@ TARGET_LINK_LIBRARIES(TestSPHProbeFilter
 # Test Probe Filter : Kernel Mode
 # Serial / Parallel
 #--------------------------------------------------
-FOREACH(N 1;2;3;4)
+FOREACH(N 1 2 3 4)
   SET(test_name "TestSPHProbeKernel-P${N}")
   SET(TestParams 
     -D "${PROJECT_SOURCE_DIR}/Testing/data"
@@ -152,7 +152,7 @@ ENDFOREACH(N)
 # Test Probe Filter : Shepard Mode
 # Serial / Parallel
 #--------------------------------------------------
-FOREACH(N 1;2;3;4)
+FOREACH(N 1 2 3 4)
   SET(test_name "TestSPHProbeShepard-subset-P${N}")
     #
     # Serial N==1
@@ -200,7 +200,7 @@ FOREACH(N 1;2;3;4)
   ENDIF (${Trilinos_FOUND} AND N GREATER 1)
 ENDFOREACH(N)
   
-FOREACH(N 16;32;64;128;192)
+FOREACH(N 16 32 64 128 192)
   SET(test_name "TestSPHProbeShepard-densitycheck-P${N}")
     #
     # Parallel N>1
@@ -234,7 +234,7 @@ ENDFOREACH(N)
 #--------------------------------------------------
 SET(counter 1)
 FOREACH(resolution 0.005 0.001 0.0005)
-  FOREACH(N 1;2;3;4)
+  FOREACH(N 1 2 3 4)
     SET(test_name "TestSPHImageResample-jet-N${counter}-R${resolution}-P${N}")
     SET(TestParams 
       -D "${PROJECT_SOURCE_DIR}/Testing/data"
@@ -291,7 +291,7 @@ ENDFOREACH(resolution)
 #--------------------------------------------------
 SET(counter 1)
 FOREACH(resolution 0.05 0.01 0.005)
-  FOREACH(N 1 4 8 16 32 64)
+  FOREACH(N 1 4 8 16 32 64 128 192)
     SET(test_name "TestSPHImageResample-dam-N${counter}-R${resolution}-P${N}")
     SET(TestParams 
       -D "${PROJECT_SOURCE_DIR}/Testing/data"
