@@ -108,46 +108,42 @@ TARGET_LINK_LIBRARIES(TestSPHProbeFilter
 #--------------------------------------------------
 FOREACH(N 1;2;3;4)
   SET(test_name "TestSPHProbeKernel-P${N}")
-    #
-    # Serial N==1
-    #
-    IF(N EQUAL 1)
+  SET(TestParams 
+    -D "${PROJECT_SOURCE_DIR}/Testing/data"
+    -F jet.h5part
+    -T "${PLUGIN_TEST_DIR}"
+    -testName ${test_name}
+    -particlesize 0.001
+    -massScalars "mass"
+    -scalar ShepardCoeff
+    -value_range "0.228203 1.1817"
+    -peak_position "-0.163415 0.129112 0.00150253"
+  )
+  #
+  # Serial N==1
+  #
+  IF(N EQUAL 1)
+    ADD_TEST(
+      NAME ${test_name}
+      COMMAND 
+        $<TARGET_FILE:TestSPHProbeFilter> 
+        ${TestParams}
+    )
+  ENDIF(N EQUAL 1)
+  #
+  # Parallel N>1
+  #
+  IF(${Trilinos_FOUND} AND N GREATER 1)
+    greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
+    IF(processors)
       ADD_TEST(
-        NAME ${test_name}
+      NAME ${test_name}
         COMMAND 
+          ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
           $<TARGET_FILE:TestSPHProbeFilter> 
-          -D "${PROJECT_SOURCE_DIR}/Testing/data"
-          -F jet.h5part
-          -T "${PLUGIN_TEST_DIR}"
-          -particlesize 0.001
-          -massScalars "mass"
-          -scalar ShepardCoeff
-          -value_range "0.228203 1.1817"
-          -peak_position "-0.163415 0.129112 0.00150253"
+          ${TestParams}
       )
-    ENDIF(N EQUAL 1)
-    #
-    # Parallel N>1
-    #
-    IF(${Trilinos_FOUND} AND N GREATER 1)
-      greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-      IF(processors)
-        ADD_TEST(
-        NAME ${test_name}
-          COMMAND 
-            ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
-            $<TARGET_FILE:TestSPHProbeFilter> 
-            -D "${PROJECT_SOURCE_DIR}/Testing/data"
-            -F jet.h5part
-            -T "${PLUGIN_TEST_DIR}"
-            -ghost_region 0.002
-            -particlesize 0.001
-            -massScalars "mass"
-            -scalar ShepardCoeff
-            -value_range   "0.228203 1.1817"
-            -peak_position "-0.163415 0.129112 0.00150253"
-        )
-      ENDIF(processors)
+    ENDIF(processors)
   ENDIF (${Trilinos_FOUND} AND N GREATER 1)
 ENDFOREACH(N)
     
@@ -168,6 +164,7 @@ FOREACH(N 1;2;3;4)
           -D "${PROJECT_SOURCE_DIR}/Testing/data"
           -F AGN_subset.h5part
           -T "${PLUGIN_TEST_DIR}"
+          -testName ${test_name}
           -neighbours 32
           -massScalars "mass"
           -scalar SmoothedDensity
@@ -189,6 +186,7 @@ FOREACH(N 1;2;3;4)
           -D "${PROJECT_SOURCE_DIR}/Testing/data"
           -F AGN_subset.h5part
           -T "${PLUGIN_TEST_DIR}"
+          -testName ${test_name}
           -neighbours 32
           -ghost_region 0.01
           -massScalars "mass"
@@ -216,6 +214,7 @@ FOREACH(N 16;32;64)
             -D "${PROJECT_SOURCE_DIR}/Testing/data"
             -F AGN_densitycheck.h5part
             -T "${PLUGIN_TEST_DIR}"
+            -testName ${test_name}
             -neighbours 32
             -ghost_region 0.01
             -massScalars "mass"
@@ -235,6 +234,25 @@ SET(counter 1)
 FOREACH(resolution 0.005 0.001 0.0005)
   FOREACH(N 1;2;3;4)
     SET(test_name "TestSPHImageResample-jet-N${counter}-R${resolution}-P${N}")
+    SET(TestParams 
+      -D "${PROJECT_SOURCE_DIR}/Testing/data"
+      -F jet.h5part
+      -T "${PLUGIN_TEST_DIR}"
+      -testName ${test_name}
+      -particlesize 0.001
+      -ghost_region 0.003
+      -gridSpacing "${resolution} ${resolution} ${resolution}"
+      -massScalars "mass"
+      -scalar ShepardCoeff
+      -contour 0.5
+      -densityScalars "FLUID_density"
+      -imagetest 1
+      -cameraPosition "-0.160102 0.106656 -0.212755"
+      -cameraFocus    "-0.160102 0.106656  0.023384"
+      -cameraViewUp   "0 1 0"
+      -imageScalars "ProcessId"
+      -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
+    )
     #
     # Serial N==1
     #
@@ -243,22 +261,7 @@ FOREACH(resolution 0.005 0.001 0.0005)
         NAME ${test_name}
         COMMAND 
           $<TARGET_FILE:TestSPHProbeFilter> 
-          -D "${PROJECT_SOURCE_DIR}/Testing/data"
-          -F jet.h5part
-          -T "${PLUGIN_TEST_DIR}"
-          -particlesize 0.001
-          -ghost_region 0.003
-          -gridSpacing "${resolution} ${resolution} ${resolution}"
-          -massScalars "mass"
-          -scalar ShepardCoeff
-          -contour 0.5
-          -densityScalars "FLUID_density"
-          -imagetest 1
-          -cameraPosition "-0.160102 0.106656 -0.212755"
-          -cameraFocus    "-0.160102 0.106656  0.023384"
-          -cameraViewUp   "0 1 0"
-          -imageScalars "ProcessId"
-          -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
+          ${TestParams}
       )
     ENDIF(N EQUAL 1)
     #
@@ -272,21 +275,7 @@ FOREACH(resolution 0.005 0.001 0.0005)
           COMMAND 
             ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
             $<TARGET_FILE:TestSPHProbeFilter> 
-            -D "${PROJECT_SOURCE_DIR}/Testing/data"
-            -F jet.h5part
-            -T "${PLUGIN_TEST_DIR}"
-            -particlesize 0.001
-            -ghost_region 0.005
-            -gridSpacing "${resolution} ${resolution} ${resolution}"
-            -scalar ShepardCoeff
-            -contour 0.5
-            -densityScalars "FLUID_density"
-            -imagetest 1
-            -cameraPosition "-0.160102 0.106656 -0.212755"
-            -cameraFocus    "-0.160102 0.106656  0.023384"
-            -cameraViewUp   "0 1 0"
-            -imageScalars "ProcessId"
-            -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
+            ${TestParams}
         )
       ENDIF(processors)
     ENDIF(${Trilinos_FOUND} AND N GREATER 1)
@@ -302,6 +291,25 @@ SET(counter 1)
 FOREACH(resolution 0.05 0.01 0.005)
   FOREACH(N 1 4 8 16 32 64)
     SET(test_name "TestSPHImageResample-dam-N${counter}-R${resolution}-P${N}")
+    SET(TestParams 
+      -D "${PROJECT_SOURCE_DIR}/Testing/data"
+      -F dam-17.h5part
+      -T "${PLUGIN_TEST_DIR}"
+      -testName ${test_name}
+      -particlesize 0.01
+      -ghost_region 0.03
+      -gridSpacing "${resolution} ${resolution} ${resolution}"
+      -scalar ShepardCoeff
+      -contour 0.1
+      -densityScalars "FLUID_rho"
+      -imagetest 1
+      -windowSize "1024 768"
+      -cameraPosition " 3.9250837 -0.4704097  0.5964158"
+      -cameraFocus    "-2.0277536  2.7267457 -0.5096563"
+      -cameraViewUp   "-0.1130509  0.1302781  0.9850112"
+      -imageScalars "ProcessId"
+      -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
+    )
     #
     # Serial N==1
     #
@@ -310,22 +318,7 @@ FOREACH(resolution 0.05 0.01 0.005)
         NAME ${test_name}
         COMMAND 
           $<TARGET_FILE:TestSPHProbeFilter> 
-          -D "${PROJECT_SOURCE_DIR}/Testing/data"
-          -F dam-17.h5part
-          -T "${PLUGIN_TEST_DIR}"
-          -particlesize 0.01
-          -ghost_region 0.03
-          -gridSpacing "${resolution} ${resolution} ${resolution}"
-          -scalar ShepardCoeff
-          -contour 0.1
-          -densityScalars "FLUID_rho"
-          -imagetest 1
-          -windowSize "1024 768"
-          -cameraPosition " 3.9250837 -0.4704097  0.5964158"
-          -cameraFocus    "-2.0277536  2.7267457 -0.5096563"
-          -cameraViewUp   "-0.1130509  0.1302781  0.9850112"
-          -imageScalars "ProcessId"
-          -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
+          ${TestParams}
       )
     ENDIF((N EQUAL 1) AND (resolution EQUAL 0.05))
     #
@@ -339,22 +332,7 @@ FOREACH(resolution 0.05 0.01 0.005)
           COMMAND 
             ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
             $<TARGET_FILE:TestSPHProbeFilter> 
-            -D "${PROJECT_SOURCE_DIR}/Testing/data"
-            -F dam-17.h5part
-            -T "${PLUGIN_TEST_DIR}"
-            -particlesize 0.01
-            -ghost_region 0.03
-            -gridSpacing "${resolution} ${resolution} ${resolution}"
-            -scalar ShepardCoeff
-            -contour 0.1
-            -densityScalars "FLUID_rho"
-            -imagetest 1
-            -windowSize "1024 768"
-            -cameraPosition " 3.9250837 -0.4704097  0.5964158"
-            -cameraFocus    "-2.0277536  2.7267457 -0.5096563"
-            -cameraViewUp   "-0.1130509  0.1302781  0.9850112"
-            -imageScalars "ProcessId"
-            -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
+            ${TestParams}
         )
       ENDIF(processors)
     ENDIF(${Trilinos_FOUND} AND N GREATER 1)

@@ -67,7 +67,7 @@
 vtkStandardNewMacro(vtkSPHProbeFilter);
 vtkCxxSetObjectMacro(vtkSPHProbeFilter, SPHManager, vtkSPHManager);
 //----------------------------------------------------------------------------
-#define JB_DEBUG__
+// #define JB_DEBUG__
 #if defined JB_DEBUG__
 
   #define OUTPUTTEXT(a) std::cout <<(a); std::cout.flush();
@@ -79,7 +79,7 @@ vtkCxxSetObjectMacro(vtkSPHProbeFilter, SPHManager, vtkSPHManager);
       vtkOStreamWrapper::EndlType endl; \
       vtkOStreamWrapper::UseEndl(endl); \
       vtkOStrStreamWrapper vtkmsg; \
-      vtkmsg << "P(" << this->UpdatePiece << "): " a << "\n"; \
+      vtkmsg << this->UpdatePiece << " : " a << "\n"; \
       OUTPUTTEXT(vtkmsg.str()); \
       vtkmsg.rdbuf()->freeze(0); \
     } \
@@ -1033,7 +1033,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
 */
 
   double averageneighbours = NeighbourCount/outId;
-  std::cout << "Average Neighbour count is " << averageneighbours << std::endl;
+  vtkWarningMacro(<< "Average Neighbour count is " << averageneighbours );
 
   //
   // Make sure arrays are valid if we aborted mid calculation

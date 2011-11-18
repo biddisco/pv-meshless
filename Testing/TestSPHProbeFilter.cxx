@@ -84,7 +84,7 @@
     vtkOStreamWrapper::EndlType endl; \
     vtkOStreamWrapper::UseEndl(endl); \
     vtkOStrStreamWrapper vtkmsg; \
-    vtkmsg << name << " : " a << endl; \
+    vtkmsg << myRank << " : " a << endl; \
     OUTPUTTEXT(vtkmsg.str()); \
     vtkmsg.rdbuf()->freeze(0); \
   }
@@ -198,35 +198,38 @@ int main (int argc, char* argv[])
   int windowSize[2] = {400,400};
 
   //
-  int            maxN = GetParameter<int>("-neighbours", "Fixed Neighbours", argc, argv, 0, myRank, fixNeighbours);
+  // General test info
+  //
+  std::string     testName = GetParameter<std::string>("-testName", "Test name", argc, argv, "", myRank, unused);
+  //
+  // SPH kernel or neighbour info
+  //
   double particleSize = GetParameter<double>("-particlesize", "Particle Size", argc, argv, 0, myRank, fixRadius);
   double        ghost = GetParameter<double>("-ghost_region", "Ghost Region", argc, argv, 0.0, myRank, unused);
-  double   contourVal = GetParameter<double>("-contour", "Contour Value", argc, argv, 0.0, myRank, unused);
-  bool      ImageTest = GetParameter<bool>("-imagetest", "ImageTest", argc, argv, 0, myRank, unused);
-
-  std::string     scalarname = GetParameter<std::string>("-scalar", "Testing Scalar Array", argc, argv, "", myRank, unused);
+  unused = GetArrayParameter<double>("-gridSpacing", "Grid Spacing", gridSpacing, 3, argc, argv, myRank);
+  int            maxN = GetParameter<int>("-neighbours", "Fixed Neighbours", argc, argv, 0, myRank, fixNeighbours);
   std::string    massScalars = GetParameter<std::string>("-massScalars", "Mass Scalar Array", argc, argv, "", myRank, unused);
   std::string densityScalars = GetParameter<std::string>("-densityScalars", "Density Scalar Array", argc, argv, "", myRank, unused);
+  //
+  // Test/Display of results
+  //
+  std::string     scalarname = GetParameter<std::string>("-scalar", "Testing Scalar Array", argc, argv, "", myRank, unused);
+  double   contourVal = GetParameter<double>("-contour", "Contour Value", argc, argv, 0.0, myRank, unused);
+  bool      ImageTest = GetParameter<bool>("-imagetest", "ImageTest", argc, argv, 0, myRank, unused);
   std::string   imageScalars = GetParameter<std::string>("-imageScalars", "Image Scalar Array", argc, argv, "", myRank, unused);
-
-  unused = GetArrayParameter<double>("-gridSpacing", "Grid Spacing", gridSpacing, 3, argc, argv, myRank);
   unused = GetArrayParameter<double>("-value_range", "Test Valid : value_range", vminmax, 2, argc, argv, myRank);
   unused = GetArrayParameter<double>("-peak_position", "Test Valid : scalar_peak_position", vpos, 3, argc, argv, myRank);
-
+  //
+  // Window/Camera
+  //
   cameraSet = GetArrayParameter<double>("-cameraPosition", "Camera Position", cameraPosition, 3, argc, argv, myRank);
   unused = GetArrayParameter<double>("-cameraFocus", "Camera Focus", cameraFocus, 3, argc, argv, myRank);
   unused = GetArrayParameter<double>("-cameraViewUp", "Camera ViewUp", cameraViewUp, 3, argc, argv, myRank);
   unused = GetArrayParameter<int>("-windowSize", "Window Size", windowSize, 2, argc, argv, myRank);
   
-
+  // bug fix for cmd line params on windows with debugger (only first read properly)
   gridSpacing[2] = gridSpacing[1] = gridSpacing[0];
 
-  if (myRank==0) {
-    std::cout << "//--------------------------------------------------------------" << std::endl;
-    std::cout << "//" << std::endl;
-    std::cout << "//--------------------------------------------------------------" << std::endl;
-  }
-  controller->Barrier();
   //--------------------------------------------------------------
   // 
   //--------------------------------------------------------------
@@ -253,6 +256,9 @@ int main (int argc, char* argv[])
   // information is passed upstream. first update information,
   // then set piece update extent,
   //--------------------------------------------------------------
+  //
+  vtkSmartPointer<vtkTimerLog> readtimer = vtkSmartPointer<vtkTimerLog>::New();
+  readtimer->StartTimer();
 
   // We can't compute the extents of the image until we know the bounds of the data, 
   // so update reader first.
@@ -264,14 +270,18 @@ int main (int argc, char* argv[])
   reader_sddp->Update();
   vtkDebugMacro( "Reader Updated " << myRank << " of " << numProcs );
   controller->Barrier();
+  readtimer->StopTimer();
+  double read_elapsed = readtimer->GetElapsedTime();
 
   vtkSmartPointer<vtkAlgorithm> data_algorithm = reader; 
+
 #ifdef PV_MESHLESS_TRILINOS
+  vtkSmartPointer<vtkTimerLog> partitiontimer = vtkSmartPointer<vtkTimerLog>::New();
+  partitiontimer->StartTimer();
   //--------------------------------------------------------------
   // Parallel partition
   //--------------------------------------------------------------
   vtkDebugMacro( "Creating Partitioner " << myRank << " of " << numProcs );
-  controller->Barrier();
   vtkSmartPointer<vtkParticlePartitionFilter> partitioner = vtkSmartPointer<vtkParticlePartitionFilter>::New();
   partitioner->SetInputConnection(reader->GetOutputPort());
   partitioner->SetGhostCellOverlap(ghost);
@@ -280,19 +290,22 @@ int main (int argc, char* argv[])
   vtkStreamingDemandDrivenPipeline *partition_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(partitioner->GetExecutive());
   partition_sddp->UpdateDataObject();
   vtkDebugMacro( "Partition DataObject Updated " << myRank << " of " << numProcs );
-  controller->Barrier();
   partition_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
   partition_sddp->UpdateInformation();
   vtkDebugMacro( "Partition Information Updated " << myRank << " of " << numProcs );
-  controller->Barrier();
   vtkDebugMacro( "Partition Update coming " << myRank << " of " << numProcs );
-  controller->Barrier();
   partition_sddp->Update();
   vtkDebugMacro( "Partition Updated " << myRank << " of " << numProcs );
+  
   controller->Barrier();
+  partitiontimer->StopTimer();
+  double partition_elapsed = partitiontimer->GetElapsedTime();
   //
   data_algorithm = partitioner;
 #endif
+
+  vtkSmartPointer<vtkTimerLog> sphtimer = vtkSmartPointer<vtkTimerLog>::New();
+  sphtimer->StartTimer();
 
   vtkDebugMacro( "Creating SPHManager " << myRank << " of " << numProcs );
   controller->Barrier();
@@ -353,10 +366,6 @@ int main (int argc, char* argv[])
   }
 
   //
-  vtkSmartPointer<vtkTimerLog> timer = vtkSmartPointer<vtkTimerLog>::New();
-  timer->StartTimer();
-
-  //
   // Update SPH Pipeline
   //
   vtkStreamingDemandDrivenPipeline *resample_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(resample_algorithm->GetExecutive());
@@ -364,19 +373,18 @@ int main (int argc, char* argv[])
   resample_sddp->UpdateDataObject();
   resample_sddp->UpdateInformation();
   resample_sddp->SetUpdateExtent(0, myRank, numProcs, 0);
-  controller->Barrier();
   resample_sddp->Update();
 
-  //
-  timer->StopTimer();
   controller->Barrier();
+  sphtimer->StopTimer();
+  double sph_elapsed = sphtimer->GetElapsedTime();
+
   if (myRank==0) {
-    double elapsed = timer->GetElapsedTime();
-    std::cout << std::endl;
-    std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * " << std::endl;
-    std::cout << "Probe completed in " << elapsed << " seconds" << std::endl;
-    std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * " << std::endl;
+    vtkDebugMacro( "Probe completed in " << sph_elapsed << " seconds" );
   }
+
+  vtkSmartPointer<vtkTimerLog> viztimer = vtkSmartPointer<vtkTimerLog>::New();
+  viztimer->StartTimer();
 
   //--------------------------------------------------------------
   // Fetch smoothed output for testing results
@@ -541,6 +549,7 @@ int main (int argc, char* argv[])
         vtkSmartPointer<vtkPolyDataMapper> bmapper = vtkSmartPointer<vtkPolyDataMapper>::New();
         vtkSmartPointer<vtkActor>          bactor = vtkSmartPointer<vtkActor>::New();
         bmapper->SetInputConnection(boxsource->GetOutputPort());
+        bmapper->SetImmediateModeRendering(1);
         bactor->SetMapper(bmapper);
         ren->AddActor(bactor);
       }
@@ -586,6 +595,19 @@ int main (int argc, char* argv[])
       ok = (retVal==vtkRegressionTester::PASSED);
     }
   }
+  controller->Barrier();
+  viztimer->StopTimer();
+  double viz_elapsed = viztimer->GetElapsedTime();
+
+  if (ok && myRank==0) {
+    std::cout << "//--------------------------------------------------------------" << std::endl;
+    std::cout << "Read Time               : " << read_elapsed << std::endl;
+    std::cout << "Partition Time          : " << partition_elapsed << std::endl;
+    std::cout << "SPH Probe Time          : " << sph_elapsed << std::endl;
+    std::cout << "Visualiztion/Check Time : " << viz_elapsed << std::endl;
+    std::cout << "//--------------------------------------------------------------" << std::endl;
+  }
+
   retVal = ok;
   
   delete []fullname;

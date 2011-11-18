@@ -47,11 +47,27 @@
 #include <set>
 #include <algorithm>
 #include <functional>
+#include <sstream>
 //
 vtkCxxRevisionMacro(vtkSPHImageResampler, "$Revision: 1.4 $");
 vtkStandardNewMacro(vtkSPHImageResampler);
 vtkCxxSetObjectMacro(vtkSPHImageResampler, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkSPHImageResampler, SPHManager, vtkSPHManager);
+//----------------------------------------------------------------------------
+#if 0
+  #define OUTPUTTEXT(a) std::cout << (a);
+
+  #undef vtkDebugMacro
+  #define vtkDebugMacro(a)  \
+  { \
+    vtkOStreamWrapper::EndlType endl; \
+    vtkOStreamWrapper::UseEndl(endl); \
+    vtkOStrStreamWrapper vtkmsg; \
+    vtkmsg << /* this->UpdatePiece << " : " */ a << endl; \
+    OUTPUTTEXT(vtkmsg.str()); \
+    vtkmsg.rdbuf()->freeze(0); \
+  }
+#endif
 //----------------------------------------------------------------------------
 #define REGULARGRID_SAXPY(a,x,y,z) \
   z[0] = a*x[0] + y[0]; \
@@ -137,7 +153,7 @@ int vtkSPHImageResampler::RequestUpdateExtent(
   //
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), piece);
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
-  std::cout << "Imagesampler (" << piece << ") set num pieces to " << numPieces << std::endl;
+  vtkDebugMacro( "Imagesampler (" << piece << ") set num pieces to " << numPieces );
   //  
   return 1;
 }
@@ -162,7 +178,7 @@ int vtkSPHImageResampler::RequestInformation(
   outInfo->Set(vtkDataObject::SPACING(), this->spacing, 3);
 
   //
-  //std::cout << "RI WHOLE_EXTENT {";
+  //vtkDebugMacro( "RI WHOLE_EXTENT {";
   //for (int i=0; i<3; i++) std::cout << WholeDimension[i] << (i<2 ? "," : "}");
   //std::cout << std::endl;
 
@@ -217,7 +233,7 @@ int vtkSPHImageResampler::ComputeInformation(
     return 0;
   }
   this->ComputeAxesFromBounds(inputData, lengths, true);
-  std::cout << "vtkSPHImageResampler::ComputeInformation BoundsInitialized " << BoundsInitialized << std::endl;
+  vtkDebugMacro( "vtkSPHImageResampler::ComputeInformation BoundsInitialized " << BoundsInitialized );
 
   if (this->BoundsInitialized) {
     //
@@ -283,9 +299,10 @@ int vtkSPHImageResampler::RequestData(
     int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
     double *bounds = bet->GetBoundsForPiece(updatePiece);
     bet->BoundsToExtentThreadSafe(bounds, outWholeExt, outUpdateExt); 
-    std::cout << "Image sampler " << updatePiece << " Setting Extent to {";
-    for (int i=0; i<6; i++) std::cout << outUpdateExt[i] << (i<5 ? "," : "}");
-    std::cout << std::endl;
+    std::stringstream temp;
+    temp << "Image sampler " << updatePiece << " Setting Extent to {";
+    for (int i=0; i<6; i++) temp << outUpdateExt[i] << (i<5 ? "," : "}");
+    vtkDebugMacro( temp.str() );
   }
   else {
 //    outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), outUpdateExt);
