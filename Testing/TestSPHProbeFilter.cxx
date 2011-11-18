@@ -521,8 +521,10 @@ int main (int argc, char* argv[])
     if (myRank>0) {
       const char *array_name = "ProcessId";
       vtkDataArray *da = contourData->GetPointData()->GetArray(array_name);
-      double *rg = da->GetRange();
-      vtkDebugMacro( "Range (Sending) " << rg[0] << " " << rg[1] );
+      if (da) {      
+        double *rg = da->GetRange();
+        vtkDebugMacro( "Range (Sending) " << rg[0] << " " << rg[1] );
+      }
       controller->Send(contourData, 0, ISO_OUTPUT_TAG);
     }
     //
@@ -549,8 +551,10 @@ int main (int argc, char* argv[])
         append->AddInput(pd);
         const char *array_name = "ProcessId";
         vtkDataArray *da = pd->GetPointData()->GetArray(array_name);
-        double *rg = da->GetRange();
-        vtkDebugMacro( "Range (Receive) " << rg[0] << " " << rg[1] );
+        if (da) {
+          double *rg = da->GetRange();
+          vtkDebugMacro( "Range (Receive) " << rg[0] << " " << rg[1] );
+        }
         //
         // Display boxes for each partition
         //
