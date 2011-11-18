@@ -1033,7 +1033,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
 */
 
   double averageneighbours = NeighbourCount/outId;
-  vtkWarningMacro(<< "Average Neighbour count is " << averageneighbours );
+  vtkDebugMacro(<< "Average Neighbour count is " << averageneighbours );
 
   //
   // Make sure arrays are valid if we aborted mid calculation
