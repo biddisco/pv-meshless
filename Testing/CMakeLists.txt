@@ -22,15 +22,11 @@ ENDMACRO(add_local_test)
 # convenience macro for a>=b for testing processor count
 #--------------------------------------------------
 MACRO(greater_equal a b boolresult) 
-  MESSAGE("Testing ${a} >= ${b}")
   IF((${a} GREATER ${b}) OR (${a} EQUAL ${b}))
-    MESSAGE("${a} >= ${b}")
     SET(${boolresult} 1)
   ELSE((${a} GREATER ${b}) OR (${a} EQUAL ${b}))
-    MESSAGE("${a} not >= ${b}")
     SET(${boolresult} 0)
   ENDIF((${a} GREATER ${b}) OR (${a} EQUAL ${b}))
-  MESSAGE("boolresult is boolresult")
 ENDMACRO(greater_equal)
 
 #--------------------------------------------------
