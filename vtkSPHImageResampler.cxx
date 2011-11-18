@@ -302,7 +302,7 @@ int vtkSPHImageResampler::RequestData(
     std::stringstream temp;
     temp << "Image sampler " << updatePiece << " Setting Extent to {";
     for (int i=0; i<6; i++) temp << outUpdateExt[i] << (i<5 ? "," : "}");
-    vtkDebugMacro( temp.str() );
+//    vtkDebugMacro( temp.str() );
   }
   else {
 //    outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), outUpdateExt);

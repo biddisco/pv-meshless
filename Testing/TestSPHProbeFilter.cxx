@@ -88,6 +88,10 @@
     OUTPUTTEXT(vtkmsg.str()); \
     vtkmsg.rdbuf()->freeze(0); \
   }
+#else
+  #undef vtkWarningMacro
+  #undef vtkDebugMacro
+  #define vtkDebugMacro(a) 
 #endif
 
 //----------------------------------------------------------------------------
@@ -587,7 +591,7 @@ int main (int argc, char* argv[])
       vtkDebugMacro( "Process Id : " << myRank << " About to Render" );
       renWindow->Render();
       //
-      retVal = vtkRegressionTester::Test(argc, argv, renWindow, 25);
+      retVal = vtkRegressionTester::Test(argc, argv, renWindow, 45);
       if ( retVal == vtkRegressionTester::DO_INTERACTOR) {
         iren->Start();
       }
