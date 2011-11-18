@@ -173,14 +173,13 @@ int main (int argc, char* argv[])
   //--------------------------------------------------------------
   // Testing params
   //--------------------------------------------------------------
-  bool unused, fixNeighbours, fixRadius, cameraSet;
+  bool unused, fixNeighbours, fixRadius;
   double gridSpacing[3] = {0.0, 0.0, 0.0};
   double vminmax[2] = {0.0, 0.0};
   double vpos[3] = {0.0, 0.0, 0.0};
   double cameraPosition[3] = {0.0, 0.0, 0.0};
   double cameraFocus[3] = {0.0, 1.0, 0.0};
   double cameraViewUp[3] = {0.0, 0.0, 1.0};
-  int windowSize[2] = {400,400};
 
   //
   int            maxN = GetParameter<int>("-neighbours", "Fixed Neighbours", argc, argv, 0, myRank, fixNeighbours);
@@ -197,11 +196,9 @@ int main (int argc, char* argv[])
   unused = GetArrayParameter<double>("-value_range", "Test Valid : value_range", vminmax, 2, argc, argv, myRank);
   unused = GetArrayParameter<double>("-peak_position", "Test Valid : scalar_peak_position", vpos, 3, argc, argv, myRank);
 
-  cameraSet = GetArrayParameter<double>("-cameraPosition", "Camera Position", cameraPosition, 3, argc, argv, myRank);
-  unused    = GetArrayParameter<double>("-cameraFocus", "Camera Focus", cameraFocus, 3, argc, argv, myRank);
-  unused    = GetArrayParameter<double>("-cameraViewUp", "Camera ViewUp", cameraViewUp, 3, argc, argv, myRank);
-  unused    = GetArrayParameter<int>("-windowSize", "Window Size", windowSize, 2, argc, argv, myRank);
-  
+  unused = GetArrayParameter<double>("-cameraPosition", "Camera Position", cameraPosition, 3, argc, argv, myRank);
+  unused = GetArrayParameter<double>("-cameraFocus", "Camera Focus", cameraFocus, 3, argc, argv, myRank);
+  unused = GetArrayParameter<double>("-cameraViewUp", "Camera ViewUp", cameraViewUp, 3, argc, argv, myRank);
 
   gridSpacing[2] = gridSpacing[1] = gridSpacing[0];
 
@@ -534,8 +531,9 @@ int main (int argc, char* argv[])
       //
       iren->SetRenderWindow(renWindow);
       ren->SetBackground(0.1, 0.1, 0.1);
-      renWindow->SetSize(windowSize);
+      renWindow->SetSize( 400, 400);
       mapper->SetInputConnection(norm->GetOutputPort());
+      mapper->SetImmediateModeRendering(1);
       mapper->SetColorModeToMapScalars();
       mapper->SetScalarModeToUsePointFieldData();
       mapper->SetInterpolateScalarsBeforeMapping(0);
@@ -550,15 +548,10 @@ int main (int argc, char* argv[])
       ren->AddActor(actor);
       renWindow->AddRenderer(ren);
       //
-      if (cameraSet) {
-        ren->GetActiveCamera()->SetPosition(cameraPosition);
-        ren->GetActiveCamera()->SetFocalPoint(cameraFocus);
-        ren->GetActiveCamera()->SetViewUp(cameraViewUp);
-        ren->ResetCameraClippingRange();
-      }
-      else {
-        ren->ResetCamera();
-      }
+      ren->GetActiveCamera()->SetPosition(cameraPosition);
+      ren->GetActiveCamera()->SetFocalPoint(cameraFocus);
+      ren->GetActiveCamera()->SetViewUp(cameraViewUp);
+      ren->ResetCamera();
       //
       std::cout << "Process Id : " << myRank << " About to Render" << std::endl;
       renWindow->Render();
