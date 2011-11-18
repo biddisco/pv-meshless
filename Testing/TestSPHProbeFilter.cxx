@@ -41,7 +41,6 @@
 #include "vtkInformation.h"
 #include "vtkDebugLeaks.h"
 #include "vtkElevationFilter.h"
-#include "vtkH5PartWriter.h"
 #include "vtkH5PartReader.h"
 #include "vtkMaskPoints.h"
 #include "vtkProperty.h"
