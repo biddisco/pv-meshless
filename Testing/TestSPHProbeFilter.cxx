@@ -204,7 +204,7 @@ int main (int argc, char* argv[])
   //
   // General test info
   //
-  std::string     testName = GetParameter<std::string>("-testName", "Test name", argc, argv, "", myRank, unused);
+  std::string testName = GetParameter<std::string>("-testName", "Test name", argc, argv, "", myRank, unused);
   //
   // SPH kernel or neighbour info
   //
@@ -219,7 +219,7 @@ int main (int argc, char* argv[])
   //
   std::string     scalarname = GetParameter<std::string>("-scalar", "Testing Scalar Array", argc, argv, "", myRank, unused);
   double   contourVal = GetParameter<double>("-contour", "Contour Value", argc, argv, 0.0, myRank, unused);
-  bool      ImageTest = GetParameter<bool>("-imagetest", "ImageTest", argc, argv, 0, myRank, unused);
+  bool      imageTest = GetParameter<bool>("-imagetest", "imageTest", argc, argv, 0, myRank, unused);
   std::string   imageScalars = GetParameter<std::string>("-imageScalars", "Image Scalar Array", argc, argv, "", myRank, unused);
   unused = GetArrayParameter<double>("-value_range", "Test Valid : value_range", vminmax, 2, argc, argv, myRank);
   unused = GetArrayParameter<double>("-peak_position", "Test Valid : scalar_peak_position", vpos, 3, argc, argv, myRank);
@@ -276,6 +276,9 @@ int main (int argc, char* argv[])
   controller->Barrier();
   readtimer->StopTimer();
   double read_elapsed = readtimer->GetElapsedTime();
+  vtkIdType totalParticles = 0;
+  vtkIdType localParticles = reader->GetOutput()->GetNumberOfPoints();
+  controller->AllReduce(&localParticles, &totalParticles, 1, vtkCommunicator::SUM_OP);
 
   vtkSmartPointer<vtkAlgorithm> data_algorithm = reader; 
 
@@ -331,8 +334,9 @@ int main (int argc, char* argv[])
     sphManager->SetMaximumSearchRadius(particleSize*1.5*3.0); 
   }
 
-  vtkSmartPointer<vtkAlgorithm> resample_algorithm; 
-  if (ImageTest) {
+  vtkSmartPointer<vtkAlgorithm> resample_algorithm;
+  int wholeExtent[6]={0,-1,0,-1,0,-1};
+  if (imageTest) {
     vtkSmartPointer<vtkSPHImageResampler> sphProbe = vtkSmartPointer<vtkSPHImageResampler>::New();
     sphProbe->SetInputConnection(data_algorithm->GetOutputPort());
     if (gridSpacing[0]>0.0) {
@@ -382,7 +386,6 @@ int main (int argc, char* argv[])
   controller->Barrier();
   sphtimer->StopTimer();
   double sph_elapsed = sphtimer->GetElapsedTime();
-
   if (myRank==0) {
     vtkDebugMacro( "Probe completed in " << sph_elapsed << " seconds" );
   }
@@ -394,6 +397,9 @@ int main (int argc, char* argv[])
   // Fetch smoothed output for testing results
   //--------------------------------------------------------------
   vtkDataSet *sph_results = vtkDataSet::SafeDownCast(resample_sddp->GetOutputData(0));
+  if (imageTest) {
+    vtkImageData::SafeDownCast(sph_results)->GetWholeExtent(wholeExtent);
+  }
 
   //--------------------------------------------------------------
   // 
@@ -404,7 +410,7 @@ int main (int argc, char* argv[])
   //
   // Testing use scalar values extracted from filters
   //
-  if (!ImageTest) {
+  if (!imageTest) {
     vtkPointData *sph_pd = sph_results->GetPointData();
     vtkDataArray *scalar_array = sph_pd->GetArray(scalarname.c_str());
     //--------------------------------------------------------------
@@ -605,10 +611,20 @@ int main (int argc, char* argv[])
 
   if (ok && myRank==0) {
     std::cout << "//--------------------------------------------------------------" << std::endl;
+    std::cout << "Total Particles         : " << totalParticles << std::endl;
     std::cout << "Read Time               : " << read_elapsed << std::endl;
     std::cout << "Partition Time          : " << partition_elapsed << std::endl;
     std::cout << "SPH Probe Time          : " << sph_elapsed << std::endl;
     std::cout << "Visualiztion/Check Time : " << viz_elapsed << std::endl;
+    vtkIdType voxels = (1+wholeExtent[1]-wholeExtent[0])*(1+wholeExtent[3]-wholeExtent[2])*(1+wholeExtent[5]-wholeExtent[4]);
+    if (imageTest) {
+      std::cout << "Image Whole Extent      : {";
+      for (int i=0; i<6; i++) {
+        std::cout << wholeExtent[i];
+        (i==(5)) ? std::cout << "}" : std::cout << ",";
+      }
+      std::cout << " : Voxels " << voxels << std::endl;
+    }
     std::cout << "//--------------------------------------------------------------" << std::endl;
   }
 
