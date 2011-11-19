@@ -445,7 +445,7 @@ int main (int argc, char* argv[])
     // the others will have a -1 as the index of the peak.
     if (index!=-1) {
       vtkIdType ids[2] = {myRank, index};
-      DisplayParameter<vtkIdType>(scalarname.c_str(), " Peak Process,Index", ids, 2, myRank);
+      DisplayParameter<vtkIdType>(scalarname.c_str(), " Peak Proc,Index", ids, 2, myRank);
       sph_results->GetPoint(index,scalar_pos);
       DisplayParameter<double>(scalarname.c_str(), " Peak Position", scalar_pos, 3, myRank);
       //
@@ -626,19 +626,15 @@ int main (int argc, char* argv[])
 
   if (ok && myRank==0) {
     std::cout << "//--------------------------------------------------------------" << std::endl;
-    std::cout << "Total Particles         : " << totalParticles << std::endl;
-    std::cout << "Read Time               : " << read_elapsed << std::endl;
-    std::cout << "Partition Time          : " << partition_elapsed << std::endl;
-    std::cout << "SPH Probe Time          : " << sph_elapsed << std::endl;
-    std::cout << "Visualiztion/Check Time : " << viz_elapsed << std::endl;
-    vtkIdType voxels = (1+wholeExtent[1]-wholeExtent[0])*(1+wholeExtent[3]-wholeExtent[2])*(1+wholeExtent[5]-wholeExtent[4]);
+    DisplayParameter<vtkIdType>("Total Particles", "", &totalParticles, 1, myRank);
+    DisplayParameter<double>("Read Time", "", &read_elapsed, 1, myRank);
+    DisplayParameter<double>("Partition Time", "", &partition_elapsed, 1, myRank);
+    DisplayParameter<double>("SPH Probe Time", "", &sph_elapsed, 1, myRank);
+    DisplayParameter<double>("Visualization/Check Time", "", &viz_elapsed, 1, myRank);
     if (imageTest) {
-      std::cout << "Image Whole Extent      : {";
-      for (int i=0; i<6; i++) {
-        std::cout << wholeExtent[i];
-        (i==(5)) ? std::cout << "}" : std::cout << ",";
-      }
-      std::cout << " : Voxels " << voxels << std::endl;
+      DisplayParameter<int>("Image Whole Extent", "", wholeExtent, 6, myRank);
+      vtkIdType voxels = (1+wholeExtent[1]-wholeExtent[0])*(1+wholeExtent[3]-wholeExtent[2])*(1+wholeExtent[5]-wholeExtent[4]);
+      DisplayParameter<vtkIdType>("Voxels", "", &voxels, 1, myRank);
     }
     std::cout << "//--------------------------------------------------------------" << std::endl;
   }
