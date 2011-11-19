@@ -245,7 +245,9 @@ int main (int argc, char* argv[])
   unused = GetArrayParameter<double>("-cameraFocus", "Camera Focus", cameraFocus, 3, argc, argv, myRank);
   unused = GetArrayParameter<double>("-cameraViewUp", "Camera ViewUp", cameraViewUp, 3, argc, argv, myRank);
   unused = GetArrayParameter<int>("-windowSize", "Window Size", windowSize, 2, argc, argv, myRank);
-  DisplayParameter<char *>("--------------------", "", &empty, 1, myRank);
+  if (myRank==0) {
+    DisplayParameter<char *>("--------------------", "", &empty, 1, myRank);
+  }
   
   // bug fix for cmd line params on windows with debugger (only first read properly)
   gridSpacing[2] = gridSpacing[1] = gridSpacing[0];
