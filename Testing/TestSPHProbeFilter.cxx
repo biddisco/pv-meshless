@@ -100,6 +100,21 @@ static const int ISO_OUTPUT_TAG=301;
 
 //----------------------------------------------------------------------------
 template <typename T>
+void DisplayParameter(const char *prefix1, const char *prefix2, T *data, int components, int rank)
+{
+  vtkstd::stringstream temp;
+  temp << prefix1 << prefix2 << std::ends;
+  std::cout.width(30);
+  std::cout << temp.str().c_str() << " : {";
+  std::cout.width(0);
+  for (int i=0; i<components; i++) {
+    std::cout << data[i];
+    (i==(components-1)) ? std::cout << "}" : std::cout << ",";
+  }
+  std::cout << std::endl;
+}
+//----------------------------------------------------------------------------
+template <typename T>
 T GetParameter(const char *argstr, const char *message, int argc, char **argv, T defaultvalue, int rank, bool &valueset)
 {
   char *tempChar = vtkTestUtilities::GetArgOrEnvOrDefault(argstr, argc, argv, "", "");
@@ -109,8 +124,7 @@ T GetParameter(const char *argstr, const char *message, int argc, char **argv, T
     vtkstd::stringstream temp(tempChar);
     temp >> newValue;
     if (rank==0) {
-      std::cout.width(30);
-      std::cout << message << " {" << newValue << "}" << std::endl;
+      DisplayParameter<T>(message, "", &newValue, 1, rank);
     }
     valueset = true;
   }
@@ -128,7 +142,7 @@ bool GetArrayParameter(const char *argstr, const char *message, T *data, int com
     for (int i=0; i<components; i++) temp >> data[i];
     if (rank==0) {
       std::cout.width(30);
-      std::cout << message << " {";
+      std::cout << message << " : {";
       std::cout.width(0);
       for (int i=0; i<components; i++) {
         std::cout << data[i];
@@ -177,10 +191,7 @@ int main (int argc, char* argv[])
   char *filename = vtkTestUtilities::GetArgOrEnvOrDefault(
     "-F", argc, argv, "DUMMY_ENV_VAR", "temp.h5");
   char* fullname = vtkTestUtilities::ExpandDataFileName(argc, argv, filename);
-  if (myRank==0) {
-    std::cout.width(30);
-    std::cout << "FileName" << " {" << fullname << "}" << std::endl;
-  }
+  if (myRank==0) DisplayParameter<char *>("FileName", "", &fullname, 1, myRank);
 
   //
   // Force the creation of our output window object
@@ -221,8 +232,8 @@ int main (int argc, char* argv[])
   double   contourVal = GetParameter<double>("-contour", "Contour Value", argc, argv, 0.0, myRank, unused);
   bool      imageTest = GetParameter<bool>("-imagetest", "imageTest", argc, argv, 0, myRank, unused);
   std::string   imageScalars = GetParameter<std::string>("-imageScalars", "Image Scalar Array", argc, argv, "", myRank, unused);
-  unused = GetArrayParameter<double>("-value_range", "Test Valid : value_range", vminmax, 2, argc, argv, myRank);
-  unused = GetArrayParameter<double>("-peak_position", "Test Valid : scalar_peak_position", vpos, 3, argc, argv, myRank);
+  unused = GetArrayParameter<double>("-value_range", "Expected Value Range", vminmax, 2, argc, argv, myRank);
+  unused = GetArrayParameter<double>("-peak_position", "Expected Peak Position", vpos, 3, argc, argv, myRank);
   //
   // Window/Camera
   //
@@ -422,9 +433,7 @@ int main (int argc, char* argv[])
     scalar_array->GetRange(scalar_range_local);
     controller->AllReduce(&scalar_range_local[0], &scalar_range_global[0], 1, vtkCommunicator::MIN_OP);
     controller->AllReduce(&scalar_range_local[1], &scalar_range_global[1], 1, vtkCommunicator::MAX_OP);
-    if (myRank==0) {
-      std::cout << "Min and Max of SmoothedDensity are {" << scalar_range_global[0] << "," << scalar_range_global[1] << "}" << std::endl;
-    }
+    if (myRank==0) DisplayParameter<double>(scalarname.c_str(), " Found Min/Max", scalar_range_global, 2, myRank);
     vtkIdType index = -1;
     for (vtkIdType i=0; i<scalar_array->GetNumberOfTuples(); i++) {
       if (scalar_array->GetTuple1(i)==scalar_range_global[1]) {
@@ -435,34 +444,36 @@ int main (int argc, char* argv[])
     // Since we computed the density in parallel, only one process will find the peak value
     // the others will have a -1 as the index of the peak.
     if (index!=-1) {
-      std::cout << "Index of peak SmoothedDensity particle is " << index << " on process " << myRank << std::endl;
+      vtkIdType ids[2] = {myRank, index};
+      DisplayParameter<vtkIdType>(scalarname.c_str(), " Peak Process,Index", ids, 2, myRank);
       sph_results->GetPoint(index,scalar_pos);
-      std::cout << "Position of peak SmoothedDensity particle is {" << scalar_pos[0] << "," << scalar_pos[1] << "," << scalar_pos[2] << "}" << std::endl;
+      DisplayParameter<double>(scalarname.c_str(), " Peak Position", scalar_pos, 3, myRank);
       //
       double tol_min = std::fabs(vminmax[0]/1000.0);
       double tol_max = std::fabs(vminmax[1]/1000.0);
       if (std::fabs(vminmax[0]-scalar_range_global[0])>tol_min || std::fabs(vminmax[1]-scalar_range_global[1])>tol_max) {
         ok = false;
-        std::cout << "//--------------------------------------------------------------" << std::endl;
+        std::cout << "// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
         std::cout << "min/max check failed " << std::endl;
         std::cout << "expected {" << vminmax[0] << ',' << vminmax[1] << "}" << std::endl;
         std::cout << "got {" << scalar_range_global[0] << ',' << scalar_range_global[1] << "}" << std::endl;
         std::cout << "err {" << std::abs(vminmax[0]-scalar_range_global[0]) << ',' << std::abs(vminmax[1]-scalar_range_global[1]) << "}" << std::endl;
-        std::cout << "//--------------------------------------------------------------" << std::endl;
+        std::cout << "// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
       }
       if (std::fabs(vpos[0]-scalar_pos[0])>1E-5 ||
           std::fabs(vpos[1]-scalar_pos[1])>1E-5 ||
           std::fabs(vpos[2]-scalar_pos[2])>1E-5)
       {
         ok = false;
-        std::cout << "//--------------------------------------------------------------" << std::endl;
+        std::cout << "// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
         std::cout << "position check failed " << std::endl;
         std::cout << "expected {" << vpos[0] << "," << vpos[1] << ',' << vpos[2] << "}" << std::endl;
         std::cout << "got {" << scalar_pos[0] << "," << scalar_pos[1] << ',' << scalar_pos[2] << "}" << std::endl;
         std::cout << "err {" << std::abs(scalar_pos[0]-vpos[0]) << ',' << std::abs(scalar_pos[1]-vpos[1]) << ',' << std::abs(scalar_pos[2]-vpos[2]) << "}" << std::endl;
-        std::cout << "//--------------------------------------------------------------" << std::endl;
+        std::cout << "// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
       }
     }
+    std::cout << "//--------------------------------------------------------------" << std::endl;
   }
   //
   // Testing using the standard VTK Image Regression
