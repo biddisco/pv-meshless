@@ -627,7 +627,6 @@ int main (int argc, char* argv[])
   double viz_elapsed = viztimer->GetElapsedTime();
 
   if (ok && myRank==0) {
-    DisplayParameter<char *>("____________________", "", &empty, 1, myRank);
     DisplayParameter<vtkIdType>("Total Particles", "", &totalParticles, 1, myRank);
     DisplayParameter<double>("Read Time", "", &read_elapsed, 1, myRank);
     DisplayParameter<double>("Partition Time", "", &partition_elapsed, 1, myRank);
