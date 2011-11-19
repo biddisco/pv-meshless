@@ -188,10 +188,14 @@ int main (int argc, char* argv[])
     test->AddArgument(argv[c]);
   }
   // Get test filename etc
+  char *empty = "";
   char *filename = vtkTestUtilities::GetArgOrEnvOrDefault(
     "-F", argc, argv, "DUMMY_ENV_VAR", "temp.h5");
   char* fullname = vtkTestUtilities::ExpandDataFileName(argc, argv, filename);
-  if (myRank==0) DisplayParameter<char *>("FileName", "", &fullname, 1, myRank);
+  if (myRank==0) {
+    DisplayParameter<char *>("====================", "", &empty, 1, myRank);
+    DisplayParameter<char *>("FileName", "", &fullname, 1, myRank);
+  }
 
   //
   // Force the creation of our output window object
@@ -241,6 +245,7 @@ int main (int argc, char* argv[])
   unused = GetArrayParameter<double>("-cameraFocus", "Camera Focus", cameraFocus, 3, argc, argv, myRank);
   unused = GetArrayParameter<double>("-cameraViewUp", "Camera ViewUp", cameraViewUp, 3, argc, argv, myRank);
   unused = GetArrayParameter<int>("-windowSize", "Window Size", windowSize, 2, argc, argv, myRank);
+  DisplayParameter<char *>("--------------------", "", &empty, 1, myRank);
   
   // bug fix for cmd line params on windows with debugger (only first read properly)
   gridSpacing[2] = gridSpacing[1] = gridSpacing[0];
@@ -453,27 +458,24 @@ int main (int argc, char* argv[])
       double tol_max = std::fabs(vminmax[1]/1000.0);
       if (std::fabs(vminmax[0]-scalar_range_global[0])>tol_min || std::fabs(vminmax[1]-scalar_range_global[1])>tol_max) {
         ok = false;
-        std::cout << "// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
+        DisplayParameter<char *>("++++++++++++++++++++", "", &empty, 1, myRank);
         std::cout << "min/max check failed " << std::endl;
         std::cout << "expected {" << vminmax[0] << ',' << vminmax[1] << "}" << std::endl;
         std::cout << "got {" << scalar_range_global[0] << ',' << scalar_range_global[1] << "}" << std::endl;
         std::cout << "err {" << std::abs(vminmax[0]-scalar_range_global[0]) << ',' << std::abs(vminmax[1]-scalar_range_global[1]) << "}" << std::endl;
-        std::cout << "// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
       }
       if (std::fabs(vpos[0]-scalar_pos[0])>1E-5 ||
           std::fabs(vpos[1]-scalar_pos[1])>1E-5 ||
           std::fabs(vpos[2]-scalar_pos[2])>1E-5)
       {
         ok = false;
-        std::cout << "// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
+        DisplayParameter<char *>("++++++++++++++++++++", "", &empty, 1, myRank);
         std::cout << "position check failed " << std::endl;
         std::cout << "expected {" << vpos[0] << "," << vpos[1] << ',' << vpos[2] << "}" << std::endl;
         std::cout << "got {" << scalar_pos[0] << "," << scalar_pos[1] << ',' << scalar_pos[2] << "}" << std::endl;
         std::cout << "err {" << std::abs(scalar_pos[0]-vpos[0]) << ',' << std::abs(scalar_pos[1]-vpos[1]) << ',' << std::abs(scalar_pos[2]-vpos[2]) << "}" << std::endl;
-        std::cout << "// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
       }
     }
-    std::cout << "//--------------------------------------------------------------" << std::endl;
   }
   //
   // Testing using the standard VTK Image Regression
@@ -625,7 +627,7 @@ int main (int argc, char* argv[])
   double viz_elapsed = viztimer->GetElapsedTime();
 
   if (ok && myRank==0) {
-    std::cout << "//--------------------------------------------------------------" << std::endl;
+    DisplayParameter<char *>("____________________", "", &empty, 1, myRank);
     DisplayParameter<vtkIdType>("Total Particles", "", &totalParticles, 1, myRank);
     DisplayParameter<double>("Read Time", "", &read_elapsed, 1, myRank);
     DisplayParameter<double>("Partition Time", "", &partition_elapsed, 1, myRank);
@@ -636,7 +638,7 @@ int main (int argc, char* argv[])
       vtkIdType voxels = (1+wholeExtent[1]-wholeExtent[0])*(1+wholeExtent[3]-wholeExtent[2])*(1+wholeExtent[5]-wholeExtent[4]);
       DisplayParameter<vtkIdType>("Voxels", "", &voxels, 1, myRank);
     }
-    std::cout << "//--------------------------------------------------------------" << std::endl;
+    DisplayParameter<char *>("====================", "", &empty, 1, myRank);
   }
 
   retVal = ok;
