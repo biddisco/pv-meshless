@@ -200,7 +200,7 @@ FOREACH(N 1 2 3 4)
   ENDIF (${Trilinos_FOUND} AND N GREATER 1)
 ENDFOREACH(N)
   
-FOREACH(N 16 32 64 128 192)
+FOREACH(N 16 32 64 128 192 256 276)
   SET(test_name "TestSPHProbeShepard-densitycheck-P${N}")
     #
     # Parallel N>1
@@ -291,7 +291,7 @@ ENDFOREACH(resolution)
 #--------------------------------------------------
 SET(counter 1)
 FOREACH(resolution 0.05 0.01 0.005)
-  FOREACH(N 1 4 8 16 32 64 128 192)
+  FOREACH(N 1 4 8 16 32 64 128 192 256 276)
     SET(test_name "TestSPHImageResample-dam-N${counter}-R${resolution}-P${N}")
     SET(TestParams 
       -D "${PROJECT_SOURCE_DIR}/Testing/data"
