@@ -179,6 +179,8 @@ class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
     char              *DensityScalars;
     int                ModifiedNumber;
     int                ComputeDensityFromNeighbourVolume;
+    bool               BoundsInitialized;
+
 
 private:
   vtkSPHImageResampler(const vtkSPHImageResampler&);  // Not implemented.

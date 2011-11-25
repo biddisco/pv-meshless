@@ -132,7 +132,7 @@ hid_t H5PartGetDiskShape(H5PartFile *f, hid_t dataset)
   return space;
 }
 //----------------------------------------------------------------------------
-#define JB_DEBUG__
+//#define JB_DEBUG__
 #ifdef JB_DEBUG__
   #define OUTPUTTEXT(a) std::cout << (a) << std::endl; std::cout.flush();
 
@@ -410,7 +410,7 @@ int vtkH5PartReader::RequestInformation(
 
   return 1;
 }
-
+//----------------------------------------------------------------------------
 int GetVTKDataType(int datatype)
 {
   if (H5Tequal(datatype,H5T_NATIVE_FLOAT))
