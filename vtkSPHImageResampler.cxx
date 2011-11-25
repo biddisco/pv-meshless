@@ -47,11 +47,27 @@
 #include <set>
 #include <algorithm>
 #include <functional>
+#include <sstream>
 //
 vtkCxxRevisionMacro(vtkSPHImageResampler, "$Revision: 1.4 $");
 vtkStandardNewMacro(vtkSPHImageResampler);
 vtkCxxSetObjectMacro(vtkSPHImageResampler, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkSPHImageResampler, SPHManager, vtkSPHManager);
+//----------------------------------------------------------------------------
+#if 0
+  #define OUTPUTTEXT(a) std::cout << (a);
+
+  #undef vtkDebugMacro
+  #define vtkDebugMacro(a)  \
+  { \
+    vtkOStreamWrapper::EndlType endl; \
+    vtkOStreamWrapper::UseEndl(endl); \
+    vtkOStrStreamWrapper vtkmsg; \
+    vtkmsg << /* this->UpdatePiece << " : " */ a << endl; \
+    OUTPUTTEXT(vtkmsg.str()); \
+    vtkmsg.rdbuf()->freeze(0); \
+  }
+#endif
 //----------------------------------------------------------------------------
 #define REGULARGRID_SAXPY(a,x,y,z) \
   z[0] = a*x[0] + y[0]; \
@@ -84,6 +100,8 @@ vtkSPHImageResampler::vtkSPHImageResampler(void) {
   this->HScalars                    = NULL;
   this->ModifiedNumber              = 0;
   this->ComputeDensityFromNeighbourVolume = 0;
+  this->BoundsInitialized           = false;
+
   //
   this->Controller              = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
@@ -135,7 +153,7 @@ int vtkSPHImageResampler::RequestUpdateExtent(
   //
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), piece);
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
-  std::cout << "Imagesampler (" << piece << ") set num pieces to " << numPieces << std::endl;
+  vtkDebugMacro( "Imagesampler (" << piece << ") set num pieces to " << numPieces );
   //  
   return 1;
 }
@@ -160,7 +178,7 @@ int vtkSPHImageResampler::RequestInformation(
   outInfo->Set(vtkDataObject::SPACING(), this->spacing, 3);
 
   //
-  //std::cout << "RI WHOLE_EXTENT {";
+  //vtkDebugMacro( "RI WHOLE_EXTENT {";
   //for (int i=0; i<3; i++) std::cout << WholeDimension[i] << (i<2 ? "," : "}");
   //std::cout << std::endl;
 
@@ -175,11 +193,11 @@ void vtkSPHImageResampler::ComputeAxesFromBounds(vtkDataSet *inputData, double l
   vtkBoundingBox box;
   double bounds[6];
   inputData->GetBounds(bounds);
+  this->BoundsInitialized = vtkMath::AreBoundsInitialized(bounds);
   box.SetBounds(bounds);
   //
 #ifdef VTK_USE_MPI
-  vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
-    vtkMultiProcessController::GetGlobalController()->GetCommunicator());
+  vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
   if (communicator)
   {
     double mins[3] = {bounds[0], bounds[2], bounds[4]};
@@ -215,32 +233,40 @@ int vtkSPHImageResampler::ComputeInformation(
     return 0;
   }
   this->ComputeAxesFromBounds(inputData, lengths, true);
+  vtkDebugMacro( "vtkSPHImageResampler::ComputeInformation BoundsInitialized " << BoundsInitialized );
 
-  //
-  // Define sampling box...
-  // This represents the complete box which may be distributed over N pieces
-  // Hence we compute WholeDimension (=WholeExtent+1)
-  //
-  double o2[3] = {0.0, 0.0, 0.0};
-  for (int i=0; i<3; i++) {
-    if (this->Spacing[i]<=0.0 && this->Resolution[i]>1) {
-      this->scaling[i] = 1.0/(this->Resolution[i]-1);
-      this->spacing[i] = lengths[i]*this->scaling[i];
-    }
-    else{
-      this->spacing[i] = this->Spacing[i];
-      if (lengths[i]>0.0) {
-        this->scaling[i] = this->Spacing[i]/lengths[i];
+  if (this->BoundsInitialized) {
+    //
+    // Define sampling box...
+    // This represents the complete box which may be distributed over N pieces
+    // Hence we compute WholeDimension (=WholeExtent+1)
+    //
+    double o2[3] = {0.0, 0.0, 0.0};
+    for (int i=0; i<3; i++) {
+      if (this->Spacing[i]<=0.0 && this->Resolution[i]>1) {
+        this->scaling[i] = 1.0/(this->Resolution[i]-1);
+        this->spacing[i] = lengths[i]*this->scaling[i];
+      }
+      else{
+        this->spacing[i] = this->Spacing[i];
+        if (lengths[i]>0.0) {
+          this->scaling[i] = this->Spacing[i]/lengths[i];
+        }
+        else {
+          this->scaling[i] = 0.0;
+        }
+      }
+      if (this->scaling[i]>0.0 && this->spacing[i]>1E-8) {
+        this->WholeDimension[i] = vtkMath::Round(1.0/this->scaling[i] + 0.5);
       }
       else {
-        this->scaling[i] = 0.0;
+        this->WholeDimension[i] = 1;
       }
     }
-    if (this->scaling[i]>0.0 && this->spacing[i]>1E-8) {
-      this->WholeDimension[i] = vtkMath::Round(1.0/this->scaling[i] + 0.5);
-    }
-    else {
-      this->WholeDimension[i] = 1;
+  }
+  else {
+    for (int i=0; i<3; i++) {
+      this->WholeDimension[i] = this->Resolution[i];
     }
   }
   return 1;
@@ -254,6 +280,9 @@ int vtkSPHImageResampler::RequestData(
   vtkImageData *outImage = this->GetOutput();
   vtkDataSet      *input = vtkDataSet::SafeDownCast(this->GetInput());
   //
+  if (!this->BoundsInitialized) {
+    this->ComputeInformation(request, inputVector, outputVector);
+  }
   vtkInformation *inInfo = inputVector[0] ? inputVector[0]->GetInformationObject(0) : NULL;
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
   //
@@ -269,10 +298,11 @@ int vtkSPHImageResampler::RequestData(
   if (bet) {
     int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
     double *bounds = bet->GetBoundsForPiece(updatePiece);
-    bet->BoundsToExtentThreadSafe(bounds, outWholeExt,outUpdateExt); 
-    std::cout << "Image sampler " << updatePiece << " Setting Extent to {";
-    for (int i=0; i<6; i++) std::cout << outUpdateExt[i] << (i<5 ? "," : "}");
-    std::cout << std::endl;
+    bet->BoundsToExtentThreadSafe(bounds, outWholeExt, outUpdateExt); 
+    std::stringstream temp;
+    temp << "Image sampler " << updatePiece << " Setting Extent to {";
+    for (int i=0; i<6; i++) temp << outUpdateExt[i] << (i<5 ? "," : "}");
+//    vtkDebugMacro( temp.str() );
   }
   else {
 //    outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), outUpdateExt);
