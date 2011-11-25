@@ -37,7 +37,6 @@
 #include "vtkInformation.h"
 #include "vtkDebugLeaks.h"
 #include "vtkElevationFilter.h"
-#include "vtkH5PartWriter.h"
 #include "vtkH5PartReader.h"
 #include "vtkMaskPoints.h"
 #include "vtkProperty.h"
@@ -64,6 +63,10 @@
 #include "zoltan.h"
 #undef min
 #undef max
+
+//----------------------------------------------------------------------------
+#define DATA_SEND_TAG 301
+//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 std::string usage = "\n"\
@@ -250,6 +253,15 @@ int main (int argc, char* argv[])
   double radius  = 500.0;
   const double a = 0.9;
   
+/*
+  // Randomly give some processes zero points to improve test coverage
+  random_seed();
+  if (0 && numProcs>1 && rand()%2==1) {
+    numPoints = 0;
+    Sprites = vtkSmartPointer<vtkPolyData>::New();
+    writer->SetInput(Sprites);
+  }
+*/
 
   known_seed();
   SpherePoints(numPoints, radius*(1.5+myRank)/(numProcs+0.5), vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0));
@@ -279,116 +291,92 @@ int main (int argc, char* argv[])
   vtkSmartPointer<vtkProcessIdScalars> processId = vtkSmartPointer<vtkProcessIdScalars>::New();
   processId->SetInputConnection(partitioner->GetOutputPort());
   processId->SetController(controller);
-
-  //--------------------------------------------------------------
-  // Create parallel writer on all processes
-  //--------------------------------------------------------------
-  vtkSmartPointer<vtkH5PartWriter> writer = vtkSmartPointer<vtkH5PartWriter>::New();
-  writer->SetFileModeToWrite();
-  writer->SetFileName(fullname);
-  writer->SetInputConnection(processId->GetOutputPort());
-  writer->SetCollectiveIO(true);
-  writer->SetDisableInformationGather(0);
-  writer->SetVectorsWithStridedWrite(0);
-  writer->SetController(controller);
-  writer->SetTimeStep(0);
-  writer->SetTimeValue(0.0);
-
-  // Randomly give some processes zero points to improve test coverage
-  random_seed();
-  if (0 && numProcs>1 && rand()%2==1) {
-    numPoints = 0;
-    Sprites = vtkSmartPointer<vtkPolyData>::New();
-    writer->SetInput(Sprites);
-  }
-  
+  //
   controller->Barrier();
   if (myRank==0) {
     std::cout << "Process Id : " << myRank << " Generated N Points : " << numPoints << std::endl;
   }
 
   //--------------------------------------------------------------
-  // Write in parallel
+  // Update in parallel
   //
-  // To get parallel writing correct, we need to make sure that piece
+  // To get parallel operation correct, we need to make sure that piece
   // information is passed upstream. first update information,
   // then set piece update extent,
   //--------------------------------------------------------------
   std::cout << "Setting piece information " << myRank << " of " << numProcs << std::endl;
-  vtkStreamingDemandDrivenPipeline *sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(writer->GetExecutive());
-  vtkSmartPointer<vtkInformation> execInfo = sddp->GetOutputInformation(0);
+  vtkStreamingDemandDrivenPipeline *sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(processId->GetExecutive());
   // no piece info set yet, assumes info is not piece dependent
   sddp->UpdateInformation();
+  // now set piece info and update
   sddp->SetUpdateExtent(0, myRank, numProcs, 0);
-  // this calls writer->Write(); using correct piece information
   sddp->Update();
 
-  // 
-  // make sure they have all finished writing before going on to the read part
-  //
-  writer->CloseFile();
-  controller->Barrier();
+  bool doRender = false;
+  if (test->IsFlagSpecified("-R")) {
+   std::cout << "Process Id : " << myRank << " Rendering" << std::endl;
+   doRender = true;
+  }
 
-  //--------------------------------------------------------------
-  // Visualization : Read back all particles on process zero
-  //--------------------------------------------------------------
-  if (myRank == 0) {
-    std::cout << std::endl;
-    std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * " << std::endl;
-    std::cout << "Process Id : " << myRank << " Expected " << static_cast<vtkTypeInt64>(numPoints*numProcs) << std::endl;
-
-    // Read the file we just wrote on N processes
-    vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
-    // we want to read all the particles on this node, so don't use MPI/Parallel
-    reader->SetController(NULL);
-    reader->SetFileName(fullname);
-    reader->SetGenerateVertexCells(1);
-    reader->Update();
-    vtkTypeInt64 ReadPoints = reader->GetOutput()->GetNumberOfPoints();
-    std::cout << "Process Id : " << myRank << " Read : " << ReadPoints << std::endl;
-    std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * " << std::endl;
-
-    bool doRender = false;
-    if (test->IsFlagSpecified("-R")) {
-     std::cout << "Process Id : " << myRank << " Rendering" << std::endl;
-     doRender = true;
+  if (doRender) {
+    //
+    // Send all the data to process zero for display
+    //
+    vtkPolyData *OutputData = vtkPolyData::SafeDownCast(sddp->GetOutputData(0)->NewInstance());
+    OutputData->ShallowCopy(sddp->GetOutputData(0));
+    if (myRank>0) {
+      const char *array_name = "ProcessId";
+      controller->Send(OutputData, 0, DATA_SEND_TAG);
     }
-
-    if (doRender) {
-      // Display something to see if we got a good output
-      vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-      vtkSmartPointer<vtkActor>                 actor = vtkSmartPointer<vtkActor>::New();
+    //
+    // Rank 0 collect all data pieces from parallel processes
+    //
+    else if (myRank==0) {
+      //
       vtkSmartPointer<vtkRenderer>                ren = vtkSmartPointer<vtkRenderer>::New();
       vtkSmartPointer<vtkRenderWindow>      renWindow = vtkSmartPointer<vtkRenderWindow>::New();
       vtkSmartPointer<vtkRenderWindowInteractor> iren = vtkSmartPointer<vtkRenderWindowInteractor>::New();
       iren->SetRenderWindow(renWindow);
       ren->SetBackground(0.1, 0.1, 0.1);
       renWindow->SetSize( 400, 400);
-      mapper->SetInputConnection(reader->GetOutputPort());
-      mapper->SetColorModeToMapScalars();
-      mapper->SetScalarModeToUsePointFieldData();
-      mapper->SetUseLookupTableScalarRange(0);
-      mapper->SetScalarRange(0,numProcs-1);
-      mapper->SetInterpolateScalarsBeforeMapping(0);
-      mapper->SelectColorArray("ProcessId");
-      actor->SetMapper(mapper);
-      actor->GetProperty()->SetPointSize(2);
-      ren->AddActor(actor);
       renWindow->AddRenderer(ren);
       //
-      vtkSmartPointer<vtkPolyDataMapper>       mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
-      vtkSmartPointer<vtkActor>                 actor2 = vtkSmartPointer<vtkActor>::New();
-      mapper2->SetInputConnection(reader->GetOutputPort());
-      mapper2->SetColorModeToMapScalars();
-      mapper2->SetScalarModeToUsePointFieldData();
-      mapper2->SetUseLookupTableScalarRange(0);
-      mapper2->SetScalarRange(0,1);
-      mapper2->SetInterpolateScalarsBeforeMapping(0);
-      mapper2->SelectColorArray("vtkGhostLevels");
-      actor2->SetMapper(mapper2);
-      actor2->GetProperty()->SetPointSize(2);
-      actor2->SetPosition(2.0*radius, 0.0, 0.0);
-      ren->AddActor(actor2);
+      for (int i=0; i<numProcs; i++) {
+        vtkSmartPointer<vtkPolyData> pd;
+        if (i==0) {
+          pd = OutputData;
+        }
+        else {
+          pd = vtkSmartPointer<vtkPolyData>::New();
+          controller->Receive(pd, i, DATA_SEND_TAG);
+        }
+        vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+        vtkSmartPointer<vtkActor>                 actor = vtkSmartPointer<vtkActor>::New();
+        mapper->SetInput(pd);
+        mapper->SetColorModeToMapScalars();
+        mapper->SetScalarModeToUsePointFieldData();
+        mapper->SetUseLookupTableScalarRange(0);
+        mapper->SetScalarRange(0,numProcs-1);
+        mapper->SetInterpolateScalarsBeforeMapping(0);
+        mapper->SelectColorArray("ProcessId");
+        actor->SetMapper(mapper);
+        actor->GetProperty()->SetPointSize(2);
+        ren->AddActor(actor);
+        //
+        vtkSmartPointer<vtkPolyDataMapper>       mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
+        vtkSmartPointer<vtkActor>                 actor2 = vtkSmartPointer<vtkActor>::New();
+        mapper2->SetInput(pd);
+        mapper2->SetColorModeToMapScalars();
+        mapper2->SetScalarModeToUsePointFieldData();
+        mapper2->SetUseLookupTableScalarRange(0);
+        mapper2->SetScalarRange(0,1);
+        mapper2->SetInterpolateScalarsBeforeMapping(0);
+        mapper2->SelectColorArray("vtkGhostLevels");
+        actor2->SetMapper(mapper2);
+        actor2->GetProperty()->SetPointSize(2);
+        actor2->SetPosition(2.0*radius, 0.0, 0.0);
+        ren->AddActor(actor2);
+      }
       //
       // Display boxes for each partition
       //

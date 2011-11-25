@@ -628,12 +628,14 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   int *exportToPart = NULL;
   PartitionVariables mesh;
 
+  vtkDebugMacro(<<"Initializing Zoltan on " << this->UpdatePiece);
   float ver;
   int rc = Zoltan_Initialize(0, NULL, &ver);
   if (rc != ZOLTAN_OK){
     printf("Zoltan initialization failed ...\n");
     return 0;
   }
+  vtkDebugMacro(<<"Zoltan Initialized on " << this->UpdatePiece);
 
   mesh.Input                    = inputCopy;
   mesh.Output                   = output;
