@@ -65,7 +65,6 @@ string(REPLACE " " ";" MPIEXEC_NUMPROC_FLAG ${MPIEXEC_NUMPROC_FLAG})
 # Trilinos
 #--------------------------------------------------
 IF(${Trilinos_FOUND})
-  ADD_DEFINITIONS(-DPV_MESHLESS_TRILINOS)
 
   ADD_EXECUTABLE(TestParticlePartitionFilter 
     TestParticlePartitionFilter.cxx

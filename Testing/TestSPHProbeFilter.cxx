@@ -61,7 +61,7 @@
 #include "vtkParticleIdFilter.h"
 #include "vtkStreamOutputWindow.h"
 //
-#ifdef PV_MESHLESS_TRILINOS
+#ifdef PVMESHLESS_USE_TRILINOS
   #include "vtkParticlePartitionFilter.h"
 #endif
 //
@@ -300,7 +300,7 @@ int main (int argc, char* argv[])
 
   vtkSmartPointer<vtkAlgorithm> data_algorithm = reader; 
 
-#ifdef PV_MESHLESS_TRILINOS
+#ifdef PVMESHLESS_USE_TRILINOS
   vtkSmartPointer<vtkTimerLog> partitiontimer = vtkSmartPointer<vtkTimerLog>::New();
   partitiontimer->StartTimer();
   //--------------------------------------------------------------
@@ -518,12 +518,14 @@ int main (int argc, char* argv[])
     // Release all the probing pipeline to free memory so that process zero
     // is less likely to crash when collecting results.
     //
+#ifdef PVMESHLESS_USE_TRILINOS
     partitioner->SetInputConnection(NULL);
+    partitioner        = NULL;
+#endif
     resample_algorithm->SetInputConnection(NULL);
     iso->SetInputConnection(NULL);
     processId->SetInputConnection(NULL);
     reader             = NULL;
-    partitioner        = NULL;
     sphManager         = NULL;
     resample_algorithm = NULL;
     iso                = NULL;
@@ -631,7 +633,9 @@ int main (int argc, char* argv[])
   if (ok && myRank==0) {
     DisplayParameter<vtkIdType>("Total Particles", "", &totalParticles, 1, myRank);
     DisplayParameter<double>("Read Time", "", &read_elapsed, 1, myRank);
+#ifdef PVMESHLESS_USE_TRILINOS
     DisplayParameter<double>("Partition Time", "", &partition_elapsed, 1, myRank);
+#endif
     DisplayParameter<double>("SPH Probe Time", "", &sph_elapsed, 1, myRank);
     DisplayParameter<double>("Visualization/Check Time", "", &viz_elapsed, 1, myRank);
     if (imageTest) {
