@@ -340,6 +340,16 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/pv_meshless_configure.h.in
                ${PROJECT_BINARY_DIR}/vtkCSCSMeshlessConfigure.h
                @ONLY IMMEDIATE)
 
+# --------------------------------------------------
+# Tools 
+# --------------------------------------------------
+OPTION(USE_ASTRO "Use pv-astro library for ramses reader/converter" OFF)
+IF(USE_ASTRO)
+  ADD_DEFINITIONS("-DUSE_PV_ASTRO")
+  INCLUDE_DIRECTORIES(${pv-astro_SOURCE_DIR})
+  ADD_SUBDIRECTORY(Tools)
+ENDIF(USE_ASTRO)
+  
 #--------------------------------------------------
 # Testing
 #--------------------------------------------------
