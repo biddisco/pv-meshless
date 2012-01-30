@@ -499,19 +499,12 @@ int main (int argc, char* argv[])
   // main processes waits in MPI_Init() and calls exit() when
   // the others are done, causing apparent memory leaks for any objects
   // created before MPI_Init().
-  int provided, rank, size;
-  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+  int rank, size;
+  MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   //
   if (rank == 0) {
-    if (provided != MPI_THREAD_MULTIPLE) {
-      std::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
-        << "MPI distribution with threads enabled" << std::endl;
-    }
-    else {
-      std::cout << "MPI_THREAD_MULTIPLE is OK" << std::endl;
-    }
   }
 
   // Note that this will create a vtkMPIController if MPI
