@@ -1,0 +1,29 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = obj_weight_dim = 1
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters       = lb_approach = partition
+File Type		= hypergraph
+File Name		= ibm03
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+1411	0	-1	-1
+5045	0	-1	-1
+5576	0	-1	-1
+5790	0	-1	-1
+6821	0	-1	-1
+6841	0	-1	-1
+7091	0	-1	-1
+7343	0	-1	-1
+7453	0	-1	-1
+8298	0	-1	-1
+9810	0	-1	-1
+10869	0	-1	-1
+11144	0	-1	-1
+18483	0	-1	-1
+18511	0	-1	-1
+19054	0	-1	-1
+19897	0	-1	-1
+20847	0	-1	-1
+22200	0	-1	-1
+22288	0	-1	-1

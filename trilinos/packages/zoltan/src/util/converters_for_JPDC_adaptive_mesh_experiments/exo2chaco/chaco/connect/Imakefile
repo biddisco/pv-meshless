@@ -1,0 +1,10 @@
+XCOMM $Id$
+
+EXTRA_INCLUDES = -I../main -I../util
+
+SRCS = add_edges.c connect_enforce.c connected.c find_comps.c heap.c 
+
+OBJS = ${SRCS:.c=.o}
+
+LibraryTargetSubdirs(libchaco.a,$(OBJS),../)
+

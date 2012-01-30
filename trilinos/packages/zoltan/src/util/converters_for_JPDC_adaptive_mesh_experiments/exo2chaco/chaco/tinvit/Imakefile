@@ -1,0 +1,10 @@
+XCOMM $Id$
+
+EXTRA_INCLUDES = -I../main -I../util
+
+SRCS = \
+epslon.c pythag.c tinvit.c
+
+OBJS = ${SRCS:.c=.o}
+
+LibraryTargetSubdirs(libchaco.a,$(OBJS),../)

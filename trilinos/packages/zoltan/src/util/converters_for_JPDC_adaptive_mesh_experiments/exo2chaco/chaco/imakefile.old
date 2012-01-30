@@ -1,0 +1,278 @@
+XCOMM $Id$
+XCOMM Imakefile for Chaco-2.0
+
+LIB = chaco
+
+ALTINC = main
+
+XCOMM Source files for main directory
+
+SRCS1 = \
+main/user_params.c    main/interface.c
+OBJS1 = \
+main/user_params.o    main/interface.o
+
+XCOMM Source files for submain directory
+SRCS2 = \
+submain/balance.c     submain/divide.c      submain/submain.c 
+OBJS2 = \
+submain/balance.o     submain/divide.o      submain/submain.o 
+
+XCOMM Source files for input directory
+SRCS3 = \
+input/input_assign.c  input/check_input.c   input/input.c \
+input/input_geom.c    input/input_graph.c   input/read_params.c \
+input/reflect_input.c input/read_val.c 
+OBJS3 = \
+input/input_assign.o  input/check_input.o   input/input.o \
+input/input_geom.o    input/input_graph.o   input/read_params.o \
+input/reflect_input.o input/read_val.o 
+
+XCOMM Source files for graph directory
+SRCS4 = \
+graph/check_graph.c   graph/free_graph.c    graph/reformat.c \
+graph/subgraph.c      graph/graph_out.c
+OBJS4 = \
+graph/check_graph.o   graph/free_graph.o    graph/reformat.o \
+graph/subgraph.o      graph/graph_out.o
+
+XCOMM Source files for inertial directory
+SRCS5 = \
+inertial/eigenvec2.c  inertial/eigenvec3.c  inertial/inertial.c \
+inertial/inertial1d.c inertial/inertial2d.c inertial/inertial3d.c \
+inertial/make_subgeom.c 
+OBJS5 = \
+inertial/eigenvec2.o  inertial/eigenvec3.o  inertial/inertial.o \
+inertial/inertial1d.o inertial/inertial2d.o inertial/inertial3d.o \
+inertial/make_subgeom.o 
+
+XCOMM Source files for klspiff directory
+SRCS6 = \
+klspiff/buckets.c                           klspiff/buckets_bi.c \
+klspiff/buckets1.c                          klspiff/bilistops.c \
+klspiff/coarsen_kl.c                        klspiff/count_weights.c \
+klspiff/compress_ewgts.c                    klspiff/kl_init.c \
+klspiff/kl_output.c                         klspiff/klspiff.c \
+klspiff/make_bndy_list.c                    klspiff/make_kl_list.c \
+klspiff/nway_kl.c
+OBJS6 = \
+klspiff/buckets.o                           klspiff/buckets_bi.o \
+klspiff/buckets1.o                          klspiff/bilistops.o \
+klspiff/coarsen_kl.o                        klspiff/count_weights.o \
+klspiff/compress_ewgts.o                    klspiff/kl_init.o \
+klspiff/kl_output.o                         klspiff/klspiff.o \
+klspiff/make_bndy_list.o                    klspiff/make_kl_list.o \
+klspiff/nway_kl.o
+
+XCOMM Source files for klvspiff
+SRCS7 = \
+klvspiff/bpm_improve.c                      klvspiff/bucketsv.c \
+klvspiff/clear_dvals.c                      klvspiff/coarsen_klv.c \
+klvspiff/countup_vtx_sep.c                  klvspiff/find_bndy.c \
+klvspiff/klv_init.c                         klvspiff/klvspiff.c \
+klvspiff/make_bpgraph.c                     klvspiff/make_sep_list.c \
+klvspiff/matching.c                         klvspiff/nway_klv.c 
+OBJS7 = \
+klvspiff/bpm_improve.o                      klvspiff/bucketsv.o \
+klvspiff/clear_dvals.o                      klvspiff/coarsen_klv.o \
+klvspiff/countup_vtx_sep.o                  klvspiff/find_bndy.o \
+klvspiff/klv_init.o                         klvspiff/klvspiff.o \
+klvspiff/make_bpgraph.o                     klvspiff/make_sep_list.o \
+klvspiff/matching.o                         klvspiff/nway_klv.o 
+
+XCOMM Source files for coarsen directory
+SRCS8 = \
+coarsen/coarsen.c     coarsen/interpolate.c coarsen/makecgraph.c \
+coarsen/coarsen1.c    coarsen/countcedges.c coarsen/makev2cv.c \
+coarsen/maxmatch.c    coarsen/maxmatch1.c   coarsen/maxmatch2.c  \
+coarsen/maxmatch3.c   coarsen/maxmatch4.c
+OBJS8 = \
+coarsen/coarsen.o     coarsen/interpolate.o coarsen/makecgraph.o \
+coarsen/coarsen1.o    coarsen/countcedges.o coarsen/makev2cv.o \
+coarsen/maxmatch.o    coarsen/maxmatch1.o   coarsen/maxmatch2.o  \
+coarsen/maxmatch3.o   coarsen/maxmatch4.o
+
+XCOMM Source files for connect directory
+SRCS9 = \
+connect/add_edges.c   connect/connected.c   connect/find_edges.c 
+OBJS9 = \
+connect/add_edges.o   connect/connected.o   connect/find_edges.o 
+
+XCOMM Source files for eigen directory
+SRCS10 = \
+eigen/bidir.c         eigen/bisect.c        eigen/checkeig.c \
+eigen/checkeig_ext.c  eigen/checkorth.c     eigen/cksturmcnt.c \
+eigen/mkeigvecs.c     eigen/eigensolve.c    eigen/get_extval.c \
+eigen/get_ritzvals.c  eigen/lanczos_FO.c    eigen/lanczos_SO.c \
+eigen/lanczos_SO_float.c                    eigen/lanczos_ext.c \
+eigen/lanczos_ext_float.c                   eigen/lanc_seconds.c \
+eigen/lanpause.c      eigen/makeorthlnk.c   eigen/mkscanlist.c \
+eigen/orthog1.c       eigen/orthogonalize.c eigen/orthogvec.c \
+eigen/ql.c            eigen/rqi.c           eigen/rqi_ext.c \
+eigen/scale_diag.c    eigen/scanmax.c       eigen/scanmin.c \
+eigen/solistout.c     eigen/sorthog.c       eigen/splarax.c \
+eigen/sturmcnt.c      eigen/Tevec.c         eigen/tri_solve.c \
+eigen/warnings.c 
+OBJS10 = \
+eigen/bidir.o         eigen/bisect.o        eigen/checkeig.o \
+eigen/checkeig_ext.o  eigen/checkorth.o     eigen/cksturmcnt.o \
+eigen/mkeigvecs.o     eigen/eigensolve.o    eigen/get_extval.o \
+eigen/get_ritzvals.o  eigen/lanczos_FO.o    eigen/lanczos_SO.o \
+eigen/lanczos_SO_float.o                    eigen/lanczos_ext.o \
+eigen/lanczos_ext_float.o                   eigen/lanc_seconds.o \
+eigen/lanpause.o      eigen/makeorthlnk.o   eigen/mkscanlist.o \
+eigen/orthog1.o       eigen/orthogonalize.o eigen/orthogvec.o \
+eigen/ql.o            eigen/rqi.o           eigen/rqi_ext.o \
+eigen/scale_diag.o    eigen/scanmax.o       eigen/scanmin.o \
+eigen/solistout.o     eigen/sorthog.o       eigen/splarax.o \
+eigen/sturmcnt.o      eigen/Tevec.o         eigen/tri_solve.o \
+eigen/warnings.o 
+
+XCOMM Source files for symmlq directory
+SRCS11 = \
+symmlq/aprod.c        symmlq/msolve.c       symmlq/pow_dd.c \
+symmlq/symmlq.c       symmlq/symmlqblas.c
+OBJS11 = \
+symmlq/aprod.o        symmlq/msolve.o       symmlq/pow_dd.o \
+symmlq/symmlq.o       symmlq/symmlqblas.o
+
+XCOMM Source files for tinvit directory
+SRCS12 = \
+tinvit/tinvit.c       tinvit/pythag.c       tinvit/epslon.c 
+OBJS12 = \
+tinvit/tinvit.o       tinvit/pythag.o       tinvit/epslon.o 
+
+XCOMM Source files for optimize directory
+SRCS13 = \
+optimize/determinant.c                      optimize/func2d.c \
+optimize/func3d.c                           optimize/opt2d.c \
+optimize/opt3d.c 
+OBJS13 = \
+optimize/determinant.o                      optimize/func2d.o \
+optimize/func3d.o                           optimize/opt2d.o \
+optimize/opt3d.o 
+
+XCOMM Source files for assign directory
+SRCS14 = \
+assign/assign.c       assign/assign_out.c   assign/mapper.c \
+assign/median.c       assign/merge_assign.c assign/rec_median.c \
+assign/rotate.c       assign/y2x.c 
+OBJS14 = \
+assign/assign.o       assign/assign_out.o   assign/mapper.o \
+assign/median.o       assign/merge_assign.o assign/rec_median.o \
+assign/rotate.o       assign/y2x.o 
+
+XCOMM Source files for bpmatch directory
+SRCS15 = \
+bpmatch/checkbp.c     bpmatch/inits2d.c     bpmatch/inits3d.c \
+bpmatch/genvals2d.c   bpmatch/genvals3d.c   bpmatch/map2d.c \
+bpmatch/map3d.c       bpmatch/movevtxs.c    bpmatch/sorts2d.c \
+bpmatch/sorts3d.c 
+OBJS15 = \
+bpmatch/checkbp.o     bpmatch/inits2d.o     bpmatch/inits3d.o \
+bpmatch/genvals2d.o   bpmatch/genvals3d.o   bpmatch/map2d.o \
+bpmatch/map3d.o       bpmatch/movevtxs.o    bpmatch/sorts2d.o \
+bpmatch/sorts3d.o 
+
+XCOMM Source files for refine_map directory
+SRCS16 = \
+refine_map/compute_cube_edata.c             refine_map/compute_cube_vdata.c \
+refine_map/refine_cube.c                    refine_map/update_cube_edata.c \
+refine_map/update_cube_vdata.c              refine_map/find_edge_cube.c \
+refine_map/init_cube_edata.c                refine_map/compute_mesh_edata.c \
+refine_map/compute_mesh_vdata.c             refine_map/find_edge_mesh.c \
+refine_map/init_mesh_edata.c                refine_map/refine_mesh.c \
+refine_map/update_mesh_edata.c              refine_map/update_mesh_vdata.c \
+refine_map/refine_map.c                     refine_map/make_comm_graph.c 
+OBJS16 = \
+refine_map/compute_cube_edata.o             refine_map/compute_cube_vdata.o \
+refine_map/refine_cube.o                    refine_map/update_cube_edata.o \
+refine_map/update_cube_vdata.o              refine_map/find_edge_cube.o \
+refine_map/init_cube_edata.o                refine_map/compute_mesh_edata.o \
+refine_map/compute_mesh_vdata.o             refine_map/find_edge_mesh.o \
+refine_map/init_mesh_edata.o                refine_map/refine_mesh.o \
+refine_map/update_mesh_edata.o              refine_map/update_mesh_vdata.o \
+refine_map/refine_map.o                     refine_map/make_comm_graph.o 
+
+XCOMM Source files for refine_part
+SRCS17 = \
+refine_part/refine_part.c                   refine_part/kl_refine.c \
+refine_part/make_maps_ref.c                 refine_part/make_terms_ref.c 
+OBJS17 = \
+refine_part/refine_part.o                   refine_part/kl_refine.o \
+refine_part/make_maps_ref.o                 refine_part/make_terms_ref.o 
+
+XCOMM Source files for internal directory
+SRCS18 = \
+internal/force_internal.c                   internal/improve_internal.c \
+internal/check_internal.c 
+OBJS18 = \
+internal/force_internal.o                   internal/improve_internal.o \
+internal/check_internal.o 
+
+XCOMM Source files for misc directory
+SRCS19 = \
+misc/define_subcubes.c                      misc/define_submeshes.c \
+misc/divide_procs.c                         misc/merge_goals.c \
+misc/make_term_props.c                      misc/count.c \
+misc/countup.c                              misc/countup_cube.c \
+misc/countup_mesh.c                         misc/make_subgoal.c \
+misc/find_maxdeg.c                          misc/make_maps.c \
+misc/make_setlists.c                        misc/sequence.c \
+misc/perturb.c                              misc/simple_part.c \
+misc/time_kernels.c                         misc/timing.c 
+OBJS19 = \
+misc/define_subcubes.o                      misc/define_submeshes.o \
+misc/divide_procs.o                         misc/merge_goals.o \
+misc/make_term_props.o                      misc/count.o \
+misc/countup.o                              misc/countup_cube.o \
+misc/countup_mesh.o                         misc/make_subgoal.o \
+misc/find_maxdeg.o                          misc/make_maps.o \
+misc/make_setlists.o                        misc/sequence.o \
+misc/perturb.o                              misc/simple_part.o \
+misc/time_kernels.o                         misc/timing.o 
+
+XCOMM Source files for util directory
+SRCS20 = \
+util/affirm.c         util/array_alloc_2D.c util/bit_reverse.c \
+util/checkpnt.c       util/cpvec.c          util/dot.c \
+util/doubleout.c      util/input_int.c      util/gray.c \
+util/machine_params.c util/makevwsqrt.c     util/mkvec.c \
+util/norm.c           util/normalize.c      util/mergesort.c \
+util/randomize.c      util/smalloc.c        util/bail.c \
+util/scadd.c          util/seconds.c        util/setvec.c \
+util/shell_sort.c     util/strout.c         util/tri_prod.c \
+util/true_or_false.c  util/update.c         util/vecout.c \
+util/vecran.c         util/vecscale.c 
+OBJS20 = \
+util/affirm.o         util/array_alloc_2D.o util/bit_reverse.o \
+util/checkpnt.o       util/cpvec.o          util/dot.o \
+util/doubleout.o      util/input_int.o      util/gray.o \
+util/machine_params.o util/makevwsqrt.o     util/mkvec.o \
+util/norm.o           util/normalize.o      util/mergesort.o \
+util/randomize.o      util/smalloc.o        util/bail.o \
+util/scadd.o          util/seconds.o        util/setvec.o \
+util/shell_sort.o     util/strout.o         util/tri_prod.o \
+util/true_or_false.o  util/update.o         util/vecout.o \
+util/vecran.o         util/vecscale.o 
+
+
+OBJS = \
+$(OBJS1)  $(OBJS2)  $(OBJS3)  $(OBJS4)  $(OBJS5)  \
+$(OBJS6)  $(OBJS7)  $(OBJS8)  $(OBJS9)  $(OBJS10) \
+$(OBJS11) $(OBJS12) $(OBJS13) $(OBJS14) $(OBJS15) \
+$(OBJS16) $(OBJS17) $(OBJS18) $(OBJS19) $(OBJS20)
+
+
+NormalLibraryTarget($(LIB),$(OBJS))
+
+InstallLibrary($(LIB),$(LIBDIR))
+
+#if Parallel
+InstallParallelLibrary($(LIB),$(PLIBDIR))
+#endif
+
+ExtraStuffToClean($(OBJS))
+
+DependTarget()
+

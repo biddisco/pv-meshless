@@ -1,0 +1,11 @@
+XCOMM $Id$
+
+EXTRA_INCLUDES = -I../main -I../util
+
+SRCS = \
+aprod.c  msolve.c  pow_dd.c  symmlq.c  symmlqblas.c
+
+OBJS = ${SRCS:.c=.o}
+
+LibraryTargetSubdirs(libchaco.a,$(OBJS),../)
+

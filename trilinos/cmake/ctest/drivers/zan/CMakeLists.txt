@@ -1,0 +1,57 @@
+TRILINOS_DRIVER_SETUP()
+
+IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  CUDA_DEBUG
+  ctest_linux_nightly_cuda_debug_zan.cmake
+  CTEST_INSTALLER_TYPE dev
+  RUN_SERIAL
+  TIMEOUT_MINUTES 150
+)
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  CUDA_OPT
+  ctest_linux_nightly_cuda_opt_zan.cmake
+  CTEST_INSTALLER_TYPE dev
+  RUN_SERIAL
+  TIMEOUT_MINUTES 150
+)
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  SERIAL_OPT_ICPC 
+  ctest_linux_nightly_serial_opt_icpc_zan.cmake
+  CTEST_INSTALLER_TYPE dev
+  RUN_SERIAL
+  TIMEOUT_MINUTES 240
+)
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  SERIAL_DEBUG_ICPC
+  ctest_linux_nightly_serial_debug_icpc_zan.cmake
+  CTEST_INSTALLER_TYPE dev
+  RUN_SERIAL
+  TIMEOUT_MINUTES 540
+)
+
+ELSE()
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  CUDA_OPT_RELEASE
+  ctest_linux_nightly_cuda_opt_release_zan.cmake
+  CTEST_INSTALLER_TYPE dev
+  RUN_SERIAL
+  TIMEOUT_MINUTES 150
+)
+
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  SERIAL_OPT_RELEASE_ICPC 
+#  ctest_linux_nightly_serial_opt_release_icpc_zan.cmake
+#  CTEST_INSTALLER_TYPE dev
+#  RUN_SERIAL
+#  TIMEOUT_MINUTES 240
+#)
+
+ENDIF()
+
+TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()

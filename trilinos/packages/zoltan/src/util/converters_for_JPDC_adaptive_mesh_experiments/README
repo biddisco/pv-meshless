@@ -1,0 +1,27 @@
+Converters for running JPDC experiments on Johan Steensland adaptive mesh data.
+Both programs assume 3D meshes.
+
+exo2chaco:
+     Reads a serial Exodus file and writes Chaco-formatted files.
+     Built using the nem_slice tool, so there's lots of stuff in the
+     source that isn't really needed.  Main changes are in elb_main.c
+     and include method gen_chaco and code to write the chaco files.
+     Executable segfaults, but the segfault happens after the Chaco
+     files are written, so I don't care.  
+     See file nem_slice_command for command line usage.
+        gmake tbird
+     produces Obj_tbird/nem_slice
+
+chaco2chaco:
+     Reads two chaco coordinates files and for each point in the second file,
+     finds a nearby point in the first file.  Can actually operate on a 
+     series of files, with each file being compared to the previous one.
+     Command line:  
+        chaco2chaco basefilename numberoffiles
+     where each file must begin with basefilename and is called 
+     basefilename.#.  numberoffiles is the largest file name.  There must
+     be a file basefilename.0.
+        cc -o chaco2chaco main.c hsfc_hilbert.c
+     Example included:
+        chaco2chaco junk3d 2
+
