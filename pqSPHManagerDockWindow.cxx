@@ -60,7 +60,7 @@ public:
   }
 
   void CreateProxy() {
-    vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+    vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
     this->SPHProxy.TakeReference(pm->NewProxy("meshless_helpers", "SPHManager"));
     if (this->SPHProxy) {
       this->pqSPHProxy = new pqProxy("meshless_helpers", "SPHManager", SPHProxy, 0, 0);
@@ -73,7 +73,7 @@ public:
 
   void DeleteProxy() {
     if (this->ProxyCreated()) {
-      vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+      vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
 //      pm->UnRegisterProxy("meshless_helpers", "SPHManager",this->SPHProxy);
       this->SPHProxy = NULL;
       delete this->SPHManagerPanel;
