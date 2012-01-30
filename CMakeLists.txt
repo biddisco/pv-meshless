@@ -347,7 +347,7 @@ OPTION(USE_ASTRO "Use pv-astro library for ramses reader/converter" OFF)
 IF(USE_ASTRO)
   ADD_DEFINITIONS("-DUSE_PV_ASTRO")
   INCLUDE_DIRECTORIES(${pv-astro_SOURCE_DIR})
-  ADD_SUBDIRECTORY(Tools)
+  ADD_SUBDIRECTORY(tools)
 ENDIF(USE_ASTRO)
   
 #--------------------------------------------------
