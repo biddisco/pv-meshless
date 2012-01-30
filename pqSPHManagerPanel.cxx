@@ -41,7 +41,6 @@
 #include "pqPropertyLinks.h"
 #include "pqProxy.h"
 #include "pqServer.h"
-#include "pqServerManagerSelectionModel.h"
 #include "pqServerManagerModelItem.h"
 #include "pqServerManagerModel.h"
 #include "pqSMAdaptor.h"
