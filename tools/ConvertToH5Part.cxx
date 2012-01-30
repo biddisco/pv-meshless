@@ -134,6 +134,7 @@ vtkSmartPointer<vtkAlgorithm> SetupXdmfReader3(const std::string &filename) {
 vtkSmartPointer<vtkAlgorithm> SetupRamsesReader(const std::string &filename) {
   vtkSmartPointer<vtkRamsesReader> reader = vtkSmartPointer<vtkRamsesReader>::New();
   reader->SetFileName(filename.c_str());
+  reader->SetHasParticleData(1);
   return reader;
 }
 #endif
