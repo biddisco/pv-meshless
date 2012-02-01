@@ -51,7 +51,44 @@ IF(VTK_USE_PARALLEL AND VTK_USE_MPI)
   TARGET_LINK_LIBRARIES(TestH5PartParallelWriter
     pv_meshless 
     )
-  ADD_TEST(TestH5PartParallelWriter ${PROJECT_BINARY_DIR}/../bin/TestH5PartParallelWriter)
+  FOREACH(N 1 2 3 4 8 16 32 64)
+    SET(test_name "TestH5PartParallelWriter-P${N}")
+      #
+      # Serial N==1
+      #
+      IF(N EQUAL 1)
+        ADD_TEST(
+          NAME ${test_name}
+          COMMAND 
+            $<TARGET_FILE:TestH5PartParallelWriter> 
+            -N 1000000
+            -F temp.h5
+            -D ${PLUGIN_TEST_DIR}
+            -T "${PLUGIN_TEST_DIR}"
+            -testName ${test_name}
+        )
+      ENDIF(N EQUAL 1)
+      #
+      # Parallel N>1
+      #
+      IF(N GREATER 1)
+        greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
+        IF(processors)
+          ADD_TEST(
+          NAME ${test_name}
+          COMMAND 
+            ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+            $<TARGET_FILE:TestH5PartParallelWriter> 
+            -N 1000000
+            -F temp.h5
+            -D ${PLUGIN_TEST_DIR}
+            -T "${PLUGIN_TEST_DIR}"
+            -testName ${test_name}
+        )
+        ENDIF(processors)
+    ENDIF (N GREATER 1)
+  ENDFOREACH(N)
+  
 ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
 
 #--------------------------------------------------
