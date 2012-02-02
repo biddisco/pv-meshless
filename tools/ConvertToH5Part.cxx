@@ -327,6 +327,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     // Start the pipeline with a reader
     //
     vtkSmartPointer<vtkAlgorithm> algorithm, reader;
+    vtkSmartPointer<vtkRamsesReader> ramses;
     if (extension==".vtu") {
       reader = SetupDataSetReader(infilename);
     }
@@ -341,6 +342,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     }
     else if (extension==".ramses") {
       reader = SetupRamsesReader(infilename);
+      ramses = vtkRamsesReader::SafeDownCast(reader);
     }
 #ifdef HAS_CFX
     else if (extension==".res") {
@@ -439,47 +441,62 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
 
     //
     // Write out time steps to File or DSM.
-    // Note : DSM Server receives data but writes nothing
+    // We loop twice for ramses, first time, using ReadHeaderOnly flag to get the time
+    // from each dataset. Then the second time we actually do the read.
     //
-    for (itype t=t0; t<t1; ++t) {
-      //
-      // Update the time we want
-      //
-      itype TimeStep = t; // was missingsteps[t]
-      double current_time = TimeSteps[TimeStep];
-      //
-      std::cout << "Beginning TimeStep " << setw(5) << setfill('0') << t 
-        << " for time " << setw(8) << setfill('0') << current_time << std::endl;
-      //
-      execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS(), &current_time, 1);
-#ifdef PARALLEL_PIECES
-      execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numProcs);
-      execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), myId);
-#endif
-      algorithm->Update();
-      //
-      // get the output temporal/multiblock - depends if we are interpolating or not
-      //
-      vtkSmartPointer<vtkTemporalDataSet>     temporal = vtkTemporalDataSet::SafeDownCast(algorithm->GetOutputDataObject(0));
-      vtkSmartPointer<vtkMultiBlockDataSet> multiblock = vtkMultiBlockDataSet::SafeDownCast(algorithm->GetOutputDataObject(0));
-      vtkSmartPointer<vtkDataSet>              dataset = vtkDataSet::SafeDownCast(algorithm->GetOutputDataObject(0));
-      if (temporal) {
-        multiblock = vtkMultiBlockDataSet::SafeDownCast(temporal->GetTimeStep(0));
-      }
-
-      //
-      // int d=0;
-      if (multiblock || dataset) {
-
-        if (multiblock) writer->SetInput(multiblock);
-        if (dataset)    writer->SetInput(dataset);
+    for (int loop=0; loop<(ramses?2:1); ++loop) {
+            
+      for (itype t=t0; t<t1; ++t) {
         //
-        writer->SetController(controller);
-        writer->SetFileName(std::string(hdf_name+".h5part").c_str());
-        writer->SetTimeValue(current_time);
-        writer->SetTimeStep((int)TimeStep);
-        writer->Modified();
-        writer->Update();
+        // Update the time we want
+        //
+        itype TimeStep = t; // was missingsteps[t]
+        double current_time = TimeSteps[TimeStep];
+        //
+        std::cout << "Beginning TimeStep " << setw(5) << setfill('0') << t 
+          << " for time " << setw(8) << setfill('0') << current_time << std::endl;
+        //
+        execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS(), &current_time, 1);
+  #ifdef PARALLEL_PIECES
+        execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numProcs);
+        execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), myId);
+  #endif
+        if (ramses && loop==0) {
+          ramses->SetReadHeaderOnly(loop==0);
+        }
+        algorithm->Update();
+        if (ramses && loop==0) {
+          vtkDataSet *out = ramses->GetOutput();
+          vtkFieldData *fd = out->GetFieldData();
+          TimeSteps[TimeStep] = fd->GetArray("time")->GetTuple1(0);
+          ramses->SetReadHeaderOnly(loop==0);
+        }
+        else {
+          //
+          // get the output temporal/multiblock - depends if we are interpolating or not
+          //
+          vtkSmartPointer<vtkTemporalDataSet>     temporal = vtkTemporalDataSet::SafeDownCast(algorithm->GetOutputDataObject(0));
+          vtkSmartPointer<vtkMultiBlockDataSet> multiblock = vtkMultiBlockDataSet::SafeDownCast(algorithm->GetOutputDataObject(0));
+          vtkSmartPointer<vtkDataSet>              dataset = vtkDataSet::SafeDownCast(algorithm->GetOutputDataObject(0));
+          if (temporal) {
+            multiblock = vtkMultiBlockDataSet::SafeDownCast(temporal->GetTimeStep(0));
+          }
+
+          //
+          // int d=0;
+          if (multiblock || dataset) {
+
+            if (multiblock) writer->SetInput(multiblock);
+            if (dataset)    writer->SetInput(dataset);
+            //
+            writer->SetController(controller);
+            writer->SetFileName(std::string(hdf_name+".h5part").c_str());
+            writer->SetTimeValue(current_time);
+            writer->SetTimeStep((int)TimeStep);
+            writer->Modified();
+            writer->Update();
+          }
+        }
       }
     }
 
