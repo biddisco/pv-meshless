@@ -456,7 +456,13 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
         std::cout << "Beginning TimeStep " << setw(5) << setfill('0') << t 
           << " for time " << setw(8) << setfill('0') << current_time << std::endl;
         //
-        execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS(), &current_time, 1);
+        if (ramses && loop==1) {
+          double simplet = t;
+          execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS(), &simplet, 1);
+        }
+        else {
+          execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS(), &current_time, 1);
+        }
   #ifdef PARALLEL_PIECES
         execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numProcs);
         execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), myId);
