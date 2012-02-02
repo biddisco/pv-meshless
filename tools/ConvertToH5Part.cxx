@@ -427,11 +427,11 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     // Limit time steps for testing to 3 so we don't wait all day
     //-------------------------------------------------------------
     itype t0=0, t1=TimeSteps.size();
-    if (t1<2) {
-      t1=10;
-      TimeSteps.assign(t1, 1);
+//    if (t1<2) {
+//      t1=10;
+//      TimeSteps.assign(t1, 1);
 //    t1 = TimeSteps.size()>3 ? 3 : TimeSteps.size();
-    }
+//    }
 
     //
     // Create the Xdmf Writer
@@ -467,7 +467,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
         execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numProcs);
         execInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), myId);
   #endif
-        if (ramses && loop==0) {
+        if (ramses) {
           ramses->SetReadHeaderOnly(loop==0);
         }
         algorithm->Update();
