@@ -476,6 +476,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
         //
         writer->SetController(controller);
         writer->SetFileName(std::string(hdf_name+".h5part").c_str());
+        writer->SetTimeValue(current_time);
         writer->SetTimeStep((int)TimeStep);
         writer->Modified();
         writer->Update();
