@@ -744,6 +744,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
 
   bool passdata = false;
   bool computesmootheddensity = false;
+  bool computesmoothedradius  = false;
 
   //
   // We may add some new arrays to the point data as well as the interpolated ones.
@@ -754,10 +755,15 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     SmoothedDensity = vtkSmartPointer<vtkFloatArray>::New();
     SmoothedDensity->SetName("SmoothedDensity");
     SmoothedDensity->SetNumberOfTuples(this->NumOutputPoints);
-    SmoothedRadius = vtkSmartPointer<vtkFloatArray>::New();
-    SmoothedRadius->SetName("SmoothedRadius");
-    SmoothedRadius->SetNumberOfTuples(this->NumOutputPoints);
     computesmootheddensity = true;
+    // if we are resampling data onto itself, we can use the actual mass for a particle
+    // and go from smoothed density to a smoothed radius
+    if (data==probepts) {
+      SmoothedRadius = vtkSmartPointer<vtkFloatArray>::New();
+      SmoothedRadius->SetName("SmoothedRadius");
+      SmoothedRadius->SetNumberOfTuples(this->NumOutputPoints);
+      computesmoothedradius = true;
+    }
     passdata = (this->PassScalars!=0);
   }
   if (!passdata) {
@@ -779,8 +785,8 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   NearestPoints->Allocate(1000);
 
   // Nearest Neighbours list setup
-  vtkSmartPointer<vtkBitArray> Visited = vtkSmartPointer<vtkBitArray>::New();
-  Visited->SetNumberOfTuples(numInputPoints);
+//  vtkSmartPointer<vtkBitArray> Visited = vtkSmartPointer<vtkBitArray>::New();
+//  Visited->SetNumberOfTuples(numInputPoints);
 //  for (vtkIdType ptId=0; ptId<numInputPoints; ptId++) {
 //    Visited->SetValue(ptId, 0);
 //  }
@@ -867,7 +873,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
       }
     }
     //
-    // if weights wer calculated ok, do the interpolation
+    // if weights were calculated ok, do the interpolation
     //
     N=NearestPoints->GetNumberOfIds();
     if (N>0) {
@@ -890,16 +896,20 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
         if (volume>0.0) {
           // smoothed density, using total mass in whole neighbourhood
           double smootheddensity = totalmass/volume;
-          // actual mass of this particle from input data
-          double mass = FloatOrDouble(this->MassDataF,this->MassDataD, ptId);
-          // computed radius based on smoothed density and actual mass
-          double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
           SmoothedDensity->SetValue(outId, smootheddensity);
-          SmoothedRadius->SetValue(outId, smoothedradius);
+          // computed radius based on smoothed density and actual mass
+          if (computesmoothedradius) {
+            // actual mass of this particle from input data
+            double mass = FloatOrDouble(this->MassDataF,this->MassDataD, ptId);
+            double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
+            SmoothedRadius->SetValue(outId, smoothedradius);
+          }
         }
         else {
           SmoothedDensity->SetValue(outId, 0.0);
-          SmoothedRadius->SetValue(outId, 0.0);
+          if (computesmoothedradius) {
+            SmoothedRadius->SetValue(outId, 0.0);
+          }
         }
       }
     }
@@ -909,7 +919,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
       GradArray->SetValue(outId, 0.0);
       if (computesmootheddensity) {
         SmoothedDensity->SetValue(outId, 0.0);
-        SmoothedRadius->SetValue(outId, 0.0);
+        if (computesmoothedradius) {
+          SmoothedRadius->SetValue(outId, 0.0);
+        }
       }
     }
     outId++;
@@ -1049,7 +1061,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
       GradArray->SetValue(outId, 0.0);
       if (computesmootheddensity) {
         SmoothedDensity->SetValue(outId, 0.0);
-        SmoothedRadius->SetValue(outId, 0.0);
+        if (computesmoothedradius) {
+          SmoothedRadius->SetValue(outId, 0.0);
+        }
       }
       outId++;
     }
@@ -1062,7 +1076,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   }
   if (computesmootheddensity) {
     outPD->AddArray(SmoothedDensity);
-    outPD->AddArray(SmoothedRadius);
+    if (computesmoothedradius) {
+      outPD->AddArray(SmoothedRadius);
+    }
   }
 
   timer->StopTimer();
