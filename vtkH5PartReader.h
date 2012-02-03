@@ -69,6 +69,11 @@ public:
   vtkGetMacro(TimeStep,int);
   
   // Description:
+  // Export time values as 0,1...N-1 regardless of real time values in file
+  vtkSetMacro(IntegerTimeStepValues,int);
+  vtkGetMacro(IntegerTimeStepValues,int);
+  
+  // Description:
   // Get the number of timesteps in the file
   vtkGetMacro(NumberOfTimeSteps,int);
 
@@ -184,6 +189,7 @@ protected:
   int           UpdateNumPieces;
   int           MaskOutOfTimeRangeOutput;
   int           TimeOutOfRange;
+  int           IntegerTimeStepValues;
   //
   char         *Xarray;
   char         *Yarray;

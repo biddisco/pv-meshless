@@ -174,6 +174,7 @@ vtkH5PartReader::vtkH5PartReader()
   this->UpdateNumPieces          = 0;
   this->TimeOutOfRange           = 0;
   this->MaskOutOfTimeRangeOutput = 0;
+  this->IntegerTimeStepValues    = 0;
   this->PointDataArraySelection  = vtkDataArraySelection::New();
   this->SetXarray("Coords_0");
   this->SetYarray("Coords_1");
@@ -383,7 +384,7 @@ int vtkH5PartReader::RequestInformation(
 
     // if TIME information was either not present ot not consistent, then
     // set something so that consumers of this data can iterate sensibly
-    if (this->NumberOfTimeSteps>0 && this->NumberOfTimeSteps!=validTimes)
+    if (this->IntegerTimeStepValues || (this->NumberOfTimeSteps>0 && this->NumberOfTimeSteps!=validTimes))
       {
       for (int i=0; i<this->NumberOfTimeSteps; i++)
         {
