@@ -665,7 +665,8 @@ int vtkH5PartReader::RequestData(
     double requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())[0];
     this->ActualTimeStep = vtkstd::find_if(
       this->TimeStepValues.begin(), this->TimeStepValues.end(),
-      vtkstd::bind2nd( H5PartToleranceCheck( this->TimeStepTolerance ), requestedTimeValue ))
+      vtkstd::bind2nd( H5PartToleranceCheck( 
+          this->IntegerTimeStepValues ? 0.5 : this->TimeStepTolerance ), requestedTimeValue ))
       - this->TimeStepValues.begin();
     //
     if (requestedTimeValue<this->TimeStepValues.front() || requestedTimeValue>this->TimeStepValues.back())
