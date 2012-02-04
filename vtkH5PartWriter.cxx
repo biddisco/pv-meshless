@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
+  Project                 : pv-meshless
   Module                  : vtkH5PartWriter.h
   Revision of last commit : $Rev: 153 $
   Author of last commit   : $Author: biddisco $
