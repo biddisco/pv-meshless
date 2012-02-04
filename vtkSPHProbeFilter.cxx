@@ -915,8 +915,10 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     }
     else {
       outPD->NullPoint(outId);
-      ShepardArray->SetValue(outId, 0.0);
-      GradArray->SetValue(outId, 0.0);
+      if (!passdata) {
+        ShepardArray->SetValue(outId, 0.0);
+        GradArray->SetValue(outId, 0.0);
+      }
       if (computesmootheddensity) {
         SmoothedDensity->SetValue(outId, 0.0);
         if (computesmoothedradius) {
@@ -1057,8 +1059,10 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
         continue;
       }
       outPD->NullPoint(outId);
-      ShepardArray->SetValue(outId, 0.0);
-      GradArray->SetValue(outId, 0.0);
+      if (!passdata) {
+        ShepardArray->SetValue(outId, 0.0);
+        GradArray->SetValue(outId, 0.0);
+      }
       if (computesmootheddensity) {
         SmoothedDensity->SetValue(outId, 0.0);
         if (computesmoothedradius) {
