@@ -266,6 +266,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkImageSamplerSource.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHImageResampler.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionRepresentation.xml
     ${TRILINOS_XML}
     ${HDF5_XML}
     ${TIPSY_XML}
@@ -292,6 +293,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkImageSamplerSource.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHImageResampler.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionRepresentation.cxx
     ${TRILINOS_CXX}
     ${HDF5_CXX}
     ${TIPSY_CXX}
