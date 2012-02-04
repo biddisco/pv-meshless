@@ -37,6 +37,20 @@ class VTK_EXPORT vtkParticlePartitionRepresentation : public vtkPolyDataAlgorith
     // Create an instance of vtkParticlePartitionRepresentation
     static vtkParticlePartitionRepresentation *New();
 
+    // Description:
+    // By default, each process generates only the box for its own rank
+    // when this option is enabled, each node produces all N boxes which may be
+    // useful for some debugging purposes
+    vtkSetMacro(AllBoxesOnAllProcesses,int);
+    vtkGetMacro(AllBoxesOnAllProcesses,int);
+    vtkBooleanMacro(AllBoxesOnAllProcesses,int);
+
+    // Description:
+    // Specify a factor (default=1) to increase (>1) or decrease (<1)
+    // the generated boxes by.
+    vtkSetMacro(InflateFactor,double);
+    vtkGetMacro(InflateFactor,double);
+    
   protected:
      vtkParticlePartitionRepresentation(void);
     ~vtkParticlePartitionRepresentation();
@@ -51,6 +65,8 @@ class VTK_EXPORT vtkParticlePartitionRepresentation : public vtkPolyDataAlgorith
     //
     virtual int FillInputPortInformation(int port, vtkInformation* info);
 
+    int    AllBoxesOnAllProcesses;
+    double InflateFactor;
 private:
   // Not implemented.
   vtkParticlePartitionRepresentation(const vtkParticlePartitionRepresentation&);
