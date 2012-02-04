@@ -22,14 +22,15 @@
 #include "vtkPointData.h"
 #include "vtkCellData.h"
 #include "vtkCellArray.h"
-#include "vtkFloatArray.h"
+#include "vtkIntArray.h"
 #include "vtkPolyData.h"
 #include "vtkObjectFactory.h"
 #include "vtkSmartPointer.h"
+#include "vtkBoundingBox.h"
 //
 #include "vtkBoundsExtentTranslator.h"
 #include "vtkAppendPolyData.h"
-#include "vtkCubeSource.h"
+#include "vtkOutlineSource.h"
 //
 #include <cmath>
 //---------------------------------------------------------------------------
@@ -38,6 +39,8 @@ vtkStandardNewMacro(vtkParticlePartitionRepresentation);
 //---------------------------------------------------------------------------
 vtkParticlePartitionRepresentation::vtkParticlePartitionRepresentation(void)
 {
+  this->AllBoxesOnAllProcesses = 0;
+  this->InflateFactor = 1.0;
 }
 //---------------------------------------------------------------------------
 vtkParticlePartitionRepresentation::~vtkParticlePartitionRepresentation(void) {
@@ -73,30 +76,51 @@ int vtkParticlePartitionRepresentation::RequestData(vtkInformation *request,
   vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
     inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR())) : NULL;
   vtkBoundsExtentTranslator *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
-  double *bounds = NULL;
-  if (bet) {
-    int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-    bounds = bet->GetBoundsForPiece(updatePiece);
-  }
-  else {
-    bounds = input->GetBounds();
-  }
   //
-  // Ok, now create cube(oid)s and stuff'em into a polydata thingy
-  vtkAppendPolyData *polys = vtkAppendPolyData::New();
-  size_t s = 1;
-  for (size_t i=0; i<s; i++)
-    {
-    vtkCubeSource *cube = vtkCubeSource::New();
-    cube->SetBounds( bounds );
-    cube->Update();
-    polys->AddInput(cube->GetOutput());
-    cube->Delete();
+  vtkSmartPointer<vtkAppendPolyData> polys = vtkSmartPointer<vtkAppendPolyData>::New();
+  size_t boxes = 1;
+  if (bet) {
+    boxes = bet->GetNumberOfPieces();  
+  }
+  int piece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  vtkSmartPointer<vtkIntArray> processIds = vtkSmartPointer<vtkIntArray>::New();
+  processIds->SetName("ProcessId");
+  //
+  double bounds[6];
+  vtkBoundingBox box;
+  for (int i=0; i<boxes; i++)
+  {
+    bool add = false;
+    if (this->AllBoxesOnAllProcesses && bet) {
+      box.SetBounds(bet->GetBoundsForPiece(i));
+      add = true;
     }
+    else if (i==piece) {
+      if (bet) box.SetBounds(bet->GetBoundsForPiece(i));
+      else box.SetBounds(input->GetBounds());
+      add = true;
+    }
+    if (add) {
+      double p1[3],p2[3];
+      box.GetMaxPoint(p1[0], p1[1], p1[2]);
+      box.GetMinPoint(p2[0], p2[1], p2[2]);
+      for (int j=0; j<3; j++) {
+        double l = box.GetLength(j);
+        double d = (l-l*this->InflateFactor);
+        p1[j] -= d/2.0; 
+        p2[j] += d/2.0; 
+      }
+      vtkSmartPointer<vtkOutlineSource> cube = vtkSmartPointer<vtkOutlineSource>::New();
+      cube->SetBounds(p1[0],p2[0],p1[1],p2[1],p1[2],p2[2]);
+      cube->Update();
+      polys->AddInput(cube->GetOutput());
+      processIds->InsertNextValue(i);
+    }
+  }
   polys->Update();
   output->SetPoints(polys->GetOutput()->GetPoints());
-  output->SetPolys(polys->GetOutput()->GetPolys());
-  polys->Delete();
+  output->SetLines(polys->GetOutput()->GetLines());
+  output->GetPointData()->AddArray(processIds);
 
   return 1;
 }

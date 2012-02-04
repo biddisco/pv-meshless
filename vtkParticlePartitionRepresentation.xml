@@ -23,6 +23,26 @@
         <InputArrayDomain name="input_array" optional="1"/>
       </InputProperty>
 
+      <DoubleVectorProperty
+        name="InflateFactor"
+        command="SetInflateFactor"
+        label="Scale factor to apply to boxes"
+        number_of_elements="1"
+        animateable="0"
+        default_values="0.01" >
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+        name="AllBoxesOnAllProcesses"
+        command="SetAllBoxesOnAllProcesses"
+        label="When set all boxes are generated on all processes instead of only the local box"
+        number_of_elements="1"
+        default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          When set all boxes are generated on all processes instead of only the local box
+        </Documentation>
+      </IntVectorProperty>
     </SourceProxy>
 
   </ProxyGroup>
