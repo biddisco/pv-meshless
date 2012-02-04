@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
+  Project                 : pv-meshless
   Module                  : vtkParticleBoxTreeRepresentation.h
   Revision of last commit : $Rev: 155 $
   Author of last commit   : $Author: biddisco $

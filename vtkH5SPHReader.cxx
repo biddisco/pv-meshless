@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
+  Project                 : pv-meshless
   Module                  : vtkH5SPHReader.h
   Revision of last commit : $Rev: 501 $
   Author of last commit   : $Author: biddisco $
