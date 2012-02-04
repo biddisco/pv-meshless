@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
+  Project                 : pv-meshless
   Module                  : vtkParticlePartitionFilter.h
   Revision of last commit : $Rev: 884 $
   Author of last commit   : $Author: biddisco $
