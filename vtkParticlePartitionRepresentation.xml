@@ -1,0 +1,31 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+
+    <SourceProxy 
+      name="ParticlePartitionDisplay" 
+      class="vtkParticlePartitionRepresentation" 
+      label="Particle Partition Display">
+      <Documentation
+         long_help="Displays bounding boxes of partition particle datasets"
+         short_help="Displays bounding boxes of partition particle datasets">
+      </Documentation>
+
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPointSet"/>
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array" optional="1"/>
+      </InputProperty>
+
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>
+
