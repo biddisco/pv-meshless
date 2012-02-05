@@ -78,21 +78,21 @@ int vtkParticlePartitionRepresentation::RequestData(vtkInformation *request,
   vtkBoundsExtentTranslator *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
   //
   vtkSmartPointer<vtkAppendPolyData> polys = vtkSmartPointer<vtkAppendPolyData>::New();
-  size_t boxes = 1;
+  int piece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  size_t boxes = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());;
   if (bet) {
     boxes = bet->GetNumberOfPieces();  
   }
-  int piece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
   vtkSmartPointer<vtkIntArray> processIds = vtkSmartPointer<vtkIntArray>::New();
   processIds->SetName("ProcessId");
   //
   double bounds[6];
   vtkBoundingBox box;
-  for (int i=0; i<boxes; i++)
-  {
+  for (int i=0; i<boxes; i++) {
     bool add = false;
-    if (this->AllBoxesOnAllProcesses && bet) {
-      box.SetBounds(bet->GetBoundsForPiece(i));
+    if (this->AllBoxesOnAllProcesses) {
+      if (bet) box.SetBounds(bet->GetBoundsForPiece(i));
+      else box.SetBounds(input->GetBounds());
       add = true;
     }
     else if (i==piece) {
@@ -114,7 +114,7 @@ int vtkParticlePartitionRepresentation::RequestData(vtkInformation *request,
       cube->SetBounds(p1[0],p2[0],p1[1],p2[1],p1[2],p2[2]);
       cube->Update();
       polys->AddInput(cube->GetOutput());
-      processIds->InsertNextValue(i);
+      for (int p=0; p<8; p++) processIds->InsertNextValue(i);
     }
   }
   polys->Update();
