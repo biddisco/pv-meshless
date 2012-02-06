@@ -501,6 +501,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
             writer->SetTimeStep((int)TimeStep);
             writer->Modified();
             writer->Update();
+            writer->CloseFile();
           }
         }
       }
