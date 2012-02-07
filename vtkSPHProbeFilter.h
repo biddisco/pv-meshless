@@ -24,6 +24,7 @@
 #ifndef __vtkSPHProbeFilter_h
 #define __vtkSPHProbeFilter_h
 
+#include "vtkCommand.h"
 #include "vtkDataSetAlgorithm.h"
 #include "vtkSmartPointer.h" // for smartpointers
 #include "vtkSPHManager.h"   // for vtkSPHManager
@@ -238,5 +239,32 @@ private:
   vtkSPHProbeFilter(const vtkSPHProbeFilter&);  // Not implemented.
   void operator=(const vtkSPHProbeFilter&);  // Not implemented.
 };
+
+//BTX
+//----------------------------------------------------------------------------
+// class to convert progress calls when a probe filter is embedded in another
+//----------------------------------------------------------------------------
+class vtkSPHProbeProgress : public vtkCommand
+{
+public:
+  static vtkSPHProbeProgress *New()
+    { return new vtkSPHProbeProgress; }
+
+  virtual void Execute(vtkObject *caller, 
+                       unsigned long event, void* vtkNotUsed(v))
+    {
+      vtkAlgorithm *alg = vtkAlgorithm::SafeDownCast(caller);
+      if (event == vtkCommand::ProgressEvent && alg)
+        {
+        this->Self->UpdateProgress(this->Offset + 0.5 * 
+                                   alg->GetProgress());
+        }
+    }
+  
+  vtkAlgorithm *Self;
+  double Offset;
+};
+//----------------------------------------------------------------------------
+//ETX
 
 #endif

@@ -79,6 +79,7 @@ vtkCxxSetObjectMacro(vtkSPHImageResampler, SPHManager, vtkSPHManager);
   a[1] = (s[1]*x2[1])>0 ? (z[1] - y[1])/(s[1]*x2[1]) : 0; \
   a[2] = (s[2]*x2[2])>0 ? (z[2] - y[2])/(s[2]*x2[2]) : 0;
 // --------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 vtkSPHImageResampler::vtkSPHImageResampler(void) {
   this->GlobalOrigin[0]         = 0.0;
   this->GlobalOrigin[1]         = 0.0;
@@ -106,8 +107,12 @@ vtkSPHImageResampler::vtkSPHImageResampler(void) {
   this->Controller              = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
   //
-  this->SPHManager = vtkSPHManager::New();
-  this->SPHProbe   = vtkSmartPointer<vtkSPHProbeFilter>::New();
+  this->SPHManager    = vtkSPHManager::New();
+  this->SPHProbe      = vtkSmartPointer<vtkSPHProbeFilter>::New();
+  this->ProbeProgress = vtkSmartPointer<vtkSPHProbeProgress>::New();
+  this->ProbeProgress->Self = this;
+  this->ProbeProgress->Offset = 0;
+  this->SPHProbe->AddObserver(vtkCommand::ProgressEvent, this->ProbeProgress);
 }
 //----------------------------------------------------------------------------
 unsigned long vtkSPHImageResampler::GetMTime()
