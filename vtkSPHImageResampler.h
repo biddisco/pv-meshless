@@ -34,6 +34,7 @@
 
 class vtkSPHManager;
 class vtkSPHProbeFilter;
+class vtkSPHProbeProgress;
 class vtkMultiProcessController;
 
 
@@ -168,8 +169,9 @@ class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
     // SPHManager
     //
     vtkSPHManager *SPHManager;
-    vtkSmartPointer<vtkSPHProbeFilter> SPHProbe;
-    vtkMultiProcessController         *Controller;
+    vtkSmartPointer<vtkSPHProbeFilter>   SPHProbe;
+    vtkSmartPointer<vtkSPHProbeProgress> ProbeProgress;
+    vtkMultiProcessController           *Controller;
     //      
     // SPH Mode
     //
