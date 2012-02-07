@@ -85,6 +85,8 @@ int vtkParticlePartitionRepresentation::RequestData(vtkInformation *request,
   }
   vtkSmartPointer<vtkIntArray> processIds = vtkSmartPointer<vtkIntArray>::New();
   processIds->SetName("ProcessId");
+  vtkSmartPointer<vtkIdTypeArray> quantity = vtkSmartPointer<vtkIdTypeArray>::New();
+  quantity->SetName("Occupation");
   //
   double bounds[6];
   vtkBoundingBox box;
@@ -115,12 +117,15 @@ int vtkParticlePartitionRepresentation::RequestData(vtkInformation *request,
       cube->Update();
       polys->AddInput(cube->GetOutput());
       for (int p=0; p<8; p++) processIds->InsertNextValue(i);
+      vtkIdType number = input->GetNumberOfPoints();
+      for (int p=0; p<8; p++) quantity->InsertNextValue(number);
     }
   }
   polys->Update();
   output->SetPoints(polys->GetOutput()->GetPoints());
   output->SetLines(polys->GetOutput()->GetLines());
   output->GetPointData()->AddArray(processIds);
+  output->GetPointData()->AddArray(quantity);
 
   return 1;
 }
