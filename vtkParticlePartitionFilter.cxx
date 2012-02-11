@@ -311,15 +311,16 @@ void zoltan_pre_ghost_migrate_pp_func(void *data, int num_gid_entries, int num_l
 //----------------------------------------------------------------------------
 vtkParticlePartitionFilter::vtkParticlePartitionFilter()
 {
-  this->UpdatePiece         = 0;
-  this->UpdateNumPieces     = 1;
-  this->NumberOfLocalPoints = 0;
-  this->Controller          = NULL;
+  this->UpdatePiece               = 0;
+  this->UpdateNumPieces           = 1;
+  this->NumberOfLocalPoints       = 0;
+  this->Controller                = NULL;
+  this->IdChannelArray            = NULL;
+  this->GhostCellOverlap          = 0.0;
+  this->AdaptiveGhostCellOverlap  = 0;
+  this->MaxAspectRatio            = 5.0;
+  this->ExtentTranslator          = vtkBoundsExtentTranslator::New();
   this->SetController(vtkMultiProcessController::GetGlobalController());
-  this->IdChannelArray      = NULL;
-  this->GhostCellOverlap    = 0.0;
-  this->AdaptiveGhostCellOverlap = 0;
-  this->ExtentTranslator    = vtkBoundsExtentTranslator::New();
 }
 
 //----------------------------------------------------------------------------
@@ -331,6 +332,7 @@ vtkParticlePartitionFilter::~vtkParticlePartitionFilter()
     delete [] this->IdChannelArray;
     this->IdChannelArray = NULL;
     }
+  this->ExtentTranslator->Delete();
 }
 
 //----------------------------------------------------------------------------
@@ -744,7 +746,11 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
   Zoltan_Set_Param(zz, "RCB_RECOMPUTE_BOX", "0");
   Zoltan_Set_Param(zz, "REDUCE_DIMENSIONS", "0");
-  Zoltan_Set_Param(zz, "RCB_MAX_ASPECT_RATIO", "10");
+
+  // Don't allow very extended regions
+  std::stringstream aspect;
+  aspect << this->MaxAspectRatio << ends;  
+  Zoltan_Set_Param(zz, "RCB_MAX_ASPECT_RATIO", aspect.str().c_str());
 
   // we need the cuts to get BBoxes for partitions later
   Zoltan_Set_Param(zz, "KEEP_CUTS", "1");
@@ -756,7 +762,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // Let Zoltan do the load balance step automatically
   // particles will be transferred as required between processes
   Zoltan_Set_Param(zz, "AUTO_MIGRATE", "1");  
-  
+    
   //
   // Query functions, to provide geometry to Zoltan 
   //
