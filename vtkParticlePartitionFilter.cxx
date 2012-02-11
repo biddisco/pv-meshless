@@ -850,7 +850,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //  
   std::vector<double> ghostOverlaps(this->UpdateNumPieces,this->GhostCellOverlap);
   if (this->AdaptiveGhostCellOverlap) {
-    ghostOverlaps[this->UpdatePiece] = this->ComputeAdaptiveOverlap(mesh.Output);
+    ghostOverlaps[this->UpdatePiece] = this->ComputeAdaptiveOverlap(mesh.Output, this->GhostCellOverlap);
     std::cout << "Adaptive overlap for process " << this->UpdatePiece << " is " << ghostOverlaps[this->UpdatePiece] << std::endl;
     communicator->AllGather((char*)MPI_IN_PLACE, (char*)&ghostOverlaps[0], sizeof(double));
   }
@@ -1021,7 +1021,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   return 1;
 }
 //----------------------------------------------------------------------------
-double vtkParticlePartitionFilter::ComputeAdaptiveOverlap(vtkPointSet *data)
+double vtkParticlePartitionFilter::ComputeAdaptiveOverlap(vtkPointSet *data, double defvalue)
 {
   // get sph manager singleton (assumed to be already initialized)
   vtkSmartPointer<vtkSPHManager> sph = vtkSmartPointer<vtkSPHManager>::New();
@@ -1032,7 +1032,7 @@ double vtkParticlePartitionFilter::ComputeAdaptiveOverlap(vtkPointSet *data)
   // setup locator
   vtkSmartPointer<vtkPointLocator> locator = vtkSmartPointer<vtkPointLocator>::New();
   locator->SetDataSet(data);
-  locator->SetDivisions(50,50,50);
+  locator->SetDivisions(100,100,100);
   locator->BuildLocator();
   if (sph->GetInterpolationMethod()==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) 
   {
@@ -1044,8 +1044,8 @@ double vtkParticlePartitionFilter::ComputeAdaptiveOverlap(vtkPointSet *data)
     for (int i=0; i<NearestPoints->GetNumberOfIds(); i++) {
       region.AddPoint(data->GetPoint(NearestPoints->GetId(i)));
     }
-    // approx double what we will really need for safety
-    return region.GetDiagonalLength();
+    // approx double what we will really need for safety    
+    return std::min(defvalue, region.GetDiagonalLength()*0.5);
   }
   else
   {

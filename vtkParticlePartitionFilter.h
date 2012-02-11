@@ -88,7 +88,7 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
     vtkBoundingBox *GetPartitionBoundingBoxWithGhostRegion(int partition);
 //ETX
 
-  static double ComputeAdaptiveOverlap(vtkPointSet *data);
+  static double ComputeAdaptiveOverlap(vtkPointSet *data, double defvalue);
 
   protected:
      vtkParticlePartitionFilter();
