@@ -1,0 +1,90 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- Filters                                                          -->
+  <!-- ================================================================ -->
+  <ProxyGroup name="filters">
+
+    <!-- ==================================================================== -->
+    <SourceProxy name="ParticleClipper" class="vtkClipPolyData">
+      <Documentation
+         long_help="Clip particles with an implicit surface."
+         short_help="Clip particles with an implicit surface.">
+        Extract regions of particles using an implicit function.
+      </Documentation>
+      <InputProperty
+         name="Input"
+         command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPolyData"/>
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array"
+              number_of_components="1" optional="1"/>
+        <Documentation>
+          This property specifies the dataset on which the Clip filter will operate.
+        </Documentation>
+      </InputProperty>
+
+      <ProxyProperty name="ClipFunction" command="SetClipFunction"
+   label="Clip Type">
+        <ProxyGroupDomain name="groups">
+          <Group name="implicit_functions"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="implicit_functions" name="Plane" />
+          <Proxy group="implicit_functions" name="Box" />
+          <Proxy group="implicit_functions" name="Sphere" />
+        </ProxyListDomain>
+        <Documentation>
+          This property specifies the parameters of the clip function (an implicit plane) used to clip the dataset.
+        </Documentation>
+        <Hints>
+          <ShowInSummaryPanel/>
+        </Hints>
+      </ProxyProperty>
+
+      <DoubleVectorProperty
+   name="InputBounds"  information_only="1">
+        <BoundsDomain name="bounds">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+    name="InsideOut"
+    command="SetInsideOut"
+    number_of_elements="1"
+    default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is set to 0, the clip filter will return that portion of the dataset that lies within the clip function. If set to 1, the portions of the dataset that lie outside the clip function will be returned instead.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+   name="UseValueAsOffset"
+   command="SetUseValueAsOffset"
+   number_of_elements="1"
+   default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          If UseValueAsOffset is true, Value is used as an offset parameter to the implicit function. Otherwise, Value is used only when clipping using a scalar array.
+        </Documentation>
+      </IntVectorProperty>
+
+      <Hints>
+        <Visibility replace_input="2" />
+        <Property name="UseValueAsOffset" show="0"/>
+      </Hints>
+      <!-- End Clip -->
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>
