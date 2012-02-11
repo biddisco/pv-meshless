@@ -10,7 +10,8 @@
     <!-- ================================================================ -->
     <SourceProxy
       name="ParticlePartitionFilter"
-      class="vtkParticlePartitionFilter">
+      class="vtkParticlePartitionFilter"
+      label="Particle Partition Filter">
       <Documentation
          short_help="Re-Partitioning of Particle Datasets in parallel">
       </Documentation>
@@ -59,6 +60,18 @@
         animateable="0"
         default_values="0.01" >
       </DoubleVectorProperty>
+
+      
+      <IntVectorProperty
+         name="AdaptiveGhostCellOverlap"
+         command="SetAdaptiveGhostCellOverlap"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Use a ghost region that is computed from the local particle density
+        </Documentation>
+      </IntVectorProperty>
 
     </SourceProxy>
 
