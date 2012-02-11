@@ -40,6 +40,8 @@
 #include "vtkIdTypeArray.h"
 #include "vtkBoundingBox.h"
 #include "vtkMath.h"
+#include "vtkPointLocator.h"
+#include "vtkSPHManager.h"
 //
 #include "vtkBoundsExtentTranslator.h"
 //
@@ -316,6 +318,7 @@ vtkParticlePartitionFilter::vtkParticlePartitionFilter()
   this->SetController(vtkMultiProcessController::GetGlobalController());
   this->IdChannelArray      = NULL;
   this->GhostCellOverlap    = 0.0;
+  this->AdaptiveGhostCellOverlap = 0;
   this->ExtentTranslator    = vtkBoundsExtentTranslator::New();
 }
 
@@ -844,7 +847,14 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
 
   //
   // For ghost cells we would like the bounding boxes of each partition
-  //
+  //  
+  std::vector<double> ghostOverlaps(this->UpdateNumPieces,this->GhostCellOverlap);
+  if (this->AdaptiveGhostCellOverlap) {
+    ghostOverlaps[this->UpdatePiece] = this->ComputeAdaptiveOverlap(mesh.Output);
+    std::cout << "Adaptive overlap for process " << this->UpdatePiece << " is " << ghostOverlaps[this->UpdatePiece] << std::endl;
+    communicator->AllGather((char*)MPI_IN_PLACE, (char*)&ghostOverlaps[0], sizeof(double));
+  }
+
   this->ExtentTranslator->SetNumberOfPieces(this->UpdateNumPieces);
   for (int p=0; p<this->UpdateNumPieces; p++) {
     double bounds[6];
@@ -863,8 +873,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
       this->ExtentTranslator->SetBoundsForPiece(p, bounds);
       //
       // Add a ghost cell region to our boxes
-      double epsilon = box.GetDiagonalLength()/10000.0;
-      box.Inflate(this->GhostCellOverlap - epsilon);
+      box.Inflate(ghostOverlaps[p]);
       this->BoxListWithGhostRegion.push_back(box);
     }
   }
@@ -1011,3 +1020,37 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   vtkDebugMacro(<<"Particle partitioning : " << timer->GetElapsedTime() << " seconds");
   return 1;
 }
+//----------------------------------------------------------------------------
+double vtkParticlePartitionFilter::ComputeAdaptiveOverlap(vtkPointSet *data)
+{
+  // get sph manager singleton (assumed to be already initialized)
+  vtkSmartPointer<vtkSPHManager> sph = vtkSmartPointer<vtkSPHManager>::New();
+  // get centre of data
+  double centre[3];
+  vtkBoundingBox box(data->GetBounds());
+  box.GetCenter(centre);
+  // setup locator
+  vtkSmartPointer<vtkPointLocator> locator = vtkSmartPointer<vtkPointLocator>::New();
+  locator->SetDataSet(data);
+  locator->SetDivisions(50,50,50);
+  locator->BuildLocator();
+  if (sph->GetInterpolationMethod()==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) 
+  {
+    vtkSmartPointer<vtkIdList> NearestPoints = vtkSmartPointer<vtkIdList>::New();
+    NearestPoints->Allocate(sph->GetMaximumNeighbours()*2);
+    // find 
+    locator->FindClosestNPoints(sph->GetMaximumNeighbours(),centre,NearestPoints);
+    vtkBoundingBox region;
+    for (int i=0; i<NearestPoints->GetNumberOfIds(); i++) {
+      region.AddPoint(data->GetPoint(NearestPoints->GetId(i)));
+    }
+    // approx double what we will really need for safety
+    return region.GetDiagonalLength();
+  }
+  else
+  {
+    std::cout << "Adaptive ghost cell regions are not supported unless Shepard method is used " << std::endl;
+    return 0.0;
+  }
+}
+//----------------------------------------------------------------------------

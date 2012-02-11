@@ -37,6 +37,7 @@ class vtkMultiProcessController;
 class vtkPoints;
 class vtkIdTypeArray;
 class vtkBoundsExtentTranslator;
+class vtkPointSet;
 
 class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
 {
@@ -68,6 +69,14 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
     vtkSetMacro(GhostCellOverlap, double);
     vtkGetMacro(GhostCellOverlap, double);
     
+    // Description:
+    // For some AMR like datasets, an adaptive ghost region may be preferable to
+    // a fixed one when some processes have very small tighly packed particles
+    // and another much more sparse ones.
+    vtkSetMacro(AdaptiveGhostCellOverlap, int);
+    vtkGetMacro(AdaptiveGhostCellOverlap, int);
+    vtkBooleanMacro(AdaptiveGhostCellOverlap, int);
+    
 //BTX
     // Description:
     // Return the Bounding Box for a partition
@@ -78,6 +87,8 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
     // all around the box where ghost cells might be required/present
     vtkBoundingBox *GetPartitionBoundingBoxWithGhostRegion(int partition);
 //ETX
+
+  static double ComputeAdaptiveOverlap(vtkPointSet *data);
 
   protected:
      vtkParticlePartitionFilter();
@@ -129,6 +140,7 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
     vtkIdType       NumberOfLocalPoints;
     char           *IdChannelArray;
     double          GhostCellOverlap;
+    int             AdaptiveGhostCellOverlap;
     vtkBoundsExtentTranslator *ExtentTranslator;
     //
   private:
