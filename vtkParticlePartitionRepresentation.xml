@@ -29,7 +29,7 @@
         label="Scale factor to apply to boxes"
         number_of_elements="1"
         animateable="0"
-        default_values="0.95" >
+        default_values="0.99" >
       </DoubleVectorProperty>
 
       <IntVectorProperty
