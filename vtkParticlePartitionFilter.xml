@@ -61,7 +61,6 @@
         default_values="0.01" >
       </DoubleVectorProperty>
 
-      
       <IntVectorProperty
          name="AdaptiveGhostCellOverlap"
          command="SetAdaptiveGhostCellOverlap"
@@ -72,6 +71,16 @@
           Use a ghost region that is computed from the local particle density
         </Documentation>
       </IntVectorProperty>
+
+      <DoubleVectorProperty
+        name="MaxAspectRatio"
+        command="SetMaxAspectRatio"
+        label="Max aspect ratio allowed between any bounding box axis"
+        number_of_elements="1"
+        animateable="1"
+        default_values="5.0" >
+        <DoubleRangeDomain name="range" min="1" max="20.0"/>
+      </DoubleVectorProperty>
 
     </SourceProxy>
 

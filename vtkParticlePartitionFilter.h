@@ -60,7 +60,12 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
     // array cannot otherwise be found, the point index is used as the ID.
     vtkSetStringMacro(IdChannelArray);
     vtkGetStringMacro(IdChannelArray);
-
+    
+    // Description:
+    // Set the maximum aspect ratio allowed for any pair of axes when subdividing
+    vtkSetMacro(MaxAspectRatio, double);
+    vtkGetMacro(MaxAspectRatio, double);
+  
     // Description:
     // The thickness of the region between each partition that is used for 
     // ghost cell exchanges. Any particles within this overlap region of another
@@ -141,6 +146,7 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
     char           *IdChannelArray;
     double          GhostCellOverlap;
     int             AdaptiveGhostCellOverlap;
+    double          MaxAspectRatio;
     vtkBoundsExtentTranslator *ExtentTranslator;
     //
   private:
