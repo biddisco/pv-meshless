@@ -13,6 +13,7 @@
     <Filter name="ParticleBoxTreeRepresentation" />
     <Filter name="ParticlePartitionFilter" />
     <Filter name="ParticlePartitionDisplay" />
+    <Filter name="ParticleClipper" />
     <Filter name="ParticleIds" />    
     <Filter name="CenterOfMass" />
     <Filter name="MomentsOfInertia" />
