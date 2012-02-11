@@ -267,6 +267,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkImageSamplerSource.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHImageResampler.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionRepresentation.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkClipPolyData.xml
     ${TRILINOS_XML}
     ${HDF5_XML}
     ${TIPSY_XML}
