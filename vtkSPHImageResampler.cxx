@@ -111,7 +111,8 @@ vtkSPHImageResampler::vtkSPHImageResampler(void) {
   this->SPHProbe      = vtkSmartPointer<vtkSPHProbeFilter>::New();
   this->ProbeProgress = vtkSmartPointer<vtkSPHProbeProgress>::New();
   this->ProbeProgress->Self = this;
-  this->ProbeProgress->Offset = 0;
+  this->ProbeProgress->Offset = 0.0;
+  this->ProbeProgress->Scale  = 1.0;
   this->SPHProbe->AddObserver(vtkCommand::ProgressEvent, this->ProbeProgress);
 }
 //----------------------------------------------------------------------------
@@ -335,6 +336,7 @@ int vtkSPHImageResampler::RequestData(
   // Now resample the input data onto the generated grid
   //
   this->SPHProbe->SetSPHManager(this->SPHManager);
+  this->SPHProbe->SetProgressFrequency(100);
   this->SPHProbe->SetDensityScalars(this->DensityScalars);
   this->SPHProbe->SetMassScalars(this->MassScalars);
   this->SPHProbe->SetVolumeScalars(this->VolumeScalars);
