@@ -828,7 +828,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     }
     if ( !(ptId % progressInterval) ) {
       double progress = (double)(ptId)/(double)(numInputPoints);
-      std::cout << "Sending Progress of " << progress << std::endl;
+      std::cout << std::setw(5) << this->UpdatePiece << " Sending Progress of "
+        << std::setw(6) << ptId << " " << std::setw(6) << numInputPoints << " " 
+        << progress << std::endl;
       this->UpdateProgress(progress);
       abort = GetAbortExecute();
     }
