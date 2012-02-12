@@ -72,6 +72,17 @@
         </Documentation>
       </IntVectorProperty>
 
+      <IntVectorProperty
+         name="SimpleGhostOverlapMode"
+         command="SetSimpleGhostOverlapMode"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Use a simple calculation for AdaptiveGhostOverlap
+        </Documentation>
+      </IntVectorProperty>
+
       <DoubleVectorProperty
         name="MaxAspectRatio"
         command="SetMaxAspectRatio"
