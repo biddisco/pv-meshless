@@ -146,7 +146,15 @@
           When ComputeDensityFromNeighbourVolume is enabled, this option skips smoothing of input scalars and they are passed through unchanged
         </Documentation>
       </IntVectorProperty>
-      
+
+
+      <IntVectorProperty
+         name="ProgressFrequency"
+         command="SetProgressFrequency"
+         number_of_elements="1"
+         default_values="20" >
+        <IntRangeDomain name="range" min="2" max="1000"/>
+      </IntVectorProperty>
 
       <IntVectorProperty
          name="ModifiedNumber"

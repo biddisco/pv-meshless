@@ -118,6 +118,9 @@ public:
   vtkSetMacro(ModifiedNumber,int);
   vtkGetMacro(ModifiedNumber,int);
 
+  vtkSetMacro(ProgressFrequency,int);
+  vtkGetMacro(ProgressFrequency,int);
+  
   vtkSetMacro(TraversalAlgorithm,int);
   vtkGetMacro(TraversalAlgorithm,int);
 
@@ -216,6 +219,7 @@ protected:
   double             GradientMagnitude;
   vtkIdType          NumInputParticles;
   vtkIdType          NumOutputPoints;
+  int                ProgressFrequency;
 
   int                ModifiedNumber;
 
@@ -249,20 +253,24 @@ class vtkSPHProbeProgress : public vtkCommand
 public:
   static vtkSPHProbeProgress *New()
     { return new vtkSPHProbeProgress; }
-
-  virtual void Execute(vtkObject *caller, 
-                       unsigned long event, void* vtkNotUsed(v))
+  
+  vtkSPHProbeProgress() {
+    this->Offset = 0.0;
+    this->Scale = 1.0;
+  }
+  
+  virtual void Execute(vtkObject *caller, unsigned long event, void* vtkNotUsed(v))
     {
       vtkAlgorithm *alg = vtkAlgorithm::SafeDownCast(caller);
       if (event == vtkCommand::ProgressEvent && alg)
         {
-        this->Self->UpdateProgress(this->Offset + 0.5 * 
-                                   alg->GetProgress());
+        this->Self->UpdateProgress(this->Offset + this->Scale*alg->GetProgress());
         }
     }
   
   vtkAlgorithm *Self;
   double Offset;
+  double Scale;
 };
 //----------------------------------------------------------------------------
 //ETX
