@@ -132,6 +132,7 @@ vtkSPHProbeFilter::vtkSPHProbeFilter()
   this->MaximumSearchRadius               = 0.0;
   this->ParticleTree                = NULL;
   this->UseParticleTree             = 0;
+  this->ProgressFrequency           = 20;
   //
   this->SPHManager                  = vtkSPHManager::New();
   this->ModifiedNumber              = 0;
@@ -795,7 +796,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   // Loop over all probe points, interpolating particle data
   //
   int abort=0, abortdecision=0;;
-  vtkIdType progressInterval=this->NumOutputPoints/20 + 1;
+  vtkIdType progressInterval=this->NumOutputPoints/this->ProgressFrequency + 1;
   vtkIdType outId = 0;
   vtkIdType NeighbourCount= 0;
   double grad[3] = {0,0,0}, totalmass, maxDistance;
@@ -826,7 +827,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
       continue;
     }
     if ( !(ptId % progressInterval) ) {
-      this->UpdateProgress((double)ptId/numInputPoints);
+      double progress = (double)(ptId)/(double)(numInputPoints);
+      std::cout << "Sending Progress of " << progress << std::endl;
+      this->UpdateProgress(progress);
       abort = GetAbortExecute();
     }
 
