@@ -319,6 +319,7 @@ vtkParticlePartitionFilter::vtkParticlePartitionFilter()
   this->GhostCellOverlap          = 0.0;
   this->AdaptiveGhostCellOverlap  = 0;
   this->MaxAspectRatio            = 5.0;
+  this->SimpleGhostOverlapMode    = 0;
   this->ExtentTranslator          = vtkBoundsExtentTranslator::New();
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
@@ -856,7 +857,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //  
   std::vector<double> ghostOverlaps(this->UpdateNumPieces,this->GhostCellOverlap);
   if (this->AdaptiveGhostCellOverlap) {
-    ghostOverlaps[this->UpdatePiece] = this->ComputeAdaptiveOverlap(mesh.Output, this->GhostCellOverlap);
+    ghostOverlaps[this->UpdatePiece] = this->ComputeAdaptiveOverlap(mesh.Output, this->GhostCellOverlap, this->SimpleGhostOverlapMode);
     std::cout << "Adaptive overlap for process " << this->UpdatePiece << " is " << ghostOverlaps[this->UpdatePiece] << std::endl;
     communicator->AllGather((char*)MPI_IN_PLACE, (char*)&ghostOverlaps[0], sizeof(double));
   }
@@ -1027,31 +1028,40 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   return 1;
 }
 //----------------------------------------------------------------------------
-double vtkParticlePartitionFilter::ComputeAdaptiveOverlap(vtkPointSet *data, double defvalue)
+double vtkParticlePartitionFilter::ComputeAdaptiveOverlap(vtkPointSet *data, double defvalue, bool simplemode)
 {
   // get sph manager singleton (assumed to be already initialized)
   vtkSmartPointer<vtkSPHManager> sph = vtkSmartPointer<vtkSPHManager>::New();
-  // get centre of data
-  double centre[3];
-  vtkBoundingBox box(data->GetBounds());
-  box.GetCenter(centre);
-  // setup locator
-  vtkSmartPointer<vtkPointLocator> locator = vtkSmartPointer<vtkPointLocator>::New();
-  locator->SetDataSet(data);
-  locator->SetDivisions(100,100,100);
-  locator->BuildLocator();
   if (sph->GetInterpolationMethod()==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) 
   {
-    vtkSmartPointer<vtkIdList> NearestPoints = vtkSmartPointer<vtkIdList>::New();
-    NearestPoints->Allocate(sph->GetMaximumNeighbours()*2);
-    // find 
-    locator->FindClosestNPoints(sph->GetMaximumNeighbours(),centre,NearestPoints);
-    vtkBoundingBox region;
-    for (int i=0; i<NearestPoints->GetNumberOfIds(); i++) {
-      region.AddPoint(data->GetPoint(NearestPoints->GetId(i)));
+    // get centre of data
+    double centre[3];
+    vtkBoundingBox box(data->GetBounds());
+    box.GetCenter(centre);
+    if (!simplemode) {
+      // setup locator
+      vtkSmartPointer<vtkPointLocator> locator = vtkSmartPointer<vtkPointLocator>::New();
+      locator->SetDataSet(data);
+      locator->SetDivisions(100,100,100);
+      locator->BuildLocator();
+      //
+      vtkSmartPointer<vtkIdList> NearestPoints = vtkSmartPointer<vtkIdList>::New();
+      NearestPoints->Allocate(sph->GetMaximumNeighbours()*2);
+      // find 
+      locator->FindClosestNPoints(sph->GetMaximumNeighbours(),centre,NearestPoints);
+      vtkBoundingBox region;
+      for (int i=0; i<NearestPoints->GetNumberOfIds(); i++) {
+        region.AddPoint(data->GetPoint(NearestPoints->GetId(i)));
+      }
+      // approx double what we will really need for safety    
+      return std::min(defvalue, region.GetDiagonalLength()*0.5);
     }
-    // approx double what we will really need for safety    
-    return std::min(defvalue, region.GetDiagonalLength()*0.5);
+    else
+    {
+      vtkIdType N = data->GetNumberOfPoints();
+      double root3 = std::pow((double)(N),1.0/3.0);
+      return box.GetDiagonalLength()/root3;
+    }
   }
   else
   {
