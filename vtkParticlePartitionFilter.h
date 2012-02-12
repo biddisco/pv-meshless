@@ -82,6 +82,13 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
     vtkGetMacro(AdaptiveGhostCellOverlap, int);
     vtkBooleanMacro(AdaptiveGhostCellOverlap, int);
     
+    // Description:
+    // By default, the adaptive ghost overlap calculation uses a neighbour
+    // search, to use a simple volume estimation instead set this mode to true
+    vtkSetMacro(SimpleGhostOverlapMode, int);
+    vtkGetMacro(SimpleGhostOverlapMode, int);
+    vtkBooleanMacro(SimpleGhostOverlapMode, int);
+    
 //BTX
     // Description:
     // Return the Bounding Box for a partition
@@ -93,7 +100,7 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
     vtkBoundingBox *GetPartitionBoundingBoxWithGhostRegion(int partition);
 //ETX
 
-  static double ComputeAdaptiveOverlap(vtkPointSet *data, double defvalue);
+  static double ComputeAdaptiveOverlap(vtkPointSet *data, double defvalue, bool simplemode);
 
   protected:
      vtkParticlePartitionFilter();
@@ -147,6 +154,7 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
     double          GhostCellOverlap;
     int             AdaptiveGhostCellOverlap;
     double          MaxAspectRatio;
+    int             SimpleGhostOverlapMode;
     vtkBoundsExtentTranslator *ExtentTranslator;
     //
   private:
