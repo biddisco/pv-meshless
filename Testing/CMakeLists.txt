@@ -381,13 +381,13 @@ ENDFOREACH(resolution)
 #--------------------------------------------------
 # Test Probe Filter for very large parallel data
 # Image Resample + Kernel Mode
-# dam Dataset(S) : Parallel only 
+# dam Dataset(s) : Parallel only 
 #--------------------------------------------------
 SET(NUMPARTICLES    
   3234168 6449040 12873672 25672080 51371840 102832380 
   205376640 410490080 820490990 1642018560 3280404204
 )
-SET(CPUS 
+SET(SIM_CPUS 
   00032 00064 00128 00256 00512 01024
   02048 04096 08192 16384 32768
 )
@@ -404,21 +404,45 @@ SET(SAMPLERES
     0.02 0.015 0.012 0.009 0.007 0.006 0.0045 0.0035 0.0030 0.0025 0.002
 )
 
+#
+# Setup some convenience flags depending on machine
+#
+SET(COMPUTERNAME $ENV{COMPUTERNAME})
+IF(COMPUTERNAME)
+  SET(HOSTNAME $ENV{COMPUTERNAME})
+ELSE(COMPUTERNAME)
+  SET(HOSTNAME $ENV{HOSTNAME})
+ENDIF(COMPUTERNAME)
+
+IF(HOSTNAME MATCHES "DINO")
+  set(LARGE_DATA_PATH "C:\\data\\nextmuse")
+ELSEIF(HOSTNAME MATCHES "BRENO")
+  set(LARGE_DATA_PATH "D:\\data\\nextmuse")
+ELSEIF(HOSTNAME MATCHES "todi")
+  set(LARGE_DATA_PATH "/scratch/todi/biddisco/nextmuse")
+ELSEIF(HOSTNAME MATCHES "eiger")
+  set(LARGE_DATA_PATH "/project/csvis/biddisco/nextmuse")
+ENDIF()
+MESSAGE("Host name is ${HOSTNAME} and large data path is ${LARGE_DATA_PATH}")
+
+#--------------------------------------------------
+# Test 1 : Take one dataset and contour it to the same resolution
+# on several different CPU counts to test strong scaling
+# 1024^3 
+#--------------------------------------------------
 SET(counter 1)
-#FOREACH(index 0 1 2 3 4 5 6 7 8 9 10)
-FOREACH(index 0)
+FOREACH(index 5)
   LIST(GET NUMPARTICLES ${index} NUM)
-  LIST(GET CPUS         ${index} CPU)
+  LIST(GET SIM_CPUS     ${index} CPU)
   LIST(GET RESOLUTIONS  ${index} RES)
   LIST(GET GHOSTWIDTH   ${index} GST)
-  SET(GRIDSIZE 32)
+  SET(GRIDSIZE 1024)
   SET(file_name "${CPU}_${RES}_dambreak0.h5part")
-  FOREACH(N 0002 0128 0192 0256 0384 0512 0768 1024 1536 2048)
-    SET(test_name "benchmark-dam-N${counter}-R${index}-P${N}")
-    MESSAGE("${test_name} ${file_name} ${ghost}")
+  FOREACH(N 0032 0064 0128 0192 0256 0384 0512 0768 1024 1536 2048)
+    SET(test_name "benchmark-strong-N${counter}-R${index}-P${N}")
+    MESSAGE("${test_name} ${file_name} ${GST}")
     SET(TestParams 
-#      -D "/project/csvis/biddisco/nextmuse/"
-      -D "C:\\data\\nextmuse"     
+      -D "${LARGE_DATA_PATH}"
       -F ${file_name}
       -T "${PLUGIN_TEST_DIR}"
       -testName ${test_name}
@@ -434,17 +458,70 @@ FOREACH(index 0)
       -imageResample 1
       -skipImageTest 1
       -windowSize "1024 768"
-#      -cameraPosition " 3.9250837 -0.4704097  0.5964158"
-#      -cameraFocus    "-2.0277536  2.7267457 -0.5096563"
-#      -cameraViewUp   "-0.1130509  0.1302781  0.9850112"
+      -cameraPosition " 1.48858 2.90908 1.08421"
+      -cameraFocus    " 2.606   0       0.275"
+      -cameraViewUp   "0.0790531 -0.238854 0.967832"
       -imageScalars "ProcessId"
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
     )
 
     IF(${Trilinos_FOUND} AND N GREATER 1)
       greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-#      SET(processors 1)
-      MESSAGE("${test_name} OK ${processors}")
+      IF(processors)
+        ADD_TEST(
+          NAME ${test_name}
+          COMMAND 
+            ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+            $<TARGET_FILE:TestSPHProbeFilter> 
+            ${TestParams}
+        )
+      ENDIF(processors)
+    ENDIF(${Trilinos_FOUND} AND N GREATER 1)
+  ENDFOREACH(N)
+  MATH(EXPR counter "${counter} + 1")
+ENDFOREACH(index)
+
+#--------------------------------------------------
+# Test 2 : Take one dataset and contour it to the same resolution
+# on severl different CPU counts to test strong scaling
+#--------------------------------------------------
+SET(counter 1)
+FOREACH(index 0 1 2 3 4 5 6 7 8 9 10)
+  LIST(GET NUMPARTICLES ${index} NUM)
+  LIST(GET SIM_CPUS     ${index} CPU)
+  LIST(GET RESOLUTIONS  ${index} RES)
+  LIST(GET GHOSTWIDTH   ${index} GST)
+  SET(GRIDSIZE 1024)
+  SET(file_name "${CPU}_${RES}_dambreak0.h5part")
+  FOREACH(N 2048)
+    SET(test_name "benchmark-weak-N${counter}-R${index}-P${N}")
+    MESSAGE("${test_name} ${file_name} ${GST}")
+    SET(TestParams 
+      -D "${LARGE_DATA_PATH}"
+      -F ${file_name}
+      -T "${PLUGIN_TEST_DIR}"
+      -testName ${test_name}
+      -Xarray "X"
+      -Yarray "Y"
+      -Zarray "Z"
+      -expectedparticles ${NUM}
+      -particlesize ${RES}
+      -ghost_region ${GST}
+      -gridResolution "${GRIDSIZE} ${GRIDSIZE} ${GRIDSIZE}"
+      -scalar ShepardCoeff
+      -contour 0.8
+      -imageResample 1
+      -skipImageTest 1
+      -windowSize "1024 768"
+      -cameraPosition " 1.48858 2.90908 1.08421"
+      -cameraFocus    " 2.606   0       0.275"
+      -cameraViewUp   "0.0790531 -0.238854 0.967832"
+      -imageScalars "ProcessId"
+      -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
+    )
+
+    IF(${Trilinos_FOUND} AND N GREATER 1)
+      greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
       IF(processors)
         ADD_TEST(
           NAME ${test_name}
