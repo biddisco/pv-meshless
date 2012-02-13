@@ -14,7 +14,15 @@
 =========================================================================*/
 #include "vtkSPHProbeFilter.h"
 #include "vtkSPHManager.h"
-
+//
+#include "vtkToolkits.h"     // For VTK_USE_MPI
+#ifdef VTK_USE_MPI
+  #include "vtkMPI.h"
+  #include "vtkMPIController.h"
+  #include "vtkMPICommunicator.h"
+#endif
+#include "vtkMultiProcessController.h"
+//
 #include "vtkSmartPointer.h"
 #include "vtkCellData.h"
 #include "vtkCell.h"
@@ -56,16 +64,10 @@
 #include "KernelQuadratic.h"
 #include "KernelSpline3rdOrder.h"
 #include "KernelSpline5thOrder.h"
-//
-#include "vtkToolkits.h"     // For VTK_USE_MPI
-#ifdef VTK_USE_MPI
-  #include "vtkMPI.h"
-  #include "vtkMPIController.h"
-  #include "vtkMPICommunicator.h"
-#endif
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSPHProbeFilter);
 vtkCxxSetObjectMacro(vtkSPHProbeFilter, SPHManager, vtkSPHManager);
+vtkCxxSetObjectMacro(vtkSPHProbeFilter, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
 #if 0
 
@@ -133,6 +135,9 @@ vtkSPHProbeFilter::vtkSPHProbeFilter()
   this->ParticleTree                = NULL;
   this->UseParticleTree             = 0;
   this->ProgressFrequency           = 20;
+  //
+  this->Controller                  = NULL;
+  this->SetController(vtkMultiProcessController::GetGlobalController());
   //
   this->SPHManager                  = vtkSPHManager::New();
   this->ModifiedNumber              = 0;
@@ -697,7 +702,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   // for debug in parallel
   //
   vtkMPICommunicator *com = NULL;
-  vtkMPIController   *con = vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController());
+  vtkMPIController   *con = vtkMPIController::SafeDownCast(this->Controller);
   if (con) {
     com = vtkMPICommunicator::SafeDownCast(con->GetCommunicator());
     this->UpdatePiece     = com ? com->GetLocalProcessId() : 0;
@@ -828,9 +833,11 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     }
     if ( !(ptId % progressInterval) ) {
       double progress = (double)(ptId)/(double)(numInputPoints);
+/*
       std::cout << std::setw(5) << this->UpdatePiece << " Sending Progress of "
         << std::setw(6) << ptId << " " << std::setw(6) << numInputPoints << " " 
         << progress << std::endl;
+*/
       this->UpdateProgress(progress);
       abort = GetAbortExecute();
     }

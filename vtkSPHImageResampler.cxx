@@ -336,6 +336,7 @@ int vtkSPHImageResampler::RequestData(
   // Now resample the input data onto the generated grid
   //
   this->SPHProbe->SetSPHManager(this->SPHManager);
+  this->SPHProbe->SetController(this->Controller);
   this->SPHProbe->SetProgressFrequency(100);
   this->SPHProbe->SetDensityScalars(this->DensityScalars);
   this->SPHProbe->SetMassScalars(this->MassScalars);
