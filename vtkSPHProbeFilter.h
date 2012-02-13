@@ -36,6 +36,7 @@ class vtkDataSet;
 class vtkIdList;
 class vtkTimerLog;
 class vtkParticleBoxTree;
+class vtkMultiProcessController;
 //BTX
 class Kernel;
 //ETX
@@ -141,6 +142,16 @@ public:
     NEIGHBOURHOOD_TILED_TRAVERSAL,
     };
 
+//BTX
+    // Description:
+    // Set/Get the controller use in compositing (set to
+    // the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+    vtkGetObjectMacro(Controller, vtkMultiProcessController);
+//ETX
+
 protected:
    vtkSPHProbeFilter();
   ~vtkSPHProbeFilter();
@@ -177,7 +188,8 @@ protected:
   //  
   // SPHManager
   //
-  vtkSPHManager *SPHManager;
+  vtkSPHManager             *SPHManager;
+  vtkMultiProcessController *Controller;
 
   // switch shepard/sph
   int    InterpolationMethod;
