@@ -1,19 +1,10 @@
 // mpiexec : C:\Program Files\MPICH2\bin\mpiexec
 // mpiargs : -localonly -n 2 -env PATH D:\cmakebuild\pv-meshless\bin\debug;c:\bin
 // appcmd  : $(TargetPath)
-// appargs : "-D" "D:/Code/plugins/pv-meshless/Testing/data" "-F" "jet.h5part" "-T" "D:/cmakebuild/plugins/pv-meshless/Testing/Temporary" "-particlesize" "0.001" "-ghost_region" "0.005" "-massScalars" "mass" "-scalar" "ShepardCoeff" "-contour" "0.5" "-densityScalars" "FLUID_density" "-imagetest" "1" "-V" "D:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResampleSerial.png"
-// appargs : -D D:/Code/plugins/pv-meshless/Testing/data -F dam-17.h5part -T D:/cmakebuild/plugins/pv-meshless/Testing/Temporary -particlesize 0.005 -ghost_region 0.01 -gridSpacing 0.0025 0.0025 0.0025 -scalar ShepardCoeff -contour 0.1 -densityScalars FLUID_rho -imagetest 1 -V D:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-4.png
+// appargs : "-D" "D:/Code/plugins/pv-meshless/Testing/data" "-F" "jet.h5part" "-T" "D:/cmakebuild/plugins/pv-meshless/Testing/Temporary" "-particlesize" "0.001" "-ghost_region" "0.005" "-massScalars" "mass" "-scalar" "ShepardCoeff" "-contour" "0.5" "-densityScalars" "FLUID_density" "-imageResample" "1" "-V" "D:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResampleSerial.png"
+// appargs : -D D:/Code/plugins/pv-meshless/Testing/data -F dam-17.h5part -T D:/cmakebuild/plugins/pv-meshless/Testing/Temporary -particlesize 0.005 -ghost_region 0.01 -gridSpacing 0.0025 0.0025 0.0025 -scalar ShepardCoeff -contour 0.1 -densityScalars FLUID_rho -imageResample 1 -V D:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-4.png
 // mpishim : C:\Program Files\Microsoft Visual Studio 9.0\Common7\IDE\Remote Debugger\x64\mpishim.exe
 
-// //breno
-// set path=c:\bin;d:\cmakebuild\pv-meshless\bin\release;d:\cmakebuild\cmake\bin\Debug
-// "C:\Program Files\MPICH2\bin\mpiexec.exe" "-localonly" "-n" "4" "C:/cmakebuild/plugins/bin/Debug/TestSPHProbeFilter.exe" "-D" "C:/Code/plugins/pv-meshless/Testing/data" "-F" "dam-17.h5part" "-T" "C:/cmakebuild/plugins/pv-meshless/Testing/Temporary" "-particlesize" "0.005" "-ghost_region" "0.01" "-gridSpacing" "0.0025 0.0025 0.0025" "-scalar" "ShepardCoeff" "-contour" "0.1" "-densityScalars" "FLUID_rho" "-imagetest" "1" "-V" "C:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-4.png"
-// "C:\Program Files\MPICH2\bin\mpiexec.exe" "-localonly" "-n" "4" "C:/cmakebuild/plugins/bin/Debug/TestSPHProbeFilter.exe" "-D" "C:/Code/plugins/pv-meshless/Testing/data" "-F" "dam-17.h5part" "-T" "C:/cmakebuild/plugins/pv-meshless/Testing/Temporary" "-particlesize" "0.005" "-ghost_region" "0.01" "-gridSpacing" "0.0025 0.0025 0.0025" "-scalar" "ShepardCoeff" "-contour" "0.1" "-densityScalars" "FLUID_rho" "-imagetest" "1" "-V" "C:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-4.png"
-
-// Breno Extent debugging
-//
-// "C:\Program Files\MPICH2\bin\mpiexec.exe" "-localonly" "-n" "8" "D:/cmakebuild/plugins/bin/Debug/TestSPHProbeFilter.exe" 
-// -D D:/Code/plugins/pv-meshless/Testing/data -F dam-17.h5part -T D:/cmakebuild/plugins/pv-meshless/Testing/Temporary -particlesize 0.005 -ghost_region 0.01 -gridSpacing 0.01 0.01 0.01 -scalar ShepardCoeff -contour 0.1 -densityScalars FLUID_rho -imagetest 1 -V D:/Code/plugins/pv-meshless/Testing/baseline/TestSPHImageResample-large-parallel-8-0.005.png -I
 #ifdef _WIN32
   #include <windows.h>
 #else 
@@ -209,35 +200,46 @@ int main (int argc, char* argv[])
   //--------------------------------------------------------------
   bool unused, fixNeighbours, fixRadius, cameraSet;
   double gridSpacing[3] = {0.0, 0.0, 0.0};
+  int    gridResolution[3] = {-1, -1, -1};
   double vminmax[2] = {0.0, 0.0};
   double vpos[3] = {0.0, 0.0, 0.0};
   double cameraPosition[3] = {0.0, 0.0, 0.0};
   double cameraFocus[3] = {0.0, 1.0, 0.0};
   double cameraViewUp[3] = {0.0, 0.0, 1.0};
-  int windowSize[2] = {400,400};
+  int    windowSize[2] = {400,400};
 
   //
   // General test info
   //
   std::string testName = GetParameter<std::string>("-testName", "Test name", argc, argv, "", myRank, unused);
   //
+  // H5Part info
+  //
+  std::string Xarray = GetParameter<std::string>("-Xarray", "Xarray name", argc, argv, "", myRank, unused);
+  std::string Yarray = GetParameter<std::string>("-Yarray", "Yarray name", argc, argv, "", myRank, unused);
+  std::string Zarray = GetParameter<std::string>("-Zarray", "Zarray name", argc, argv, "", myRank, unused);
+  //
   // SPH kernel or neighbour info
   //
-  double particleSize = GetParameter<double>("-particlesize", "Particle Size", argc, argv, 0, myRank, fixRadius);
-  double        ghost = GetParameter<double>("-ghost_region", "Ghost Region", argc, argv, 0.0, myRank, unused);
-  unused = GetArrayParameter<double>("-gridSpacing", "Grid Spacing", gridSpacing, 3, argc, argv, myRank);
-  int            maxN = GetParameter<int>("-neighbours", "Fixed Neighbours", argc, argv, 0, myRank, fixNeighbours);
+  double        particleSize = GetParameter<double>("-particlesize", "Particle Size", argc, argv, 0, myRank, fixRadius);
+  double               ghost = GetParameter<double>("-ghost_region", "Ghost Region", argc, argv, 0.0, myRank, unused);
+  unused                     = GetArrayParameter<double>("-gridSpacing", "Grid Spacing", gridSpacing, 3, argc, argv, myRank);
+  unused                     = GetArrayParameter<int>("-gridResolution", "Grid Resolution", gridResolution, 3, argc, argv, myRank);
+  int                   maxN = GetParameter<int>("-neighbours", "Fixed Neighbours", argc, argv, 0, myRank, fixNeighbours);
   std::string    massScalars = GetParameter<std::string>("-massScalars", "Mass Scalar Array", argc, argv, "", myRank, unused);
   std::string densityScalars = GetParameter<std::string>("-densityScalars", "Density Scalar Array", argc, argv, "", myRank, unused);
+  vtkIdType        expectedN = GetParameter<vtkIdType>("-expectedparticles", "Simulation Particles", argc, argv, 0, myRank, unused);
+
   //
   // Test/Display of results
   //
   std::string     scalarname = GetParameter<std::string>("-scalar", "Testing Scalar Array", argc, argv, "", myRank, unused);
-  double   contourVal = GetParameter<double>("-contour", "Contour Value", argc, argv, 0.0, myRank, unused);
-  bool      imageTest = GetParameter<bool>("-imagetest", "imageTest", argc, argv, 0, myRank, unused);
+  double          contourVal = GetParameter<double>("-contour", "Contour Value", argc, argv, 0.0, myRank, unused);
+  bool         imageResample = GetParameter<bool>("-imageResample", "imageResample", argc, argv, 0, myRank, unused);
+  bool         skipImageTest = GetParameter<bool>("-skipImageTest", "skipImageTest", argc, argv, 0, myRank, unused);
   std::string   imageScalars = GetParameter<std::string>("-imageScalars", "Image Scalar Array", argc, argv, "", myRank, unused);
-  unused = GetArrayParameter<double>("-value_range", "Expected Value Range", vminmax, 2, argc, argv, myRank);
-  unused = GetArrayParameter<double>("-peak_position", "Expected Peak Position", vpos, 3, argc, argv, myRank);
+  unused                     = GetArrayParameter<double>("-value_range", "Expected Value Range", vminmax, 2, argc, argv, myRank);
+  unused                     = GetArrayParameter<double>("-peak_position", "Expected Peak Position", vpos, 3, argc, argv, myRank);
   //
   // Window/Camera
   //
@@ -251,6 +253,7 @@ int main (int argc, char* argv[])
   
   // bug fix for cmd line params on windows with debugger (only first read properly)
   gridSpacing[2] = gridSpacing[1] = gridSpacing[0];
+  gridResolution[2] = gridResolution[1] = gridResolution[0];
 
   //--------------------------------------------------------------
   // 
@@ -271,6 +274,15 @@ int main (int argc, char* argv[])
   reader->SetFileName(fullname);
   reader->SetController(controller);
   reader->SetGenerateVertexCells(1);
+  if (Xarray.size()>0) {
+    reader->SetXarray(Xarray.c_str());
+  }
+  if (Yarray.size()>0) {
+    reader->SetYarray(Yarray.c_str());
+  }
+  if (Zarray.size()>0) {
+    reader->SetZarray(Zarray.c_str());
+  }
 
   //--------------------------------------------------------------
   // Update in parallel:
@@ -297,6 +309,7 @@ int main (int argc, char* argv[])
   vtkIdType totalParticles = 0;
   vtkIdType localParticles = reader->GetOutput()->GetNumberOfPoints();
   controller->AllReduce(&localParticles, &totalParticles, 1, vtkCommunicator::SUM_OP);
+  DisplayParameter<vtkIdType>("Particle Count", "", &totalParticles, 1, myRank);
 
   vtkSmartPointer<vtkAlgorithm> data_algorithm = reader; 
 
@@ -342,6 +355,7 @@ int main (int argc, char* argv[])
     sphManager->SetKernelDimension(3);
     sphManager->SetDefaultParticleSideLength(0.0);
     sphManager->SetHCoefficient(0.0);
+    partitioner->SetGhostCellOverlap(ghost);
   }
   else if (fixRadius) {
     sphManager->SetInterpolationMethodToKernel();
@@ -354,25 +368,29 @@ int main (int argc, char* argv[])
 
   vtkSmartPointer<vtkAlgorithm> resample_algorithm;
   int wholeExtent[6]={0,-1,0,-1,0,-1};
-  if (imageTest) {
+  if (imageResample) {
     vtkSmartPointer<vtkSPHImageResampler> sphProbe = vtkSmartPointer<vtkSPHImageResampler>::New();
     sphProbe->SetInputConnection(data_algorithm->GetOutputPort());
     if (gridSpacing[0]>0.0) {
       sphProbe->SetSpacing(gridSpacing);
       sphProbe->SetResolution(0,0,0);
     }
+    else if (gridResolution[0]>-1) {
+      sphProbe->SetResolution(gridResolution[0],gridResolution[1],gridResolution[2]);
+    }
     else {
-      sphProbe->SetResolution(32,64,32);
+      sphProbe->SetResolution(32,32,32);
     }
     sphProbe->SetDelta(particleSize);
     sphProbe->SetSPHManager(sphManager);
     if (massScalars.size()) {
       sphProbe->SetMassScalars(massScalars.c_str());
+      sphProbe->SetComputeDensityFromNeighbourVolume(1);
     }
     if (densityScalars.size()) {
       sphProbe->SetDensityScalars(densityScalars.c_str());
+      sphProbe->SetComputeDensityFromNeighbourVolume(1);
     }
-    sphProbe->SetComputeDensityFromNeighbourVolume(1);
     sphProbe->SetController(controller);
     resample_algorithm = sphProbe;
   }
@@ -383,11 +401,12 @@ int main (int argc, char* argv[])
     sphProbe->SetSPHManager(sphManager);
     if (massScalars.size()) {
       sphProbe->SetMassScalars(massScalars.c_str());
+      sphProbe->SetComputeDensityFromNeighbourVolume(1);
     }
     if (densityScalars.size()) {
       sphProbe->SetDensityScalars(densityScalars.c_str());
+      sphProbe->SetComputeDensityFromNeighbourVolume(1);
     }
-    sphProbe->SetComputeDensityFromNeighbourVolume(1);
     resample_algorithm = sphProbe;
   }
 
@@ -415,7 +434,7 @@ int main (int argc, char* argv[])
   // Fetch smoothed output for testing results
   //--------------------------------------------------------------
   vtkDataSet *sph_results = vtkDataSet::SafeDownCast(resample_sddp->GetOutputData(0));
-  if (imageTest) {
+  if (imageResample) {
     vtkImageData::SafeDownCast(sph_results)->GetWholeExtent(wholeExtent);
   }
 
@@ -428,7 +447,7 @@ int main (int argc, char* argv[])
   //
   // Testing use scalar values extracted from filters
   //
-  if (!imageTest) {
+  if (!imageResample) {
     vtkPointData *sph_pd = sph_results->GetPointData();
     vtkDataArray *scalar_array = sph_pd->GetArray(scalarname.c_str());
     //--------------------------------------------------------------
@@ -618,12 +637,18 @@ int main (int argc, char* argv[])
       vtkDebugMacro( "Process Id : " << myRank << " About to Render" );
       renWindow->Render();
       //
-      retVal = vtkRegressionTester::Test(argc, argv, renWindow, 45);
-      if ( retVal == vtkRegressionTester::DO_INTERACTOR) {
-        iren->Start();
+      if (skipImageTest) {
+        retVal = vtkRegressionTester::Test(argc, argv, renWindow, 45);
+        retVal=vtkRegressionTester::PASSED;
+        ok = true;
+      }
+      else {
+        retVal = vtkRegressionTester::Test(argc, argv, renWindow, 45);
+        if (retVal == vtkRegressionTester::DO_INTERACTOR) {
+          iren->Start();
+        }
       }
       vtkDebugMacro( "Process Id : " << myRank << " Rendered" );
-      ok = (retVal==vtkRegressionTester::PASSED);
     }
   }
   controller->Barrier();
@@ -638,7 +663,7 @@ int main (int argc, char* argv[])
 #endif
     DisplayParameter<double>("SPH Probe Time", "", &sph_elapsed, 1, myRank);
     DisplayParameter<double>("Visualization/Check Time", "", &viz_elapsed, 1, myRank);
-    if (imageTest) {
+    if (imageResample) {
       DisplayParameter<int>("Image Whole Extent", "", wholeExtent, 6, myRank);
       vtkIdType voxels = (1+wholeExtent[1]-wholeExtent[0])*(1+wholeExtent[3]-wholeExtent[2])*(1+wholeExtent[5]-wholeExtent[4]);
       DisplayParameter<vtkIdType>("Voxels", "", &voxels, 1, myRank);
