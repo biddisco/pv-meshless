@@ -438,7 +438,7 @@ FOREACH(index 5)
   LIST(GET GHOSTWIDTH   ${index} GST)
   SET(GRIDSIZE 1024)
   SET(file_name "${CPU}_${RES}_dambreak0.h5part")
-  FOREACH(N 0032 0064 0128 0192 0256 0384 0512 0768 1024 1536 2048)
+  FOREACH(N 32 64 128 192 256 384 512 768 1024 1536 2048)
     SET(test_name "benchmark-strong-N${counter}-R${index}-P${N}")
     MESSAGE("${test_name} ${file_name} ${GST}")
     SET(TestParams 

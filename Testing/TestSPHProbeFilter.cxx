@@ -309,7 +309,7 @@ int main (int argc, char* argv[])
   vtkIdType totalParticles = 0;
   vtkIdType localParticles = reader->GetOutput()->GetNumberOfPoints();
   controller->AllReduce(&localParticles, &totalParticles, 1, vtkCommunicator::SUM_OP);
-  DisplayParameter<vtkIdType>("Particle Count", "", &totalParticles, 1, myRank);
+//  DisplayParameter<vtkIdType>("Particle Count", "", &totalParticles, 1, myRank);
 
   vtkSmartPointer<vtkAlgorithm> data_algorithm = reader; 
 
@@ -638,7 +638,7 @@ int main (int argc, char* argv[])
       renWindow->Render();
       //
       if (skipImageTest) {
-        retVal = vtkRegressionTester::Test(argc, argv, renWindow, 45);
+//        retVal = vtkRegressionTester::Test(argc, argv, renWindow, 45);
         retVal=vtkRegressionTester::PASSED;
         ok = true;
       }
