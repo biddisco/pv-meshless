@@ -284,7 +284,7 @@ FOREACH(resolution 0.005 0.001 0.0005)
       -scalar ShepardCoeff
       -contour 0.5
       -densityScalars "FLUID_density"
-      -imagetest 1
+      -imageResample 1
       -cameraPosition "-0.160102 0.106656 -0.212755"
       -cameraFocus    "-0.160102 0.106656  0.023384"
       -cameraViewUp   "0 1 0"
@@ -340,7 +340,7 @@ FOREACH(resolution 0.05 0.01 0.005)
       -scalar ShepardCoeff
       -contour 0.1
       -densityScalars "FLUID_rho"
-      -imagetest 1
+      -imageResample 1
       -windowSize "1024 768"
       -cameraPosition " 3.9250837 -0.4704097  0.5964158"
       -cameraFocus    "-2.0277536  2.7267457 -0.5096563"
@@ -378,3 +378,96 @@ FOREACH(resolution 0.05 0.01 0.005)
   MATH(EXPR counter "${counter} + 1")
 ENDFOREACH(resolution)
     
+#--------------------------------------------------
+# Test Probe Filter for very large parallel data
+# Image Resample + Kernel Mode
+# dam Dataset(S) : Parallel only 
+#--------------------------------------------------
+SET(NUMPARTICLES    
+  3234168 6449040 12873672 25672080 51371840 102832380 
+  205376640 410490080 820490990 1642018560 3280404204
+)
+SET(CPUS 
+  00032 00064 00128 00256 00512 01024
+  02048 04096 08192 16384 32768
+)
+SET(RESOLUTIONS
+    5.95392956532109E-003 4.72563702766763E-003 3.75074059446973E-003
+    2.97696478266054E-003 2.36281851383381E-003 1.87537029723487E-003
+    1.48848239133027E-003 1.18140925691691E-003 9.37685148617434E-004
+    7.44241195665136E-004 5.90704628458454E-004
+)
+SET(GHOSTWIDTH
+    0.018 0.015 0.012 0.009 0.007 0.006 0.0045 0.0036 0.0030 0.0023 0.002
+)
+SET(SAMPLERES
+    0.02 0.015 0.012 0.009 0.007 0.006 0.0045 0.0035 0.0030 0.0025 0.002
+)
+
+SET(counter 1)
+#FOREACH(index 0 1 2 3 4 5 6 7 8 9 10)
+FOREACH(index 0)
+  LIST(GET NUMPARTICLES ${index} NUM)
+  LIST(GET CPUS         ${index} CPU)
+  LIST(GET RESOLUTIONS  ${index} RES)
+  LIST(GET GHOSTWIDTH   ${index} GST)
+  SET(GRIDSIZE 32)
+  SET(file_name "${CPU}_${RES}_dambreak0.h5part")
+  FOREACH(N 0002 0128 0192 0256 0384 0512 0768 1024 1536 2048)
+    SET(test_name "benchmark-dam-N${counter}-R${index}-P${N}")
+    MESSAGE("${test_name} ${file_name} ${ghost}")
+    SET(TestParams 
+#      -D "/project/csvis/biddisco/nextmuse/"
+      -D "C:\\data\\nextmuse"     
+      -F ${file_name}
+      -T "${PLUGIN_TEST_DIR}"
+      -testName ${test_name}
+      -Xarray "X"
+      -Yarray "Y"
+      -Zarray "Z"
+      -expectedparticles ${NUM}
+      -particlesize ${RES}
+      -ghost_region ${GST}
+      -gridResolution "${GRIDSIZE} ${GRIDSIZE} ${GRIDSIZE}"
+      -scalar ShepardCoeff
+      -contour 0.8
+      -imageResample 1
+      -skipImageTest 1
+      -windowSize "1024 768"
+#      -cameraPosition " 3.9250837 -0.4704097  0.5964158"
+#      -cameraFocus    "-2.0277536  2.7267457 -0.5096563"
+#      -cameraViewUp   "-0.1130509  0.1302781  0.9850112"
+      -imageScalars "ProcessId"
+      -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
+    )
+
+    IF(${Trilinos_FOUND} AND N GREATER 1)
+      greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
+#      SET(processors 1)
+      MESSAGE("${test_name} OK ${processors}")
+      IF(processors)
+        ADD_TEST(
+          NAME ${test_name}
+          COMMAND 
+            ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+            $<TARGET_FILE:TestSPHProbeFilter> 
+            ${TestParams}
+        )
+      ENDIF(processors)
+    ENDIF(${Trilinos_FOUND} AND N GREATER 1)
+  ENDFOREACH(N)
+  MATH(EXPR counter "${counter} + 1")
+ENDFOREACH(index)
+
+#/project/csvis/biddisco/nextmuse/00032_5.95392956532109E-003_dambreak0.h5part
+#/project/csvis/biddisco/nextmuse/00064_4.72563702766763E-003_dambreak0.h5part
+#/project/csvis/biddisco/nextmuse/00128_3.75074059446973E-003_dambreak0.h5part
+#/project/csvis/biddisco/nextmuse/00256_2.97696478266054E-003_dambreak0.h5part
+#/project/csvis/biddisco/nextmuse/00512_2.36281851383381E-003_dambreak0.h5part
+#/project/csvis/biddisco/nextmuse/01024_1.87537029723487E-003_dambreak0.h5part
+#/project/csvis/biddisco/nextmuse/02048_1.48848239133027E-003_dambreak0.h5part
+#/project/csvis/biddisco/nextmuse/04096_1.18140925691691E-003_dambreak0.h5part
+#/project/csvis/biddisco/nextmuse/08192_9.37685148617434E-004_dambreak0.h5part
+#/project/csvis/biddisco/nextmuse/16384_7.44241195665136E-004_dambreak0.h5part
+#/project/csvis/biddisco/nextmuse/32768_5.90704628458454E-004_dambreak0.h5part
+
