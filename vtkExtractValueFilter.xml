@@ -10,7 +10,7 @@
     <!-- ================================================================ -->
     <SourceProxy name="ExtractValueFilter"
                  class="vtkExtractValueFilter"
-                 label="Extract MaxMin (Water height)">
+                 label="Extract MaxMin">
       <Documentation
         long_help="Extract one point from a dataset based on a value"
         short_help="Extract one point from a dataset based on a value">
@@ -26,7 +26,31 @@
            <DataTypeDomain name="input_type">
              <DataType value="vtkDataSet"/>
            </DataTypeDomain>
-      </InputProperty>
+       <InputArrayDomain name="input_array"/>
+     </InputProperty>
+
+      <StringVectorProperty
+        name="ExtractionScalars"
+        command="SetExtractionScalars"
+        number_of_elements="1"
+        animateable="0"
+        default_values="SmoothedDensity"
+        default_regex_delimiter=","
+        default_regex="^.*Density,.*density"
+        label="Extraction Scalar Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property indicates the name of the array to be used for testing
+        </Documentation>
+      </StringVectorProperty>
 
       <IntVectorProperty
         name="ExtractByMaximum"
@@ -35,7 +59,7 @@
         default_values="1">
         <BooleanDomain name="bool"/>
         <Documentation>
-          The Maximum or Minum can be extracted
+          The Maximum or Minimum can be extracted
         </Documentation>
       </IntVectorProperty>
 
@@ -43,7 +67,7 @@
         name="ExtractByCoordinate"
         command="SetExtractByCoordinate"
         number_of_elements="1"
-        default_values="1">
+        default_values="0">
         <BooleanDomain name="bool"/>
         <Documentation>
           Extraction may be based on coordinate values, or by scalar values (Only cordinate extraction is implemented currently)
