@@ -44,6 +44,11 @@ class VTK_EXPORT vtkExtractValueFilter : public vtkPolyDataAlgorithm
     vtkBooleanMacro(ExtractByMaximum,int);
 
     // Description:
+    // Set/Get the scalar value to use for testing and extraction
+    vtkSetStringMacro(ExtractionScalars);
+    vtkGetStringMacro(ExtractionScalars);
+
+    // Description:
     // Set the extraction algorithm to operate on the coordinates
     // instead of the scalars. Default is true.
     vtkSetMacro(ExtractByCoordinate,int);
@@ -62,12 +67,13 @@ class VTK_EXPORT vtkExtractValueFilter : public vtkPolyDataAlgorithm
 
     virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   //BTX
-    void FindMaximum(vtkDataSet *input, vtkPolyData *output);
+    void FindMaximum(vtkDataSet *input, vtkPolyData *output, vtkDataArray *scalars);
   //ETX
 
     int ExtractByMaximum;
     int ExtractByCoordinate;
     int Component;
+    char *ExtractionScalars;
 
   private:
     vtkExtractValueFilter(const vtkExtractValueFilter&);  // Not implemented.

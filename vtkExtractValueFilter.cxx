@@ -59,12 +59,14 @@ vtkStandardNewMacro(vtkExtractValueFilter);
 vtkExtractValueFilter::vtkExtractValueFilter()
 {
   this->ExtractByMaximum = 1;
-  this->ExtractByCoordinate = 1;
+  this->ExtractionScalars = NULL;
+  this->ExtractByCoordinate = 0;
   this->Component = 2;
 }
 //----------------------------------------------------------------------------
 vtkExtractValueFilter::~vtkExtractValueFilter()
 {
+  delete []this->ExtractionScalars;
 }
 //----------------------------------------------------------------------------
 int vtkExtractValueFilter::RequestData(
@@ -85,36 +87,47 @@ int vtkExtractValueFilter::RequestData(
   //
   this->UpdateProgress(0.0);
   //
-  this->FindMaximum(data,output);
+  vtkDataArray *DensityArray = this->ExtractionScalars ?
+    data->GetPointData()->GetArray(this->ExtractionScalars) : NULL;
+  //
+  this->FindMaximum(data, output, DensityArray);
   //
   this->UpdateProgress(1.0);
   return 1;
 }
 //----------------------------------------------------------------------------
-void vtkExtractValueFilter::FindMaximum(vtkDataSet *input, vtkPolyData *output)
+void vtkExtractValueFilter::FindMaximum(vtkDataSet *input, vtkPolyData *output, vtkDataArray *scalars)
 {
   double vmax = VTK_DOUBLE_MIN;
   double vmin = VTK_DOUBLE_MAX;
   vtkIdType i, imax = -1, imin = VTK_INT_MAX;
   
+  double val;
   double *p = NULL;
   for (vtkIdType i=0; i<input->GetNumberOfPoints(); i++) {
     if (this->ExtractByCoordinate) {
       p = input->GetPoint(i);
+      if (p[this->Component]>vmax) {
+        vmax = p[this->Component];
+        imax = i;
+      }
+      if (p[this->Component]<vmin) {
+        vmin = p[this->Component];
+        imin = i;
+      }
     }
     else {
-      // @TODO not yet implemented
-      p = input->GetPoint(i);
+      val = scalars->GetTuple1(i);
+      if (val>vmax) {
+        vmax = val;
+        imax = i;
+      }
+      if (val<vmin) {
+        vmin = val;
+        imin = i;
+      }
     }
 
-    if (p[this->Component]>vmax) {
-      vmax = p[this->Component];
-      imax = i;
-    }
-    if (p[this->Component]<vmin) {
-      vmin = p[this->Component];
-      imin = i;
-    }
   }
   if (imax != -1 && imin != VTK_INT_MAX) {
     vtkIdType pt = 0;

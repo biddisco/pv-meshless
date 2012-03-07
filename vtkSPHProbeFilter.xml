@@ -61,9 +61,11 @@
         number_of_elements="1"
         animateable="0"
         default_values="H"
+        label="H (smoothing length) Array">
+<!--
         default_regex_delimiter=","
         default_regex="^[Hh]$,.*[Ss][Mm][Oo][Oo][Tt][Hh],.*[Hh]$"
-        label="H (smoothing length) Array">
+-->
         <ArrayListDomain
           name="array_list"
           attribute_type="Scalars"
@@ -107,9 +109,11 @@
         number_of_elements="1"
         animateable="0"
         default_values="Density"
+        label="Density Scalar Array">
+<!--
         default_regex_delimiter=","
         default_regex="^[Dd][Ee][Nn][Ss][Ii][Tt][Yy]$,^[Rr][Hh][Oo]$,.*[Dd][Ee][Nn][Ss][Ii][Tt][Yy],.*_[Rr][Hh][Oo],.*[Rr][Hh][Oo]"
-        label="Density Scalar Array">
+-->
         <ArrayListDomain
           name="array_list"
           attribute_type="Scalars"
