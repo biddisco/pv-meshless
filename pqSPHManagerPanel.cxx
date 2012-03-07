@@ -52,7 +52,6 @@
 #include "pqRenderView.h"
 #include "pqActiveView.h"
 #include "pqDataRepresentation.h"
-#include "pqActiveObjects.h"
 #include "pqDisplayPolicy.h"
 #include "pqAnimationScene.h"
 #include "pqPropertyManager.h"
