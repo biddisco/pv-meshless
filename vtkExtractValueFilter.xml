@@ -41,7 +41,6 @@
         <ArrayListDomain
           name="array_list"
           attribute_type="Scalars"
-          none_string="Not available"
           input_domain_name="input_array">
           <RequiredProperties>
             <Property name="Input" function="Input"/>
