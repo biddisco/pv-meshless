@@ -47,7 +47,17 @@
 #include "vtkBoundingBox.h"
 #include "vtkContourFilter.h"
 //
+#ifdef VTK_USE_MPI
+#include "vtkMPI.h"
+#include "vtkMultiProcessController.h"
+#include "vtkMPICommunicator.h"
+#endif
+//
 vtkStandardNewMacro(vtkExtractValueFilter);
+//
+#ifdef VTK_USE_MPI
+vtkCxxSetObjectMacro(vtkExtractValueFilter, Controller, vtkMultiProcessController);
+#endif
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -62,6 +72,10 @@ vtkExtractValueFilter::vtkExtractValueFilter()
   this->ExtractionScalars = NULL;
   this->ExtractByCoordinate = 0;
   this->Component = 2;
+#ifdef VTK_USE_MPI
+  this->Controller = NULL;
+  this->SetController(vtkMultiProcessController::GetGlobalController());
+#endif
 }
 //----------------------------------------------------------------------------
 vtkExtractValueFilter::~vtkExtractValueFilter()
@@ -129,10 +143,44 @@ void vtkExtractValueFilter::FindMaximum(vtkDataSet *input, vtkPolyData *output, 
     }
 
   }
-  if (imax != -1 && imin != VTK_INT_MAX) {
+  //
+  // Value has been found, do parallel reduction
+  //
+  bool validresult = true;
+#ifdef VTK_USE_MPI
+  if (this->Controller) {
+    double result;
+    vtkIdType rank, lowRank;
+    rank = this->Controller->GetLocalProcessId();
+    if (this->ExtractByMaximum) {
+      this->Controller->AllReduce(&vmax, &result/*(double*)MPI_IN_PLACE*/, 1, vtkCommunicator::MAX_OP);
+      if (result > vmax) {
+        validresult = false;
+      }
+    }
+    else {
+      this->Controller->AllReduce(&vmin, &result/*(double*)MPI_IN_PLACE*/, 1, vtkCommunicator::MIN_OP);
+      if (result < vmin) {
+        validresult = false;
+      }
+    }
+    // If many processes has the same peak value (like zero!), we choose by rank
+    if (!validresult) {
+      rank = VTK_INT_MAX;
+    }
+    this->Controller->AllReduce(&rank, &lowRank, 1, vtkCommunicator::MIN_OP);
+    if (validresult) {
+      if (rank!=lowRank) {
+        validresult = false;
+      }
+    }
+  }
+#endif
+
+  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+  vtkSmartPointer<vtkCellArray> verts = vtkSmartPointer<vtkCellArray>::New();
+  if (validresult && (imax != -1) && (imin != VTK_INT_MAX)) {
     vtkIdType pt = 0;
-    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-    vtkSmartPointer<vtkCellArray> verts = vtkSmartPointer<vtkCellArray>::New();
     if (this->ExtractByMaximum) {
       i = imax;
     }
@@ -141,11 +189,11 @@ void vtkExtractValueFilter::FindMaximum(vtkDataSet *input, vtkPolyData *output, 
     }
     points->InsertNextPoint(input->GetPoint(i));
     verts->InsertNextCell(1, &pt);
-    output->SetPoints(points);
-    output->SetVerts(verts);
     output->GetPointData()->CopyAllocate(input->GetPointData());
     output->GetPointData()->CopyData(input->GetPointData(), i, 0);
   }
+  output->SetPoints(points);
+  output->SetVerts(verts);
 }
 //----------------------------------------------------------------------------
 void vtkExtractValueFilter::PrintSelf(ostream& os, vtkIndent indent)

@@ -25,8 +25,12 @@
 
 #include "vtkPolyDataAlgorithm.h"
 #include "vtkSmartPointer.h" // for smartpointers
-
-#define PROBE_MAX_NEIGHBOURS 1024
+#include "vtkToolkits.h"     // For VTK_USE_MPI 
+//
+#ifdef VTK_USE_MPI
+  class vtkMultiProcessController;
+#endif
+//
 
 class VTK_EXPORT vtkExtractValueFilter : public vtkPolyDataAlgorithm
 {
@@ -61,6 +65,18 @@ class VTK_EXPORT vtkExtractValueFilter : public vtkPolyDataAlgorithm
     vtkSetMacro(Component,int);
     vtkGetMacro(Component,int);
 
+//BTX
+  #ifdef VTK_USE_MPI
+    // Description:
+    // Set/Get the controller used for coordinating parallel writing
+    // (set to the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+    vtkGetObjectMacro(Controller, vtkMultiProcessController);
+  #endif
+//ETX
+
   protected:
      vtkExtractValueFilter();
     ~vtkExtractValueFilter();
@@ -74,6 +90,14 @@ class VTK_EXPORT vtkExtractValueFilter : public vtkPolyDataAlgorithm
     int ExtractByCoordinate;
     int Component;
     char *ExtractionScalars;
+
+  //BTX
+    #ifdef VTK_USE_MPI
+  //ETX
+      vtkMultiProcessController* Controller;
+  //BTX
+    #endif
+  //ETX
 
   private:
     vtkExtractValueFilter(const vtkExtractValueFilter&);  // Not implemented.
