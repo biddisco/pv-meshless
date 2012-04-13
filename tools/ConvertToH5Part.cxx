@@ -38,7 +38,14 @@
 #include "vtkExtentTranslator.h"
 
 // vtk MPI
-#include "vtkMPIController.h"
+#ifdef VTK_USE_MPI
+  #include "vtkMPI.h"
+  #include "vtkMPIController.h"
+  #include "vtkMPICommunicator.h"
+#endif
+// Otherwise
+#include "vtkMultiProcessController.h"
+
 #include "vtkParallelFactory.h"
 
 // vtk Testing 
@@ -495,7 +502,9 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
             if (multiblock) writer->SetInput(multiblock);
             if (dataset)    writer->SetInput(dataset);
             //
+#ifdef VTK_USE_MPI
             writer->SetController(controller);
+#endif
             writer->SetFileName(std::string(hdf_name+".h5part").c_str());
             writer->SetTimeValue(current_time);
             writer->SetTimeStep((int)TimeStep);
@@ -534,8 +543,11 @@ int main (int argc, char* argv[])
 
   // Note that this will create a vtkMPIController if MPI
   // is configured, vtkThreadedController otherwise.
+#ifdef VTK_USE_MPI
   vtkMPIController* controller = vtkMPIController::New();
-
+#else
+  vtkMultiProcessController* controller = vtkMultiProcessController::GetGlobalController();
+#endif
   controller->Initialize(&argc, &argv, 1);
 
   vtkParallelFactory* pf = vtkParallelFactory::New();

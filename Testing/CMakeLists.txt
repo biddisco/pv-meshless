@@ -101,7 +101,7 @@ string(REPLACE " " ";" MPIEXEC_NUMPROC_FLAG ${MPIEXEC_NUMPROC_FLAG})
 #--------------------------------------------------
 # Trilinos
 #--------------------------------------------------
-IF(${Trilinos_FOUND})
+IF(${Trilinos_FOUND} AND VTK_USE_MPI)
 
   ADD_EXECUTABLE(TestParticlePartitionFilter 
     TestParticlePartitionFilter.cxx
@@ -127,7 +127,7 @@ IF(${Trilinos_FOUND})
     )
   ENDIF(processors)
  
-ENDIF(${Trilinos_FOUND})
+ENDIF(${Trilinos_FOUND} AND VTK_USE_MPI)
 
 #--------------------------------------------------
 # Test Probe Filter

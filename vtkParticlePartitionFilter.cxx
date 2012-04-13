@@ -403,9 +403,11 @@ vtkSmartPointer<vtkIdTypeArray> vtkParticlePartitionFilter::GenerateGlobalIds(vt
   vtkstd::vector<int>       PartialSum(this->UpdateNumPieces+1);
   vtkstd::vector<vtkIdType> PointsPerProcess(this->UpdateNumPieces);
   //
+#ifdef VTK_USE_MPI
   vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
   com->AllGather(&N, &PointsPerProcess[0], 1);
   vtkstd::partial_sum(PointsPerProcess.begin(), PointsPerProcess.end(), PartialSum.begin()+1);
+#endif
 
   vtkIdType initialValue = PartialSum[this->UpdatePiece];
 //  vtkDebugMacro(<< "Id filter rank " << this->UpdatePiece << " Using offset " << initialValue);
@@ -859,7 +861,9 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   if (this->AdaptiveGhostCellOverlap) {
     ghostOverlaps[this->UpdatePiece] = this->ComputeAdaptiveOverlap(mesh.Output, this->GhostCellOverlap, this->SimpleGhostOverlapMode);
     std::cout << "Adaptive overlap for process " << this->UpdatePiece << " is " << ghostOverlaps[this->UpdatePiece] << std::endl;
+#ifdef VTK_USE_MPI
     communicator->AllGather((char*)MPI_IN_PLACE, (char*)&ghostOverlaps[0], sizeof(double));
+#endif
   }
 
   this->ExtentTranslator->SetNumberOfPieces(this->UpdateNumPieces);
