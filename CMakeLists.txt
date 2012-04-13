@@ -305,7 +305,7 @@ ADD_PARAVIEW_PLUGIN(
     ${TIPSY_CXX}
   SERVER_SOURCES
     ${KernelFiles_SRCS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/AstroVizHelpers.cxx  
+#    ${CMAKE_CURRENT_SOURCE_DIR}/AstroVizHelpers.cxx  
   GUI_INTERFACES 
     ${MESHLESS_IFACE_W}
     ${MESHLESS_IFACE_O}
