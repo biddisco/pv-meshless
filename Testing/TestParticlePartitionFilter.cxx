@@ -17,13 +17,17 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 //
+//#ifdef VTK_USE_MPI
+  #include "vtkMPI.h"
+  #include "vtkMPIController.h"
+  #include "vtkMPICommunicator.h"
+//#endif
 #include "vtkActor.h"
 #include "vtkAppendPolyData.h"
 #include "vtkCamera.h"
 #include "vtkPointSource.h"
 #include "vtkDataSet.h"
 #include "vtkMath.h"
-#include "vtkMPIController.h"
 #include "vtkParallelFactory.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper.h"
