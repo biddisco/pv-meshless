@@ -4,7 +4,6 @@
   Module:    $RCSfile: vtkMomentsOfInertiaFilter.cxx,v $
 =========================================================================*/
 #include "vtkMomentsOfInertiaFilter.h"
-#include "AstroVizHelpers.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
@@ -20,6 +19,14 @@
 #include "vtkUnsignedCharArray.h"
 #include "vtkSmartPointer.h"
 #include "vtkMath.h"
+#include "vtkPointData.h"
+
+enum PointsInRadiusMPIData
+{
+	TOTAL_MASS_IN_SPHERE,
+	TOTAL_NUMBER_IN_SPHERE,
+	MAX_R
+};
 
 vtkStandardNewMacro(vtkMomentsOfInertiaFilter);
 vtkCxxSetObjectMacro(vtkMomentsOfInertiaFilter,Controller, vtkMultiProcessController);
@@ -91,17 +98,19 @@ void vtkMomentsOfInertiaFilter::UpdateInertiaTensor(vtkPointSet* input,
              inertiaTensor[i][j] = 0.0;
              }
            }
+  vtkDataArray *massarray = input->GetPointData()->GetArray(massArrayName.c_str());
+  double radius[3]; 
 	for(unsigned long nextPointId = 0;\
 	 		nextPointId < input->GetPoints()->GetNumberOfPoints();\
 	 		++nextPointId)
 		{
-		double* nextPoint=GetPoint(input,nextPointId);
+    double* nextPoint=input->GetPoint(nextPointId);
 		// extracting the mass
 		// has to be double as this version of VTK doesn't have 
 		// GetTuple function which operates with float
-		double* mass=GetDataValue(input,massArrayName.c_str(),nextPointId);
+    double* mass=massarray->GetTuple(nextPointId);
 		// get distance from nextPoint to center point
-		double* radius = PointVectorDifference(nextPoint,centerPoint);
+    vtkMath::Subtract(nextPoint,centerPoint, radius);
 		// update the components of the inertia tensor
 		inertiaTensor[0][0]+=mass[0]*(pow(nextPoint[1],2)+pow(nextPoint[2],2));
 		inertiaTensor[1][1]+=mass[0]*(pow(nextPoint[0],2)+pow(nextPoint[2],2));
@@ -109,10 +118,6 @@ void vtkMomentsOfInertiaFilter::UpdateInertiaTensor(vtkPointSet* input,
 		inertiaTensor[0][1]+=mass[0]*nextPoint[0]*nextPoint[1];		
 		inertiaTensor[0][2]+=mass[0]*nextPoint[0]*nextPoint[2];		
 		inertiaTensor[1][2]+=mass[0]*nextPoint[1]*nextPoint[2];		
-		// Finally, some memory management
-		delete [] radius;
-		delete [] mass;
-		delete [] nextPoint;
 		}
 }
 //----------------------------------------------------------------------------
@@ -128,6 +133,68 @@ void vtkMomentsOfInertiaFilter::UpdateInertiaTensorFinal(vtkPointSet* input,
 	inertiaTensor[1][0]=inertiaTensor[0][1];
 	inertiaTensor[2][0]=inertiaTensor[0][2];		
 	inertiaTensor[2][1]=inertiaTensor[1][2];
+}
+//----------------------------------------------------------------------------
+bool RunInParallel(vtkMultiProcessController* controller)
+{
+	return (controller != NULL && controller->GetNumberOfProcesses() > 1);
+}
+//----------------------------------------------------------------------------
+double ComputeMaxR(vtkPointSet* input,double point[])
+{
+	double bounds[6]; //xmin,xmax,ymin,ymax,zmin,zmax
+	input->GetPoints()->ComputeBounds();
+	input->GetPoints()->GetBounds(bounds);
+	double maxR=0;
+	double testR=0;
+	// for each of the 8 corners of the bounding box, compute the 
+	// distance to the point. maxR is the max distance.
+	for(int x = 0; x < 2; ++x)
+		{
+		for(int y = 2; y <4; ++y)
+			{
+			for(int z = 4; z < 6; ++z)
+				{
+				double testCorner[3] = {bounds[x],bounds[y],bounds[z]};
+				testR = sqrt(vtkMath::Distance2BetweenPoints(testCorner,point));
+				// only if our test R is greater than the current max do we update
+				maxR=vtkstd::max(maxR,testR);
+				}
+			}
+		}
+	return maxR;
+}
+//----------------------------------------------------------------------------
+double ComputeMaxRadiusInParallel(
+	vtkMultiProcessController* controller,vtkPointSet* input, double point[])
+{
+	double maxR=ComputeMaxR(input,point);
+	if(RunInParallel(controller))
+		{
+		int procId=controller->GetLocalProcessId();
+		int numProc=controller->GetNumberOfProcesses();
+		if(procId==0)
+			{
+			// collecting and updating maxR from other processors			
+			for(int proc= 1; proc < numProc; ++proc)
+				{
+				double recMaxR=0;
+				controller->Receive(&recMaxR,1,proc,MAX_R);
+				maxR=vtkstd::max(maxR,recMaxR);
+				}
+			// Syncronizing global maxR results
+			controller->Broadcast(&maxR,1,0);
+			}
+		else
+			{
+			// sending to process 0, which will compare all results and compute
+			// global maximum
+			controller->Send(&maxR,1,0,MAX_R);
+			// syncronizing global maxR results
+			controller->Broadcast(&maxR,1,0);
+			}
+		}
+	return maxR;
 }
 //----------------------------------------------------------------------------
 void vtkMomentsOfInertiaFilter::DisplayVectorsAsLines(vtkPointSet* input,
@@ -146,7 +213,7 @@ void vtkMomentsOfInertiaFilter::DisplayVectorsAsLines(vtkPointSet* input,
 	double scale=ComputeMaxR(input,centerPoint);
 	for(int i = 0; i < 3; ++i)
 		{
-		VecMultConstant(vectors[i],scale);
+    vtkMath::MultiplyScalar(vectors[i],scale);
 		points->InsertNextPoint(vectors[i]);
 		// creating the lines
 		vtkSmartPointer<vtkLine> nextLine = vtkSmartPointer<vtkLine>::New();
