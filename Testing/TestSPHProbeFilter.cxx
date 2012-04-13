@@ -14,13 +14,20 @@
 #include "Testing/Cxx/vtkTestUtilities.h"
 #include "Testing/Cxx/vtkRegressionTestImage.h"
 //
+#ifdef VTK_USE_MPI
+  #include "vtkMPI.h"
+  #include "vtkMPIController.h"
+  #include "vtkMPICommunicator.h"
+#endif
+// Otherwise
+#include "vtkMultiProcessController.h"
+
 #include "vtkActor.h"
 #include "vtkAppendPolyData.h"
 #include "vtkCamera.h"
 #include "vtkPointSource.h"
 #include "vtkDataSet.h"
 #include "vtkMath.h"
-#include "vtkMPIController.h"
 #include "vtkParallelFactory.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper.h"
@@ -151,13 +158,12 @@ int main (int argc, char* argv[])
 {
   int retVal = 1;
 
-  // This is here to avoid false leak messages from vtkDebugLeaks when
-  // using mpich. It appears that the root process which spawns all the
-  // main processes waits in MPI_Init() and calls exit() when
-  // the others are done, causing apparent memory leaks for any objects
-  // created before MPI_Init().
-  MPI_Init(&argc, &argv);
-  vtkSmartPointer<vtkMPIController> controller = vtkSmartPointer<vtkMPIController>::New();
+#ifdef VTK_USE_MPI
+  vtkMPIController* controller = vtkMPIController::New();
+#else
+  vtkMultiProcessController* controller = vtkMultiProcessController::GetGlobalController();
+#endif
+
   controller->Initialize(&argc, &argv, 1);
   
   // Obtain the id of the running process and the total
@@ -272,7 +278,9 @@ int main (int argc, char* argv[])
   //--------------------------------------------------------------
   vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
   reader->SetFileName(fullname);
+#ifdef VTK_USE_MPI
   reader->SetController(controller);
+#endif
   reader->SetGenerateVertexCells(1);
   if (Xarray.size()>0) {
     reader->SetXarray(Xarray.c_str());
