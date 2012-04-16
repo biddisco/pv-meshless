@@ -31,6 +31,17 @@ INCLUDE_DIRECTORIES(
 # Option to disable hdf5 readers etc
 # --------------------------------------------------
 OPTION(USE_HDF5 "Use HDF5 readers/writers" ON)
+
+# --------------------------------------------------
+# Check if HDF5 was compiled with Parallel support
+# --------------------------------------------------
+IF(USE_HDF5) 
+  INCLUDE (${CMAKE_ROOT}/Modules/CheckSymbolExists.cmake)
+  CHECK_SYMBOL_EXISTS(H5_HAVE_PARALLEL H5pubconf.h HAVE_H5_HAVE_PARALLEL)
+  IF(NOT HAVE_H5_HAVE_PARALLEL)
+    MESSAGE("H5_HAVE_PARALLEL was not found, Parallel IO will not be enabled")
+  ENDIF(NOT HAVE_H5_HAVE_PARALLEL)
+ENDIF(USE_HDF5) 
   
 #------------------------------------------------------
 # Parallel IO (H5Part Readers and Writers)
