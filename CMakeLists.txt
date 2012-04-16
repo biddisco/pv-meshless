@@ -74,35 +74,6 @@ IF(USE_HDF5)
   SET(H5PART_LIBS H5Part)
 ENDIF(USE_HDF5)
 
-# --------------------------------------------------
-# Optional cosmo support 
-# --------------------------------------------------
-OPTION(USE_COSMO "Use cosmo library" OFF)
-  
-IF(USE_COSMO)
-  ADD_DEFINITIONS("-DUSE_VTK_COSMO")
-  
-  #--------------------------------------------------
-  # Build minimal Cosmo lib for support
-  #--------------------------------------------------
-  
-  ADD_SUBDIRECTORY(cosmo)
-  #--------------------------------------------------
-  # Tipsy reader uses code from Doug Potter's Tipsy lib.
-  #--------------------------------------------------
-  ADD_SUBDIRECTORY(tipsylib)
-  
-  SET(TIPSY_XML
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkTipsyReader.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.xml
-  )
-  SET(TIPSY_CXX
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkTipsyReader.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkPTipsyReader.cxx
-  )
-  SET(TIPSY_LIB TipsyLib Cosmo2)
-ENDIF (USE_COSMO)
-
 #--------------------------------------------------
 # Set Definitions 
 #--------------------------------------------------
