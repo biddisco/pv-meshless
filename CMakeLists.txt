@@ -41,16 +41,28 @@ ENDIF (VTK_USE_MPI)
 OPTION(USE_HDF5 "Use HDF5 readers/writers" ON)
 
 # --------------------------------------------------
-# Check if HDF5 was compiled with Parallel support
+# Configure all HDF5 options
 # --------------------------------------------------
 IF(USE_HDF5) 
+  #-----------------------------------------------
+  # If (paraview) using system hdf5, find it
+  #-----------------------------------------------
+  IF (NOT TARGET "vtkhdf5")
+    FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
+    INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
+  ENDIF (NOT TARGET "vtkhdf5")
+  
+  #-----------------------------------------------
+  # Check if HDF5 was compiled with Parallel support
+  #-----------------------------------------------
   INCLUDE (${CMAKE_ROOT}/Modules/CheckSymbolExists.cmake)
-  #
-  # if ParaView is reconfigured, this flag needs to be cleared
-  # 
   UNSET(HAVE_H5_HAVE_PARALLEL CACHE)
-  SET(CMAKE_REQUIRED_INCLUDES "${VTK_INCLUDE_DIRS}")
-  CHECK_SYMBOL_EXISTS(H5_HAVE_PARALLEL H5pubconf.h HAVE_H5_HAVE_PARALLEL)
+  SET(CMAKE_REQUIRED_INCLUDES ${HDF5_INCLUDE_DIR} ${VTK_INCLUDE_DIRS})
+  CHECK_SYMBOL_EXISTS(H5_HAVE_PARALLEL "H5pubconf.h" HAVE_H5_HAVE_PARALLEL)
+
+  #-----------------------------------------------
+  # Enable parallel IO if available
+  #-----------------------------------------------
   IF(HAVE_H5_HAVE_PARALLEL)
     ADD_DEFINITIONS(-DPARALLEL_IO)
   ELSE(HAVE_H5_HAVE_PARALLEL)
