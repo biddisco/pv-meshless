@@ -12,16 +12,17 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkSPHProbeFilter.h"
-#include "vtkSPHManager.h"
-//
-#include "vtkToolkits.h"     // For VTK_USE_MPI
+// For VTK_USE_MPI 
+#include "vtkToolkits.h"     
 #ifdef VTK_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
   #include "vtkMPICommunicator.h"
 #endif
-#include "vtkMultiProcessController.h"
+#include "vtkDummyController.h"
+//
+#include "vtkSPHProbeFilter.h"
+#include "vtkSPHManager.h"
 //
 #include "vtkSmartPointer.h"
 #include "vtkCellData.h"
@@ -136,8 +137,11 @@ vtkSPHProbeFilter::vtkSPHProbeFilter()
   this->UseParticleTree             = 0;
   this->ProgressFrequency           = 20;
   //
-  this->Controller                  = NULL;
+  this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
+  if (this->Controller == NULL) {
+    this->SetController(vtkSmartPointer<vtkDummyController>::New());
+  }
   //
   this->SPHManager                  = vtkSPHManager::New();
   this->ModifiedNumber              = 0;

@@ -14,13 +14,15 @@
 #include "Testing/Cxx/vtkTestUtilities.h"
 #include "Testing/Cxx/vtkRegressionTestImage.h"
 //
+// For VTK_USE_MPI 
+#include "vtkToolkits.h"     
 #ifdef VTK_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
   #include "vtkMPICommunicator.h"
 #endif
 // Otherwise
-#include "vtkMultiProcessController.h"
+#include "vtkDummyController.h"
 
 #include "vtkActor.h"
 #include "vtkAppendPolyData.h"
@@ -66,7 +68,6 @@
 #include <vtksys/SystemTools.hxx>
 #include <sstream>
 //
-#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -160,11 +161,10 @@ int main (int argc, char* argv[])
 
 #ifdef VTK_USE_MPI
   vtkMPIController* controller = vtkMPIController::New();
-#else
-  vtkMultiProcessController* controller = vtkMultiProcessController::GetGlobalController();
-#endif
-
   controller->Initialize(&argc, &argv, 1);
+#else
+  vtkDummyController* controller = vtkDummyController::New();
+#endif
   
   // Obtain the id of the running process and the total
   // number of processes
@@ -278,9 +278,7 @@ int main (int argc, char* argv[])
   //--------------------------------------------------------------
   vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
   reader->SetFileName(fullname);
-#ifdef VTK_USE_MPI
   reader->SetController(controller);
-#endif
   reader->SetGenerateVertexCells(1);
   if (Xarray.size()>0) {
     reader->SetXarray(Xarray.c_str());
@@ -363,7 +361,9 @@ int main (int argc, char* argv[])
     sphManager->SetKernelDimension(3);
     sphManager->SetDefaultParticleSideLength(0.0);
     sphManager->SetHCoefficient(0.0);
+#ifdef PVMESHLESS_USE_TRILINOS
     partitioner->SetGhostCellOverlap(ghost);
+#endif
   }
   else if (fixRadius) {
     sphManager->SetInterpolationMethodToKernel();

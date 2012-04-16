@@ -17,11 +17,16 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 //
-//#ifdef VTK_USE_MPI
+//
+// For VTK_USE_MPI 
+#include "vtkToolkits.h"     
+#ifdef VTK_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
   #include "vtkMPICommunicator.h"
-//#endif
+#endif
+#include "vtkMultiProcessController.h"
+//
 #include "vtkActor.h"
 #include "vtkAppendPolyData.h"
 #include "vtkCamera.h"

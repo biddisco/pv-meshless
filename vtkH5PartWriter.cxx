@@ -42,11 +42,14 @@
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
 //
+// For VTK_USE_MPI 
+#include "vtkToolkits.h"     
 #ifdef VTK_USE_MPI
-#include "vtkMPI.h"
-#include "vtkMultiProcessController.h"
-#include "vtkMPICommunicator.h"
+  #include "vtkMPI.h"
+  #include "vtkMPIController.h"
+  #include "vtkMPICommunicator.h"
 #endif
+#include "vtkDummyController.h"
 //
 #include "H5Part.h"
 #include <stdlib.h>
@@ -58,9 +61,7 @@
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkH5PartWriter, "$Revision: 153 $");
 vtkStandardNewMacro(vtkH5PartWriter);
-#ifdef VTK_USE_MPI
 vtkCxxSetObjectMacro(vtkH5PartWriter, Controller, vtkMultiProcessController);
-#endif
 //----------------------------------------------------------------------------
 #ifdef JB_DEBUG__
   #ifdef WIN32
@@ -100,18 +101,17 @@ vtkH5PartWriter::vtkH5PartWriter()
   this->UpdateNumPieces           = -1;
   this->VectorsWithStridedWrite   = 0;
   this->DisableInformationGather  = 0;
-#ifdef VTK_USE_MPI
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
-#endif
+  if (this->Controller == NULL) {
+    this->SetController(vtkSmartPointer<vtkDummyController>::New());
+  }
 }
 //----------------------------------------------------------------------------
 vtkH5PartWriter::~vtkH5PartWriter()
 { 
   this->CloseFile();
-#ifdef VTK_USE_MPI
   this->SetController(NULL);
-#endif
 }
 //----------------------------------------------------------------------------
 int vtkH5PartWriter::FillInputPortInformation(int, vtkInformation *info)
@@ -536,7 +536,6 @@ public:
 //----------------------------------------------------------------------------
 void vtkH5PartWriter::WriteData()
 {
-#ifdef VTK_USE_MPI
   if (this->Controller) {
     this->UpdatePiece = this->Controller->GetLocalProcessId();
     this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
@@ -545,10 +544,6 @@ void vtkH5PartWriter::WriteData()
     this->UpdatePiece = 0;
     this->UpdateNumPieces = 1;
   }
-#else
-  this->UpdatePiece = 0;
-  this->UpdateNumPieces = 1;
-#endif
 
   //
   // Make sure file is open
