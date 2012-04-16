@@ -12,8 +12,6 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkToolkits.h" // For VTK_USE_MPI
-//
 #include "vtkParticleIdFilter.h"
 //
 #include "vtkCellData.h"
@@ -24,8 +22,9 @@
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
-#include "vtkMultiProcessController.h"
-#include "vtkMPICommunicator.h"
+#include "vtkSmartPointer.h"
+//
+#include "vtkDummyController.h"
 //
 #include <numeric> // for accumulate, partial_sum
 //----------------------------------------------------------------------------
@@ -36,8 +35,11 @@ vtkParticleIdFilter::vtkParticleIdFilter()
 {
   this->UpdatePiece     = 0;
   this->UpdateNumPieces = 1;
-  this->Controller      = NULL;
+  this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
+  if (this->Controller == NULL) {
+    this->SetController(vtkSmartPointer<vtkDummyController>::New());
+  }
 }
 //----------------------------------------------------------------------------
 vtkParticleIdFilter::~vtkParticleIdFilter()
@@ -87,8 +89,6 @@ int vtkParticleIdFilter::RequestData(
   //
   // setup communicator for parallel work
   //
-  vtkMPICommunicator *communicator = NULL;
-#ifdef VTK_USE_MPI
   if (this->Controller) {
     this->UpdatePiece     = this->Controller->GetLocalProcessId();
     this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
@@ -97,20 +97,15 @@ int vtkParticleIdFilter::RequestData(
     this->UpdatePiece     = 0;
     this->UpdateNumPieces = 1;
   }
-  communicator = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
-#else
-  this->UpdatePiece = 0;
-  this->UpdateNumPieces = 1;
-#endif
 
   // Loop over points (if requested) and generate ids
   //
   if ( this->PointIds )
     {
     vtkstd::vector<int> PartialSum(this->UpdateNumPieces+1);
-    if (communicator) {
+    if (this->Controller) {
       vtkstd::vector<vtkIdType> PointsPerProcess(this->UpdateNumPieces);
-      communicator->AllGather(&numPts, &PointsPerProcess[0], 1);
+      this->Controller->AllGather(&numPts, &PointsPerProcess[0], 1);
       vtkstd::partial_sum(PointsPerProcess.begin(), PointsPerProcess.end(), PartialSum.begin()+1);
     }
     vtkIdType initialValue = PartialSum[this->UpdatePiece];
@@ -140,9 +135,9 @@ int vtkParticleIdFilter::RequestData(
   if ( this->CellIds)
     {
     vtkstd::vector<int> PartialSum(this->UpdateNumPieces+1);
-    if (communicator) {
+    if (this->Controller) {
       vtkstd::vector<vtkIdType> CellsPerProcess(this->UpdateNumPieces);
-      communicator->AllGather(&numCells, &CellsPerProcess[0], 1);
+      this->Controller->AllGather(&numCells, &CellsPerProcess[0], 1);
       vtkstd::partial_sum(CellsPerProcess.begin(), CellsPerProcess.end(), PartialSum.begin()+1);  
     }
     vtkIdType initialValue = PartialSum[this->UpdatePiece];

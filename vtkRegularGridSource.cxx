@@ -14,14 +14,8 @@
   found in the file Copyright.txt supplied with the software.
 
 =========================================================================*/
-#include "vtkRegularGridSource.h"
 //
-#include "vtkToolkits.h" // For VTK_USE_MPI
-#ifdef VTK_USE_MPI
-  #include "vtkMPI.h"
-  #include "vtkMPIController.h"
-  #include "vtkMPICommunicator.h"
-#endif
+#include "vtkRegularGridSource.h"
 //
 #include "vtkObjectFactory.h"
 #include "vtkCellArray.h"
@@ -42,6 +36,8 @@
 #include "vtkExtentTranslator.h"
 //
 #include "vtkBoundsExtentTranslator.h"
+//
+#include "vtkDummyController.h"
 //
 #include <set>
 #include <algorithm>
@@ -286,21 +282,17 @@ void vtkRegularGridSource::ComputeAxesFromBounds(vtkDataSet *inputData, double l
   double bounds[6];
   inputData->GetBounds(bounds);
   box.SetBounds(bounds);
-#ifdef VTK_USE_MPI
-  vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(
-    vtkMultiProcessController::GetGlobalController()->GetCommunicator());
-  MPI_Comm mpiComm = MPI_COMM_NULL;
-  if (communicator) {
-    mpiComm = *(communicator->GetMPIComm()->GetHandle());
-    double bmin[3], bmn[3] = {bounds[0], bounds[2], bounds[4]};
-    double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
-    MPI_Allreduce(bmn, bmin, 3, MPI_DOUBLE, MPI_MIN, mpiComm);
-    MPI_Allreduce(bmx, bmax, 3, MPI_DOUBLE, MPI_MAX, mpiComm);
-    vtkBoundingBox box;
-    box.SetMinPoint(bmin);
-    box.SetMaxPoint(bmax);
+      
+  double bmin[3], bmn[3] = {bounds[0], bounds[2], bounds[4]};
+  double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
+  vtkSmartPointer<vtkMultiProcessController> Controller = vtkMultiProcessController::GetGlobalController();
+  if (Controller == NULL) {
+    Controller = vtkSmartPointer<vtkDummyController>::New();
   }
-#endif
+  Controller->AllReduce(bmn, bmin, 3, vtkCommunicator::MIN_OP);
+  Controller->AllReduce(bmx, bmax, 3, vtkCommunicator::MAX_OP);
+  box.SetMinPoint(bmin);
+  box.SetMaxPoint(bmax);
   if (inflate) {
     box.Inflate(this->Delta);
   }

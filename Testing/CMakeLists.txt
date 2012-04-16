@@ -44,9 +44,16 @@ FOREACH(test_name ${TEST_LIST})
 ENDFOREACH(test_name)
 
 #--------------------------------------------------
+# All tests from here on make use of HDF5 for IO
+#--------------------------------------------------
+IF (NOT USE_HDF5) 
+  return()
+ENDIF (NOT USE_HDF5) 
+
+#--------------------------------------------------
 # H5Part
 #--------------------------------------------------
-IF(VTK_USE_PARALLEL AND VTK_USE_MPI)
+IF(VTK_USE_MPI)
   ADD_EXECUTABLE(TestH5PartParallelWriter TestH5PartParallelWriter.cxx)
   TARGET_LINK_LIBRARIES(TestH5PartParallelWriter
     pv_meshless 
@@ -89,7 +96,7 @@ IF(VTK_USE_PARALLEL AND VTK_USE_MPI)
     ENDIF (N GREATER 1)
   ENDFOREACH(N)
   
-ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
+ENDIF (VTK_USE_MPI)
 
 #--------------------------------------------------
 # Slurm job manager require "-rmk" "slurm" arguments
@@ -101,7 +108,7 @@ string(REPLACE " " ";" MPIEXEC_NUMPROC_FLAG ${MPIEXEC_NUMPROC_FLAG})
 #--------------------------------------------------
 # Trilinos
 #--------------------------------------------------
-IF(${Trilinos_FOUND} AND VTK_USE_MPI)
+IF(${TRILINOS_ENABLED} AND VTK_USE_MPI)
 
   ADD_EXECUTABLE(TestParticlePartitionFilter 
     TestParticlePartitionFilter.cxx
@@ -127,7 +134,7 @@ IF(${Trilinos_FOUND} AND VTK_USE_MPI)
     )
   ENDIF(processors)
  
-ENDIF(${Trilinos_FOUND} AND VTK_USE_MPI)
+ENDIF(${TRILINOS_ENABLED} AND VTK_USE_MPI)
 
 #--------------------------------------------------
 # Test Probe Filter
@@ -170,7 +177,7 @@ FOREACH(N 1 2 3 4)
   #
   # Parallel N>1
   #
-  IF(${Trilinos_FOUND} AND N GREATER 1)
+  IF(${TRILINOS_ENABLED} AND N GREATER 1)
     greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
     IF(processors)
       ADD_TEST(
@@ -181,7 +188,7 @@ FOREACH(N 1 2 3 4)
           ${TestParams}
       )
     ENDIF(processors)
-  ENDIF (${Trilinos_FOUND} AND N GREATER 1)
+  ENDIF (${TRILINOS_ENABLED} AND N GREATER 1)
 ENDFOREACH(N)
     
 #--------------------------------------------------
@@ -213,7 +220,7 @@ FOREACH(N 1 2 3 4)
     #
     # Parallel N>1
     #
-    IF(${Trilinos_FOUND} AND N GREATER 1)
+    IF(${TRILINOS_ENABLED} AND N GREATER 1)
       greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
       IF(processors)
         ADD_TEST(
@@ -233,7 +240,7 @@ FOREACH(N 1 2 3 4)
           -peak_position "0.53753125667572 0.529183149337769 0.526147127151489"
       )
       ENDIF(processors)
-  ENDIF (${Trilinos_FOUND} AND N GREATER 1)
+  ENDIF (${TRILINOS_ENABLED} AND N GREATER 1)
 ENDFOREACH(N)
   
 FOREACH(N 16 32 64 128 192 256 276)
@@ -241,7 +248,7 @@ FOREACH(N 16 32 64 128 192 256 276)
     #
     # Parallel N>1
     #
-    IF(${Trilinos_FOUND} AND N GREATER 1)
+    IF(${TRILINOS_ENABLED} AND N GREATER 1)
       greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
       IF(processors)
         ADD_TEST(
@@ -261,7 +268,7 @@ FOREACH(N 16 32 64 128 192 256 276)
             -peak_position "0.557741165161133 0.581159114837646 0.552553355693817"
         )
       ENDIF(processors)
-  ENDIF (${Trilinos_FOUND} AND N GREATER 1)
+  ENDIF (${TRILINOS_ENABLED} AND N GREATER 1)
 ENDFOREACH(N)
 
 #--------------------------------------------------
@@ -305,7 +312,7 @@ FOREACH(resolution 0.005 0.001 0.0005)
     #
     # Parallel N>1
     #
-    IF(${Trilinos_FOUND} AND N GREATER 1)
+    IF(${TRILINOS_ENABLED} AND N GREATER 1)
       greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
       IF(processors)
         ADD_TEST(
@@ -316,7 +323,7 @@ FOREACH(resolution 0.005 0.001 0.0005)
             ${TestParams}
         )
       ENDIF(processors)
-    ENDIF(${Trilinos_FOUND} AND N GREATER 1)
+    ENDIF(${TRILINOS_ENABLED} AND N GREATER 1)
   ENDFOREACH(N)
   MATH(EXPR counter "${counter} + 1")
 ENDFOREACH(resolution)
@@ -362,7 +369,7 @@ FOREACH(resolution 0.05 0.01 0.005)
     #
     # Parallel N>1
     #
-    IF(${Trilinos_FOUND} AND N GREATER 1)
+    IF(${TRILINOS_ENABLED} AND N GREATER 1)
       greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
       IF(processors)
         ADD_TEST(
@@ -373,7 +380,7 @@ FOREACH(resolution 0.05 0.01 0.005)
             ${TestParams}
         )
       ENDIF(processors)
-    ENDIF(${Trilinos_FOUND} AND N GREATER 1)
+    ENDIF(${TRILINOS_ENABLED} AND N GREATER 1)
   ENDFOREACH(N)
   MATH(EXPR counter "${counter} + 1")
 ENDFOREACH(resolution)
@@ -423,7 +430,7 @@ ELSEIF(HOSTNAME MATCHES "todi")
 ELSEIF(HOSTNAME MATCHES "eiger")
   set(LARGE_DATA_PATH "/project/csvis/biddisco/nextmuse")
 ENDIF()
-MESSAGE("Host name is ${HOSTNAME} and large data path is ${LARGE_DATA_PATH}")
+# MESSAGE("Host name is ${HOSTNAME} and large data path is ${LARGE_DATA_PATH}")
 
 #--------------------------------------------------
 # Test 1 : Take one dataset and contour it to the same resolution
@@ -440,7 +447,7 @@ FOREACH(index 5)
   SET(file_name "${CPU}_${RES}_dambreak0.h5part")
   FOREACH(N 32 64 128 192 256 384 512 768 1024 1536 2048)
     SET(test_name "benchmark-strong-N${counter}-R${index}-P${N}")
-    MESSAGE("${test_name} ${file_name} ${GST}")
+#    MESSAGE("${test_name} ${file_name} ${GST}")
     SET(TestParams 
       -D "${LARGE_DATA_PATH}"
       -F ${file_name}
@@ -465,7 +472,7 @@ FOREACH(index 5)
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
     )
 
-    IF(${Trilinos_FOUND} AND N GREATER 1)
+    IF(${TRILINOS_ENABLED} AND N GREATER 1)
       greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
       IF(processors)
         ADD_TEST(
@@ -476,7 +483,7 @@ FOREACH(index 5)
             ${TestParams}
         )
       ENDIF(processors)
-    ENDIF(${Trilinos_FOUND} AND N GREATER 1)
+    ENDIF(${TRILINOS_ENABLED} AND N GREATER 1)
   ENDFOREACH(N)
   MATH(EXPR counter "${counter} + 1")
 ENDFOREACH(index)
@@ -495,7 +502,7 @@ FOREACH(index 0 1 2 3 4 5 6 7 8 9 10)
   SET(file_name "${CPU}_${RES}_dambreak0.h5part")
   FOREACH(N 2048)
     SET(test_name "benchmark-weak-N${counter}-R${index}-P${N}")
-    MESSAGE("${test_name} ${file_name} ${GST}")
+#    MESSAGE("${test_name} ${file_name} ${GST}")
     SET(TestParams 
       -D "${LARGE_DATA_PATH}"
       -F ${file_name}
@@ -520,7 +527,7 @@ FOREACH(index 0 1 2 3 4 5 6 7 8 9 10)
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
     )
 
-    IF(${Trilinos_FOUND} AND N GREATER 1)
+    IF(${TRILINOS_ENABLED} AND N GREATER 1)
       greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
       IF(processors)
         ADD_TEST(
@@ -531,7 +538,7 @@ FOREACH(index 0 1 2 3 4 5 6 7 8 9 10)
             ${TestParams}
         )
       ENDIF(processors)
-    ENDIF(${Trilinos_FOUND} AND N GREATER 1)
+    ENDIF(${TRILINOS_ENABLED} AND N GREATER 1)
   ENDFOREACH(N)
   MATH(EXPR counter "${counter} + 1")
 ENDFOREACH(index)

@@ -18,14 +18,15 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-#include "vtkToolkits.h"     // For VTK_USE_MPI
-//
+// For VTK_USE_MPI
+#include "vtkToolkits.h"
 #ifdef VTK_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
   #include "vtkMPICommunicator.h"
 #endif
-#include "vtkMultiProcessController.h"
+#include "vtkDummyController.h"
+//
 #include "vtkParticlePartitionFilter.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkPolyData.h"
@@ -314,14 +315,17 @@ vtkParticlePartitionFilter::vtkParticlePartitionFilter()
   this->UpdatePiece               = 0;
   this->UpdateNumPieces           = 1;
   this->NumberOfLocalPoints       = 0;
-  this->Controller                = NULL;
   this->IdChannelArray            = NULL;
   this->GhostCellOverlap          = 0.0;
   this->AdaptiveGhostCellOverlap  = 0;
   this->MaxAspectRatio            = 5.0;
   this->SimpleGhostOverlapMode    = 0;
   this->ExtentTranslator          = vtkBoundsExtentTranslator::New();
+  this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
+  if (this->Controller == NULL) {
+    this->SetController(vtkSmartPointer<vtkDummyController>::New());
+  }
 }
 
 //----------------------------------------------------------------------------

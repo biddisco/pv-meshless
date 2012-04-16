@@ -26,15 +26,12 @@
 #ifndef __vtkH5PartWriter_h
 #define __vtkH5PartWriter_h
 
-#include "vtkToolkits.h"     // For VTK_USE_MPI 
 #include "vtkSmartPointer.h" // For vtkSmartPointer
 #include <vtkstd/string>     // for strings
 #include <vtkstd/vector>     // for vectors
 #include "vtkAbstractParticleWriter.h"
 //
-#ifdef VTK_USE_MPI
-  class vtkMultiProcessController;
-#endif
+class vtkMultiProcessController;
 //
 
 struct H5PartFile;
@@ -84,17 +81,13 @@ public:
   vtkGetMacro(VectorsWithStridedWrite,int);
   vtkBooleanMacro(VectorsWithStridedWrite,int);
 
-//BTX
-  #ifdef VTK_USE_MPI
-    // Description:
-    // Set/Get the controller used for coordinating parallel writing
-    // (set to the global controller by default)
-    // If not using the default, this must be called before any
-    // other methods.
-    virtual void SetController(vtkMultiProcessController* controller);
-    vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  #endif
-//ETX
+  // Description:
+  // Set/Get the controller used for coordinating parallel writing
+  // (set to the global controller by default)
+  // If not using the default, this must be called before any
+  // other methods.
+  virtual void SetController(vtkMultiProcessController* controller);
+  vtkGetObjectMacro(Controller, vtkMultiProcessController);
 
   // Description:
   // When writing in parallel, all processes must send data to HDF...
@@ -157,13 +150,7 @@ protected:
   int     UpdateNumPieces;
   int     DisableInformationGather;
 
-  //BTX
-    #ifdef VTK_USE_MPI
-  //ETX
-      vtkMultiProcessController* Controller;
-  //BTX
-    #endif
-  //ETX
+  vtkMultiProcessController* Controller;
 
 private:
   vtkH5PartWriter(const vtkH5PartWriter&);  // Not implemented.

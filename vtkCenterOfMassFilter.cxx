@@ -15,9 +15,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStringArray.h"
-#include "vtkMultiProcessController.h"
 #include "vtkSmartPointer.h"
 #include "vtkTimerLog.h"
+//
+#include "vtkDummyController.h"
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkCenterOfMassFilter);
 vtkCxxSetObjectMacro(vtkCenterOfMassFilter,Controller, vtkMultiProcessController);
@@ -35,6 +36,9 @@ vtkCenterOfMassFilter::vtkCenterOfMassFilter()
   this->MassArray  = NULL;
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
+  if (this->Controller == NULL) {
+    this->SetController(vtkSmartPointer<vtkDummyController>::New());
+  }
 }
 
 //----------------------------------------------------------------------------

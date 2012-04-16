@@ -28,7 +28,6 @@
 #ifndef _vtkSPHImageResampler_h
 #define _vtkSPHImageResampler_h
 
-#include "vtkToolkits.h"     // For VTK_USE_MPI 
 #include "vtkImageAlgorithm.h"
 #include "vtkSmartPointer.h"
 

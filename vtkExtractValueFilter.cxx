@@ -47,17 +47,11 @@
 #include "vtkBoundingBox.h"
 #include "vtkContourFilter.h"
 //
-#ifdef VTK_USE_MPI
-#include "vtkMPI.h"
-#include "vtkMultiProcessController.h"
-#include "vtkMPICommunicator.h"
-#endif
+#include "vtkDummyController.h"
 //
 vtkStandardNewMacro(vtkExtractValueFilter);
 //
-#ifdef VTK_USE_MPI
 vtkCxxSetObjectMacro(vtkExtractValueFilter, Controller, vtkMultiProcessController);
-#endif
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -72,10 +66,11 @@ vtkExtractValueFilter::vtkExtractValueFilter()
   this->ExtractionScalars = NULL;
   this->ExtractByCoordinate = 0;
   this->Component = 2;
-#ifdef VTK_USE_MPI
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
-#endif
+  if (this->Controller == NULL) {
+    this->SetController(vtkSmartPointer<vtkDummyController>::New());
+  }
 }
 //----------------------------------------------------------------------------
 vtkExtractValueFilter::~vtkExtractValueFilter()
@@ -147,7 +142,6 @@ void vtkExtractValueFilter::FindMaximum(vtkDataSet *input, vtkPolyData *output, 
   // Value has been found, do parallel reduction
   //
   bool validresult = true;
-#ifdef VTK_USE_MPI
   if (this->Controller) {
     double result;
     vtkIdType rank, lowRank;
@@ -175,7 +169,6 @@ void vtkExtractValueFilter::FindMaximum(vtkDataSet *input, vtkPolyData *output, 
       }
     }
   }
-#endif
 
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> verts = vtkSmartPointer<vtkCellArray>::New();

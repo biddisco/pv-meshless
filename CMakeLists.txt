@@ -27,6 +27,14 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/tipsylib
 )
 
+#------------------------------------------------------
+# MPI support if ParaView compiled with MPI
+#------------------------------------------------------
+IF (VTK_USE_MPI)
+  FIND_PACKAGE(MPI)   
+  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+ENDIF (VTK_USE_MPI)
+
 # --------------------------------------------------
 # Option to disable hdf5 readers etc
 # --------------------------------------------------
@@ -37,48 +45,55 @@ OPTION(USE_HDF5 "Use HDF5 readers/writers" ON)
 # --------------------------------------------------
 IF(USE_HDF5) 
   INCLUDE (${CMAKE_ROOT}/Modules/CheckSymbolExists.cmake)
+  #
+  # if ParaView is reconfigured, this flag needs to be cleared
+  # 
+  UNSET(HAVE_H5_HAVE_PARALLEL CACHE)
+  SET(CMAKE_REQUIRED_INCLUDES "${VTK_INCLUDE_DIRS}")
   CHECK_SYMBOL_EXISTS(H5_HAVE_PARALLEL H5pubconf.h HAVE_H5_HAVE_PARALLEL)
-  IF(NOT HAVE_H5_HAVE_PARALLEL)
-    MESSAGE("H5_HAVE_PARALLEL was not found, Parallel IO will not be enabled")
-  ENDIF(NOT HAVE_H5_HAVE_PARALLEL)
+  IF(HAVE_H5_HAVE_PARALLEL)
+    ADD_DEFINITIONS(-DPARALLEL_IO)
+  ELSE(HAVE_H5_HAVE_PARALLEL)
+    MESSAGE("H5_HAVE_PARALLEL not found, Parallel HDF5 IO will not be enabled")
+  ENDIF(HAVE_H5_HAVE_PARALLEL)
+  
+  #-----------------------------------------------
+  # Build minimal H5Part lib for support
+  #-----------------------------------------------
+  ADD_SUBDIRECTORY(h5part)
+  SET(H5PART_LIBS H5Part)
+  
+  SET(HDF5_XML 
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.xml
+  )
+  SET(HDF5_CXX
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartWriter.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5SPHReader.cxx
+  )
 ENDIF(USE_HDF5) 
   
-#------------------------------------------------------
-# Parallel IO (H5Part Readers and Writers)
-#------------------------------------------------------
-IF (VTK_USE_PARALLEL AND VTK_USE_MPI)
-  ADD_DEFINITIONS(-DPARALLEL_IO)
-  FIND_PACKAGE(MPI REQUIRED)
-  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-ELSE (VTK_USE_PARALLEL AND VTK_USE_MPI)
-  ADD_DEFINITIONS(-DUSE_SERIAL_COSMO)
-ENDIF (VTK_USE_PARALLEL AND VTK_USE_MPI)
-
 # --------------------------------------------------
 # Optional Trilinos support 
 # --------------------------------------------------
-OPTION(USE_TRILINOS "Use Trilinos library" OFF)
-IF(USE_TRILINOS)
-  FIND_PACKAGE(Trilinos)
-  IF(${Trilinos_FOUND})
-    ADD_DEFINITIONS(-DPVMESHLESS_USE_TRILINOS)
-    INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
-    LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS})
-    SET(TRILINOS_CXX ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx)
-    SET(TRILINOS_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml)
-#    MESSAGE("Trilinos_LIBRARY_DIRS ${Trilinos_LIBRARY_DIRS}/${CMAKE_CFG_INTDIR}") 
-  ENDIF(${Trilinos_FOUND})
-ELSE(USE_TRILINOS)
-  SET(Trilinos_FOUND 0)
-ENDIF(USE_TRILINOS)
-
-#--------------------------------------------------
-# Build minimal H5Part lib for support
-#-----------------------------------------------
-IF(USE_HDF5)
-  ADD_SUBDIRECTORY(h5part)
-  SET(H5PART_LIBS H5Part)
-ENDIF(USE_HDF5)
+SET(TRILINOS_ENABLED 0)
+IF (VTK_USE_MPI)
+  OPTION(USE_TRILINOS "Use Trilinos library" OFF)
+  IF(USE_TRILINOS)
+    FIND_PACKAGE(Trilinos)
+    IF(${Trilinos_FOUND})
+      ADD_DEFINITIONS(-DPVMESHLESS_USE_TRILINOS)
+      INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
+      LINK_DIRECTORIES("${Trilinos_LIBRARY_DIRS}")
+#    MESSAGE("Trilinos Include Dirs ${Trilinos_INCLUDE_DIRS} and Trilinos Link Dirs ${Trilinos_LIBRARY_DIRS} ")
+      SET(TRILINOS_CXX ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx)
+      SET(TRILINOS_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml)
+      SET(TRILINOS_ENABLED 1)
+    ENDIF(${Trilinos_FOUND})
+  ENDIF(USE_TRILINOS)
+ELSE (VTK_USE_MPI)
+  SET(USE_TRILINOS OFF CACHE BOOL "Use Trilinos library" FORCE)
+ENDIF (VTK_USE_MPI)
 
 #--------------------------------------------------
 # Set Definitions 
@@ -209,17 +224,6 @@ SOURCE_GROUP(KernelFiles FILES
   ${KernelFiles_SRCS}
 )
 
-IF(USE_HDF5)
-  SET(HDF5_XML 
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.xml
-  )
-  SET(HDF5_CXX
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartWriter.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5SPHReader.cxx
-  )
-ENDIF(USE_HDF5)
-  
 #--------------------------------------------------
 # Define Plugin 
 #--------------------------------------------------
@@ -252,7 +256,6 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkClipPolyData.xml
     ${TRILINOS_XML}
     ${HDF5_XML}
-    ${TIPSY_XML}
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkBoundsExtentTranslator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
@@ -261,7 +264,6 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxRepresentation.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMCustomBoxRepresentationProxy.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
-#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMSPHManagerProxy.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.cxx
@@ -279,10 +281,8 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionRepresentation.cxx
     ${TRILINOS_CXX}
     ${HDF5_CXX}
-    ${TIPSY_CXX}
   SERVER_SOURCES
     ${KernelFiles_SRCS}
-#    ${CMAKE_CURRENT_SOURCE_DIR}/AstroVizHelpers.cxx  
   GUI_INTERFACES 
     ${MESHLESS_IFACE_W}
     ${MESHLESS_IFACE_O}
