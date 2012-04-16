@@ -26,7 +26,6 @@
 #ifndef __vtkH5SPHReader_h
 #define __vtkH5SPHReader_h
 
-#include "vtkToolkits.h"     // For VTK_USE_MPI 
 #include "vtkH5PartReader.h"
 #include <vtkstd/string>
 #include <vtkstd/vector>

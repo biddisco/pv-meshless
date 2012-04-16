@@ -26,7 +26,6 @@
 #ifndef __vtkH5PartReader_h
 #define __vtkH5PartReader_h
 
-#include "vtkToolkits.h"     // For VTK_USE_MPI 
 #include "vtkPolyDataAlgorithm.h"
 #include <vtkstd/string>
 #include <vtkstd/vector>
@@ -138,21 +137,13 @@ public:
   int         GetCoordinateArrayStatus(const char* name);
   void        SetCoordinateArrayStatus(const char* name, int status);
 
-//BTX
-  #ifdef VTK_USE_MPI
-//ETX
-//BTX
-    // Description:
-    // Set/Get the controller use in compositing (set to
-    // the global controller by default)
-    // If not using the default, this must be called before any
-    // other methods.
-    virtual void SetController(vtkMultiProcessController* controller);
-    vtkGetObjectMacro(Controller, vtkMultiProcessController);
-//ETX
-//BTX
-  #endif
-//ETX
+  // Description:
+  // Set/Get the controller use in compositing (set to
+  // the global controller by default)
+  // If not using the default, this must be called before any
+  // other methods.
+  virtual void SetController(vtkMultiProcessController* controller);
+  vtkGetObjectMacro(Controller, vtkMultiProcessController);
 
 protected:
    vtkH5PartReader();
@@ -206,13 +197,7 @@ protected:
   // To allow paraview gui to enable/disable scalar reading
   vtkDataArraySelection* CoordinateSelection;
 
-  //BTX
-    #ifdef VTK_USE_MPI
-  //ETX
-      vtkMultiProcessController* Controller;
-  //BTX
-    #endif
-  //ETX
+  vtkMultiProcessController* Controller;
 
 private:
   vtkH5PartReader(const vtkH5PartReader&);  // Not implemented.

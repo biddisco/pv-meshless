@@ -61,12 +61,10 @@
 #include "vtkDoubleArray.h"
 #include "vtkSmartPointer.h"
 #include "vtkExtentTranslator.h"
-
+//
 #include "FileSeriesFinder.h"
-
-#ifdef VTK_USE_MPI
+//
 #include "vtkMultiProcessController.h"
-#endif
 
 //#define LIMIT_PARTITIONS 1024
 
@@ -346,15 +344,14 @@ int vtkH5SPHReader::RequestInformation(
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
 
-#ifdef VTK_USE_MPI
   if (this->Controller) {
     this->UpdatePiece = this->Controller->GetLocalProcessId();
     this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
   }
-#else 
-  this->UpdatePiece     = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-  this->UpdateNumPieces = 1;
-#endif
+  else {
+    this->UpdatePiece     = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+    this->UpdateNumPieces = 1;
+  }
 
   if (!this->Finder) {   
     this->Finder = new FileSeriesFinder(this->FileNamePattern);
@@ -494,7 +491,6 @@ int vtkH5SPHReader::RequestData(
     {
     this->UpdatePiece = 0;
     }
-#ifdef VTK_USE_MPI
   if (this->Controller && 
       (this->UpdatePiece != this->Controller->GetLocalProcessId() ||
        this->UpdateNumPieces != this->Controller->GetNumberOfProcesses()))
@@ -502,7 +498,6 @@ int vtkH5SPHReader::RequestData(
     this->UpdatePiece = this->Controller->GetLocalProcessId();
     this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
   }
-#endif    
 
   //
   typedef vtkstd::map< vtkstd::string, vtkstd::vector<vtkstd::string> > FieldMap;

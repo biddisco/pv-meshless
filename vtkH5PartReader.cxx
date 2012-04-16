@@ -59,15 +59,14 @@
 #include "vtkDoubleArray.h"
 #include "vtkSmartPointer.h"
 #include "vtkExtentTranslator.h"
-
-#ifdef VTK_USE_MPI
-#include "vtkMultiProcessController.h"
-vtkCxxSetObjectMacro(vtkH5PartReader, Controller, vtkMultiProcessController);
-#endif
-
+//
+#include "vtkDummyController.h"
+//
 #include <algorithm>
 
 #include "H5Part.h"
+//----------------------------------------------------------------------------
+vtkCxxSetObjectMacro(vtkH5PartReader, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
 /*!
   \ingroup h5part_utility
@@ -179,10 +178,11 @@ vtkH5PartReader::vtkH5PartReader()
   this->SetXarray("Coords_0");
   this->SetYarray("Coords_1");
   this->SetZarray("Coords_2");
-#ifdef VTK_USE_MPI
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
-#endif
+  if (this->Controller == NULL) {
+    this->SetController(vtkSmartPointer<vtkDummyController>::New());
+  }
 }
 //----------------------------------------------------------------------------
 vtkH5PartReader::~vtkH5PartReader()
@@ -203,9 +203,7 @@ vtkH5PartReader::~vtkH5PartReader()
   this->PointDataArraySelection->Delete();
   this->PointDataArraySelection = 0;
 
-#ifdef VTK_USE_MPI
   this->SetController(NULL);
-#endif
 }
 //----------------------------------------------------------------------------
 bool vtkH5PartReader::HasStep(int Step)

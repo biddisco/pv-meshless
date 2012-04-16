@@ -11,7 +11,6 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStringArray.h"
 #include "vtkSphereSource.h"
-#include "vtkMultiProcessController.h"
 #include "vtkCenterOfMassFilter.h"
 #include "vtkCellData.h"
 #include "vtkPoints.h"
@@ -20,6 +19,8 @@
 #include "vtkSmartPointer.h"
 #include "vtkMath.h"
 #include "vtkPointData.h"
+//
+#include "vtkDummyController.h"
 
 enum PointsInRadiusMPIData
 {
@@ -29,7 +30,7 @@ enum PointsInRadiusMPIData
 };
 
 vtkStandardNewMacro(vtkMomentsOfInertiaFilter);
-vtkCxxSetObjectMacro(vtkMomentsOfInertiaFilter,Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkMomentsOfInertiaFilter, Controller, vtkMultiProcessController);
 
 //----------------------------------------------------------------------------
 vtkMomentsOfInertiaFilter::vtkMomentsOfInertiaFilter()
@@ -42,8 +43,11 @@ vtkMomentsOfInertiaFilter::vtkMomentsOfInertiaFilter()
     0,
     vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS,
     vtkDataSetAttributes::SCALARS);
-	this->Controller = NULL;
+  this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
+  if (this->Controller == NULL) {
+    this->SetController(vtkSmartPointer<vtkDummyController>::New());
+  }
 }
 
 //----------------------------------------------------------------------------
