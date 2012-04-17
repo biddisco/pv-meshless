@@ -133,9 +133,9 @@ MACRO(TRIBITS_PROJECT_IMPL)
   # A.2) Set up other stuff
   #
   
-  INCLUDE(TribitsFindPythonInterp)
-  TRIBITS_FIND_PYTHON()
-  PRINT_VAR(PYTHON_EXECUTABLE)
+#  INCLUDE(TribitsFindPythonInterp)
+#  TRIBITS_FIND_PYTHON()
+#  PRINT_VAR(PYTHON_EXECUTABLE)
   
   #
   # A.3) Read in the Project's version file
