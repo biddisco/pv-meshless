@@ -45,6 +45,14 @@ IF (VTK_USE_MPI)
   INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
 ENDIF (VTK_USE_MPI)
 
+#--------------------------------------------------
+# Set Definitions 
+#--------------------------------------------------
+ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
+IF (WIN32)
+  ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
+ENDIF(WIN32)
+
 # --------------------------------------------------
 # Option to disable hdf5 readers etc
 # --------------------------------------------------
@@ -102,28 +110,31 @@ SET(TRILINOS_ENABLED 0)
 IF (VTK_USE_MPI)
   OPTION(USE_TRILINOS "Use Trilinos library" OFF)
   IF(USE_TRILINOS)
-    FIND_PACKAGE(Trilinos)
-    IF(${Trilinos_FOUND})
-      ADD_DEFINITIONS(-DPVMESHLESS_USE_TRILINOS)
-      INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
-      LINK_DIRECTORIES("${Trilinos_LIBRARY_DIRS}")
-#    MESSAGE("Trilinos Include Dirs ${Trilinos_INCLUDE_DIRS} and Trilinos Link Dirs ${Trilinos_LIBRARY_DIRS} ")
-      SET(TRILINOS_CXX ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx)
-      SET(TRILINOS_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml)
-      SET(TRILINOS_ENABLED 1)
-    ENDIF(${Trilinos_FOUND})
+    SET(TPL_ENABLE_MPI ON CACHE BOOL "Do not change")
+    SET(Trilinos_ENABLE_TESTS OFF CACHE BOOL "Do not change")
+    SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES OFF CACHE BOOL "Do not change")
+    SET(Trilinos_ENABLE_Zoltan ON CACHE BOOL "Do not change")
+    SET(Trilinos_ENABLE_Fortran OFF CACHE BOOL "Do not change")
+    IF (WIN32)
+      ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
+      INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/trilinos/cmake/tribits/common_tools/win_interface/include")
+    ENDIF(WIN32)
+    ADD_SUBDIRECTORY(trilinos)
+    INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
+    LINK_DIRECTORIES("${Trilinos_LIBRARY_DIRS}")
+    # MESSAGE("Trilinos Include Dirs ${Trilinos_INCLUDE_DIRS} and Trilinos Link Dirs ${Trilinos_LIBRARY_DIRS} ")
+    #
+    # Add source which depends on trilinos to our plugin
+    #
+    SET(TRILINOS_CXX ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx)
+    SET(TRILINOS_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml)
+    SET(Trilinos_DEPS_HTML_OUTPUT_FILE "" CACHE STRING "Leave empty" FORCE)
+    SET(TRILINOS_ENABLED 1)
+    ADD_DEFINITIONS(-DPVMESHLESS_USE_TRILINOS)
   ENDIF(USE_TRILINOS)
 ELSE (VTK_USE_MPI)
   SET(USE_TRILINOS OFF CACHE BOOL "Use Trilinos library" FORCE)
 ENDIF (VTK_USE_MPI)
-
-#--------------------------------------------------
-# Set Definitions 
-#--------------------------------------------------
-ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
-IF (WIN32)
-  ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-ENDIF(WIN32)
 
 #--------------------------------------------------
 # Setup GUI custom Qt panel sources and wrapping
