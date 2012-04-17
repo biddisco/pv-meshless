@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 #ifndef __BUCKET__H
 #define __BUCKET__H

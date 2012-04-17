@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
  
@@ -23,6 +23,7 @@ extern "C" {
 #include "params_const.h"
 #include "all_allo_const.h"
 #include "zz_const.h"
+#include "phg_params.h"
 
 
 /*
@@ -33,90 +34,6 @@ extern "C" {
  *  Main routine for Zoltan interface to hypergraph partitioning. 
  *  Also routines that build input data structures, set parameters, etc.
  */
-
-
-/******************************************************************************/
-/*  Parameters structure for parallel HG method.  */
-static PARAM_VARS PHG_params[] = {
-  /* Add parameters here. */
-  {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
-    /* Software package: PHG (Zoltan) or Patoh */
-  {"PHG_MULTILEVEL",                  NULL,  "INT", 0},
-    /* Indicate whether or not to use multilevel method (1/0) */
-  {"PHG_CUT_OBJECTIVE",               NULL,  "STRING", 0},
-    /* connectivity or hyperedges */
-  {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
-    /* Higher value -> more output */
-  {"FINAL_OUTPUT",                    NULL,  "INT",    0},
-    /* Output related to final partitioning only */ 
-  {"CHECK_GRAPH",                     NULL,  "INT",    0},
-    /* Same as CHECK_HYPERGRAPH */
-  {"CHECK_HYPERGRAPH",                NULL,  "INT",    0},
-    /* Same as CHECK_GRAPH */
-  {"PHG_NPROC_VERTEX",                NULL,  "INT",    0},
-    /* No. of processors along vertex direction initially in 2D layout */
-  {"PHG_NPROC_EDGE",                  NULL,  "INT",    0},
-    /* No. of processors along hyperedge direction initially in 2D layout */
-  {"PHG_COARSENING_LIMIT",            NULL,  "INT",    0},
-    /* When to stop coarsening (global no. of vertices) */
-  {"PHG_COARSENING_NCANDIDATE",       NULL,  "INT",    0},  
-    /* Max no. of candidate vertices in a round of matching */
-  {"PHG_COARSENING_METHOD",           NULL,  "STRING", 0},
-    /* Coarsening method (ipm, agg, etc. ) */
-  {"PHG_COARSENING_METHOD_FAST",      NULL,  "STRING", 0},
-    /* Used by a-ipm to alternate between full ipm and a faster method */
-  {"PHG_VERTEX_VISIT_ORDER",          NULL,  "INT",    0},
-    /* Vertex ordering for greedy matching (linear, random,  ) */
-  {"PHG_EDGE_SCALING",                NULL,  "INT",    0},
-    /* Edge scaling schemes to tweak inner product similarity in matching */
-  {"PHG_VERTEX_SCALING",              NULL,  "INT",    0},
-    /* Vertex scaling schemes to tweak inner product similarity in matching */
-  {"PHG_COARSEPARTITION_METHOD",      NULL,  "STRING", 0},
-    /* Coarse partitioning method: linear, random, greedy, auto */
-  {"PHG_REFINEMENT_METHOD",           NULL,  "STRING", 0},
-    /* Only 2-way FM (fm2) for now */
-  {"PHG_DIRECT_KWAY",                 NULL,  "INT",    0},
-    /* Direct k-way partitioning not yet implemented! */
-  {"PHG_REFINEMENT_LOOP_LIMIT",       NULL,  "INT",    0},
-    /* Max no. of loops in KL/FM. */
-  {"PHG_REFINEMENT_MAX_NEG_MOVE",     NULL,  "INT",    0},    
-    /* Max. no. of negative moves allowed before exiting refinement. */
-  {"PHG_REFINEMENT_QUALITY",          NULL,  "FLOAT",  0},
-    /* 1.0 is default; higher (lower) value gives more (less) refinement. */
-  {"PHG_USE_TIMERS",                  NULL,  "INT",    0},    
-    /* Same as USE_TIMERS. */
-  {"USE_TIMERS",                      NULL,  "INT",    0},    
-    /* Same as PHG_USE_TIMERS. */
-  {"PHG_EDGE_SIZE_THRESHOLD",         NULL,  "FLOAT",  0},
-    /* Ignore hyperedges larger than this threshold times nvertex */
-    /* If PHG_EDGE_SIZE_THRESHOLD>1, interpret it as absolute value. */
-  {"PHG_MATCH_EDGE_SIZE_THRESHOLD",   NULL,  "INT",    0},
-    /* Ignore hyperedges larger than this threshold, in local processor, during matching */
-  {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},  
-    /* Adjustment factor for balance in recursive bisection. */
-  {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING",  0},
-    /* How to handle inconsistent edge weights across processors */
-  {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
-    /* Serial partitioner for ParKway (PaToH or hMetis) */
-  {"ADD_OBJ_WEIGHT",                  NULL,  "STRING", 0},
-    /* Add implicit vertex weight, like no. of pins (nonzeros)? */
-  {"PHG_RANDOMIZE_INPUT",             NULL,  "INT",    0},    
-    /* Randomizing input often improves load balance within PHG but destroys 
-       locality, so may produce lower quality partitions  */
-  {"PHG_PROCESSOR_REDUCTION_LIMIT",   NULL,  "FLOAT",  0},
-    /* When to move data to fewer processors. */
-  {"PHG_REPART_MULTIPLIER",           NULL,  "FLOAT",  0},
-    /* Multiplier for communication to migration trade-off in repartitioning. */
-  {"PATOH_ALLOC_POOL0",               NULL,  "INT",    0},
-    /* Memory allocation parameter for Patoh. */
-  {"PATOH_ALLOC_POOL1",               NULL,  "INT",    0},   
-  /* Memory allocation parameter for Patoh. */
-#ifdef CEDRIC_2D_PARTITIONS
-  {"PHG_KEEP_TREE",                   NULL,  "INT",    0},
-  /* Keep dissection tree */
-#endif /* CEDRIC_2D_PARTITIONS */
-  {NULL,                              NULL,  NULL,     0}     
-};
 
 /* prototypes for static functions: */
 
@@ -731,6 +648,9 @@ int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_SCALING", &hgp->vtx_scaling);
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_METHOD", hgp->refinement_str);
   Zoltan_Bind_Param(PHG_params, "PHG_DIRECT_KWAY", &hgp->kway);
+  Zoltan_Bind_Param(PHG_params, "HYBRID_REDUCTION_FACTOR", &hgp->geometric_red);
+  Zoltan_Bind_Param(PHG_params, "HYBRID_REDUCTION_LEVELS",
+                                 &hgp->geometric_levels); 
 #ifdef CEDRIC_2D_PARTITIONS
   Zoltan_Bind_Param(PHG_params, "PHG_KEEP_TREE", &hgp->keep_tree);
 #endif /* CEDRIC_2D_PARTITIONS */
@@ -815,6 +735,8 @@ int Zoltan_PHG_Initialize_Params(
   hgp->nProc_x_req = -1;
   hgp->nProc_y_req = -1;
   hgp->kway = 0;
+  hgp->geometric_red = 0.1;
+  hgp->geometric_levels = INT_MAX;
   hgp->fm_loop_limit = 10;
   hgp->fm_max_neg_move = 250;  
   hgp->refinement_quality = 1;
@@ -1146,6 +1068,12 @@ int *outparts         = zhg->Output_Parts;
 
   if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) 
     goto End;
+  else if (zz->LB.Return_Lists == ZOLTAN_LB_CANDIDATE_LISTS) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Candidate Lists not supported in PHG."
+                                     "change RETURN_LISTS parameter");
+    ierr = ZOLTAN_MEMERR;
+    goto End;
+  }
 
   /* Count number of objects with new partitions or new processors. */
   *num_exp = 0;

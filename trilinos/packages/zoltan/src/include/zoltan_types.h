@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 #ifndef __ZOLTAN_TYPES_H

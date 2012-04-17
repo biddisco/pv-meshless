@@ -3,7 +3,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 #ifndef __REFTREE_CONST_H

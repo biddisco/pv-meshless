@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 
@@ -105,6 +105,16 @@ extern void Zoltan_RB_stats(ZZ *, double, struct Dot_Struct *, int ,
 extern int Zoltan_RB_Use_IDs(ZZ *);
 
 extern int Zoltan_RB_Tree_Gatherv(ZZ *, int, int *, int *, int *);
+
+extern int Zoltan_RB_Candidates_Copy_Input(ZZ *, int, ZOLTAN_ID_PTR,
+  ZOLTAN_ID_PTR, struct Dot_Struct *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
+  int **, int **);
+
+extern int Zoltan_RB_Candidates_Output(ZZ *, int, int *, 
+  ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
+  struct Dot_Struct *, int, ZOLTAN_ID_PTR, int *, ZOLTAN_ID_PTR *);
+
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

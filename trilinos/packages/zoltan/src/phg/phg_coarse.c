@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -37,82 +37,6 @@ extern "C" {
 #define BITSET(data, elem)       ((data)[(elem) >> 5] |=( 1 << ((elem) & 31)))
 #define BITCHECK(data, elem)     ((data)[(elem) >> 5] & (1 << ((elem) & 31)))
     
-/* UVC:
-   Following quicksort routines are modified from
-   Numerical Recipes Software
-   these versions of quicksort seems to perform
-   better than the ones that exist in Zoltan
-*/
-    
-#define SWAP(a,b) {temp=(a);(a)=(b);(b)=temp;}
-
-#define M             7
-#define NSTACK        50
-
-
-static void uqsorti(int n, int *arr)
-{
-    int         i, ir=n, j, k, l=1;
-    int         jstack=0, istack[NSTACK];
-    int         temp;
-    int a;
-    
-    --arr;
-    for (;;) {
-        if (ir-l < M) {
-            for (j=l+1;j<=ir;j++) {
-                a=arr[j];
-                for (i=j-1;i>=1;i--) {
-                    if (arr[i] <= a) 
-                        break;
-                    arr[i+1] = arr[i];
-                }
-                arr[i+1]=a;
-            }
-            if (jstack == 0) 
-                break;
-            ir=istack[jstack--];
-            l=istack[jstack--];
-        } else {
-            k=(l+ir) >> 1;
-            SWAP(arr[k],arr[l+1]);
-            if (arr[l+1] > arr[ir]) 
-                SWAP(arr[l+1], arr[ir]);
-            if (arr[l] > arr[ir]) 
-                SWAP(arr[l], arr[ir]);
-            if (arr[l+1] > arr[l]) 
-                SWAP(arr[l+1], arr[l]);
-            i=l+1;
-            j=ir;
-            a=arr[l];
-            for (;;) {
-                do i++; while (arr[i] < a);
-                do j--; while (arr[j] > a);
-                if (j < i) break;
-                SWAP(arr[i], arr[j]);
-            }
-            arr[l]=arr[j];
-            arr[j]=a;
-            jstack += 2;
-            if (jstack > NSTACK) 
-                errexit("uqsort: NSTACK too small in sort.");
-            if (ir-i+1 >= j-l) {
-                istack[jstack]=ir;
-                istack[jstack-1]=i;
-                ir=j-1;
-            } else {
-                istack[jstack]=j-1;
-                istack[jstack-1]=l;
-                l=i;
-            }
-        }
-    }
-}
-
-
-#undef M
-#undef NSTACK
-#undef SWAP
 
 static unsigned int hashValue(HGraph *hg, int n, int *ar)
 {
@@ -169,14 +93,16 @@ int Zoltan_PHG_Coarsening
   struct Zoltan_Comm_Obj *plan=NULL;
   ZOLTAN_GNO_TYPE *listgno=NULL;
   char *buffer=NULL, *rbuffer=NULL, *b=NULL, *b_end=NULL;
+  double *coordbuf=NULL, *coordrecbuf=NULL;
   int *ahvertex=NULL;
   int *msg_size=NULL;     /* TODO64 - would we ever need ZOLTAN_GNO_TYPE for message sizes? */
-
+  double *coorcount = NULL; /* No. of vertices represented by the corresponding c_hg->coor */
   int gno_size, alt_field_count, int_size, float_size;
   ZOLTAN_GNO_TYPE tmp_gno;
   ZOLTAN_GNO_TYPE *gnoptr;
   int *intptr;
   float *floatptr;
+  double *doubleptr;
   MPI_Datatype zoltan_gno_mpi_type;
   struct phg_timer_indices *timer = NULL;
   int time_details;
@@ -223,7 +149,7 @@ int Zoltan_PHG_Coarsening
   Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   c_hg->comm    = hg->comm;         /* set communicators */
   c_hg->info    = hg->info + 1;     /* for debugging */
-  c_hg->coor    = NULL;             /* currently we don't use coordinates */
+  c_hg->coor    = NULL;           
   c_hg->nDim    = hg->nDim;    
   c_hg->vmap    = NULL;             /* only needed by rec-bisec */
   c_hg->redl    = hg->redl;  /* to stop coarsening near desired count */
@@ -343,6 +269,9 @@ int Zoltan_PHG_Coarsening
     for (i = 0; i < hg->nVtx; ++i){
         if (match[i] == VTX_LNO_TO_GNO(hg, i)) {
             LevelMap[i] = (ZOLTAN_GNO_TYPE)c_hg->nVtx;
+#ifdef KDDKDD_DEBUG
+if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d MATCH %d (%f %f %f) to %d; LevelMap = %d\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], match[i], LevelMap[i]);
+#endif
             if (c_hg->fixed_part)
                 c_hg->fixed_part[c_hg->nVtx] = hg->fixed_part[i];
             if (c_hg->pref_part)
@@ -368,6 +297,9 @@ int Zoltan_PHG_Coarsening
 /*                  uprintf(hgc, "LOCMAT:  match[%d (gno=%zd)] = %zd   new vtxno=%d\n", i, VTX_LNO_TO_GNO(hg, i), match[i], LevelMap[i]);*/
               }
       }
+#ifdef KDDKDD_DEBUG
+if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d MATCH %d (%f %f %f) to %d; LevelMap = %d\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], match[i], LevelMap[i]);
+#endif
     }
     *LevelSndCnt = count;
 /*      errexit("this type of coarsening is not implemented yet"); */
@@ -420,13 +352,57 @@ int Zoltan_PHG_Coarsening
 
     msg_size[i] = (b - (char *)gnoptr) / sizeof(int);
   }    
+  if (hg->nDim) { /* Only process coords for coarse graph if fine graph has them */
+    if (count &&
+	!(coordbuf = (double *) ZOLTAN_MALLOC(count * hg->nDim * sizeof(double))))
+      MEMORY_ERROR;
 
+    /* Add local coordinates to their send buffer */
+    for (i = 0; i < count; i++){
+      int lno = listlno[i];
+      for (j = 0; j < hg->nDim; j++)
+	coordbuf[i * hg->nDim + j] = hg->coor[lno * hg->nDim + j];
+#ifdef KDDKDD_DEBUG
+if (VTX_LNO_TO_GNO(hg, lno) == 35 || VTX_LNO_TO_GNO(hg, lno) == 65 || VTX_LNO_TO_GNO(hg, lno) == 66) printf("%d LOADING %d (%f %f %f) (%f %f %f)\n", zz->Proc, VTX_LNO_TO_GNO(hg, lno), hg->coor[lno*hg->nDim], hg->coor[lno*hg->nDim+1], hg->coor[lno*hg->nDim+2], coordbuf[i*hg->nDim], coordbuf[i*hg->nDim+1], coordbuf[i*hg->nDim+2]);
+#endif
+    }
+  }
   /* Create comm plan. */
   Zoltan_Comm_Create(comm_plan, count, listproc, hgc->row_comm, PLAN_TAG, 
-                      &size); /* we'll ignore the size because of resize*/
+                      &size); /* we'll use size for coords and then resize*/
+  
+  if (hg->nDim) {
+    if (size &&
+	!(coordrecbuf = (double *) ZOLTAN_MALLOC(size * hg->nDim * sizeof(double))))
+      MEMORY_ERROR;
+
+    /* No need for resize yet, since coordinates won't be of variable sizes */
+    Zoltan_Comm_Do(*comm_plan, PLAN_TAG+1, (char *)coordbuf, sizeof(double) * hg->nDim,
+		   (char *)coordrecbuf);
+  
+    /* Allocate coordinate array for coarse hgraph */
+    if (c_hg->nVtx && (
+         !(c_hg->coor = (double *) ZOLTAN_CALLOC(c_hg->nVtx * hg->nDim, sizeof(double)))
+      || !(coorcount  = (double *) ZOLTAN_CALLOC(c_hg->nVtx, sizeof(double)))))
+      MEMORY_ERROR;
+
+    /* Accumulating on-processor coordinates */
+    for (i = 0; i < hg->nVtx; i++) {
+      ZOLTAN_GNO_TYPE ni = LevelMap[i];
+      if (ni >= 0) {
+        double hg_vwgt = hg->vwgt[i*hg->VtxWeightDim];
+	for (j = 0; j < hg->nDim; j++)
+	  c_hg->coor[ni*hg->nDim + j] += (hg_vwgt * hg->coor[i*hg->nDim + j]);
+	coorcount[ni] += hg_vwgt;
+#ifdef KDDKDD_DEBUG
+if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d SUMMING %d (%f %f %f) into ni %d coorcount %f\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], ni, coorcount[ni]);
+#endif
+      }
+    }
+  }
   
   /* call Comm_Resize since we have variable-size messages */
-  Zoltan_Comm_Resize(*comm_plan, msg_size, PLAN_TAG+1, &size); 
+  Zoltan_Comm_Resize(*comm_plan, msg_size, PLAN_TAG+2, &size); 
 
   /* Allocate receive buffer. */
   /* size is the size of the received data, measured in #ints */
@@ -444,8 +420,8 @@ int Zoltan_PHG_Coarsening
       MEMORY_ERROR;
 
   /* Comm_Do sends personalized messages of variable sizes */
-  Zoltan_Comm_Do(*comm_plan, PLAN_TAG+2, (char *)buffer, sizeof(int), (char *)rbuffer);
-
+  Zoltan_Comm_Do(*comm_plan, PLAN_TAG+3, (char *)buffer, sizeof(int), (char *)rbuffer);
+     
   /* Allocate vertex weight array for coarse hgraph */
   if (c_hg->nVtx > 0 && c_hg->VtxWeightDim > 0 &&
       !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx * c_hg->VtxWeightDim,
@@ -458,11 +434,12 @@ int Zoltan_PHG_Coarsening
               c_hg->vwgt[ni*hg->VtxWeightDim+j] += hg->vwgt[i*hg->VtxWeightDim+j];
   }
       
-  /* index all received data for rapid lookup */
-
+  /* index all received data for rapid lookup */ 
   *LevelCnt   = 0;
   b = rbuffer;
   b_end = rbuffer + (size * sizeof(int));
+  if (hg->nDim)
+    doubleptr = (double *)coordrecbuf;
 
   while (b < b_end){
     int j, sz, source_lno;
@@ -474,7 +451,7 @@ int Zoltan_PHG_Coarsening
     sz = intptr[1 + alt_field_count];
     floatptr = (float *)(intptr + 2 + alt_field_count + sz);
     b = (char *)(floatptr + hg->VtxWeightDim);
-
+    
     source_lno              = *intptr++;
     lno = VTX_GNO_TO_LNO (hg, gnoptr[0]);
        
@@ -491,6 +468,18 @@ int Zoltan_PHG_Coarsening
     (*LevelData)[(*LevelCnt)++] = lno;              /* to lookup in part[] */
 
     lno = (int)LevelMap[lno];
+    if (hg->nDim) {
+#ifdef KDDKDD_DEBUG
+if (gnoptr[0] == 35 || gnoptr[0] == 65 || gnoptr[0] == 66) printf("%d RECEIVED %d (%f %f %f) into lno %d coorcount %f doublptr %x\n", zz->Proc, gnoptr[0], *doubleptr, *(doubleptr+1), *(doubleptr+2), lno, coorcount[lno]+1., doubleptr);
+#endif
+      for (j = 0; j < hg->nDim; j++){
+        /* NOTE:  This code must preceed accumulation of vwgt below so that 
+         * floatptr is correct. */
+	c_hg->coor[lno * hg->nDim + j] += (*floatptr * *doubleptr++);
+      }
+      coorcount[lno] += *floatptr;
+    }
+    
     for (j=0; j<hg->VtxWeightDim; ++j)
         c_hg->vwgt[lno*hg->VtxWeightDim+j] += *floatptr++;
     
@@ -499,6 +488,14 @@ int Zoltan_PHG_Coarsening
         ++ahindex[*intptr++];
   }
 
+  if (c_hg->nDim) {
+    /* Average coordinates */
+    for (i = 0; i < c_hg->nVtx; i++)
+      for (j = 0; j < c_hg->nDim; j++)
+	c_hg->coor[i * hg->nDim + j] = c_hg->coor[i * hg->nDim + j] / coorcount[i];
+    ZOLTAN_FREE(&coorcount);
+  }
+  
   for (i=0; i<hg->nEdge; ++i) /* prefix sum over ahindex */
     ahindex[i+1] += ahindex[i];
   /* now prepare ahvertex */
@@ -523,7 +520,7 @@ int Zoltan_PHG_Coarsening
         ahvertex[--ahindex[*intptr++]] = lno;
   }
 
-  Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);
+  Zoltan_Multifree (__FILE__, __LINE__, 4, &buffer, &rbuffer, &coordbuf, &coordrecbuf);
   
   c_hg->nPins = hg->nPins + ahindex[hg->nEdge]; /* safe over estimate of nPins */
   c_hg->nEdge = hg->nEdge;
@@ -568,9 +565,7 @@ int Zoltan_PHG_Coarsening
           }
       }          
       /* in qsort start and end indices are inclusive */
-      /*    Zoltan_quicksort_list_inc_int(&c_hg->hvertex[sidx], 0, idx-sidx-1); */
-      /* UVC my qsort code is a little bit faster :) */
-      uqsorti(idx-sidx, &c_hg->hvertex[sidx]);
+      Zoltan_quicksort_list_inc_one_int(&c_hg->hvertex[sidx], 0, idx-sidx-1);
   }
   c_hg->hindex[hg->nEdge] = c_hg->nPins = idx;
 

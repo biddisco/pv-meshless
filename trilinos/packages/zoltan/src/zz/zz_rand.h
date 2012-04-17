@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 #ifndef __ZZ_RAND_H
 #define __ZZ_RAND_H

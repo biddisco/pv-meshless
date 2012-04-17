@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 #ifndef _G2L_HASH_H_
 #define _G2L_HASH_H_

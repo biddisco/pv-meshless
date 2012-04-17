@@ -3,7 +3,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 #ifdef __cplusplus
@@ -661,6 +661,12 @@ int wdim;             /* Max(zz->Obj_Weight_Dim, 1) */
   if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_OK);
+  }
+  else if (zz->LB.Return_Lists == ZOLTAN_LB_CANDIDATE_LISTS) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Candidate Lists not supported in REFTREE;"
+                                     "change RETURN_LISTS parameter.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_FATAL);
   }
   else if (num_exp == 0) {
     *num_export = 0;

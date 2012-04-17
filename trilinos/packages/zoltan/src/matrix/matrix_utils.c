@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 #ifdef __cplusplus
@@ -200,6 +200,7 @@ Zoltan_Matrix2d_adjproc (ZZ* zz, const Zoltan_matrix_2d * const mat, int **adjpr
  End:
   ZOLTAN_TRACE_EXIT(zz, yo);
 
+KDDKDDKDD(zz->Proc, "Zoltan_Matrix2d_adjproc done");
   return (ierr);
 }
 

@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 
@@ -27,11 +27,6 @@ extern "C" {
 /* Misc. local constants */
 #define CHUNKSIZE 20  /* Number of nodes to allocate in initial chunk. */
 #define REALLOC_FACTOR 1.5  /* Increase size by this factor if too small. */
-
-
-/* Macro for error handling */
-#define ZOLTAN_PARMETIS_ERROR(error,str) {ierr = error ; \
- ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto End ;}
 
 
 /* Data structures used in ParMetis interface routines */

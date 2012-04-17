@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 
@@ -246,6 +246,10 @@ int  idx 			/* index of vector param, -1 if scalar */
           tmp = ZOLTAN_LB_NO_LISTS;      /* no lists */
           status = 3;
         }
+        else if (strcmp(result.sval, "CANDIDATE_LISTS")==0) {
+          tmp = ZOLTAN_LB_CANDIDATE_LISTS;   /* candidates needed in matching */
+          status = 3;
+        }
         else{
           tmp = ZOLTAN_LB_RETURN_LISTS_DEF;
           sprintf(msg, "Unknown return_lists option %s.", result.sval);
@@ -386,6 +390,9 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
   case ZOLTAN_LB_COMPLETE_EXPORT_LISTS:
     printf("PARTITION ASSIGNMENTS\n");
     break;
+  case ZOLTAN_LB_CANDIDATE_LISTS:
+    printf("CANDIDATE LISTS\n");
+    break;
   case ZOLTAN_LB_NO_LISTS:
     printf("NONE\n");
     break;
@@ -426,46 +433,41 @@ void Zoltan_Print_Configuration(char *indent)
   /* Metis and ParMetis have different version numbers.  Some
    * older versions do not define version numbers.
    */
-
-#if __parmetis__ + __metis__ > 0
-  #if __parmetis__ > 0
-    printf("%sThird party library: ParMetis ", indent);
-
-    #ifdef PARMETIS_MAJOR_VERSION
-      printf("version %d.%d", PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION);
-      #ifdef PARMETIS_SUBMINOR_VERSION
-        printf(".%d", PARMETIS_SUBMINOR_VERSION);
-      #endif
-    #endif
-
-    printf("\n");
-
+#ifdef ZOLTAN_PARMETIS
+  printf("%sThird party library: ParMetis ", indent);
+  printf("version %d.%d", PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION);
+  #ifdef PARMETIS_SUBMINOR_VERSION
+    printf(".%d", PARMETIS_SUBMINOR_VERSION);
   #endif
-  #if __metis__ > 0
-    #ifdef METISTITLE
-      printf("%sThird party library: %s\n",indent, METISTITLE);
-    #else
-      printf("%sThird party library: METIS\n",indent);
-    #endif
-  #endif
+  printf("\n");
+#endif
 
+#ifdef ZOLTAN_METIS
+  #ifdef METISTITLE
+    printf("%sThird party library: %s\n",indent, METISTITLE);
+  #else
+    printf("%sThird party library: METIS\n",indent);
+  #endif
 #endif
 
   /* Scotch and PTScotch have the same version number.  Version
    * numbers are not defined in older versions.
    */
 
-#if __ptscotch__ + __scotch__ > 0
-  printf("%sThird party library: ", indent);
-  #if __ptscotch__ > 0
-    printf("PTScotch ");
-  #else
-    printf("Scotch ");
-  #endif
+#ifdef ZOLTAN_PTSCOTCH
+  printf("%sThird party library: PTScotch ", indent);
   #ifdef SCOTCH_VERSION
-    printf("version %d.%d.%d", SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+    printf("version %d.%d.%d\n", 
+           SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
   #endif
-   printf("\n");
+#endif
+
+#ifdef ZOLTAN_SCOTCH
+  printf("%sThird party library: Scotch ", indent);
+  #ifdef SCOTCH_VERSION
+    printf("version %d.%d.%d\n", 
+           SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+  #endif
 #endif
 }
 

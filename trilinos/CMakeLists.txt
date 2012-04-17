@@ -1,241 +1,78 @@
-
-
-CMAKE_MINIMUM_REQUIRED(VERSION 2.7)
-
+# @HEADER
+# ************************************************************************
+#
+#            Trilinos: An Object-Oriented Solver Framework
+#                 Copyright (2001) Sandia Corporation
+#
+#
+# Copyright (2001) Sandia Corporation. Under the terms of Contract
+# DE-AC04-94AL85000, there is a non-exclusive license for use of this
+# work by or on behalf of the U.S. Government.  Export of this program
+# may require a license from the United States Government.
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# NOTICE:  The United States Government is granted for itself and others
+# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
+# license in this data to reproduce, prepare derivative works, and
+# perform publicly and display publicly.  Beginning five (5) years from
+# July 25, 2001, the United States Government is granted for itself and
+# others acting on its behalf a paid-up, nonexclusive, irrevocable
+# worldwide license in this data to reproduce, prepare derivative works,
+# distribute copies to the public, perform publicly and display
+# publicly, and to permit others to do so.
+#
+# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
+# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
+# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
+# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
+# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
+# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
+#
+# ************************************************************************
+# @HEADER
 
 #
-# A) Basic top-level Trilinos stuff
+# A) Define your project name and set up major project options
 #
 
-MESSAGE("")
-MESSAGE("Configuring Trilinos build directory")
-MESSAGE("")
+# Must set the project name as a varaible at very beginning before including anything else
+# We set the project name in a separate file so CTest scripts can use it.
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake)
 
-IF ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
-  MESSAGE(FATAL_ERROR "Error, CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
-    " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
-    " Trilinos does not support in source builds!" )
-ENDIF()
-
-PROJECT(Trilinos NONE)
-
-SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
-SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
-# Above, we put these in the cache so we can grep them out
-
-MESSAGE("-- " "TRILINOS_HOME_DIR = ${TRILINOS_HOME_DIR}")
-MESSAGE("-- " "TRILINOS_BUILD_DIR = ${TRILINOS_BUILD_DIR}")
-
-IF (NOT ${PROJECT_NAME}_DEPS_HOME_DIR)
-  SET(${PROJECT_NAME}_DEPS_HOME_DIR "${TRILINOS_HOME_DIR}")
-ENDIF()
-
-SET( CMAKE_MODULE_PATH
-   ${TRILINOS_HOME_DIR}
-   ${TRILINOS_HOME_DIR}/cmake
-   ${TRILINOS_HOME_DIR}/cmake/utils
-   ${TRILINOS_HOME_DIR}/cmake/package_arch
-   ${TRILINOS_HOME_DIR}/cmake/config_tests
-   )
-
-#Pull in Trilinos version information and create the version header file.
-INCLUDE(TrilinosVersion)
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
-  Trilinos_version.h)
-
-#Automatically update the version file for sierra too.
-IF (NOT WIN32)
-  # Only configure on non-windows system because of the dreaded ^M
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/SIERRA/bjam/config_headers/Trilinos_version.h)
-ENDIF()
-
-#Since the version header file is now configured the root build
-#dir needs to be on the include path
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
-INCLUDE(PackageArchGlobalMacros)
-INCLUDE(TrilinosGlobalMacros)
-INCLUDE(AdvancedSet)
-INCLUDE(AdvancedOption)
-
-OPTION(Trilinos_VERBOSE_CONFIGURE
-  "Make the Trilinos configure process verbose." OFF)
+# CMake requires that you declare the CMake project in the top-level file and
+# not in an include file :-(
+PROJECT(${PROJECT_NAME} NONE)
 
 #
-# A.1) Run misc unit tests that don't need anything else
-#
-# These below tests are a bit strange.  See
-# cmake/TestingUnitTests/CMakeLists.txt for details!
+# B) Pull in the TriBITS system and execute
 #
 
-IF (Trilinos_INVOKE_TESTING_UNIT_TESTS)
-  ADD_SUBDIRECTORY(cmake/TestingUnitTests/UnitTests)
-  RETURN()
-ENDIF()
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch/TribitsProject.cmake)
 
-#
-# A.2) Set up other stuff
-#
+# CMake requires this be in the top file and not in an include file :-(
+CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
 
-# Find Python executable which is needed for dependency file building
-FIND_PACKAGE(PythonInterp)
-
-
-#
-# B) Set up user options and global variables that will be used throughout
-#
-
-MESSAGE("")
-MESSAGE("Setting up major user options ...")
-MESSAGE("")
-
-PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS()
-
-ADVANCED_SET(Trilinos_DATA_DIR
-  "NOTFOUND"
-  CACHE PATH
-  "Path TrilinosData directory to find more tests and other stuff" )
-
-ADVANCED_OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
-  "Shortcircut after dependency handling is complete"
-  OFF )
-
-ADVANCED_OPTION(Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST
-  "Skip the Fortran/C++ compatibility test"
-  OFF )
-
-SET(TRILINOS_BUILD_SHARED_LIBS "@BUILD_SHARED_LIBS@")
-
-
-#
-# C) Read in Trilinos packages and TPLs and process dependencies
-#
-
-PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
-
-
-#
-# D) Apply logic to enable Trilinos packages and tests
-#
-
-IF (NOT Trilinos_ENABLE_Fortran)
-  MESSAGE(
-    "\n***"
-    "\n*** Warning: Setting Trilinos_ENABLE_ForTrilinos=OFF"
-    " because Trilinos_ENABLE_Fortran=OFF!"
-    "\n***\n"
-    )
-  SET(Trilinos_ENABLE_ForTrilinos OFF)
-ENDIF()
-
-PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
-
-
-#
-# E) Stop if asked
-#
-
-IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
-  MESSAGE("")
-  MESSAGE(SEND_ERROR "Shortcircuiting after dependency tracking ...")
-  RETURN()
-ENDIF()
-
-# ToDo: rabartl: Remove the above once the unit tests have been refactored to
-# just run macros and not the entire system.
-
-
-#
-# F) Add the 'dashboard' target
-#
-
-TRILINOS_ADD_DASHBOARD_TARGET()
-
-
-#
-# G) Set up the environment on this computer
-#
-
-MESSAGE("")
-MESSAGE("Probing the environment ...")
-MESSAGE("")
-
-PACKAGE_ARCH_PRE_SETUP_ENV()
-
-INCLUDE(TrilinosProbeEnv)
-
-PACKAGE_ARCH_POST_SETUP_ENV()
-
-
-#
-# H) Go get the information for all enabled TPLS
-#
-
-MESSAGE("")
-MESSAGE("Getting information for all enabled TPLs ...")
-MESSAGE("")
-
-PACKAGE_ARCH_PROCESS_ENABLED_TPLS()
-
-# OpenMP is similar to a TPL in some respects, but requires only compiler
-# flags to enable
-
-OPTION(Trilinos_ENABLE_OpenMP
-      "Build with OpenMP support." OFF)
-
-
-#
-# I) Set up for testing with CTest and Trilinos test harness
-#
-
-#MESSAGE("")
-#MESSAGE("Setting up testing support ...")
-#MESSAGE("")
-
-
-
-
-
-
-
-
-#INCLUDE(CTest)
-
-#TRILINOS_SETUP_TESTING_SUPPORT()
-
-
-#
-# J) Configure individual packages
-# 
-
-MESSAGE("")
-MESSAGE("Configuring individual enabled Trilinos packages ...")
-MESSAGE("")
-
-PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES()
-
-
-#
-# K) Setup for packaging and distribution
-#
-
-TRILINOS_DEFINE_PACKAGING()
-
-
-#
-# L) Install-related commands
-#
-
-PACKAGE_ARCH_WRITE_CONFIG_FILE()
-
-
-#
-# M) Export the library dependencies. This will let client projects
-# refer to all TPLs used by Trilinos. (KRL, 26 Nov 2009)
-#
-
-MESSAGE("")
-MESSAGE("Exporting library dependencies ...")
-MESSAGE("")
-EXPORT_LIBRARY_DEPENDENCIES( ${Trilinos_BINARY_DIR}/TrilinosLibraryDepends.cmake )
+# Do all of the processing for this Tribits project
+TRIBITS_PROJECT()

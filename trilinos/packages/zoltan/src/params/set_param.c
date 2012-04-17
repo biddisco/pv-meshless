@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 
@@ -27,10 +27,10 @@ extern "C" {
 #ifdef ZOLTAN_OCT
 #include "octupdate_const.h"
 #endif
-#include "third_library_const.h"
 #include "reftree_const.h"
 #include "ha_const.h"
 #include "rib_const.h"
+#include "simple_const.h"
 #include "hsfc_const.h"
 #include "all_allo_const.h"
 #include "order_const.h"
@@ -41,6 +41,9 @@ extern "C" {
 #endif
 #ifdef ZOLTAN_DRUM
 #include "ha_drum.h"
+#endif
+#ifdef ZOLTAN_OVIS
+#include "ha_ovis.h"
 #endif
 #include "coloring_const.h"
 #include "zz_const.h"
@@ -53,12 +56,12 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_Set_Malloc_Param,
        Zoltan_RCB_Set_Param,
        Zoltan_Third_Set_Param,
-#ifdef ZOLTAN_PARMETIS
+#if defined(ZOLTAN_PARMETIS)
        Zoltan_ParMetis_Set_Param,
-#endif /* ZOLTAN_PARMETIS_SET_PARAM */
-#ifdef ZOLTAN_SCOTCH
+#endif 
+#if defined(ZOLTAN_SCOTCH) || defined(ZOLTAN_PTSCOTCH)
        Zoltan_Scotch_Set_Param,
-#endif /* ZOLTAN_PARMETIS_SET_PARAM */
+#endif
 #ifdef ZOLTAN_OCT
        Zoltan_Oct_Set_Param,
 #endif
@@ -73,11 +76,16 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
 #ifdef ZOLTAN_DRUM
        Zoltan_Drum_Set_Param,
 #endif
+#ifdef ZOLTAN_OVIS
+       Zoltan_OVIS_Set_Param,
+#endif
        Zoltan_ZG_Set_Param,
        /* Zoltan_Set_Machine_Param, */
        Zoltan_Color_Set_Param,
        /*** Add your new parameter setting function here! ***/
        Zoltan_Graph_Package_Set_Param,
+       Zoltan_Random_Set_Param,
+
        NULL /* Last entry _must_ be NULL! */
 };
 

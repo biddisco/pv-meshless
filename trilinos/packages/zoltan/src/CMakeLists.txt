@@ -1,5 +1,8 @@
+IF(WIN32)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include/win32)
+ENDIF(WIN32)
 
-INCLUDE(PackageLibraryMacros)
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -17,10 +20,13 @@ SET(HAVE_PATOH ${${PACKAGE_NAME}_ENABLE_PaToH})
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Scotch)
 SET(HAVE_SCOTCH ${${PACKAGE_NAME}_ENABLE_Scotch})
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_OVIS)
+SET(HAVE_OVIS ${${PACKAGE_NAME}_ENABLE_OVIS})
+
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Zlib)
 SET(HAVE_GZIP ${${PACKAGE_NAME}_ENABLE_Zlib})
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -78,20 +84,6 @@ APPEND_SET(SOURCES
   )
 
 #
-# src/ccolamd
-#
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ccolamd)
-
-APPEND_SET(NOINSTALLHEADERS
-  ccolamd/zoltan_ccolamd.h
-  )
-
-APPEND_SET(SOURCES
-  ccolamd/ccolamd.c
-  )
-
-#
 # src/coloring
 #
 
@@ -136,13 +128,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ha)
 APPEND_SET(NOINSTALLHEADERS
   ha/ha_const.h
   ha/ha_drum.h
+  ha/ha_ovis.h
   )
 
 APPEND_SET(SOURCES
-  ha/build_machine_desc.c
   ha/divide_machine.c
   ha/get_processor_name.c
   ha/ha_drum.c
+  ha/ha_ovis.c
   )
 
 #
@@ -223,7 +216,6 @@ APPEND_SET(SOURCES
   matrix/matrix_operations.c
   matrix/matrix_sym.c
   matrix/matrix_utils.c
-  matrix/common_sort.c
   )
 
 
@@ -353,7 +345,6 @@ APPEND_SET(NOINSTALLHEADERS
   tpls/third_library.h
   tpls/third_library_tools.h
   tpls/graph_util.h
-  tpls/ccolamd_interface.h
   )
 
 APPEND_SET(SOURCES
@@ -363,7 +354,6 @@ APPEND_SET(SOURCES
   tpls/scatter_graph.c
   tpls/third_library.c
   tpls/verify_graph.c
-  tpls/ccolamd_interface.c
   )
 
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS OR ${PACKAGE_NAME}_ENABLE_METIS)
@@ -495,6 +485,10 @@ APPEND_SET(SOURCES
   simple/random.c
   )
 
+APPEND_SET(NOINSTALLHEADERS
+  simple/simple_const.h
+  )
+
 #
 # src/timer
 #
@@ -569,6 +563,7 @@ APPEND_SET(NOINSTALLHEADERS
   zz/zz_rand.h
   zz/zz_sort.h
   zz/zz_util_const.h
+  zz/murmur3.h
   )
 
 APPEND_SET(SOURCES
@@ -585,6 +580,7 @@ APPEND_SET(SOURCES
   zz/zz_struct.c
   zz/zz_back_trace.c
   zz/zz_util.c
+  zz/MurmurHash3.cpp
   )
 
 
@@ -592,7 +588,7 @@ APPEND_SET(SOURCES
 # src/fort
 #
 
-IF(Trilinos_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
+IF(${PROJECT_NAME}_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/fort)
 
   APPEND_SET(NOINSTALLHEADERS
@@ -770,9 +766,8 @@ IF (NOT TPL_ENABLE_MPI)
   SET(DEPLIBS simpi)
 ENDIF()
 
-PACKAGE_ADD_LIBRARY(
+TRIBITS_ADD_LIBRARY(
   zoltan
-  STATICLINK 
   HEADERS ${HEADERS}
   NOINSTALLHEADERS ${NOINSTALLHEADERS}
   SOURCES ${SOURCES}

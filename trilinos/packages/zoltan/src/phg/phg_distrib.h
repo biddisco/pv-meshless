@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 #ifndef __ZOLTAN_PHG_DISTRIB_H
 #define __ZOLTAN_PHG_DISTRIB_H

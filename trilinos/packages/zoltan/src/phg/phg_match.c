@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
  
 
@@ -24,6 +24,7 @@ extern "C" {
 
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;         /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_agg_ipm;     /* agglomerative IPM */
+static ZOLTAN_PHG_MATCHING_FN pmatching_geom;        /* geometric matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_local_ipm;   /* local ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;     /* alternating ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_hybrid_ipm;  /* hybrid ipm */
@@ -32,6 +33,12 @@ static int Zoltan_PHG_match_isolated(ZZ* zz, HGraph* hg, PHGPartParams* hgp,
                                      ZOLTAN_GNO_TYPE *match, int small_degree);
 static int Zoltan_PHG_compute_esize(ZZ* zz, HGraph* hg, PHGPartParams* hgp);
 
+/* Functions to be used in geometric matching */
+static ZOLTAN_NUM_OBJ_FN geometric_get_num_obj;
+static ZOLTAN_OBJ_LIST_FN geometric_get_obj_list;
+static ZOLTAN_NUM_GEOM_FN geometric_get_num_geom;
+static ZOLTAN_GEOM_MULTI_FN geometric_get_geom_multi;
+  
 typedef struct triplet {
     ZOLTAN_GNO_TYPE candidate;      /* gno of candidate vertex */
     ZOLTAN_GNO_TYPE partner;        /* gno of best match found so far */
@@ -76,17 +83,23 @@ static HGraph *HG_Ptr;
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 {
     int exist=1;
-    
-    if (!strcasecmp(hgp->redm_str, "no"))
+
+    if (!strncasecmp(hgp->redm_str, "agg", 3)) { /* == "agg-ipm" */
+        hgp->matching = pmatching_agg_ipm;
+        hgp->match_array_type = 1;
+    }
+    else if (!strcasecmp(hgp->redm_str, "rcb") || 
+             !strcasecmp(hgp->redm_str, "rib")) {
+        hgp->matching = pmatching_geom;
+	hgp->match_array_type = 1;
+    }
+    else if (!strcasecmp(hgp->redm_str, "no"))
         hgp->matching = NULL;
     else if (!strcasecmp(hgp->redm_str, "none"))
         hgp->matching = NULL;
     else if (!strcasecmp(hgp->redm_str, "ipm"))
         hgp->matching = pmatching_ipm;
-    else if (!strncasecmp(hgp->redm_str, "agg", 3)) { /* == "agg-ipm" */
-        hgp->matching = pmatching_agg_ipm;
-        hgp->match_array_type = 1;
-    } else if (!strcasecmp(hgp->redm_str, "l-ipm"))
+    else if (!strcasecmp(hgp->redm_str, "l-ipm"))
         hgp->matching = pmatching_local_ipm;           
     else if (!strcasecmp(hgp->redm_str, "c-ipm"))
         hgp->matching = pmatching_ipm;   
@@ -134,7 +147,9 @@ char  *yo = "Zoltan_PHG_Matching";
   /* Do the matching */
   if (hgp->matching) {
     /* first match isolated vertices */
-    Zoltan_PHG_match_isolated(zz, hg, hgp, match, 0);
+    /* if matching is not geometric, then run isolated */
+    if (hgp->matching != pmatching_geom)
+      Zoltan_PHG_match_isolated(zz, hg, hgp, match, 0);
 
     /* now do the real matching */
     if ((ierr = Zoltan_PHG_compute_esize(zz, hg, hgp))==ZOLTAN_OK)
@@ -2305,6 +2320,238 @@ ZOLTAN_FREE(&master_procs);
 }
 
 
+/****************************************************************************/
+static int pmatching_geom (ZZ *zz,
+			  HGraph *hg,
+			  ZOLTAN_GNO_TYPE *match, /* the matching array */
+                          PHGPartParams *hgp)
+{
+  int ierr = ZOLTAN_OK;
+
+  char *yo = "pmatching_geom";
+  ZZ *zz2 = Zoltan_Create(hg->comm->Communicator);
+  int i;
+  char s[28]; 
+  int changes, num_gid_entries, num_lid_entries, local_vtx;
+  ZOLTAN_GNO_TYPE *procmatch;
+  MPI_Datatype zoltan_gno_mpi_type;
+
+  /* --LB_Partition arguments-- */
+  int num_import;                         /* Returned */
+  ZOLTAN_ID_PTR import_global_ids = NULL; /* Returned */
+  ZOLTAN_ID_PTR import_local_ids = NULL;  /* Returned */
+  int *import_procs = NULL;               /* Returned */
+  int *import_to_part = NULL;             /* Returned */
+  int num_export;                  /* Returned: number of input GIDs */
+  ZOLTAN_ID_PTR candidate_ids = NULL; /* Returned:  candidates for each
+                                             input GID */
+  ZOLTAN_ID_PTR export_local_ids = NULL;  /* Not computed */
+  int *export_procs = NULL;               /* Not computed */
+  int *export_to_part = NULL;             /* Not computed */
+  /* ----------------- */
+
+#ifdef KDDKDD_DEBUG
+for (i =0; i < hg->nVtx; i++)
+  printf("%d KDDIN: %d (%f %f %f) %f\n", hg->info, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], hg->vwgt[i]);
+#endif
+
+  /* Register new geometric callbacks and parameters */
+  if ((Zoltan_Set_Fn(zz2, ZOLTAN_NUM_OBJ_FN_TYPE,
+                     (void (*)()) geometric_get_num_obj,
+		     (void *) hg) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Fn(zz2, ZOLTAN_OBJ_LIST_FN_TYPE,
+                     (void (*)()) geometric_get_obj_list,
+		     (void *) hg) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_GEOM_FN_TYPE,
+                     (void (*)()) geometric_get_num_geom,
+		     (void *) hg) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Fn(zz2, ZOLTAN_GEOM_MULTI_FN_TYPE,
+                     (void (*)()) geometric_get_geom_multi,
+		     (void *) hg) == ZOLTAN_FATAL))
+  {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                      "fatal: error returned from Zoltan_Set_Fn()\n");
+    goto End;
+  }
+
+  if ((hgp->geometric_red <= 0) || (hgp->geometric_red > 1)) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo,
+                       "Invalid hybrid reduction factor. Using default value.");
+      hgp->geometric_red = 0.1;
+  }
+
+  /* Parts are reduced by a factor, result should not be 0 */  
+  local_vtx = (int)(hgp->geometric_red * (double) hg->nVtx
+                                       / (double) hg->comm->nProc_y);
+  sprintf(s, "%d", (local_vtx == 0) ? 1 : local_vtx);
+
+
+  if ((Zoltan_Set_Param(zz2,"NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"DEBUG_LEVEL", "0") == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"OBJ_WEIGHT_DIM", "1") == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"REMAP", "0") == ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"CHECK_GEOM", "0")== ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"RETURN_LISTS", "CANDIDATE_LISTS")==ZOLTAN_FATAL) ||
+      (Zoltan_Set_Param(zz2,"LB_METHOD", hgp->redm_str) == ZOLTAN_FATAL))
+  {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                       "fatal: error returned from Zoltan_Set_Param()\n");
+    goto End;
+  }
+
+  /* using the wrapper (just like any other RCB/RIB user) */
+  ierr = Zoltan_LB_Partition(zz2, &changes, &num_gid_entries, &num_lid_entries,
+                    &num_import, &import_global_ids,
+		    &import_local_ids, &import_procs, &import_to_part,
+		    &num_export, &candidate_ids, &export_local_ids,
+		    &export_procs, &export_to_part);
+
+  if(!(procmatch = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC(hg->nVtx,
+                                                     sizeof(ZOLTAN_GNO_TYPE))))
+    MEMORY_ERROR;
+
+  for (i = 0; i < hg->nVtx; i++) match[i] = 0;
+
+  for (i = 0; i < num_import; i++)
+    procmatch[import_local_ids[i]] = candidate_ids[i];
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+  MPI_Allreduce(procmatch, match, hg->nVtx, zoltan_gno_mpi_type, MPI_SUM,
+                hg->comm->col_comm);
+
+#ifdef KDDKDD_DEBUG
+ {/* KDDKDD */
+   int kdd, kddlid;
+   for (kdd = 0; kdd < num_import; kdd++) { 
+     kddlid = import_local_ids[kdd];
+     printf("%d KDDMATCH (%d %d %d)  (%f %f %f)  wgt %f Candidate %d\n", hg->info, import_global_ids[kdd], VTX_LNO_TO_GNO(hg, kddlid), kddlid, hg->coor[3*kddlid], hg->coor[3*kddlid+1], hg->coor[3*kddlid+2], hg->vwgt[kddlid], candidate_ids[kdd]); 
+   } 
+ /* KDDKDD */
+ } 
+#endif
+
+  /* 
+   * Perform geometric matching only on geometric_levels levels.  If done,
+   * switch to agglomerative matching.
+   */
+  if (hg->info+1 >= hgp->geometric_levels) {
+    hgp->matching = pmatching_agg_ipm;
+    sprintf(hgp->redm_str, "agg");
+  }
+
+ End:
+  Zoltan_Destroy(&zz2);
+  ZOLTAN_FREE(&procmatch);
+  ZOLTAN_FREE(&import_global_ids);
+  ZOLTAN_FREE(&import_local_ids);
+  ZOLTAN_FREE(&import_procs);
+  ZOLTAN_FREE(&import_to_part);
+  ZOLTAN_FREE(&candidate_ids);
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
+  
+  return ierr;
+
+}
+
+static int geometric_get_num_obj(void *data, int *ierr) {
+  /* Return number of vertices / number of processes on the y-axis */
+  HGraph *hg;
+  int count, diff;
+  
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return 0;
+  }
+
+  hg = ((HGraph*) data);
+  *ierr = ZOLTAN_OK;
+
+  count = hg->nVtx / hg->comm->nProc_y;
+  diff  = hg->nVtx % hg->comm->nProc_y;
+  
+/* Use processor ID to select which will take extra processes */
+  return hg->comm->myProc_y < diff? count + 1 : count;
+}
+
+static void geometric_get_obj_list(void *data, int num_gid, int num_lid,
+			     ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+			     int wdim, float *wgt, int *ierr) {
+  /* Return GNOs, LNOs, and weights */
+  
+  HGraph *hg;
+  int local_obj;  /* Number of objects endemic to this processor */
+  int count, diff, idx;
+  int i, j;
+  
+  if (data == NULL) { 
+    *ierr = ZOLTAN_FATAL; 
+    return;
+  } 
+
+  hg = ((HGraph*) data);
+  *ierr = ZOLTAN_OK;
+
+  count = hg->nVtx / hg->comm->nProc_y;
+  diff  = hg->nVtx % hg->comm->nProc_y;
+  local_obj =  hg->comm->myProc_y < diff? count + 1 : count;
+  idx = (count * hg->comm->myProc_y) + (hg->comm->myProc_y > diff ?
+					diff : hg->comm->myProc_y);
+  
+  for (i = 0; i < local_obj; i++) {
+    global_id[i] = VTX_LNO_TO_GNO(hg, (idx + i));
+    local_id[i] = idx + i;
+  }
+
+  if (wdim > 0)
+    for (i = 0; i < local_obj; i++)
+      for (j = 0; j < wdim; j++)
+	wgt[(i * wdim) + j] = hg->vwgt[local_id[i] * wdim + j];
+}
+
+static int geometric_get_num_geom(void *data, int *ierr) {
+/* Return number of values needed to express the geometry of the HG */
+
+  HGraph *hg;
+
+  if (data == NULL) {
+      *ierr = ZOLTAN_FATAL;
+      return 0;
+  }
+
+  hg = ((HGraph*) data);
+  *ierr = ZOLTAN_OK;
+
+  return hg->nDim;
+}
+
+static void geometric_get_geom_multi(void *data, int num_obj, int num_gid,
+			       int num_lid, ZOLTAN_ID_PTR global_id,
+			       ZOLTAN_ID_PTR local_id, int num_dim,
+			       double *coor, int *ierr) {
+  /* Return coords by GNOs of object list */
+
+    HGraph *hg;
+    int local_obj;
+    ZOLTAN_ID_TYPE glob;
+    int i, j;
+    
+  if (data == NULL) {
+      *ierr = ZOLTAN_FATAL;
+      return;
+  }
+
+  hg = ((HGraph*) data);
+  *ierr = ZOLTAN_OK;
+
+  local_obj = geometric_get_num_obj(hg, ierr);
+				    
+  for (i = 0; i < local_obj; i++) { 
+    glob = local_id[i];
+    for (j = 0; j < hg->nDim; j++)
+      coor[i * hg->nDim + j] = hg->coor[glob * hg->nDim + j]; 
+  }
+}
 
 #undef MACRO_REALLOC
 #undef MACRO_TIMER_START

@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 #ifndef __LBI_CONST_H
@@ -21,6 +21,10 @@
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
+
+#warning "WARNING:  Use of zoltan include file lbi_const.h is deprecated and will not be supported in Trilinos v11.  Update your code to include zoltan.h instead. "
+#warning "WARNING:  Use of zoltan include file lbi_const.h is deprecated and will not be supported in Trilinos v11.  Update your code to include zoltan.h instead. "
+#warning "WARNING:  Use of zoltan include file lbi_const.h is deprecated and will not be supported in Trilinos v11.  Update your code to include zoltan.h instead. "
 
 /****************************************************************************
  *  This file is maintained for backward compatability with previous versions

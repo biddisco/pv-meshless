@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 
@@ -27,6 +27,7 @@ extern "C" {
 #include <string.h>
 #include <errno.h>
 
+#include "zoltan_types.h"
 #include "zz_util_const.h"
 #include "zoltan_mem.h"
 #include "zz_const.h"
@@ -339,15 +340,58 @@ char *Zoltan_mpi_gno_name()
   return zz_mpi_gno_name;
 }
 
+/* On a linux node, find the total memory currently allocated
+ * to this process.
+ * Return the number of kilobytes allocated to this process.
+ * Return 0 if it is not possible to determine this.
+ */
+long Zoltan_get_process_kilobytes()
+{
+#ifdef _SC_PAGESIZE
+pid_t pid;
+long pageSize, pageKBytes, totalPages;
+char buf[64];
+char *c;
+int f, rc;
+
+  pageSize = sysconf(_SC_PAGESIZE);
+  pid = getpid();
+  sprintf(buf,"/proc/%d/statm", pid);
+  f = open(buf, O_RDONLY);
+  if (f == -1) return 0;
+
+  c = buf;
+  rc = read(f, (void *)c, 1);
+
+  while ((rc==1) && isdigit(*c)){
+    ++c;
+    rc = read(f, (void *)c, 1);
+  }
+  *c = 0;  /* null terminate */
+  
+  close(f);
+  if (buf[0] == 0) return 0;
+
+  pageKBytes = pageSize / 1024;
+  totalPages = atol(buf);
+
+  return totalPages * pageKBytes;
+#else
+//#warning "Page size query is not possible.  No per-process memory stats."
+  return 0;
+#endif
+
+}
+
 /* On a linux node, try to write the contents of /proc/meminfo to a file.
  * If committedOnly, then only write the Committed_AS line.  This is the
  * amount of memory that has been granted for memory allocation requests.
  * It may exceed the amount of physical memory, which will cause a fault
  * on a system that doesn't swap if that memory is written to.
  */
-#ifdef HOST_LINUX
 void Zoltan_write_linux_meminfo(int append, char *msg, int committedOnly)
 {
+#ifndef _WIN32
 int rank;
 int f, n;
 size_t fsize, rc;
@@ -412,8 +456,61 @@ char fbuf[64],buf[2048],label[64],value[64],units[64];
 
   fsync(f);
   close(f);
-}
 #endif
+}
+
+/* On a linux node, just get the committed line as a char string.
+ * It's the caller's responsibility to free the result string.
+ */
+void Zoltan_get_linux_meminfo(char *msg, char **result)
+{
+int f, n, got_it;
+size_t fsize, rc;
+char *c=NULL, *next=NULL, *c_end;
+char buf[2048],label[64],value[64],units[64];
+
+  *result=NULL;
+  f = open("/proc/meminfo", O_RDONLY);
+  if (f == -1) return;
+
+  c = buf;
+  rc = read(f, (void *)c++, 1);
+
+  while ((rc == 1) && (c - buf < 2047)){
+    rc = read(f, (void *)c++, 1);
+  }
+
+  fsize = c-buf-1;
+
+  close(f);
+
+  c = buf;
+  c_end = buf + fsize;
+  got_it=0;
+
+  while( c < c_end){
+    next = strchr(c, '\n');
+    *next = 0;
+    n = sscanf(c, "%s %s %s", label, value, units);
+    if (n == 3){
+      if (strcmp(label, "Committed_AS:") == 0){
+        if (msg != NULL) sprintf(buf,"%s: \t%s \t%s %s\n",msg,label,value,units);
+        else             sprintf(buf,"%s %s %s\n",label,value,units);
+
+        fsize = strlen(buf);
+        got_it=1;
+        break;
+      }
+    }
+    c = next + 1;
+  }
+  if (got_it){
+    c = malloc(strlen(buf) + 1);
+    strcpy(c, buf);
+    *result = c;
+  }
+}
+
 int Zoltan_get_global_id_type(char **name)
 {
   if (name){

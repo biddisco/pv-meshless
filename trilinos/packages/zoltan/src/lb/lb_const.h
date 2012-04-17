@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 
@@ -83,6 +83,7 @@ typedef enum Zoltan_LB_Method {
 #define ZOLTAN_LB_EXPORT_LISTS 2
 #define ZOLTAN_LB_COMPLETE_EXPORT_LISTS 3
 #define ZOLTAN_LB_ALL_LISTS 4
+#define ZOLTAN_LB_CANDIDATE_LISTS 5
 
 /*
  ******************************************************
@@ -269,9 +270,6 @@ extern int Zoltan_LB_Copy_Struct(struct Zoltan_Struct *to,
 extern int Zoltan_LB_Special_Free_Part(struct Zoltan_Struct *,
   ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **);
 
-extern int Zoltan_LB_Add_Part_Sizes_Weight(struct Zoltan_Struct *, int, int,
-                                           float *, float **);
-
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_Block;
 extern ZOLTAN_LB_FN Zoltan_Cyclic;
@@ -279,8 +277,12 @@ extern ZOLTAN_LB_FN Zoltan_Random;
 extern ZOLTAN_LB_FN Zoltan_RCB;
 extern ZOLTAN_LB_FN Zoltan_Octpart;
 extern ZOLTAN_LB_FN Zoltan_Graph;
+#ifdef ZOLTAN_PARMETIS
 extern ZOLTAN_LB_FN Zoltan_ParMetis;
+#endif
+#if defined(ZOLTAN_SCOTCH) || defined(ZOLTAN_PTSCOTCH)
 extern ZOLTAN_LB_FN Zoltan_Scotch;
+#endif
 extern ZOLTAN_LB_FN Zoltan_Reftree_Part;
 extern ZOLTAN_LB_FN Zoltan_RIB;
 extern ZOLTAN_LB_FN Zoltan_HSFC;

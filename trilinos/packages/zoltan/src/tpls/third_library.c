@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 
@@ -25,13 +25,7 @@ extern "C" {
 #include "params_const.h"
 #include "order_const.h"
 #include "third_library.h"
-
-/**********  parameters structure used by PHG, ParMetis and Jostle **********/
-static PARAM_VARS Graph_Package_params[] = {
-        { "GRAPH_PACKAGE", NULL, "STRING", 0 },
-        { "ORDER_TYPE", NULL, "STRING", 0 },
-        { NULL, NULL, NULL, 0 } };
-
+#include "third_library_params.h"
 
 /**********************************************************/
 /* Interface routine for Graph methods.                   */
@@ -79,6 +73,18 @@ int rc;
     rc = ZOLTAN_FATAL;
 #endif /* ZOLTAN_PARMETIS */
   }
+  else if (!strcasecmp(package, "METIS")){
+#ifdef ZOLTAN_METIS
+    rc = Zoltan_ParMetis(zz, part_sizes, num_imp, imp_gids, imp_lids,
+                         imp_procs, imp_to_part,
+                         num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
+#else
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                       "METIS partitioning was requested but "
+                       "Zoltan was compiled without METIS.\n");
+    rc = ZOLTAN_FATAL;
+#endif /* ZOLTAN_METIS */
+  }
   else if (!strcasecmp(package, "SCOTCH")){
 #ifdef ZOLTAN_SCOTCH
     rc = Zoltan_Scotch(zz, part_sizes, num_imp, imp_gids, imp_lids,
@@ -120,7 +126,7 @@ char *val)                      /* value of variable */
   PARAM_UTYPE result;         /* value returned from Check_Param */
   int index;                  /* index returned from Check_Param */
   char *valid_methods[] = {
-    "PARMETIS", "PHG", "ZOLTAN", "SCOTCH",
+    "PARMETIS", "PHG", "ZOLTAN", "SCOTCH", "METIS",
     NULL };
 
   status = Zoltan_Check_Param(name, val, Graph_Package_params,
@@ -134,16 +140,6 @@ char *val)                      /* value of variable */
       for (i=0; valid_methods[i] != NULL; i++){
 	if (strcmp(val, valid_methods[i]) == 0){
 	  status = 0;
-#ifndef ZOLTAN_PARMETIS
-          if (strcmp(val, "PARMETIS") == 0){
-            status = 2;
-          }
-#endif
-#ifndef ZOLTAN_SCOTCH
-          if (strcmp(val, "SCOTCH") == 0){
-            status = 2;
-          }
-#endif
 	  break;
 	}
       }
@@ -186,6 +182,8 @@ void Zoltan_Third_Exit(ZOLTAN_Third_Graph *gr, ZOLTAN_Third_Geom *geo,
     MEMFREE(prt->part_orig);
     if (prt->part_sizes != prt->input_part_sizes)
       MEMFREE(prt->part_sizes);
+    if (sizeof(realtype) != sizeof(float))
+      MEMFREE(prt->input_part_sizes);
   }
 
   if (vsp) {

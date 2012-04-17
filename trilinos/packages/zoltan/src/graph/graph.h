@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 #ifndef __GRAPH_H
@@ -20,7 +20,6 @@ extern "C" {
 #endif
 
 #include "matrix.h"
-#include "third_library_const.h"
 
 typedef struct ZG_ {
   Zoltan_matrix_2d mtx;

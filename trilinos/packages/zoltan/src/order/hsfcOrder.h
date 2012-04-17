@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  *****************************************************************************/
 
 int Zoltan_LocalHSFC_Order(

@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 
@@ -23,8 +23,6 @@ extern "C" {
 #include "zz_util_const.h"
 #include "phg.h"
 #include "phg_lookup.h"
-#include "third_library_const.h"
-#include "third_library_tools.h"
 
 /* #define CEDRIC_PRINT */
 
@@ -744,14 +742,6 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     lookup_myObjs = phg_create_GID_lookup_table(zhg->objGID, zhg->nObj, gid_size);
     if (!lookup_myObjs) MEMORY_ERROR;
 
-    /* Convert the application's vertex GIDs to our vertex global numbers. */
-
-    zhg->pinGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_CALLOC(sizeof(ZOLTAN_GNO_TYPE) , zhg->nPins);
-    if (zhg->nPins && !zhg->pinGNO) MEMORY_ERROR;
-
-    ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, zhg->pinGNO, zhg->nPins, randomizeInitDist,
-                                              &zhg->globalPins);
-
     if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error");
       goto End;
@@ -797,6 +787,9 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     phg_free_objects(&myObjs);
   
     msg_tag--;
+
+    zhg->pinGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_CALLOC(sizeof(ZOLTAN_GNO_TYPE) , zhg->nPins);
+    if (zhg->nPins && !zhg->pinGNO) MEMORY_ERROR;
   
     ierr = Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *)sendGnoBuf, sizeof(ZOLTAN_GNO_TYPE),
                   NULL, (char *)zhg->pinGNO);

@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 #ifndef __ZOLTAN_H
@@ -33,7 +33,7 @@ typedef void ZOLTAN_VOID_FN(void);
 extern "C" {
 #endif
 
-#define ZOLTAN_VERSION_NUMBER   3.501
+#define ZOLTAN_VERSION_NUMBER   3.601
 
 /*****************************************************************************
  *  Data types and functions describing the interface between the

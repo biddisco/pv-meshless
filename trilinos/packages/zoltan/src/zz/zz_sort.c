@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 #ifdef __cplusplus
@@ -102,6 +102,25 @@ int  equal, smaller;
      }
 }
 /****************************************************************************/
+/****************************************************************************/
+/* Sort in increasing order by first calling the decreasing sort,
+   then reverse the order in linear time. */
+void Zoltan_quicksort_pointer_inc_double (
+  int *sorted, double* val, int start, int end
+)
+{
+  int i, j;
+  double temp;
+
+  /* sort in decreasing order */
+  Zoltan_quicksort_pointer_dec_double(sorted, val, start, end);
+  /* reverse order */
+  for (i=start, j=end; i<j; i++, j--){
+    temp = sorted[i];
+    sorted[i] = sorted[j];
+    sorted[j] = temp;
+  }
+}
 
 /****************************************************************************/
 /* Sort in increasing order by first calling the decreasing sort,
@@ -271,6 +290,38 @@ int  equal, larger;
 
 
 /* Sorting values in array list in increasing order. Criteria is int. */
+static void quickpart_list_inc_one_int (
+  int *list, int start, int end, int *equal, int *larger)
+{
+int i, key, change, parchange;
+
+  key = list ? list[(end+start)/2] : 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++)
+    if (list[i] < key) {
+      change            = list[i];
+      list[i]           = list[*larger];
+      list[(*larger)++] = list[*equal];
+      list[(*equal)++]  = change;
+    }
+    else if (list[i] == key) {
+      list[i]           = list[*larger];
+      list[(*larger)++] = key;
+    }
+}
+
+void Zoltan_quicksort_list_inc_one_int (int* list, int start, int end)
+{
+int  equal, larger;
+
+  if (start < end) {
+    quickpart_list_inc_one_int (list, start, end, &equal, &larger);
+    Zoltan_quicksort_list_inc_one_int (list, start,  equal-1);
+    Zoltan_quicksort_list_inc_one_int (list, larger, end);
+  }
+}
+
 /* Also rearrange values in array parlist to match the new order of list. */
 static void quickpart_list_inc_int (
   int *list, int *parlist, int start, int end, int *equal, int *larger)
@@ -437,11 +488,10 @@ int  equal, larger;
   }
 }
 
-#ifdef HAVE_LONG_LONG_INT
 /* Exact same code except the list to be sorted is long long*/
 
 static void quickpart_list_inc_long_long (
-  long long *list, int *parlist, int start, int end, int *equal, int *larger)
+  int64_t *list, int *parlist, int start, int end, int *equal, int *larger)
 {
 int i, parchange;
 long long key, change;
@@ -469,7 +519,7 @@ long long key, change;
     }
 }
 
-void Zoltan_quicksort_list_inc_long_long(long long *list, int *parlist, int start, int end)
+void Zoltan_quicksort_list_inc_long_long(int64_t*list, int *parlist, int start, int end)
 {
 int  equal, larger;
 
@@ -479,7 +529,6 @@ int  equal, larger;
     Zoltan_quicksort_list_inc_long_long(list, parlist, larger, end);
   }
 }
-#endif
 
 
 

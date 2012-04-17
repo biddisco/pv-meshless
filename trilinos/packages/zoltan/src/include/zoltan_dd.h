@@ -9,7 +9,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 #ifndef ZOLTAN_DD_DDIRECTORY_H

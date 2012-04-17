@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 
@@ -24,24 +24,6 @@
 extern "C" {
 #endif
 
-
-#ifdef ZOLTAN_PARMETIS
-/* Include ParMetis header files if necessary.
- * These include files must be available in the include path set in the
- * Zoltan configuration file.
- */
-#include <parmetis.h>
-#endif /* ZOLTAN_PARMETIS */
-
-#ifdef ZOLTAN_METIS
-#include <metis.h>
-#else
-#ifdef ZOLTAN_PARMETIS
-/* We use one METIS function that is not in parmetis.h */
-extern void METIS_NodeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
-#endif /* ZOLTAN_PARMETIS */
-#endif /* ZOLTAN_METIS */
-
 /* Guess the version number of ParMetis if not defined */
 /* PARMETIS_MAJOR_VERSION is only defined in version 3.0 and higher */
 #if (!defined(PARMETIS_MAJOR_VERSION))
@@ -53,9 +35,6 @@ extern void METIS_NodeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, i
  * in defs.h in the version of ParMetis you are using!
  * Both ParMetis 2.0 and 3.0 defs are included below.
  */
-#define OPTION_IPART            1
-#define OPTION_FOLDF            2
-#define OPTION_DBGLVL           3
 #define PMV3_OPTION_DBGLVL      1
 #define PMV3_OPTION_SEED        2
 #define PMV3_OPTION_IPART       3

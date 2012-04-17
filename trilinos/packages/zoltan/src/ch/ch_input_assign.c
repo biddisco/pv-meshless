@@ -9,7 +9,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    Revision$
+ *    $Revision$
  ****************************************************************************/
 
 /* This software was developed by Bruce Hendrickson and Robert Leland   *
