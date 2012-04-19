@@ -3,7 +3,7 @@ PROJECT("CSCS_Plugins")
 #--------------------------------------------------
 # Instructions
 # This file should be placed in the parent directory
-# where pv-common, pv-meshless, pv-echame, etc exist
+# where pv-common, pv-meshless, pv-splotch, etc exist
 # as sub directories.
 #--------------------------------------------------
 
@@ -14,13 +14,14 @@ cmake_minimum_required(VERSION 2.8)
 
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 OLD)
+  cmake_policy(SET CMP0017 NEW)
 endif(COMMAND cmake_policy)
 
 #--------------------------------------------------
 # Simple macro to add each subdir as a plugin
 #--------------------------------------------------
 MACRO(ADD_PLUGIN name path)
-  OPTION("CSCS_PLUGIN_${name}" "Build ${name} plugin" ON)
+  OPTION("CSCS_PLUGIN_${name}" "Build ${name} plugin" OFF)
   IF(CSCS_PLUGIN_${name})
     SET(CSCS_PLUGIN_${name}_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${path})
     GET_FILENAME_COMPONENT(TEMP_Filename ${path} NAME)
@@ -42,9 +43,30 @@ ENDIF(WIN32)
 FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
 INCLUDE(${PARAVIEW_VTK_DIR}/VTKConfig.cmake)
-MESSAGE("VTKConfig loaded from ${PARAVIEW_VTK_DIR}/VTKConfig.cmake")
 SET(PARAVIEW_LOADED 1)
-SET(BUILD_SHARED_LIBS ${PARAVIEW_BUILD_SHARED_LIBS})
+option(BUILD_SHARED_LIBS "Build with shared libraries." ${PARAVIEW_BUILD_SHARED_LIBS})
+SET(BUILD_SHARED_LIBS ${PARAVIEW_BUILD_SHARED_LIBS} CACHE BOOL FORCE "Use same settings as ParaView")
+
+#--------------------------------------------------
+# Convenience checks for CSCS projects
+#--------------------------------------------------
+IF(EXISTS "${PROJECT_SOURCE_DIR}/Icarus/DSMManager/")
+  #--------------------------------------------------
+  # If (paraview) using system hdf5
+  #--------------------------------------------------
+  IF (NOT TARGET "vtkhdf5")
+    FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
+    INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
+  ENDIF (NOT TARGET "vtkhdf5")
+
+  #--------------------------------------------------
+  # If (paraview) using system H5FDdsm
+  #--------------------------------------------------
+  IF (NOT TARGET "H5FDdsm")
+    FIND_PACKAGE(H5FDdsm REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/H5FDdsm")
+    INCLUDE_DIRECTORIES(${H5FDdsm_INCLUDE_DIR} ${H5FD_DSM_INCLUDE_DIR})
+  ENDIF (NOT TARGET "H5FDdsm")
+ENDIF(EXISTS "${PROJECT_SOURCE_DIR}/Icarus/DSMManager/")
 
 #--------------------------------------------------
 # Setup Output directories
@@ -99,6 +121,20 @@ IF(EXISTS "${PROJECT_SOURCE_DIR}/pv-meshless/")
 ENDIF(EXISTS "${PROJECT_SOURCE_DIR}/pv-meshless/")
 
 #--------------------------------------------------
+# pv-astro
+#--------------------------------------------------
+IF(EXISTS "${PROJECT_SOURCE_DIR}/pv-astro/")
+  ADD_PLUGIN(pv-astro "pv-astro/")
+ENDIF(EXISTS "${PROJECT_SOURCE_DIR}/pv-astro/")
+
+#--------------------------------------------------
+# pv-splotch
+#--------------------------------------------------
+IF(EXISTS "${PROJECT_SOURCE_DIR}/pv-splotch/paraview/")
+  ADD_PLUGIN(pv-splotch "pv-splotch/paraview/")
+ENDIF(EXISTS "${PROJECT_SOURCE_DIR}/pv-splotch/paraview/")
+
+#--------------------------------------------------
 # netCDF/ECHAM
 #--------------------------------------------------
 IF(EXISTS "${PROJECT_SOURCE_DIR}/pv-echam/")
@@ -106,7 +142,7 @@ IF(EXISTS "${PROJECT_SOURCE_DIR}/pv-echam/")
 ENDIF(EXISTS "${PROJECT_SOURCE_DIR}/pv-echam/")
 
 #--------------------------------------------------
-# DSM Manager
+# ICARUS - DSM Manager
 #--------------------------------------------------
 IF(EXISTS "${PROJECT_SOURCE_DIR}/Icarus/DSMManager/")
   ADD_PLUGIN(DSM-Manager "Icarus/DSMManager")
@@ -122,9 +158,9 @@ ENDIF(EXISTS "${PROJECT_SOURCE_DIR}/Icarus/CustomControls/")
 #--------------------------------------------------
 # MHD
 #--------------------------------------------------
-IF(EXISTS "${PROJECT_SOURCE_DIR}/vtkMHD/")
-  ADD_PLUGIN(MHD "vtkMHD/pv3-plugin")
-ENDIF(EXISTS "${PROJECT_SOURCE_DIR}/vtkMHD/")
+IF(EXISTS "${PROJECT_SOURCE_DIR}/pv-MHD/")
+  ADD_PLUGIN(pv-MHD "pv-MHD")
+ENDIF(EXISTS "${PROJECT_SOURCE_DIR}/pv-MHD/")
 
 #--------------------------------------------------
 # vtkArrowGlyph
@@ -139,4 +175,5 @@ ENDIF(EXISTS "${PROJECT_SOURCE_DIR}/vtkArrowGlyph/")
 IF(EXISTS "${PROJECT_SOURCE_DIR}/VolumeSliceRender/")
   ADD_PLUGIN(VolumeSliceRender "VolumeSliceRender")
 ENDIF(EXISTS "${PROJECT_SOURCE_DIR}/VolumeSliceRender/")
+
 
