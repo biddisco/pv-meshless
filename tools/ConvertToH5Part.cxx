@@ -37,7 +37,7 @@
 #include "vtkTemporalDataSet.h"
 #include "vtkExtentTranslator.h"
 
-// vtk MPI
+#include "vtkToolkits.h" // For VTK_USE_MPI
 #ifdef VTK_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
@@ -66,10 +66,6 @@
 
 // Sys
 #include <sstream>
-#include "vtkToolkits.h" // For VTK_USE_MPI
-#ifdef VTK_USE_MPI
- #include <mpi.h>
-#endif
 
 #ifdef USE_PV_ASTRO
 #include "vtkRamsesReader.h"

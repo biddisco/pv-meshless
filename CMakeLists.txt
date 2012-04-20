@@ -361,13 +361,15 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/pv_meshless_configure.h.in
 # --------------------------------------------------
 # Tools 
 # --------------------------------------------------
-OPTION(USE_ASTRO "Use pv-astro library for ramses reader/converter" OFF)
-IF(USE_ASTRO)
-  ADD_DEFINITIONS("-DUSE_PV_ASTRO")
-  INCLUDE_DIRECTORIES(${pv-astro_SOURCE_DIR})
-  ADD_SUBDIRECTORY(tools)
-ENDIF(USE_ASTRO)
-  
+IF(EXISTS "${PROJECT_SOURCE_DIR}/../pv-astro/")
+  OPTION(USE_ASTRO "Use pv-astro library for ramses reader/converter" OFF)
+  IF(USE_ASTRO)
+    ADD_DEFINITIONS("-DUSE_PV_ASTRO")
+    INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/../pv-astro/")
+    ADD_SUBDIRECTORY(tools)
+  ENDIF(USE_ASTRO)
+ENDIF(EXISTS "${PROJECT_SOURCE_DIR}/../pv-astro/")
+
 #--------------------------------------------------
 # Testing
 #--------------------------------------------------
