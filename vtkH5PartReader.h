@@ -145,14 +145,24 @@ public:
   virtual void SetController(vtkMultiProcessController* controller);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
 
+  void SetFileModified();
+
 protected:
    vtkH5PartReader();
   ~vtkH5PartReader();
   //
   int   RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   int   RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  int   OpenFile();
-  void  CloseFile();
+  //
+  virtual int  OpenFile();
+  virtual void CloseFile();
+  // Under normal circumstances, when loading data and animating though timesteps
+  // one does not want to close the file between steps (calls to ExecuteInfo/Data)
+  // but subclasses (e.g. dsm) do need to close the file for real. We therefore
+  // call CloseFileIntermediate when we can leave it open and subclasses can decide
+  // to act on it, or do nothing. By default, do nothing.
+  virtual void CloseFileIntermediate();
+
 //  void  CopyIntoCoords(int offset, vtkDataArray *source, vtkDataArray *dest);
   // returns 0 if no, returns 1,2,3,45 etc for the first, second...
   // example : if CombineVectorComponents is true, then 
