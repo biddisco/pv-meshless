@@ -160,6 +160,7 @@ int main (int argc, char* argv[])
   int retVal = 1;
 
 #ifdef VTK_USE_MPI
+  MPI_Init(&argc,&argv);
   vtkMPIController* controller = vtkMPIController::New();
   controller->Initialize(&argc, &argv, 1);
 #else
