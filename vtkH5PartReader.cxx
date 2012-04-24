@@ -236,18 +236,29 @@ void vtkH5PartReader::SetFileName(char *filename)
   if (filename)
     {
     this->FileName = vtksys::SystemTools::DuplicateString(filename);
-    this->FileModifiedTime.Modified();
+    this->SetFileModified();
     }
+  this->Modified();
+}
+//----------------------------------------------------------------------------
+void vtkH5PartReader::SetFileModified()
+{
+  this->FileModifiedTime.Modified();
   this->Modified();
 }
 //----------------------------------------------------------------------------
 void vtkH5PartReader::CloseFile()
 {
+  
   if (this->H5FileId != NULL)
     {
     H5PartCloseFile(this->H5FileId);
     this->H5FileId = NULL;
     }
+}
+//----------------------------------------------------------------------------
+void vtkH5PartReader::CloseFileIntermediate()
+{
 }
 //----------------------------------------------------------------------------
 int vtkH5PartReader::OpenFile()
@@ -322,13 +333,13 @@ int vtkH5PartReader::RequestInformation(
   outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
   bool NeedToReadInformation = (FileModifiedTime>FileOpenedTime || !this->H5FileId);
 
-  if (!this->OpenFile())
+  if (NeedToReadInformation)
     {
-    return 0;
-    }
+    if (!this->OpenFile())
+      {
+      return 0;
+      }
 
-  if (1 || NeedToReadInformation)
-    {
     this->NumberOfTimeSteps = H5PartGetNumSteps(this->H5FileId);
     H5PartSetStep(this->H5FileId, 0);
     int nds = H5PartGetNumDatasets(this->H5FileId);
@@ -406,6 +417,8 @@ int vtkH5PartReader::RequestInformation(
       }
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
     }
+
+  this->CloseFileIntermediate();
 
   return 1;
 }
@@ -694,6 +707,12 @@ int vtkH5PartReader::RequestData(
     return 1;
     }
 
+  // open the file if not already done
+  if (!this->OpenFile())
+    {
+    return 0;
+    }
+
   // Set the TimeStep on the H5 file
   H5PartSetStep(this->H5FileId, this->ActualTimeStep);
   //
@@ -826,6 +845,14 @@ int vtkH5PartReader::RequestData(
       }
     }
 
+  //
+  // only subclasses actually close the file.
+  //
+  this->CloseFileIntermediate();
+
+  //
+  // generate cells
+  //
   if (this->GenerateVertexCells)
     {
     vtkSmartPointer<vtkCellArray> vertices = vtkSmartPointer<vtkCellArray>::New();
