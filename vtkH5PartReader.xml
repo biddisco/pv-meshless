@@ -90,10 +90,18 @@
          default_values="0" >
         <BooleanDomain name="bool"/>
       </IntVectorProperty>
-      
+
       <IntVectorProperty
          name="MaskOutOfTimeRangeOutput"
          command="SetMaskOutOfTimeRangeOutput"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="ExportPartitionBoxes"
+         command="SetExportPartitionBoxes"
          number_of_elements="1"
          default_values="0" >
         <BooleanDomain name="bool"/>
