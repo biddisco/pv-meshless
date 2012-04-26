@@ -15,7 +15,7 @@ INCLUDE_DIRECTORIES(
 SET(TOOL_VTK_LIBS
   pv_common
   pv_meshless
-  pv_astro
+#  pv_astro
   vtkWidgets
   vtkHybrid
   vtkRendering
@@ -37,12 +37,12 @@ ENDIF(VTK_USE_MPI)
 #-----------------------------------------------
 # Create conversion utilities
 #-----------------------------------------------
-ADD_EXECUTABLE( 
-  ConvertTo2H5Part 
-  ConvertToH5Part.cxx
-)
+#ADD_EXECUTABLE( 
+#  ConvertTo2H5Part 
+#  ConvertToH5Part.cxx
+#)
 
-TARGET_LINK_LIBRARIES(
-  ConvertTo2H5Part
-  ${TOOL_VTK_LIBS}
-)
+#TARGET_LINK_LIBRARIES(
+#  ConvertTo2H5Part
+#  ${TOOL_VTK_LIBS}
+#)
