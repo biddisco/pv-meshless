@@ -71,6 +71,7 @@ public:
   // Export time values as 0,1...N-1 regardless of real time values in file
   vtkSetMacro(IntegerTimeStepValues,int);
   vtkGetMacro(IntegerTimeStepValues,int);
+  vtkBooleanMacro(IntegerTimeStepValues,int);
   
   // Description:
   // Get the number of timesteps in the file
@@ -87,6 +88,13 @@ public:
   vtkGetMacro(GenerateVertexCells, int);
   vtkBooleanMacro(GenerateVertexCells, int);
 
+  // Description:
+  // If set and present in the file, bounding boxes of each parallel
+  // partition will be exported (as lines) along with particles.
+  vtkSetMacro(ExportPartitionBoxes,int);
+  vtkGetMacro(ExportPartitionBoxes,int);
+  vtkBooleanMacro(ExportPartitionBoxes,int);
+  
   // Description:
   // When this option is set, scalar fields with names which form a pattern
   // of the form scalar_0, scalar_1, scalar_2 will be combined into a single
@@ -153,6 +161,7 @@ protected:
   //
   int   RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   int   RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+  int   ReadBoundingBoxes(vtkDataArray *coords, vtkPolyData *output);
   //
   virtual int  OpenFile();
   virtual void CloseFile();
@@ -191,6 +200,7 @@ protected:
   int           MaskOutOfTimeRangeOutput;
   int           TimeOutOfRange;
   int           IntegerTimeStepValues;
+  int           ExportPartitionBoxes;
   //
   char         *Xarray;
   char         *Yarray;
