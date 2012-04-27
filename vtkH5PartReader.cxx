@@ -870,7 +870,7 @@ int vtkH5PartReader::RequestData(
   //
   //
   if (this->ExportPartitionBoxes) {
-    int newpoints = this->ReadBoundingBoxes(coords, output);
+    int newpoints = this->ReadBoundingBoxes(coords, output, ParticleStart, ParticleEnd);
   }
   //
   //
@@ -886,7 +886,7 @@ int vtkH5PartReader::RequestData(
   return 1;
 }
 //----------------------------------------------------------------------------
-int vtkH5PartReader::ReadBoundingBoxes(vtkDataArray *coords, vtkPolyData *output)
+int vtkH5PartReader::ReadBoundingBoxes(vtkDataArray *coords, vtkPolyData *output, vtkIdType extent0, vtkIdType extent1)
 {
    H5E_auto2_t  errfunc;
    void        *errdata;
@@ -939,12 +939,24 @@ int vtkH5PartReader::ReadBoundingBoxes(vtkDataArray *coords, vtkPolyData *output
     //
     for (int i=0; i<partitions; i++) {
       vtkIdType numParticles = static_cast<vtkIdType>(data[0+i*13]);
-      for (vtkIdType p=0; p<numParticles; p++) {
-        boxId->SetValue(index, i);
-        occupation->SetValue(index, numParticles);
-        index++;
+      if ((index+numParticles)>=extent0 && (index<=extent1)) {
+        for (vtkIdType p=0; p<numParticles; p++) {
+          if (index>=extent0 && index<=extent1) {
+            boxId->SetValue(index-extent0, i);
+            occupation->SetValue(index-extent0, numParticles);
+          }
+          index++;
+        }
+      }
+      else {
+        index +=numParticles;
+        continue;
       }
     }
+    //
+    // We haven't read all particles, so set index to last valid ID
+    //
+    index = (extent1-extent0)+1;
     //
     // generate boxes, 2 per partition (6*2+1 = 13 vals per partition)
     // count, min{x,y,z}, max{x,y,z}, ghostmin{x,y,z}, ghostmax{x,y,z}
