@@ -161,7 +161,9 @@ protected:
   //
   int   RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   int   RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  int   ReadBoundingBoxes(vtkDataArray *coords, vtkPolyData *output);
+  // read bboxes, we only colour particle actually read on this process 
+  // i.e. those betweem extent0 and extent1
+  int   ReadBoundingBoxes(vtkDataArray *coords, vtkPolyData *output, vtkIdType extent0, vtkIdType extent1);
   //
   virtual int  OpenFile();
   virtual void CloseFile();
