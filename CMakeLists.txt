@@ -13,8 +13,20 @@ endif(COMMAND cmake_policy)
 #--------------------------------------------------
 # Find and Use ParaView
 #--------------------------------------------------
-FIND_PACKAGE(ParaView REQUIRED)
-INCLUDE(${PARAVIEW_USE_FILE})
+IF (ParaView_SOURCE_DIR)
+  IF(PARAVIEW_BUILD_QT_GUI)
+    INCLUDE(${QT_USE_FILE})
+  ENDIF(PARAVIEW_BUILD_QT_GUI)
+  INCLUDE_DIRECTORIES(
+    ${HDF5_INCLUDE_DIR}
+    ${PARAVIEW_INCLUDE_DIRS}
+    ${PARAVIEW_GUI_INCLUDE_DIRS}
+    ${VTK_INCLUDE_DIR}
+  )
+ELSE (ParaView_SOURCE_DIR)
+  FIND_PACKAGE(ParaView REQUIRED)
+  INCLUDE(${PARAVIEW_USE_FILE})
+ENDIF (ParaView_SOURCE_DIR)
 
 #--------------------------------------------------
 # Set project include directories 
@@ -110,27 +122,38 @@ SET(TRILINOS_ENABLED 0)
 IF (VTK_USE_MPI)
   OPTION(USE_TRILINOS "Use Trilinos library" OFF)
   IF(USE_TRILINOS)
-    SET(TPL_ENABLE_MPI ON CACHE BOOL "Do not change")
-    SET(Trilinos_ENABLE_TESTS OFF CACHE BOOL "Do not change")
-    SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES OFF CACHE BOOL "Do not change")
-    SET(Trilinos_ENABLE_Zoltan ON CACHE BOOL "Do not change")
-    SET(Trilinos_ENABLE_Fortran OFF CACHE BOOL "Do not change")
-    IF (WIN32)
-      ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-      INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/trilinos/cmake/tribits/common_tools/win_interface/include")
-    ENDIF(WIN32)
-    ADD_SUBDIRECTORY(trilinos)
-    INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
-    LINK_DIRECTORIES("${Trilinos_LIBRARY_DIRS}")
-    # MESSAGE("Trilinos Include Dirs ${Trilinos_INCLUDE_DIRS} and Trilinos Link Dirs ${Trilinos_LIBRARY_DIRS} ")
-    #
-    # Add source which depends on trilinos to our plugin
-    #
-    SET(TRILINOS_CXX ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx)
-    SET(TRILINOS_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml)
-    SET(Trilinos_DEPS_HTML_OUTPUT_FILE "" CACHE STRING "Leave empty" FORCE)
-    SET(TRILINOS_ENABLED 1)
-    ADD_DEFINITIONS(-DPVMESHLESS_USE_TRILINOS)
+
+    OPTION(USE_SYSTEM_TRILINOS "Use System Trilinos library" ON)
+    IF(USE_SYSTEM_TRILINOS)
+      FIND_PACKAGE(Trilinos)
+    ELSE(USE_SYSTEM_TRILINOS)
+      SET(TPL_ENABLE_MPI ON CACHE BOOL "Do not change")
+      SET(Trilinos_ENABLE_TESTS OFF CACHE BOOL "Do not change")
+      SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES OFF CACHE BOOL "Do not change")
+      SET(Trilinos_ENABLE_Zoltan ON CACHE BOOL "Do not change")
+      SET(Trilinos_ENABLE_Fortran OFF CACHE BOOL "Do not change")
+      IF (WIN32)
+        ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
+        INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/trilinos/cmake/tribits/common_tools/win_interface/include")
+      ENDIF(WIN32)
+      ADD_SUBDIRECTORY(trilinos)
+      SET(Trilinos_FOUND 1)
+      SET(Trilinos_DEPS_HTML_OUTPUT_FILE "" CACHE STRING "Leave empty" FORCE)
+    ENDIF(USE_SYSTEM_TRILINOS)
+
+    IF(Trilinos_FOUND)
+      INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
+      LINK_DIRECTORIES("${Trilinos_LIBRARY_DIRS}")
+      # MESSAGE("Trilinos Include Dirs ${Trilinos_INCLUDE_DIRS} and Trilinos Link Dirs ${Trilinos_LIBRARY_DIRS} ")
+      #
+      # Add source which depends on trilinos to our plugin
+      #
+      SET(TRILINOS_CXX ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx)
+      SET(TRILINOS_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml)
+      SET(TRILINOS_ENABLED 1)
+      ADD_DEFINITIONS(-DPVMESHLESS_USE_TRILINOS)
+    ENDIF(Trilinos_FOUND)
+
   ENDIF(USE_TRILINOS)
 ELSE (VTK_USE_MPI)
   SET(USE_TRILINOS OFF CACHE BOOL "Use Trilinos library" FORCE)
