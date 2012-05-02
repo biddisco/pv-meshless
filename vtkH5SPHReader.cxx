@@ -215,29 +215,6 @@ int vtkH5SPHReader::OpenFile()
   return 1;
 }
 //----------------------------------------------------------------------------
-int vtkH5SPHReader::IndexOfVectorComponent(const char *name)
-{
-  if (!this->CombineVectorComponents) return 0;
-  //
-  vtksys::RegularExpression re1(".*_([0-9]+)");
-  if (re1.find(name)) {
-    int index = atoi(re1.match(1).c_str());
-    return index+1;
-  }
-  return 0;
-}
-//----------------------------------------------------------------------------
-vtkstd::string vtkH5SPHReader::NameOfVectorComponent(const char *name)
-{
-  if (!this->CombineVectorComponents) return name;
-  //
-  vtksys::RegularExpression re1("(.*)_[0-9]+");
-  if (re1.find(name)) {
-    return re1.match(1);
-  }
-  return name;
-}
-//----------------------------------------------------------------------------
 vtkIdType vtkH5SPHReader::GetNumberOfParticles()
 {
 #if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
@@ -393,69 +370,6 @@ int vtkH5SPHReader::RequestInformation(
 //  hid_t loc_id, vtkDataArray *data, hid_t h5type, char *name)
 //{ 
 //}
-//----------------------------------------------------------------------------
-/*
-template <class T1, class T2>
-void CopyIntoCoords_T(int offset, vtkDataArray *source, vtkDataArray *dest)
-{
-  int N = source->GetNumberOfTuples();
-  T1 *sptr = static_cast<T1*>(source->GetVoidPointer(0));
-  T2 *dptr = static_cast<T2*>(dest->WriteVoidPointer(0,N)) + offset;
-  for (int i=0; i<N; ++i) {
-    *dptr = *sptr++;
-    dptr += 3;
-  }
-}
-//----------------------------------------------------------------------------
-void vtkH5SPHReader::CopyIntoCoords(int offset, vtkDataArray *source, vtkDataArray *dest)
-{
-  switch (source->GetDataType()) 
-  {
-    case VTK_CHAR:
-    case VTK_SIGNED_CHAR:
-    case VTK_UNSIGNED_CHAR:
-      CopyIntoCoords_T<char,float>(offset, source, dest);
-      break;
-    case VTK_SHORT:
-      CopyIntoCoords_T<short int,float>(offset, source, dest);
-      break;
-    case VTK_UNSIGNED_SHORT:
-      CopyIntoCoords_T<unsigned short int,float>(offset, source, dest);
-      break;
-    case VTK_INT:
-      CopyIntoCoords_T<int,float>(offset, source, dest);
-      break;
-    case VTK_UNSIGNED_INT:
-      CopyIntoCoords_T<unsigned int,float>(offset, source, dest);
-      break;
-    case VTK_LONG:
-      CopyIntoCoords_T<long int,float>(offset, source, dest);
-      break;
-    case VTK_UNSIGNED_LONG:
-      CopyIntoCoords_T<unsigned long int,float>(offset, source, dest);
-      break;
-    case VTK_LONG_LONG:
-      CopyIntoCoords_T<long long,float>(offset, source, dest);
-      break;
-    case VTK_UNSIGNED_LONG_LONG:
-      CopyIntoCoords_T<unsigned long long,float>(offset, source, dest);
-      break;
-    case VTK_FLOAT:
-      CopyIntoCoords_T<float,float>(offset, source, dest);
-      break;
-    case VTK_DOUBLE:
-      CopyIntoCoords_T<double,float>(offset, source, dest);
-      break;
-    case VTK_ID_TYPE:
-      CopyIntoCoords_T<vtkIdType,float>(offset, source, dest);
-      break;
-    default:
-      break;
-      vtkErrorMacro(<<"Unexpected data type");
-  }
-}
-*/
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 class H5SPH_WithinTolerance: public std::binary_function<double, double, bool>
 {

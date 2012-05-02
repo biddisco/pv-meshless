@@ -104,6 +104,16 @@ public:
   vtkBooleanMacro(CombineVectorComponents, int);
 
   // Description:
+  // When on UseStridedMultiComponentRead tells the reader to use  a hyperslab
+  // with strides to read an array such as "X" into a coordinate array.
+  // This can be very slow, but save some memory and is off by default.
+  // When off, arrays such as "X, "Y", "Z" are read independently, then
+  // copied into the vector array one by one.
+  vtkSetMacro(UseStridedMultiComponentRead, int);
+  vtkGetMacro(UseStridedMultiComponentRead, int);
+  vtkBooleanMacro(UseStridedMultiComponentRead, int);
+
+  // Description:
   // Normally, a request for data at time t=x, where x is either before the start of
   // time for the data, or after the end, will result in the first or last
   // timestep of data to be retrieved (time is clamped to max/min values).
@@ -172,6 +182,7 @@ protected:
   //
   virtual int  OpenFile();
   virtual void CloseFile();
+  
   // Under normal circumstances, when loading data and animating though timesteps
   // one does not want to close the file between steps (calls to ExecuteInfo/Data)
   // but subclasses (e.g. dsm) do need to close the file for real. We therefore
@@ -179,7 +190,11 @@ protected:
   // to act on it, or do nothing. By default, do nothing.
   virtual void CloseFileIntermediate();
 
-//  void  CopyIntoCoords(int offset, vtkDataArray *source, vtkDataArray *dest);
+  // Copy a scalar array into one component field of a vector dataset
+  // example X using offset 0, into {X,-,-}, etc etc
+  template <class T1>
+  void CopyIntoVector(int offset, vtkDataArray *source, vtkDataArray *dest);
+
   // returns 0 if no, returns 1,2,3,45 etc for the first, second...
   // example : if CombineVectorComponents is true, then 
   // velocity_0 returns 1, velocity_1 returns 2 etc
@@ -189,6 +204,7 @@ protected:
 //BTX
   vtkstd::string  NameOfVectorComponent(const char *name);
 //ETX
+
   //
   // Internal Variables
   //
@@ -198,6 +214,7 @@ protected:
   int           ActualTimeStep;
   double        TimeStepTolerance;
   int           CombineVectorComponents;
+  int           UseStridedMultiComponentRead;
   int           GenerateVertexCells;
   H5PartFile   *H5FileId;
   vtkTimeStamp  FileModifiedTime;
@@ -212,7 +229,7 @@ protected:
   char         *Xarray;
   char         *Yarray;
   char         *Zarray;
-  //BTX
+//BTX
   vtkstd::vector<double>                  TimeStepValues;
   typedef vtkstd::vector<vtkstd::string>  stringlist;
   vtkstd::vector<stringlist>              FieldArrays;
@@ -220,7 +237,7 @@ protected:
   std::vector<vtkIdType> PartitionCount;
   std::vector<double>    BoundsTable;
   std::vector<double>    BoundsTableHalo;
-  //ETX
+//ETX
 
   // To allow paraview gui to enable/disable scalar reading
   vtkDataArraySelection* PointDataArraySelection;
