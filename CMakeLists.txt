@@ -123,7 +123,7 @@ IF (VTK_USE_MPI)
   OPTION(USE_TRILINOS "Use Trilinos library" OFF)
   IF(USE_TRILINOS)
 
-    OPTION(USE_SYSTEM_TRILINOS "Use System Trilinos library" ON)
+    OPTION(USE_SYSTEM_TRILINOS "Use System Trilinos library" OFF)
     IF(USE_SYSTEM_TRILINOS)
       FIND_PACKAGE(Trilinos)
     ELSE(USE_SYSTEM_TRILINOS)
