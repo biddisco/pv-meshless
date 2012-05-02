@@ -161,9 +161,14 @@ protected:
   //
   int   RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   int   RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  // read bboxes, we only colour particle actually read on this process 
+
+  // read bboxes information into box/partition arrays
+  vtkIdType ReadBoundingBoxes();
+
+  // create polygons/lines from boxes for visual display
+  // Note : we only colour particles actually read on this process 
   // i.e. those betweem extent0 and extent1
-  int   ReadBoundingBoxes(vtkDataArray *coords, vtkPolyData *output, vtkIdType extent0, vtkIdType extent1);
+  vtkIdType DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyData *output, vtkIdType extent0, vtkIdType extent1);
   //
   virtual int  OpenFile();
   virtual void CloseFile();
@@ -211,6 +216,10 @@ protected:
   vtkstd::vector<double>                  TimeStepValues;
   typedef vtkstd::vector<vtkstd::string>  stringlist;
   vtkstd::vector<stringlist>              FieldArrays;
+  // For Bounding boxes if present
+  std::vector<vtkIdType> PartitionCount;
+  std::vector<double>    BoundsTable;
+  std::vector<double>    BoundsTableHalo;
   //ETX
 
   // To allow paraview gui to enable/disable scalar reading
