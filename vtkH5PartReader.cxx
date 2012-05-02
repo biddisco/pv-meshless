@@ -161,24 +161,25 @@ vtkH5PartReader::vtkH5PartReader()
 {
   this->SetNumberOfInputPorts(0);
   //
-  this->NumberOfTimeSteps        = 0;
-  this->TimeStep                 = 0;
-  this->ActualTimeStep           = 0;
-  this->TimeStepTolerance        = 1E-6;
-  this->CombineVectorComponents  = 1;
-  this->GenerateVertexCells      = 0;
-  this->FileName                 = NULL;
-  this->H5FileId                 = NULL;
-  this->Xarray                   = NULL;
-  this->Yarray                   = NULL;
-  this->Zarray                   = NULL;
-  this->UpdatePiece              = 0;
-  this->UpdateNumPieces          = 0;
-  this->TimeOutOfRange           = 0;
-  this->MaskOutOfTimeRangeOutput = 0;
-  this->IntegerTimeStepValues    = 0;
-  this->ExportPartitionBoxes     = 0;
-  this->PointDataArraySelection  = vtkDataArraySelection::New();
+  this->NumberOfTimeSteps             = 0;
+  this->TimeStep                      = 0;
+  this->ActualTimeStep                = 0;
+  this->TimeStepTolerance             = 1E-6;
+  this->CombineVectorComponents       = 1;
+  this->UseStridedMultiComponentRead  = 0;
+  this->GenerateVertexCells           = 0;
+  this->FileName                      = NULL;
+  this->H5FileId                      = NULL;
+  this->Xarray                        = NULL;
+  this->Yarray                        = NULL;
+  this->Zarray                        = NULL;
+  this->UpdatePiece                   = 0;
+  this->UpdateNumPieces               = 0;
+  this->TimeOutOfRange                = 0;
+  this->MaskOutOfTimeRangeOutput      = 0;
+  this->IntegerTimeStepValues         = 0;
+  this->ExportPartitionBoxes          = 0;
+  this->PointDataArraySelection       = vtkDataArraySelection::New();
   this->SetXarray("Coords_0");
   this->SetYarray("Coords_1");
   this->SetZarray("Coords_2");
@@ -481,7 +482,6 @@ int GetVTKDataType(int datatype)
 }
 
 //----------------------------------------------------------------------------
-/*
 template <class T1, class T2>
 void CopyIntoCoords_T(int offset, vtkDataArray *source, vtkDataArray *dest)
 {
@@ -494,54 +494,54 @@ void CopyIntoCoords_T(int offset, vtkDataArray *source, vtkDataArray *dest)
   }
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::CopyIntoCoords(int offset, vtkDataArray *source, vtkDataArray *dest)
+template <class T2>
+void vtkH5PartReader::CopyIntoVector(int offset, vtkDataArray *source, vtkDataArray *dest)
 {
   switch (source->GetDataType())
   {
     case VTK_CHAR:
     case VTK_SIGNED_CHAR:
     case VTK_UNSIGNED_CHAR:
-      CopyIntoCoords_T<char,float>(offset, source, dest);
+      CopyIntoCoords_T<char,T2>(offset, source, dest);
       break;
     case VTK_SHORT:
-      CopyIntoCoords_T<short int,float>(offset, source, dest);
+      CopyIntoCoords_T<short int,T2>(offset, source, dest);
       break;
     case VTK_UNSIGNED_SHORT:
-      CopyIntoCoords_T<unsigned short int,float>(offset, source, dest);
+      CopyIntoCoords_T<unsigned short int,T2>(offset, source, dest);
       break;
     case VTK_INT:
-      CopyIntoCoords_T<int,float>(offset, source, dest);
+      CopyIntoCoords_T<int,T2>(offset, source, dest);
       break;
     case VTK_UNSIGNED_INT:
-      CopyIntoCoords_T<unsigned int,float>(offset, source, dest);
+      CopyIntoCoords_T<unsigned int,T2>(offset, source, dest);
       break;
     case VTK_LONG:
-      CopyIntoCoords_T<long int,float>(offset, source, dest);
+      CopyIntoCoords_T<long int,T2>(offset, source, dest);
       break;
     case VTK_UNSIGNED_LONG:
-      CopyIntoCoords_T<unsigned long int,float>(offset, source, dest);
+      CopyIntoCoords_T<unsigned long int,T2>(offset, source, dest);
       break;
     case VTK_LONG_LONG:
-      CopyIntoCoords_T<long long,float>(offset, source, dest);
+      CopyIntoCoords_T<long long,T2>(offset, source, dest);
       break;
     case VTK_UNSIGNED_LONG_LONG:
-      CopyIntoCoords_T<unsigned long long,float>(offset, source, dest);
+      CopyIntoCoords_T<unsigned long long,T2>(offset, source, dest);
       break;
     case VTK_FLOAT:
-      CopyIntoCoords_T<float,float>(offset, source, dest);
+      CopyIntoCoords_T<float,T2>(offset, source, dest);
       break;
     case VTK_DOUBLE:
-      CopyIntoCoords_T<double,float>(offset, source, dest);
+      CopyIntoCoords_T<double,T2>(offset, source, dest);
       break;
     case VTK_ID_TYPE:
-      CopyIntoCoords_T<vtkIdType,float>(offset, source, dest);
+      CopyIntoCoords_T<vtkIdType,T2>(offset, source, dest);
       break;
     default:
       break;
       vtkErrorMacro(<<"Unexpected data type");
   }
 }
-*/
 //----------------------------------------------------------------------------
 /*
 vtkstd::pair<double, double> GetClosest(vtkstd::vector<double> &sortedlist, const double& val) const
@@ -724,6 +724,9 @@ int vtkH5PartReader::RequestData(
   //
   vtkIdType Nparticles = H5PartGetNumParticles(this->H5FileId);
 
+  //
+  // If the file has bounding box partition support
+  //
   vtkIdType partitions = this->ReadBoundingBoxes();
 
   //
@@ -759,35 +762,49 @@ int vtkH5PartReader::RequestData(
     vtkstd::string rootname = this->NameOfVectorComponent(array_name);
     int Nc = static_cast<int>(arraylist.size());
     //
+    // if an array has already been read such as one of {"X","Y","Z"} for 
+    // the coordinates, then do not read it again as a single array
+    //
+    if (output->GetPointData()->GetArray(array_name)) {
+      continue;
+    }
+    //
     vtkSmartPointer<vtkDataArray> dataarray = NULL;
     hid_t datatype = H5PartGetNativeDatasetType(H5FileId,array_name);
     int vtk_datatype = GetVTKDataType(datatype);
 
-    if (vtk_datatype != VTK_VOID)
+    if (vtk_datatype == VTK_VOID)
       {
-      dataarray.TakeReference(vtkDataArray::CreateDataArray(vtk_datatype));
-      dataarray->SetNumberOfComponents(Nc);
-      dataarray->SetNumberOfTuples(Nt);
-      dataarray->SetName(rootname.c_str());
+      H5Tclose(datatype);
+      vtkErrorMacro("An unexpected data type was encountered");
+      return 0;
+      }
 
-      // now read the data components.
-      herr_t r;
-      hsize_t count1_mem[] = { Nt*Nc };
-      hsize_t count2_mem[] = { Nt };
-      hsize_t offset_mem[] = { 0 };
-      hsize_t stride_mem[] = { Nc };
-      hsize_t     count1_dsk[] = { Nt };
-      hsize_t     offset_dsk[] = { ParticleStart };
-      hsize_t     stride_dsk[] = { 1 };
-      //
-      for (int c=0; c<Nc; c++)
+    dataarray.TakeReference(vtkDataArray::CreateDataArray(vtk_datatype));
+    dataarray->SetNumberOfComponents(Nc);
+    dataarray->SetNumberOfTuples(Nt);
+    dataarray->SetName(rootname.c_str());
+
+    // now read the data components.
+    herr_t r;
+    hsize_t count1_mem[] = { Nt*Nc };
+    hsize_t count2_mem[] = { Nt };
+    hsize_t offset_mem[] = { 0 };
+    hsize_t stride_mem[] = { Nc };
+    hsize_t     count1_dsk[] = { Nt };
+    hsize_t     offset_dsk[] = { ParticleStart };
+    hsize_t     stride_dsk[] = { 1 };
+    //
+    for (int c=0; c<Nc; c++)
+      {
+      const char *name = arraylist[c].c_str();
+      hid_t dataset   = H5Dopen(H5FileId->timegroup, name h_params);
+      hid_t diskshape = H5PartGetDiskShape(H5FileId,dataset);
+      /* parallel read needs hyperslab for disk */
+      r = H5Sselect_hyperslab(diskshape, H5S_SELECT_SET,
+        offset_dsk, stride_dsk, count1_dsk, NULL);
+      if (Nc==1 || this->UseStridedMultiComponentRead) 
         {
-        const char *name = arraylist[c].c_str();
-        hid_t dataset   = H5Dopen(H5FileId->timegroup, name h_params);
-        hid_t diskshape = H5PartGetDiskShape(H5FileId,dataset);
-        /* parallel read needs hyperslab for disk */
-        r = H5Sselect_hyperslab(diskshape, H5S_SELECT_SET,
-          offset_dsk, stride_dsk, count1_dsk, NULL);
         hid_t memspace = H5Screate_simple(1, count1_mem, NULL);
         hid_t component_datatype = H5PartGetNativeDatasetType(H5FileId, name);
         /* read x/y/z arrays into strided mem - use hyperslab */
@@ -795,7 +812,7 @@ int vtkH5PartReader::RequestData(
         r = H5Sselect_hyperslab(
           memspace, H5S_SELECT_SET,
           offset_mem, stride_mem, count2_mem, NULL);
-        if (component_datatype == datatype)
+        if (H5Tequal(component_datatype,datatype))
           {
           H5Dread(dataset, datatype, memspace,
             diskshape, H5P_DEFAULT, dataarray->GetVoidPointer(0));
@@ -818,22 +835,52 @@ int vtkH5PartReader::RequestData(
           dataarray->CopyComponent(c, temparray, c);
           temparray->Delete();
           }
-        if (memspace!=H5S_ALL)
+        H5Sclose(memspace);
+        H5Tclose(component_datatype);
+        }      
+      else 
+        {
+        vtkSmartPointer<vtkDataArray> onearray = NULL;
+        onearray.TakeReference(vtkDataArray::CreateDataArray(vtk_datatype));
+        onearray->SetNumberOfComponents(1);
+        onearray->SetNumberOfTuples(Nt);
+        onearray->SetName(name);
+        offset_mem[0] = 0;
+        count1_mem[0] = Nt;
+        stride_mem[0] = 1;
+        hid_t memspace = H5Screate_simple(1, count1_mem, NULL);
+        hid_t component_datatype = H5PartGetNativeDatasetType(H5FileId, name);
+        r = H5Sselect_hyperslab(
+          memspace, H5S_SELECT_SET,
+          offset_mem, stride_mem, count2_mem, NULL);
+        if (H5Tequal(component_datatype,datatype))
           {
-          H5Sclose(memspace);
+          H5Dread(dataset, datatype, memspace,
+            diskshape, H5P_DEFAULT, onearray->GetVoidPointer(0));
           }
-        if (diskshape!=H5S_ALL)
+        else 
           {
-          H5Sclose(diskshape);
+          vtkErrorMacro("H5Part : Unhandled type change condition")
           }
-        H5Dclose(dataset);
+        switch (dataarray->GetDataType()) 
+          {
+          case VTK_FLOAT:
+            this->CopyIntoVector<float>(c,onearray,dataarray);
+            break;
+          case VTK_DOUBLE:
+            this->CopyIntoVector<double>(c,onearray,dataarray);
+            break;
+          default:
+          vtkErrorMacro("H5Part : Unhandled vector type")
+          }
+        H5Sclose(memspace);
+        H5Tclose(component_datatype);
+        // if the array we read for the vector component is a field array
+        // then skip reading it twice.
+        output->GetPointData()->AddArray(onearray);
         }
-      }
-    else
-      {
-      H5Tclose(datatype);
-      vtkErrorMacro("An unexpected data type was encountered");
-      return 0;
+      H5Sclose(diskshape);
+      H5Dclose(dataset);
       }
     H5Tclose(datatype);
     //
@@ -842,7 +889,7 @@ int vtkH5PartReader::RequestData(
       if ((*it).first=="Coords") {
         coords = dataarray;
         coords->SetName("Coordinates");
-      }
+        }
       else
         {
         output->GetPointData()->AddArray(dataarray);

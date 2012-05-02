@@ -122,15 +122,8 @@ protected:
   int   RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   int   OpenFile();
   void  CloseFile();
-//  void  CopyIntoCoords(int offset, vtkDataArray *source, vtkDataArray *dest);
-  // returns 0 if no, returns 1,2,3,45 etc for the first, second...
-  // example : if CombineVectorComponents is true, then 
-  // velocity_0 returns 1, velocity_1 returns 2 etc
-  // if CombineVectorComponents is false, then 
-  // velocity_0 returns 0, velocity_1 returns 0 etc
-  int             IndexOfVectorComponent(const char *name);
+//  void CopyIntoCoords(int offset, vtkDataArray *source, vtkDataArray *dest);
 //BTX
-  vtkstd::string  NameOfVectorComponent(const char *name);
   static int      ScanCompoundType(hid_t loc_id, const char *name, void *opdata);
   int             FindCompoundDataSet(hid_t group_id, const char *group_name, const hid_t type, char * const pattern);
   vtkIdType       GetNumberOfParticles();
