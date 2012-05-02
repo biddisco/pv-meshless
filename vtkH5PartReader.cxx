@@ -724,6 +724,8 @@ int vtkH5PartReader::RequestData(
   //
   vtkIdType Nparticles = H5PartGetNumParticles(this->H5FileId);
 
+  vtkIdType partitions = this->ReadBoundingBoxes();
+
   //
   // Split particles up per process for parallel load
   //
@@ -870,7 +872,7 @@ int vtkH5PartReader::RequestData(
   //
   //
   if (this->ExportPartitionBoxes) {
-    int newpoints = this->ReadBoundingBoxes(coords, output, ParticleStart, ParticleEnd);
+    vtkIdType newpoints = this->DisplayBoundingBoxes(coords, output, ParticleStart, ParticleEnd);
   }
   //
   //
@@ -886,16 +888,16 @@ int vtkH5PartReader::RequestData(
   return 1;
 }
 //----------------------------------------------------------------------------
-int vtkH5PartReader::ReadBoundingBoxes(vtkDataArray *coords, vtkPolyData *output, vtkIdType extent0, vtkIdType extent1)
+vtkIdType vtkH5PartReader::ReadBoundingBoxes()
 {
-   H5E_auto2_t  errfunc;
-   void        *errdata;
-   vtkIdType    N2 = 0;
+  H5E_auto2_t  errfunc;
+  void        *errdata;
+  vtkIdType    partitions = 0;
 
-   // Prevent HDF5 to print out handled errors, first save old error handler
-   H5Eget_auto(H5E_DEFAULT, &errfunc, &errdata);
-   // Turn off error handling
-   H5Eset_auto(H5E_DEFAULT, NULL, NULL);
+  // Prevent HDF5 printing errors if the bboxes dataset doesn't exist, save error handler
+  H5Eget_auto(H5E_DEFAULT, &errfunc, &errdata);
+  // Replace with NULL error handler
+  H5Eset_auto(H5E_DEFAULT, NULL, NULL);
 
   // @TODO, use group/name string passed into reader ...
 #if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
@@ -905,121 +907,46 @@ int vtkH5PartReader::ReadBoundingBoxes(vtkDataArray *coords, vtkPolyData *output
   hid_t partitiongroup = H5Gopen(H5FileId->file, "Partition#0");
 	hid_t dataset_id = (partitiongroup>0) ? H5Dopen ( partitiongroup, "Box") : -1;
 #endif
+  // Replace normal error handler
+  H5Eset_auto(H5E_DEFAULT, errfunc, errdata); 
+
+  // if all was ok, go ahead and read the data
   if (partitiongroup>0 && dataset_id>0) { 
-    // the disk space is more complicated. We must read Nt from the 
-    // part of the file offset by ParticleStart 
     hid_t diskshape = H5PartGetDiskShape(H5FileId, dataset_id);
-    hsize_t dims[2]; 
-    hsize_t maxdims[2];
-    int val = H5Sget_simple_extent_dims(diskshape, dims, maxdims);
-    int partitions = dims[0]/13;
+    hsize_t dims[2], maxdims[2];
+    herr_t err = H5Sget_simple_extent_dims(diskshape, dims, maxdims);
+    if (err!=1) vtkErrorMacro("Error in H5Part bounding box dimensions read");
+    partitions = dims[0]/13;
     //
     std::vector<double> data(dims[0], 0.0);
-    H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &data[0]);
-
-    vtkIdType N1 = coords->GetNumberOfTuples();
-    N2 = partitions*8*2;
-    vtkIdType N3 = (N1+N2);
-    //
-    // We will add 2 new data arrays per point, boxId and occupation(count)
-    //
-    vtkSmartPointer<vtkIdTypeArray> occupation = vtkSmartPointer<vtkIdTypeArray>::New();
-    occupation->SetNumberOfTuples(N3);
-    occupation->SetName("Occupation");
-    vtkSmartPointer<vtkIdTypeArray> boxId = vtkSmartPointer<vtkIdTypeArray>::New();
-    boxId->SetNumberOfTuples(N3);
-    boxId->SetName("Partition");
-    //
-    vtkIdType index = 0;
-    double bounds[6];
-    vtkBoundingBox box;
-    vtkSmartPointer<vtkAppendPolyData> polys = vtkSmartPointer<vtkAppendPolyData>::New();
-    //
-    // set scalars for each particle
-    //
-    for (int i=0; i<partitions; i++) {
-      vtkIdType numParticles = static_cast<vtkIdType>(data[0+i*13]);
-      if ((index+numParticles)>=extent0 && (index<=extent1)) {
-        for (vtkIdType p=0; p<numParticles; p++) {
-          if (index>=extent0 && index<=extent1) {
-            boxId->SetValue(index-extent0, i);
-            occupation->SetValue(index-extent0, numParticles);
-          }
-          index++;
-        }
-      }
-      else {
-        index +=numParticles;
-        continue;
-      }
-    }
-    //
-    // We haven't read all particles, so set index to last valid ID
-    //
-    index = (extent1-extent0)+1;
+    err = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &data[0]);
+    if (err<0) vtkErrorMacro("Error in H5Part bounding box data read");
     //
     // generate boxes, 2 per partition (6*2+1 = 13 vals per partition)
     // count, min{x,y,z}, max{x,y,z}, ghostmin{x,y,z}, ghostmax{x,y,z}
     //
-    for (int i=0; i<partitions; i++) {
-      double p1[3],p2[3];
-      box.SetMinPoint(&data[1+i*13]);
-      box.SetMaxPoint(&data[4+i*13]);
+    this->PartitionCount.resize(partitions);
+    this->BoundsTable.resize(partitions*6);
+    this->BoundsTableHalo.resize(partitions*6);
+    //
+    for (vtkIdType i=0; i<partitions; i++) {
+      vtkIdType offset1 = i*6;
+      vtkIdType offset2 = i*13;
+      this->PartitionCount[i]      = static_cast<vtkIdType>(data[0+offset2]);
+      this->BoundsTable[0+offset1] = data[1+offset2];
+      this->BoundsTable[1+offset1] = data[4+offset2];
+      this->BoundsTable[2+offset1] = data[2+offset2];
+      this->BoundsTable[3+offset1] = data[5+offset2];
+      this->BoundsTable[4+offset1] = data[3+offset2];
+      this->BoundsTable[5+offset1] = data[6+offset2];
       //
-      vtkSmartPointer<vtkOutlineSource> cube1 = vtkSmartPointer<vtkOutlineSource>::New();
-      cube1->SetBounds(data[0+1+i*13],data[0+4+i*13],data[0+2+i*13],data[0+5+i*13],data[0+3+i*13],data[0+6+i*13]);
-      cube1->Update();
-      polys->AddInput(cube1->GetOutput());
-      //
-      vtkSmartPointer<vtkOutlineSource> cube2 = vtkSmartPointer<vtkOutlineSource>::New();
-      cube2->SetBounds(data[6+1+i*13],data[6+4+i*13],data[6+2+i*13],data[6+5+i*13],data[6+3+i*13],data[6+6+i*13]);
-      cube2->Update();
-      polys->AddInput(cube2->GetOutput());
+      this->BoundsTableHalo[0+offset1] = data[1+6+offset2];
+      this->BoundsTableHalo[1+offset1] = data[4+6+offset2];
+      this->BoundsTableHalo[2+offset1] = data[2+6+offset2];
+      this->BoundsTableHalo[3+offset1] = data[5+6+offset2];
+      this->BoundsTableHalo[4+offset1] = data[3+6+offset2];
+      this->BoundsTableHalo[5+offset1] = data[6+6+offset2];
     }
-    polys->Update();
-    //
-    // Add the generated box points to our original list
-    //
-    vtkPoints *points = polys->GetOutput()->GetPoints();
-    coords->Resize(N3); // might allocate more memory than we need.
-    coords->SetNumberOfTuples(N3); // set limits to correct count
-    for (vtkIdType P=0; P<N2; P++) {
-      coords->SetTuple(N1+P, points->GetPoint(P));
-    }
-    //
-    // Copy lines to output, but add N1 to the point ID of each line vertex
-    //
-    output->SetLines(polys->GetOutput()->GetLines()); 
-    vtkIdType L = output->GetLines()->GetNumberOfCells();
-    vtkIdTypeArray *linedata = output->GetLines()->GetData();
-    // lines stored as : {2, p1, p2}, {2, p1, p2}, ... 
-    for (vtkIdType B=0; B<L; B++) {
-      linedata->SetValue(B*3+1, N1 + linedata->GetValue(B*3+1));
-      linedata->SetValue(B*3+2, N1 + linedata->GetValue(B*3+2));
-    }
-    //
-    // set scalars for line/box
-    //
-    for (int i=0; i<partitions; i++) {
-      vtkIdType numParticles = static_cast<vtkIdType>(data[0+i*13]);
-      for (vtkIdType p=0; p<8*2; p++) {
-        boxId->SetValue(index, i);
-        occupation->SetValue(index, numParticles);
-        index++;
-      }
-    }
-    //
-    // The existing scalar array must be padded out for the new points we added
-    //
-    output->GetPointData()->CopyAllocate(output->GetPointData(),N3);
-    for (vtkIdType i=0; i<N2; i++) {
-      output->GetPointData()->NullPoint(N1+i);
-    }
-    //
-    // And now add the new arrays (correct size already)
-    //
-    output->GetPointData()->AddArray(boxId);
-    output->GetPointData()->AddArray(occupation);
     //
     // cleanup hdf5
     //
@@ -1027,8 +954,111 @@ int vtkH5PartReader::ReadBoundingBoxes(vtkDataArray *coords, vtkPolyData *output
   }
   if (dataset_id>0) H5Dclose(dataset_id);
   if (partitiongroup>0) H5Gclose(partitiongroup);
-  // put error handling back to previous state.
-  H5Eset_auto(H5E_DEFAULT, errfunc, errdata); 
+  //
+  return partitions;
+}
+//----------------------------------------------------------------------------
+vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyData *output, vtkIdType extent0, vtkIdType extent1)
+{
+  vtkIdType partitions = this->PartitionCount.size();
+  //
+  vtkIdType N1 = coords->GetNumberOfTuples();
+  vtkIdType N2 = partitions*8*2;
+  vtkIdType N3 = (N1+N2);
+  //
+  // We will add 2 new data arrays per point, boxId and occupation(count)
+  //
+  vtkSmartPointer<vtkIdTypeArray> occupation = vtkSmartPointer<vtkIdTypeArray>::New();
+  occupation->SetNumberOfTuples(N3);
+  occupation->SetName("Occupation");
+  vtkSmartPointer<vtkIdTypeArray> boxId = vtkSmartPointer<vtkIdTypeArray>::New();
+  boxId->SetNumberOfTuples(N3);
+  boxId->SetName("Partition");
+  //
+  vtkIdType index = 0;
+  vtkBoundingBox box;
+  vtkSmartPointer<vtkAppendPolyData> polys = vtkSmartPointer<vtkAppendPolyData>::New();
+  //
+  // set scalars for each particle
+  //
+  for (int i=0; i<partitions; i++) {
+    vtkIdType numParticles = this->PartitionCount[i];
+    if ((index+numParticles)>=extent0 && (index<=extent1)) {
+      for (vtkIdType p=0; p<numParticles; p++) {
+        if (index>=extent0 && index<=extent1) {
+          boxId->SetValue(index-extent0, i);
+          occupation->SetValue(index-extent0, numParticles);
+        }
+        index++;
+      }
+    }
+    else {
+      index +=numParticles;
+      continue;
+    }
+  }
+  //
+  // We haven't read all particles, so set index to last valid ID
+  //
+  index = (extent1-extent0)+1;
+  //
+  // generate boxes, 2 per partition (6*2+1 = 13 vals per partition)
+  // count, min{x,y,z}, max{x,y,z}, ghostmin{x,y,z}, ghostmax{x,y,z}
+  //
+  for (int i=0; i<partitions; i++) {
+    vtkSmartPointer<vtkOutlineSource> cube1 = vtkSmartPointer<vtkOutlineSource>::New();
+    cube1->SetBounds(&this->BoundsTable[i*6]);
+    cube1->Update();
+    polys->AddInput(cube1->GetOutput());
+    //
+    vtkSmartPointer<vtkOutlineSource> cube2 = vtkSmartPointer<vtkOutlineSource>::New();
+    cube2->SetBounds(&this->BoundsTableHalo[i*6]);
+    cube2->Update();
+    polys->AddInput(cube2->GetOutput());
+  }
+  polys->Update();
+  //
+  // Add the generated box points to our original list
+  //
+  vtkPoints *points = polys->GetOutput()->GetPoints();
+  coords->Resize(N3); // might allocate more memory than we need.
+  coords->SetNumberOfTuples(N3); // set limits to correct count
+  for (vtkIdType P=0; P<N2; P++) {
+    coords->SetTuple(N1+P, points->GetPoint(P));
+  }
+  //
+  // Copy lines to output, but add N1 to the point ID of each line vertex
+  //
+  output->SetLines(polys->GetOutput()->GetLines()); 
+  vtkIdType L = output->GetLines()->GetNumberOfCells();
+  vtkIdTypeArray *linedata = output->GetLines()->GetData();
+  // lines stored as : {2, p1, p2}, {2, p1, p2}, ... 
+  for (vtkIdType B=0; B<L; B++) {
+    linedata->SetValue(B*3+1, N1 + linedata->GetValue(B*3+1));
+    linedata->SetValue(B*3+2, N1 + linedata->GetValue(B*3+2));
+  }
+  //
+  // set scalars for line/box
+  //
+  for (int i=0; i<partitions; i++) {
+    for (vtkIdType p=0; p<8*2; p++) {
+      boxId->SetValue(index, i);
+      occupation->SetValue(index, this->PartitionCount[i]);
+      index++;
+    }
+  }
+  //
+  // The existing scalar array must be padded out for the new points we added
+  //
+  output->GetPointData()->CopyAllocate(output->GetPointData(),N3);
+  for (vtkIdType i=0; i<N2; i++) {
+    output->GetPointData()->NullPoint(N1+i);
+  }
+  //
+  // And now add the new arrays (correct size already)
+  //
+  output->GetPointData()->AddArray(boxId);
+  output->GetPointData()->AddArray(occupation);
 
   return N2;
 }
