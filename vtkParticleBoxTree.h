@@ -63,6 +63,13 @@ class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
     vtkGetObjectMacro(ParticleSizeArray, vtkDataArray);
     
     // Description:
+    // Supply an array of bounding boxes, one per particle
+    // this allows asymmetrical boxes to be handled.
+    // The array should have N*6 components of bounds[] entries
+    virtual void SetParticleBoundsArray(vtkDataArray*);
+    vtkGetObjectMacro(ParticleBoundsArray, vtkDataArray);
+    
+    // Description:
     // Generate BBox representation of Nth level
     virtual void GenerateRepresentation(int level, vtkPolyData *pd);
 
@@ -94,6 +101,7 @@ class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
 
   double ParticleSize;
   vtkDataArray *ParticleSizeArray;
+  vtkDataArray *ParticleBoundsArray;
 
 private:
   vtkParticleBoxTree(const vtkParticleBoxTree&);  // Not implemented.

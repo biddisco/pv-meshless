@@ -40,6 +40,7 @@
 vtkCxxRevisionMacro(vtkParticleBoxTree, "$Revision: 1.2 $");
 vtkStandardNewMacro(vtkParticleBoxTree);
 vtkCxxSetObjectMacro(vtkParticleBoxTree, ParticleSizeArray, vtkDataArray);
+vtkCxxSetObjectMacro(vtkParticleBoxTree, ParticleBoundsArray, vtkDataArray);
 //----------------------------------------------------------------------------
 #define JB_DEBUG__
 #if defined JB_DEBUG__
@@ -67,10 +68,12 @@ vtkCxxSetObjectMacro(vtkParticleBoxTree, ParticleSizeArray, vtkDataArray);
 vtkParticleBoxTree::vtkParticleBoxTree(void) {
   this->ParticleSize = 0.05;
   this->ParticleSizeArray = NULL;
+  this->ParticleBoundsArray = NULL;
 }
 //---------------------------------------------------------------------------
 vtkParticleBoxTree::~vtkParticleBoxTree(void) {
   this->SetParticleSizeArray(NULL);
+  this->SetParticleBoundsArray(NULL);
 }
 //----------------------------------------------------------------------------
 bool vtkParticleBoxTree::StoreCellBounds()
@@ -84,13 +87,18 @@ bool vtkParticleBoxTree::StoreCellBounds()
   double size = this->ParticleSize;
   for (vtkIdType j=0; j<numCells; j++) 
   { 
-    if (this->ParticleSizeArray) {
-      size = this->ParticleSize*sqrt(this->ParticleSizeArray->GetTuple1(j));
+    if (this->ParticleBoundsArray) {
+      this->ParticleBoundsArray->GetTuple(j, &this->CellBounds[j][0]);
     }
-    this->DataSet->GetCellBounds(j, CellBounds[j]);
-    for (int i=0; i<3; i++) {
-      this->CellBounds[j][i*2+0] -= size/2.0;    
-      this->CellBounds[j][i*2+1] += size/2.0;    
+    else {
+      if (this->ParticleSizeArray) {
+        size = this->ParticleSize*sqrt(this->ParticleSizeArray->GetTuple1(j));
+      }
+      this->DataSet->GetCellBounds(j, CellBounds[j]);
+      for (int i=0; i<3; i++) {
+        this->CellBounds[j][i*2+0] -= size/2.0;    
+        this->CellBounds[j][i*2+1] += size/2.0;    
+      }
     }
   }
   return true;
@@ -233,8 +241,8 @@ void vtkParticleBoxTree::GenerateRepresentation(int level, vtkPolyData *pd)
   //
   //
   // For each node, add the bbox to our polydata
-  int s = bl.size();
-  for (int i=0; i<s; i++) {
+  size_t s = bl.size();
+  for (size_t i=0; i<s; i++) {
     this->AddBox(pd, bl[i].bounds);
   }
 }
