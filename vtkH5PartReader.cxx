@@ -62,11 +62,14 @@
 #include "vtkDoubleArray.h"
 #include "vtkSmartPointer.h"
 #include "vtkExtentTranslator.h"
+#include "vtkParticleBoxTree.h"
+#include "vtkBoundingBox.h"
+#include "vtkIdListCollection.h"
 //
 #include "vtkDummyController.h"
 //
 #include <algorithm>
-
+#include <numeric>
 #include "H5Part.h"
 //----------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkH5PartReader, Controller, vtkMultiProcessController);
@@ -179,6 +182,7 @@ vtkH5PartReader::vtkH5PartReader()
   this->MaskOutOfTimeRangeOutput      = 0;
   this->IntegerTimeStepValues         = 0;
   this->ExportPartitionBoxes          = 0;
+  this->UseLinearBoxPartitioning      = 1;
   this->PointDataArraySelection       = vtkDataArraySelection::New();
   this->SetXarray("Coords_0");
   this->SetYarray("Coords_1");
@@ -485,10 +489,10 @@ int GetVTKDataType(int datatype)
 template <class T1, class T2>
 void CopyIntoCoords_T(int offset, vtkDataArray *source, vtkDataArray *dest)
 {
-  int N = source->GetNumberOfTuples();
+  vtkIdType N = source->GetNumberOfTuples();
   T1 *sptr = static_cast<T1*>(source->GetVoidPointer(0));
   T2 *dptr = static_cast<T2*>(dest->WriteVoidPointer(0,N)) + offset;
-  for (int i=0; i<N; ++i) {
+  for (vtkIdType i=0; i<N; ++i) {
     *dptr = *sptr++;
     dptr += 3;
   }
@@ -732,24 +736,17 @@ int vtkH5PartReader::RequestData(
   //
   // Split particles up per process for parallel load
   //
-  vtkExtentTranslator *extTran = vtkExtentTranslator::New();
-  extTran->SetSplitModeToBlock();
-  int WholeExtent[6] = { 0, Nparticles, 0, 0, 0, 0 };
-#if !defined(LIMIT_PARTITIONS)
-  extTran->SetNumberOfPieces(this->UpdateNumPieces);
-#else 
-  extTran->SetNumberOfPieces(LIMIT_PARTITIONS);
-#endif
-  extTran->SetPiece(this->UpdatePiece);
-  extTran->SetWholeExtent(WholeExtent);
-  extTran->PieceToExtent();
-  int PartitionExtents[6];
-  extTran->GetExtent(PartitionExtents);
-  extTran->Delete();
-  int ParticleStart = PartitionExtents[0];
-  int ParticleEnd   = PartitionExtents[1]-1;
-  vtkIdType Nt = ParticleEnd - ParticleStart + 1;
-  vtkDebugMacro(<< "Reading Particles " << ParticleStart << " : " << ParticleEnd << " = " << Nt);
+  std::vector<vtkIdType> startend;
+  if (partitions>0 && this->PartitionByBoundingBoxes(startend)) {
+    //
+  }
+  else {
+    this->PartitionByExtents(Nparticles, startend);
+  }
+  vtkIdType ParticleStart = startend[0];
+  vtkIdType ParticleEnd   = startend[1];
+  vtkIdType            Nt = ParticleEnd - ParticleStart + 1;
+  //
 
   // Setup arrays for reading data
   vtkSmartPointer<vtkPoints>    points = vtkSmartPointer<vtkPoints>::New();
@@ -973,6 +970,8 @@ vtkIdType vtkH5PartReader::ReadBoundingBoxes()
     // count, min{x,y,z}, max{x,y,z}, ghostmin{x,y,z}, ghostmax{x,y,z}
     //
     this->PartitionCount.resize(partitions);
+    this->PartitionOffset.resize(partitions+1,0);
+    this->PieceId.resize(partitions,0); // values set in repartitioning methods
     this->BoundsTable.resize(partitions*6);
     this->BoundsTableHalo.resize(partitions*6);
     //
@@ -994,6 +993,7 @@ vtkIdType vtkH5PartReader::ReadBoundingBoxes()
       this->BoundsTableHalo[4+offset1] = data[3+6+offset2];
       this->BoundsTableHalo[5+offset1] = data[6+6+offset2];
     }
+    std::partial_sum(this->PartitionCount.begin(), this->PartitionCount.end(), this->PartitionOffset.begin()+1);
     //
     // cleanup hdf5
     //
@@ -1021,6 +1021,9 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
   vtkSmartPointer<vtkIdTypeArray> boxId = vtkSmartPointer<vtkIdTypeArray>::New();
   boxId->SetNumberOfTuples(N3);
   boxId->SetName("Partition");
+  vtkSmartPointer<vtkIdTypeArray> piece = vtkSmartPointer<vtkIdTypeArray>::New();
+  piece->SetNumberOfTuples(N3);
+  piece->SetName("PieceId");
   //
   vtkIdType index = 0;
   vtkBoundingBox box;
@@ -1028,13 +1031,15 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
   //
   // set scalars for each particle
   //
-  for (int i=0; i<partitions; i++) {
+  for (vtkIdType i=0; i<partitions; i++) {
     vtkIdType numParticles = this->PartitionCount[i];
+    vtkIdType pieceId = this->PieceId[i];
     if ((index+numParticles)>=extent0 && (index<=extent1)) {
       for (vtkIdType p=0; p<numParticles; p++) {
         if (index>=extent0 && index<=extent1) {
           boxId->SetValue(index-extent0, i);
           occupation->SetValue(index-extent0, numParticles);
+          piece->SetValue(index-extent0, pieceId);
         }
         index++;
       }
@@ -1052,7 +1057,7 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
   // generate boxes, 2 per partition (6*2+1 = 13 vals per partition)
   // count, min{x,y,z}, max{x,y,z}, ghostmin{x,y,z}, ghostmax{x,y,z}
   //
-  for (int i=0; i<partitions; i++) {
+  for (vtkIdType i=0; i<partitions; i++) {
     vtkSmartPointer<vtkOutlineSource> cube1 = vtkSmartPointer<vtkOutlineSource>::New();
     cube1->SetBounds(&this->BoundsTable[i*6]);
     cube1->Update();
@@ -1087,10 +1092,13 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
   //
   // set scalars for line/box
   //
-  for (int i=0; i<partitions; i++) {
+  for (vtkIdType i=0; i<partitions; i++) {
+    vtkIdType numParticles = this->PartitionCount[i];
+    vtkIdType pieceId = this->PieceId[i];
     for (vtkIdType p=0; p<8*2; p++) {
       boxId->SetValue(index, i);
-      occupation->SetValue(index, this->PartitionCount[i]);
+      occupation->SetValue(index, numParticles);
+      piece->SetValue(index, pieceId);
       index++;
     }
   }
@@ -1106,8 +1114,133 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
   //
   output->GetPointData()->AddArray(boxId);
   output->GetPointData()->AddArray(occupation);
+  output->GetPointData()->AddArray(piece);
 
   return N2;
+}
+//----------------------------------------------------------------------------
+int vtkH5PartReader::PartitionByExtents(vtkIdType N, std::vector<vtkIdType> &startend)
+{
+  vtkExtentTranslator *extTran = vtkExtentTranslator::New();
+  extTran->SetSplitModeToBlock();
+  int WholeExtent[6] = { 0, N, 0, 0, 0, 0 };
+#if !defined(LIMIT_PARTITIONS)
+  extTran->SetNumberOfPieces(this->UpdateNumPieces);
+#else 
+  extTran->SetNumberOfPieces(LIMIT_PARTITIONS);
+#endif
+  extTran->SetPiece(this->UpdatePiece);
+  extTran->SetWholeExtent(WholeExtent);
+  extTran->PieceToExtent();
+  int PartitionExtents[6];
+  extTran->GetExtent(PartitionExtents);
+  extTran->Delete();
+  startend.push_back(PartitionExtents[0]);
+  startend.push_back(PartitionExtents[1]-1);
+  vtkDebugMacro(<< "PartitionByExtents " << startend[0] << " : " << startend[1] << " = " << (startend[1]-startend[0]+1));
+  return 1;
+}
+//----------------------------------------------------------------------------
+unsigned int mylog2(unsigned int val) {
+  unsigned int ret = -1;
+  while (val != 0) {
+    val >>= 1;
+    ret++;
+  }
+  return ret;
+}
+//----------------------------------------------------------------------------
+int vtkH5PartReader::PartitionByBoundingBoxes(std::vector<vtkIdType> &startend)
+{
+  vtkIdType NP = this->PartitionCount.size();
+  vtkIdType NR = this->UpdateNumPieces;
+  vtkIdType  N = NP/NR;
+  vtkIdType  D = NP % NR;
+  //
+  if (NR==1 || N<1 || D>0) { 
+    std::cout << "H5Part partitioning : Box method unavailable " << NP << ":" << NR << " % " << D << std::endl;
+    return 0; 
+  }
+  std::cout << "H5Part partitioning : Using " << N << " Boxes per rank " << std::endl;
+  //
+  if (this->UseLinearBoxPartitioning) {
+    bool ok = true;
+    vtkIdType minId = VTK_INT_MAX;
+    vtkIdType maxId = VTK_INT_MIN;
+    for (vtkIdType i=0; i<NP; i++) {
+      if ((i/N) == this->UpdatePiece) {
+        minId = std::min(this->PartitionOffset[i], minId);
+        maxId = std::max(this->PartitionOffset[i+1]-1, maxId);
+        this->PieceId[i] = this->UpdatePiece;
+      }
+      else {
+        if ((this->PartitionOffset[i]>=minId && this->PartitionOffset[i]<=maxId) ||
+            (this->PartitionOffset[i+1]>=minId && this->PartitionOffset[i+1]<=maxId)) {
+          ok = false;
+        }
+      }
+    }
+    if (ok) {
+      startend.push_back(minId);
+      startend.push_back(maxId);
+      return 1;
+    }
+    vtkDebugMacro("Linear Partitioning failed : using BSP tree instead");
+  }
+
+  //
+  // Create a dataset with 1 point per partition centre
+  vtkSmartPointer<vtkPolyData> poly = vtkSmartPointer<vtkPolyData>::New();
+  vtkSmartPointer<vtkPoints> boxcentres = vtkSmartPointer<vtkPoints>::New();
+  boxcentres->SetNumberOfPoints(NP);
+  vtkBoundingBox box;
+  double centre[3];
+  for (vtkIdType i=0; i<NP; i++) {
+    box.SetBounds(&this->BoundsTable[i*6]);
+    box.GetCenter(centre);
+    boxcentres->SetPoint(i, centre);
+  }
+  vtkSmartPointer<vtkCellArray> boxcells = vtkSmartPointer<vtkCellArray>::New();
+  vtkIdType *cells = boxcells->WritePointer(NP, 2*NP);
+  for (vtkIdType i=0; i<NP; ++i) {
+    cells[2*i] = 1;
+    cells[2*i+1] = i;
+  }
+  poly->SetPoints(boxcentres);
+  poly->SetVerts(boxcells);
+  // Construct a BSP tree and set the bounding boxes to our partition extents
+  vtkSmartPointer<vtkParticleBoxTree> tree = vtkSmartPointer<vtkParticleBoxTree>::New();
+  vtkSmartPointer<vtkDoubleArray> bounds = vtkSmartPointer<vtkDoubleArray>::New();
+  bounds->SetNumberOfComponents(6);
+  bounds->SetNumberOfTuples(NP);
+  bounds->SetVoidArray(&this->BoundsTable[0], this->BoundsTable.size(), 1); // we delete array
+  tree->SetParticleBoundsArray(bounds);
+  tree->SetNumberOfCellsPerNode(N);
+  tree->SetMaxLevel(mylog2(NR));
+  //
+  tree->SetDataSet(poly);
+  tree->SetLazyEvaluation(0);
+  tree->BuildLocator();
+  //
+  vtkSmartPointer<vtkIdListCollection> info;
+  info.TakeReference(tree->GetLeafNodeCellInformation());
+
+  vtkIdList* list;
+  vtkCollectionSimpleIterator adit;
+  int L = 0, part=0;
+  for (info->InitTraversal(adit); (list = info->GetNextIdList(adit));) {
+    std::cout << "Entries for list " << L << " (" << list->GetNumberOfIds() << ")" << std::endl;
+    for (vtkIdType i=0; i<list->GetNumberOfIds(); i++) {
+      std::cout << list->GetId(i) << " ";
+      if (this->UpdatePiece==0) {
+        this->PieceId[part++] = L;
+      }
+    }
+    std::cout << std::endl;
+    L++;
+  }
+  //
+  return 0;
 }
 //----------------------------------------------------------------------------
 int vtkH5PartReader::GetCoordinateArrayStatus(const char* name)

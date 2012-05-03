@@ -177,8 +177,15 @@ protected:
 
   // create polygons/lines from boxes for visual display
   // Note : we only colour particles actually read on this process 
-  // i.e. those betweem extent0 and extent1
+  // i.e. those between extent0 and extent1
   vtkIdType DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyData *output, vtkIdType extent0, vtkIdType extent1);
+
+  // Use simple 1...N, divide particle list to partition data for reading
+  int PartitionByExtents(vtkIdType N, std::vector<vtkIdType> &startend);
+  
+  // Use the BoundingBoxes read to partition data for reading
+  int PartitionByBoundingBoxes(std::vector<vtkIdType> &startend);
+
   //
   virtual int  OpenFile();
   virtual void CloseFile();
@@ -225,6 +232,7 @@ protected:
   int           TimeOutOfRange;
   int           IntegerTimeStepValues;
   int           ExportPartitionBoxes;
+  int           UseLinearBoxPartitioning;
   //
   char         *Xarray;
   char         *Yarray;
@@ -235,6 +243,8 @@ protected:
   vtkstd::vector<stringlist>              FieldArrays;
   // For Bounding boxes if present
   std::vector<vtkIdType> PartitionCount;
+  std::vector<vtkIdType> PartitionOffset;
+  std::vector<vtkIdType> PieceId;
   std::vector<double>    BoundsTable;
   std::vector<double>    BoundsTableHalo;
 //ETX
