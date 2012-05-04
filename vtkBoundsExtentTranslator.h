@@ -61,7 +61,13 @@ public:
   // Description:
   // Set the bounding box + halo region to be used for a piece.
   virtual void SetBoundsHaloForPiece(int piece, double* bounds);
-  
+
+  // Description:
+  // Set the maximum ghost overlap region that is required 
+  vtkSetMacro(BoundsHalosPresent, int);
+  vtkGetMacro(BoundsHalosPresent, int); 
+  vtkBooleanMacro(BoundsHalosPresent, int); 
+
   // Description:  
   // Get the bounds table entry for the given piece.  
   // Structured Extents should be calculated using PieceToExtent
@@ -100,6 +106,7 @@ protected:
   double WholeBounds[6];
   double Spacing[3];
   double MaximumGhostDistance;
+  int    BoundsHalosPresent;
    
 private:
   vtkBoundsExtentTranslator(const vtkBoundsExtentTranslator&);  // Not implemented.

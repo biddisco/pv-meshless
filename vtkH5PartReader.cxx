@@ -752,6 +752,7 @@ int vtkH5PartReader::RequestData(
   if (partitions>0 && this->PartitionByBoundingBoxes(minIds,maxIds,this->PieceBounds,PieceHaloBounds)) {
     ParticleStart = minIds[this->UpdatePiece];
     ParticleEnd   = maxIds[this->UpdatePiece];
+    this->ExtentTranslator->SetBoundsHalosPresent(1);
     this->ExtentTranslator->SetNumberOfPieces(this->PieceBounds.size());
     for (int i=0; i<this->PieceBounds.size(); i++) {
       double bounds[6];
