@@ -22,6 +22,7 @@ vtkStandardNewMacro(vtkBoundsExtentTranslator);
 vtkBoundsExtentTranslator::vtkBoundsExtentTranslator()
 {
   this->MaximumGhostDistance = 0;
+  this->BoundsHalosPresent = 0;
 }
 
 //----------------------------------------------------------------------------
