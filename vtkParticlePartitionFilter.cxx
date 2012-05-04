@@ -649,6 +649,10 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   }
   vtkDebugMacro(<<"Zoltan Initialized on " << this->UpdatePiece);
 
+  //
+  // Setup mesh structure as a user parameter to zoltan 
+  // with partition info (H5Part reader can generate this)
+  //
   mesh.Input                    = inputCopy;
   mesh.Output                   = output;
   mesh.InputNumberOfLocalPoints = numPoints;
@@ -789,9 +793,8 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   // Register functions for packing and unpacking data
   // by migration tools.  
   // GCC has trouble resolving the templated function pointers, so we explicitly
-  // declare the types ant then cast them as args
+  // declare the types and then cast them as args
   //    
-
   
   typedef int  (*zsize_fn) (void *, int , int , ZOLTAN_ID_PTR , ZOLTAN_ID_PTR , int *);
   typedef void (*zpack_fn) (void *, int , int , ZOLTAN_ID_PTR , ZOLTAN_ID_PTR , int , int , char *, int *);
@@ -819,79 +822,136 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,     (void (*)()) f3, &mesh);
     Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, (void (*)()) f4, &mesh);
   }
-  //
-  // Zoltan can now partition our particles. 
-  // After this returns, we have redistributed particles and the Output holds
-  // the list of correct points/fields etc for each process
-  //
-  rc = Zoltan_LB_Partition(zz, // input (all remaining fields are output)
-        &changes,              // 1 if partitioning was changed, 0 otherwise 
-        &numGidEntries,        // Number of integers used for a global ID
-        &numLidEntries,        // Number of integers used for a local ID
-        &numImport,            // Number of vertices to be sent to me
-        &importGlobalGids,     // Global IDs of vertices to be sent to me
-        &importLocalGids,      // Local IDs of vertices to be sent to me
-        &importProcs,          // Process rank for source of each incoming vertex
-        &importToPart,         // New partition for each incoming vertex
-        &numExport,            // Number of vertices I must send to other processes*/
-        &exportGlobalGids,     // Global IDs of the vertices I must send
-        &exportLocalGids,      // Local IDs of the vertices I must send
-        &exportProcs,          // Process to which I send each of the vertices
-        &exportToPart);        // Partition to which each vertex will belong
 
-  if (rc != ZOLTAN_OK){
-    printf("Zoltan_LB_Partition NOT OK...\n");
-    MPI_Finalize();
-    Zoltan_Destroy(&zz);
-    exit(0);
+  //
+  // Check the input to see if it has a bounds translator already initialized
+  // with partition info (H5Part reader can generate this)
+  //
+  vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
+    inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR())) : NULL;
+  vtkBoundsExtentTranslator *input_bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
+  // if the extent translator has not been initialized well - don't use it
+  if (input_bet && input_bet->GetNumberOfPieces()==0) {
+    input_bet = NULL;
   }
 
-  vtkDebugMacro(<<"Partitioning complete on " << this->UpdatePiece << 
-    " pack_count : " << pack_count <<
-    " size_count : " << size_count <<
-    " unpack_count : " << unpack_count 
-   );
+  //
+  // if the input had a BoundsExtentTranslator, then we don't need to load-balance particles
+  // we only need to exchange halo particles.
+  //
+  if (!input_bet) {
+    //
+    // Zoltan can now partition our particles. 
+    // After this returns, we have redistributed particles and the Output holds
+    // the list of correct points/fields etc for each process
+    //
+    rc = Zoltan_LB_Partition(zz, // input (all remaining fields are output)
+          &changes,              // 1 if partitioning was changed, 0 otherwise 
+          &numGidEntries,        // Number of integers used for a global ID
+          &numLidEntries,        // Number of integers used for a local ID
+          &numImport,            // Number of vertices to be sent to me
+          &importGlobalGids,     // Global IDs of vertices to be sent to me
+          &importLocalGids,      // Local IDs of vertices to be sent to me
+          &importProcs,          // Process rank for source of each incoming vertex
+          &importToPart,         // New partition for each incoming vertex
+          &numExport,            // Number of vertices I must send to other processes*/
+          &exportGlobalGids,     // Global IDs of the vertices I must send
+          &exportLocalGids,      // Local IDs of the vertices I must send
+          &exportProcs,          // Process to which I send each of the vertices
+          &exportToPart);        // Partition to which each vertex will belong
 
-  MPI_Barrier(mpiComm);
-  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
-                      &importProcs, &importToPart);
-  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
-                      &exportProcs, &exportToPart);
+    if (rc != ZOLTAN_OK){
+      printf("Zoltan_LB_Partition NOT OK...\n");
+      MPI_Finalize();
+      Zoltan_Destroy(&zz);
+      exit(0);
+    }
+
+    vtkDebugMacro(<<"Partitioning complete on " << this->UpdatePiece << 
+      " pack_count : " << pack_count <<
+      " size_count : " << size_count <<
+      " unpack_count : " << unpack_count 
+     );
+
+    Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
+                        &importProcs, &importToPart);
+    Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
+                        &exportProcs, &exportToPart);
+  }
+  else {
+    //
+    // If we skipped the zoltan repartitioning, then do a copy (setup everything)
+    // just like would have taken place at the start of the load balancing
+    //
+    if (pointstype==VTK_FLOAT) {
+      zprem_fn  f4 = zoltan_pre_migrate_pp_func<float>; 
+      f4(&mesh, 0, 0, 0, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL); 
+    }
+    else if (pointstype==VTK_DOUBLE) {
+      zprem_fn  f4 = zoltan_pre_migrate_pp_func<double>;
+      f4(&mesh, 0, 0, 0, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL); 
+    }
+  }
 
   //
-  // For ghost cells we would like the bounding boxes of each partition
+  // Get the partition bounding boxes from Zoltan if we don't have them
   //  
-  std::vector<double> ghostOverlaps(this->UpdateNumPieces,this->GhostCellOverlap);
-  if (this->AdaptiveGhostCellOverlap) {
-    ghostOverlaps[this->UpdatePiece] = this->ComputeAdaptiveOverlap(mesh.Output, this->GhostCellOverlap, this->SimpleGhostOverlapMode);
-    std::cout << "Adaptive overlap for process " << this->UpdatePiece << " is " << ghostOverlaps[this->UpdatePiece] << std::endl;
-#ifdef VTK_USE_MPI
-    communicator->AllGather((char*)MPI_IN_PLACE, (char*)&ghostOverlaps[0], sizeof(double));
-#endif
+  this->ExtentTranslator->SetNumberOfPieces(this->UpdateNumPieces);
+  if (!input_bet) {
+    for (int p=0; p<this->UpdateNumPieces; p++) {
+      double bounds[6];
+      int ndim;
+      if (ZOLTAN_OK==Zoltan_RCB_Box(zz, p, &ndim, &bounds[0], &bounds[2], &bounds[4], &bounds[1], &bounds[3], &bounds[5])) {
+        if (bounds[0]==-DBL_MAX) { bounds[0] = bmin[0]; }
+        if (bounds[1]== DBL_MAX) { bounds[1] = bmax[0]; }
+        if (bounds[2]==-DBL_MAX) { bounds[2] = bmin[1]; }
+        if (bounds[3]== DBL_MAX) { bounds[3] = bmax[1]; }
+        if (bounds[4]==-DBL_MAX) { bounds[4] = bmin[2]; }
+        if (bounds[5]== DBL_MAX) { bounds[5] = bmax[2]; }
+        vtkBoundingBox box(bounds);
+        this->BoxList.push_back(box);
+        this->ExtentTranslator->SetBoundsForPiece(p, bounds);
+      }
+    }
+  }
+  else {
+    for (int p=0; p<this->UpdateNumPieces; p++) {
+      vtkBoundingBox box;  
+      box.SetBounds(input_bet->GetBoundsForPiece(p));
+      this->BoxList.push_back(box);
+      this->ExtentTranslator->SetBoundsForPiece(p, input_bet->GetBoundsForPiece(p));
+    }
   }
 
-  this->ExtentTranslator->SetNumberOfPieces(this->UpdateNumPieces);
-  for (int p=0; p<this->UpdateNumPieces; p++) {
-    double bounds[6];
-    int ndim;
-    if (ZOLTAN_OK==Zoltan_RCB_Box(zz, p, &ndim, &bounds[0], &bounds[2], &bounds[4], &bounds[1], &bounds[3], &bounds[5])) {
-      if (bounds[0]==-DBL_MAX) { bounds[0] = bmin[0]; }
-      if (bounds[1]== DBL_MAX) { bounds[1] = bmax[0]; }
-      if (bounds[2]==-DBL_MAX) { bounds[2] = bmin[1]; }
-      if (bounds[3]== DBL_MAX) { bounds[3] = bmax[1]; }
-      if (bounds[4]==-DBL_MAX) { bounds[4] = bmin[2]; }
-      if (bounds[5]== DBL_MAX) { bounds[5] = bmax[2]; }
-      vtkBoundingBox box(bounds);
-      this->BoxList.push_back(box);
-      //
-      // Copy the bounds to our piece to bounds translator
-      this->ExtentTranslator->SetBoundsForPiece(p, bounds);
-      //
-      // Add a ghost cell region to our boxes
+  //
+  // Set the halo/ghost regions we need around each process bounding box
+  //  
+  if (input_bet && input_bet->GetBoundsHalosPresent()) {
+    this->ExtentTranslator->SetBoundsHalosPresent(1);
+    for (int p=0; p<this->UpdateNumPieces; p++) {
+      vtkBoundingBox box;  
+      box.SetBounds(input_bet->GetBoundsHaloForPiece(p));
+      this->BoxListWithGhostRegion.push_back(box);
+      this->ExtentTranslator->SetBoundsHaloForPiece(p,input_bet->GetBoundsHaloForPiece(p));
+    }
+  }
+  else {
+    // do a calaculation on all nodes
+    std::vector<double> ghostOverlaps(this->UpdateNumPieces,this->GhostCellOverlap);
+    if (this->AdaptiveGhostCellOverlap) {
+      ghostOverlaps[this->UpdatePiece] = this->ComputeAdaptiveOverlap(mesh.Output, this->GhostCellOverlap, this->SimpleGhostOverlapMode);
+      std::cout << "Adaptive overlap for process " << this->UpdatePiece << " is " << ghostOverlaps[this->UpdatePiece] << std::endl;
+  #ifdef VTK_USE_MPI
+      communicator->AllGather((char*)MPI_IN_PLACE, (char*)&ghostOverlaps[0], sizeof(double));
+  #endif
+    }
+    for (int p=0; p<this->UpdateNumPieces; p++) {
+      vtkBoundingBox box = this->BoxList[p];  
       box.Inflate(ghostOverlaps[p]);
       this->BoxListWithGhostRegion.push_back(box);
     }
   }
+
   this->ExtentTranslator->InitWholeBounds();
   this->LocalBox = &this->BoxListWithGhostRegion[this->UpdatePiece];
 
