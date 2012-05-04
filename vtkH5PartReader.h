@@ -91,6 +91,13 @@ public:
   vtkBooleanMacro(GenerateVertexCells, int);
 
   // Description:
+  // If set, the reader will not attempt to read or use Bounding Boxes
+  // for partitions, and display of them will also be disabled
+  vtkSetMacro(IgnorePartitionBoxes,int);
+  vtkGetMacro(IgnorePartitionBoxes,int);
+  vtkBooleanMacro(IgnorePartitionBoxes,int);
+  
+  // Description:
   // If set and present in the file, bounding boxes of each parallel
   // partition will be exported (as lines) along with particles.
   vtkSetMacro(ExportPartitionBoxes,int);
@@ -237,6 +244,7 @@ protected:
   int           MaskOutOfTimeRangeOutput;
   int           TimeOutOfRange;
   int           IntegerTimeStepValues;
+  int           IgnorePartitionBoxes;
   int           ExportPartitionBoxes;
   int           UseLinearBoxPartitioning;
   //

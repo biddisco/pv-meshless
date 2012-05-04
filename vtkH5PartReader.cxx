@@ -184,6 +184,7 @@ vtkH5PartReader::vtkH5PartReader()
   this->TimeOutOfRange                = 0;
   this->MaskOutOfTimeRangeOutput      = 0;
   this->IntegerTimeStepValues         = 0;
+  this->IgnorePartitionBoxes          = 0;
   this->ExportPartitionBoxes          = 0;
   this->UseLinearBoxPartitioning      = 1;
   this->PointDataArraySelection       = vtkDataArraySelection::New();
@@ -739,7 +740,7 @@ int vtkH5PartReader::RequestData(
   //
   // If the file has bounding box partition support
   //
-  vtkIdType partitions = this->ReadBoundingBoxes();
+  vtkIdType partitions = this->IgnorePartitionBoxes ? 1 : this->ReadBoundingBoxes();
 
   //
   // Split particles up per process for parallel load
@@ -1197,10 +1198,10 @@ int vtkH5PartReader::PartitionByBoundingBoxes(
   vtkIdType  D = NP % NR;
   //
   if (NR==1 || N<1 || D>0) { 
-    std::cout << "H5Part partitioning : Box method unavailable " << NP << ":" << NR << " % " << D << std::endl;
+//    std::cout << "H5Part partitioning : Box method unavailable " << NP << ":" << NR << " % " << D << std::endl;
     return 0; 
   }
-  std::cout << "H5Part partitioning : Using " << N << " Boxes per rank " << std::endl;
+//  std::cout << "H5Part partitioning : Using " << N << " Boxes per rank " << std::endl;
   //
   PieceBounds.assign(NR,vtkBoundingBox());
   PieceHaloBounds.assign(NR,vtkBoundingBox());
