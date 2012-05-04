@@ -225,6 +225,7 @@ int main (int argc, char* argv[])
   std::string Xarray = GetParameter<std::string>("-Xarray", "Xarray name", argc, argv, "", myRank, unused);
   std::string Yarray = GetParameter<std::string>("-Yarray", "Yarray name", argc, argv, "", myRank, unused);
   std::string Zarray = GetParameter<std::string>("-Zarray", "Zarray name", argc, argv, "", myRank, unused);
+  bool        ignore = GetParameter<bool>("-ignoreBoxes", "Ignore Partitions", argc, argv, 0, myRank, unused);
   //
   // SPH kernel or neighbour info
   //
@@ -290,6 +291,7 @@ int main (int argc, char* argv[])
   if (Zarray.size()>0) {
     reader->SetZarray(Zarray.c_str());
   }
+  reader->SetIgnorePartitionBoxes(ignore);
 
   //--------------------------------------------------------------
   // Update in parallel:
