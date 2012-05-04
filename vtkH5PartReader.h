@@ -27,11 +27,13 @@
 #define __vtkH5PartReader_h
 
 #include "vtkPolyDataAlgorithm.h"
+#include "vtkBoundingBox.h"
 #include <vtkstd/string>
 #include <vtkstd/vector>
 
 class vtkDataArraySelection;
 class vtkMultiProcessController;
+class vtkBoundsExtentTranslator;
 
 struct H5PartFile;
 
@@ -184,7 +186,11 @@ protected:
   int PartitionByExtents(vtkIdType N, std::vector<vtkIdType> &startend);
   
   // Use the BoundingBoxes read to partition data for reading
-  int PartitionByBoundingBoxes(std::vector<vtkIdType> &startend);
+  int PartitionByBoundingBoxes(
+    std::vector<vtkIdType> &minIds, 
+    std::vector<vtkIdType> &maxIds,
+    std::vector<vtkBoundingBox> &PieceBounds,
+    std::vector<vtkBoundingBox> &PieceHaloBounds);
 
   //
   virtual int  OpenFile();
@@ -242,11 +248,13 @@ protected:
   typedef vtkstd::vector<vtkstd::string>  stringlist;
   vtkstd::vector<stringlist>              FieldArrays;
   // For Bounding boxes if present
-  std::vector<vtkIdType> PartitionCount;
-  std::vector<vtkIdType> PartitionOffset;
-  std::vector<vtkIdType> PieceId;
-  std::vector<double>    BoundsTable;
-  std::vector<double>    BoundsTableHalo;
+  std::vector<vtkIdType>      PartitionCount;
+  std::vector<vtkIdType>      PartitionOffset;
+  std::vector<vtkIdType>      PieceId;
+  std::vector<double>         BoundsTable;
+  std::vector<double>         BoundsTableHalo;
+  std::vector<vtkBoundingBox> PieceBounds;
+  vtkBoundsExtentTranslator  *ExtentTranslator;
 //ETX
 
   // To allow paraview gui to enable/disable scalar reading

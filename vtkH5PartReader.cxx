@@ -71,6 +71,9 @@
 #include <algorithm>
 #include <numeric>
 #include "H5Part.h"
+//
+#include "vtkBoundsExtentTranslator.h"
+//
 //----------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkH5PartReader, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
@@ -184,6 +187,7 @@ vtkH5PartReader::vtkH5PartReader()
   this->ExportPartitionBoxes          = 0;
   this->UseLinearBoxPartitioning      = 1;
   this->PointDataArraySelection       = vtkDataArraySelection::New();
+  this->ExtentTranslator              = vtkBoundsExtentTranslator::New();
   this->SetXarray("Coords_0");
   this->SetYarray("Coords_1");
   this->SetZarray("Coords_2");
@@ -211,6 +215,8 @@ vtkH5PartReader::~vtkH5PartReader()
 
   this->PointDataArraySelection->Delete();
   this->PointDataArraySelection = 0;
+
+  this->ExtentTranslator->Delete();
 
   this->SetController(NULL);
 }
@@ -428,6 +434,8 @@ int vtkH5PartReader::RequestInformation(
     }
 
   this->CloseFileIntermediate();
+
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), this->ExtentTranslator);
 
   return 1;
 }
@@ -736,15 +744,29 @@ int vtkH5PartReader::RequestData(
   //
   // Split particles up per process for parallel load
   //
-  std::vector<vtkIdType> startend;
-  if (partitions>0 && this->PartitionByBoundingBoxes(startend)) {
-    //
+  std::vector<vtkIdType> minIds, maxIds, Ids;
+  std::vector<vtkBoundingBox> PieceHaloBounds;
+  vtkIdType ParticleStart;
+  vtkIdType ParticleEnd;
+  //
+  if (partitions>0 && this->PartitionByBoundingBoxes(minIds,maxIds,this->PieceBounds,PieceHaloBounds)) {
+    ParticleStart = minIds[this->UpdatePiece];
+    ParticleEnd   = maxIds[this->UpdatePiece];
+    this->ExtentTranslator->SetNumberOfPieces(this->PieceBounds.size());
+    for (int i=0; i<this->PieceBounds.size(); i++) {
+      double bounds[6];
+      this->PieceBounds[i].GetBounds(bounds);
+      this->ExtentTranslator->SetBoundsForPiece(i, bounds);
+      PieceHaloBounds[i].GetBounds(bounds);
+      this->ExtentTranslator->SetBoundsHaloForPiece(i, bounds);
+    }
+    this->ExtentTranslator->InitWholeBounds();
   }
   else {
-    this->PartitionByExtents(Nparticles, startend);
+    this->PartitionByExtents(Nparticles, Ids);
+    ParticleStart = Ids[0];
+    ParticleEnd   = Ids[1];
   }
-  vtkIdType ParticleStart = startend[0];
-  vtkIdType ParticleEnd   = startend[1];
   vtkIdType            Nt = ParticleEnd - ParticleStart + 1;
   //
 
@@ -1059,12 +1081,24 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
   //
   for (vtkIdType i=0; i<partitions; i++) {
     vtkSmartPointer<vtkOutlineSource> cube1 = vtkSmartPointer<vtkOutlineSource>::New();
-    cube1->SetBounds(&this->BoundsTable[i*6]);
+    if (i<this->PieceBounds.size()) {
+      double bbb[6];
+      this->PieceBounds[i].GetBounds(bbb);
+      cube1->SetBounds(bbb);
+    }
+    else {
+      double bbb[6] = {0,1,0,1,0,1};
+//      cube1->SetBounds(&this->BoundsTable[i*6]);
+      cube1->SetBounds(bbb);
+    }
     cube1->Update();
     polys->AddInput(cube1->GetOutput());
     //
     vtkSmartPointer<vtkOutlineSource> cube2 = vtkSmartPointer<vtkOutlineSource>::New();
-    cube2->SetBounds(&this->BoundsTableHalo[i*6]);
+      double bbb[6] = {0,1,0,1,0,1};
+//      cube1->SetBounds(&this->BoundsTable[i*6]);
+      cube2->SetBounds(bbb);
+//    cube2->SetBounds(&this->BoundsTableHalo[i*6]);
     cube2->Update();
     polys->AddInput(cube2->GetOutput());
   }
@@ -1150,7 +1184,11 @@ unsigned int mylog2(unsigned int val) {
   return ret;
 }
 //----------------------------------------------------------------------------
-int vtkH5PartReader::PartitionByBoundingBoxes(std::vector<vtkIdType> &startend)
+int vtkH5PartReader::PartitionByBoundingBoxes(
+  std::vector<vtkIdType> &minIds, 
+  std::vector<vtkIdType> &maxIds, 
+  std::vector<vtkBoundingBox> &PieceBounds,
+  std::vector<vtkBoundingBox> &PieceHaloBounds)
 {
   vtkIdType NP = this->PartitionCount.size();
   vtkIdType NR = this->UpdateNumPieces;
@@ -1163,26 +1201,26 @@ int vtkH5PartReader::PartitionByBoundingBoxes(std::vector<vtkIdType> &startend)
   }
   std::cout << "H5Part partitioning : Using " << N << " Boxes per rank " << std::endl;
   //
+  PieceBounds.assign(NR,vtkBoundingBox());
+  PieceHaloBounds.assign(NR,vtkBoundingBox());
+  minIds.assign(NR,VTK_INT_MAX);
+  maxIds.assign(NR,VTK_INT_MIN);
   if (this->UseLinearBoxPartitioning) {
     bool ok = true;
-    vtkIdType minId = VTK_INT_MAX;
-    vtkIdType maxId = VTK_INT_MIN;
     for (vtkIdType i=0; i<NP; i++) {
-      if ((i/N) == this->UpdatePiece) {
-        minId = std::min(this->PartitionOffset[i], minId);
-        maxId = std::max(this->PartitionOffset[i+1]-1, maxId);
-        this->PieceId[i] = this->UpdatePiece;
-      }
-      else {
-        if ((this->PartitionOffset[i]>=minId && this->PartitionOffset[i]<=maxId) ||
-            (this->PartitionOffset[i+1]>=minId && this->PartitionOffset[i+1]<=maxId)) {
-          ok = false;
-        }
+      vtkIdType pieceId = (i/N);
+      this->PieceId[i] = pieceId;
+      minIds[pieceId] = std::min(this->PartitionOffset[i], minIds[pieceId]);
+      maxIds[pieceId] = std::max(this->PartitionOffset[i+1]-1, maxIds[pieceId]);
+      PieceBounds[pieceId].AddBounds(&this->BoundsTable[i*6]);
+      PieceHaloBounds[pieceId].AddBounds(&this->BoundsTableHalo[i*6]);
+      //
+      if ((this->PartitionOffset[i]>=minIds[pieceId] && this->PartitionOffset[i]<=maxIds[pieceId]) ||
+          (this->PartitionOffset[i+1]>=minIds[pieceId] && this->PartitionOffset[i+1]<=maxIds[pieceId])) {
+//        ok = false;
       }
     }
     if (ok) {
-      startend.push_back(minId);
-      startend.push_back(maxId);
       return 1;
     }
     vtkDebugMacro("Linear Partitioning failed : using BSP tree instead");

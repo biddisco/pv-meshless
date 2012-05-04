@@ -55,9 +55,12 @@ public:
                               int byPoints);
   
   // Description:
-  // Set the extent to be used for a piece.  This sets the extent table
-  // entry for the piece.
+  // Set the bounding box to be used for a piece.
   virtual void SetBoundsForPiece(int piece, double* bounds);
+  
+  // Description:
+  // Set the bounding box + halo region to be used for a piece.
+  virtual void SetBoundsHaloForPiece(int piece, double* bounds);
   
   // Description:  
   // Get the bounds table entry for the given piece.  
@@ -65,6 +68,8 @@ public:
   // (after a valid spacing has been set).
   virtual void    GetBoundsForPiece(int piece, double *bounds);
   virtual double *GetBoundsForPiece(int piece);
+  virtual void    GetBoundsHaloForPiece(int piece, double *bounds);
+  virtual double *GetBoundsHaloForPiece(int piece);
   
   // Description:
   // Set the maximum ghost overlap region that is required 
@@ -91,6 +96,7 @@ protected:
   
   // Store the extent table in a single array.  Every 6 values form an extent.
   std::vector<double> BoundsTable;
+  std::vector<double> BoundsTableHalo;
   double WholeBounds[6];
   double Spacing[3];
   double MaximumGhostDistance;
