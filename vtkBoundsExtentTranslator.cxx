@@ -64,6 +64,7 @@ void vtkBoundsExtentTranslator::SetNumberOfPieces(int pieces)
 {
   // Allocate a table for this number of pieces.
   this->BoundsTable.resize(pieces*6);
+  this->BoundsTableHalo.resize(pieces*6);
   this->Superclass::SetNumberOfPieces(pieces);
 }
 
@@ -77,6 +78,17 @@ void vtkBoundsExtentTranslator::SetBoundsForPiece(int piece, double* bounds)
     return;
     }
   memcpy(&this->BoundsTable[piece*6], bounds, sizeof(double)*6);
+}
+//----------------------------------------------------------------------------
+void vtkBoundsExtentTranslator::SetBoundsHaloForPiece(int piece, double* bounds)
+{
+  if ((piece*6)>this->BoundsTableHalo.size() || (piece < 0))
+    {
+    vtkErrorMacro("Piece " << piece << " does not exist.  "
+                  "GetNumberOfPieces() is " << this->GetNumberOfPieces());
+    return;
+    }
+  memcpy(&this->BoundsTableHalo[piece*6], bounds, sizeof(double)*6);
 }
 
 //----------------------------------------------------------------------------
@@ -118,6 +130,31 @@ double* vtkBoundsExtentTranslator::GetBoundsForPiece(int piece)
     return emptyBounds;
     }
   return &this->BoundsTable[piece*6];
+}
+
+//----------------------------------------------------------------------------
+void vtkBoundsExtentTranslator::GetBoundsHaloForPiece(int piece, double* bounds)
+{
+  if ((piece*6)>this->BoundsTableHalo.size() || (piece < 0))
+    {
+    vtkErrorMacro("Piece " << piece << " does not exist.  "
+                  "GetNumberOfPieces() is " << this->GetNumberOfPieces());
+    return;
+    }
+  memcpy(bounds, &this->BoundsTableHalo[piece*6], sizeof(double)*6);
+}
+
+//----------------------------------------------------------------------------
+double* vtkBoundsExtentTranslator::GetBoundsHaloForPiece(int piece)
+{
+  static double emptyBounds[6] = {0,-1,0,-1,0,-1};
+  if ((piece*6)>this->BoundsTableHalo.size() || (piece < 0))
+    {
+    vtkErrorMacro("Piece " << piece << " does not exist.  "
+                  "GetNumberOfPieces() is " << this->GetNumberOfPieces());
+    return emptyBounds;
+    }
+  return &this->BoundsTableHalo[piece*6];
 }
 
 //----------------------------------------------------------------------------
