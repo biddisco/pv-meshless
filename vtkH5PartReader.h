@@ -126,6 +126,13 @@ public:
   vtkBooleanMacro(CombineVectorComponents, int);
 
   // Description:
+  // When 3 separate arrays such as {x, y,,z} are loaded into a coordinate/vector array, they
+  // can also be added to the field data for visualization. Default is off as it uses extra memory.
+  vtkSetMacro(MultiComponentArraysAsFieldData, int);
+  vtkGetMacro(MultiComponentArraysAsFieldData, int);
+  vtkBooleanMacro(MultiComponentArraysAsFieldData, int);
+
+  // Description:
   // When on UseStridedMultiComponentRead tells the reader to use  a hyperslab
   // with strides to read an array such as "X" into a coordinate array.
   // This can be very slow, but save some memory and is off by default.
@@ -247,6 +254,7 @@ protected:
   int           ActualTimeStep;
   double        TimeStepTolerance;
   int           CombineVectorComponents;
+  int           MultiComponentArraysAsFieldData;
   int           UseStridedMultiComponentRead;
   int           GenerateVertexCells;
   H5PartFile   *H5FileId;
