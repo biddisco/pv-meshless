@@ -100,8 +100,24 @@
       </IntVectorProperty>
 
       <IntVectorProperty
-         name="ExportPartitionBoxes"
-         command="SetExportPartitionBoxes"
+         name="DisplayPartitionBoxes"
+         command="SetDisplayPartitionBoxes"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="DisplayPieceBoxes"
+         command="SetDisplayPieceBoxes"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="IgnorePartitionBoxes"
+         command="SetIgnorePartitionBoxes"
          number_of_elements="1"
          default_values="0" >
         <BooleanDomain name="bool"/>

@@ -92,17 +92,30 @@ public:
 
   // Description:
   // If set, the reader will not attempt to read or use Bounding Boxes
-  // for partitions, and display of them will also be disabled
+  // for partitions, display of them will also be disabled
   vtkSetMacro(IgnorePartitionBoxes,int);
   vtkGetMacro(IgnorePartitionBoxes,int);
   vtkBooleanMacro(IgnorePartitionBoxes,int);
   
   // Description:
   // If set and present in the file, bounding boxes of each parallel
-  // partition will be exported (as lines) along with particles.
-  vtkSetMacro(ExportPartitionBoxes,int);
-  vtkGetMacro(ExportPartitionBoxes,int);
-  vtkBooleanMacro(ExportPartitionBoxes,int);
+  // partition will be displayed (as lines) along with particles.
+  // Note that the Partition Boxes are the ones present in the file
+  // and the Piece Boxes are the ones we export from the reader
+  // which will consist of 1 or more partitions joined together.
+  vtkSetMacro(DisplayPartitionBoxes,int);
+  vtkGetMacro(DisplayPartitionBoxes,int);
+  vtkBooleanMacro(DisplayPartitionBoxes,int);
+  
+  // Description:
+  // If set and present in the file, bounding boxes of each parallel
+  // piece will be exported (as lines) along with particles.
+  // Note that the Partition Boxes are the ones present in the file
+  // and the Piece Boxes are the ones we export from the reader
+  // which will consist of 1 or more partitions joined together.
+  vtkSetMacro(DisplayPieceBoxes,int);
+  vtkGetMacro(DisplayPieceBoxes,int);
+  vtkBooleanMacro(DisplayPieceBoxes,int);
   
   // Description:
   // When this option is set, scalar fields with names which form a pattern
@@ -245,7 +258,8 @@ protected:
   int           TimeOutOfRange;
   int           IntegerTimeStepValues;
   int           IgnorePartitionBoxes;
-  int           ExportPartitionBoxes;
+  int           DisplayPartitionBoxes;
+  int           DisplayPieceBoxes;
   int           UseLinearBoxPartitioning;
   //
   char         *Xarray;
@@ -259,9 +273,10 @@ protected:
   std::vector<vtkIdType>      PartitionCount;
   std::vector<vtkIdType>      PartitionOffset;
   std::vector<vtkIdType>      PieceId;
-  std::vector<double>         BoundsTable;
-  std::vector<double>         BoundsTableHalo;
+  std::vector<double>         PartitionBoundsTable;
+  std::vector<double>         PartitionBoundsTableHalo;
   std::vector<vtkBoundingBox> PieceBounds;
+  std::vector<vtkBoundingBox> PieceBoundsHalo;
   vtkBoundsExtentTranslator  *ExtentTranslator;
 //ETX
 
