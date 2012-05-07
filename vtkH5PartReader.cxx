@@ -185,7 +185,8 @@ vtkH5PartReader::vtkH5PartReader()
   this->MaskOutOfTimeRangeOutput      = 0;
   this->IntegerTimeStepValues         = 0;
   this->IgnorePartitionBoxes          = 0;
-  this->ExportPartitionBoxes          = 0;
+  this->DisplayPartitionBoxes         = 0;
+  this->DisplayPieceBoxes             = 0;
   this->UseLinearBoxPartitioning      = 1;
   this->PointDataArraySelection       = vtkDataArraySelection::New();
   this->ExtentTranslator              = vtkBoundsExtentTranslator::New();
@@ -740,17 +741,16 @@ int vtkH5PartReader::RequestData(
   //
   // If the file has bounding box partition support
   //
-  vtkIdType partitions = this->IgnorePartitionBoxes ? 1 : this->ReadBoundingBoxes();
+  vtkIdType partitions = this->IgnorePartitionBoxes ? 0 : this->ReadBoundingBoxes();
 
   //
   // Split particles up per process for parallel load
   //
   std::vector<vtkIdType> minIds, maxIds, Ids;
-  std::vector<vtkBoundingBox> PieceHaloBounds;
   vtkIdType ParticleStart;
   vtkIdType ParticleEnd;
   //
-  if (partitions>0 && this->PartitionByBoundingBoxes(minIds,maxIds,this->PieceBounds,PieceHaloBounds)) {
+  if (partitions>0 && this->PartitionByBoundingBoxes(minIds,maxIds,this->PieceBounds,this->PieceBoundsHalo)) {
     ParticleStart = minIds[this->UpdatePiece];
     ParticleEnd   = maxIds[this->UpdatePiece];
     this->ExtentTranslator->SetBoundsHalosPresent(1);
@@ -759,7 +759,7 @@ int vtkH5PartReader::RequestData(
       double bounds[6];
       this->PieceBounds[i].GetBounds(bounds);
       this->ExtentTranslator->SetBoundsForPiece(i, bounds);
-      PieceHaloBounds[i].GetBounds(bounds);
+      this->PieceBoundsHalo[i].GetBounds(bounds);
       this->ExtentTranslator->SetBoundsHaloForPiece(i, bounds);
     }
     this->ExtentTranslator->InitWholeBounds();
@@ -939,8 +939,8 @@ int vtkH5PartReader::RequestData(
   //
   //
   //
-  if (this->ExportPartitionBoxes) {
-    vtkIdType newpoints = this->DisplayBoundingBoxes(coords, output, ParticleStart, ParticleEnd);
+  if (this->DisplayPartitionBoxes || this->DisplayPieceBoxes) {
+    this->DisplayBoundingBoxes(coords, output, ParticleStart, ParticleEnd);
   }
   //
   //
@@ -996,26 +996,26 @@ vtkIdType vtkH5PartReader::ReadBoundingBoxes()
     this->PartitionCount.resize(partitions);
     this->PartitionOffset.resize(partitions+1,0);
     this->PieceId.resize(partitions,0); // values set in repartitioning methods
-    this->BoundsTable.resize(partitions*6);
-    this->BoundsTableHalo.resize(partitions*6);
+    this->PartitionBoundsTable.resize(partitions*6);
+    this->PartitionBoundsTableHalo.resize(partitions*6);
     //
     for (vtkIdType i=0; i<partitions; i++) {
       vtkIdType offset1 = i*6;
       vtkIdType offset2 = i*13;
       this->PartitionCount[i]      = static_cast<vtkIdType>(data[0+offset2]);
-      this->BoundsTable[0+offset1] = data[1+offset2];
-      this->BoundsTable[1+offset1] = data[4+offset2];
-      this->BoundsTable[2+offset1] = data[2+offset2];
-      this->BoundsTable[3+offset1] = data[5+offset2];
-      this->BoundsTable[4+offset1] = data[3+offset2];
-      this->BoundsTable[5+offset1] = data[6+offset2];
+      this->PartitionBoundsTable[0+offset1] = data[1+offset2];
+      this->PartitionBoundsTable[1+offset1] = data[4+offset2];
+      this->PartitionBoundsTable[2+offset1] = data[2+offset2];
+      this->PartitionBoundsTable[3+offset1] = data[5+offset2];
+      this->PartitionBoundsTable[4+offset1] = data[3+offset2];
+      this->PartitionBoundsTable[5+offset1] = data[6+offset2];
       //
-      this->BoundsTableHalo[0+offset1] = data[1+6+offset2];
-      this->BoundsTableHalo[1+offset1] = data[4+6+offset2];
-      this->BoundsTableHalo[2+offset1] = data[2+6+offset2];
-      this->BoundsTableHalo[3+offset1] = data[5+6+offset2];
-      this->BoundsTableHalo[4+offset1] = data[3+6+offset2];
-      this->BoundsTableHalo[5+offset1] = data[6+6+offset2];
+      this->PartitionBoundsTableHalo[0+offset1] = data[1+6+offset2];
+      this->PartitionBoundsTableHalo[1+offset1] = data[4+6+offset2];
+      this->PartitionBoundsTableHalo[2+offset1] = data[2+6+offset2];
+      this->PartitionBoundsTableHalo[3+offset1] = data[5+6+offset2];
+      this->PartitionBoundsTableHalo[4+offset1] = data[3+6+offset2];
+      this->PartitionBoundsTableHalo[5+offset1] = data[6+6+offset2];
     }
     std::partial_sum(this->PartitionCount.begin(), this->PartitionCount.end(), this->PartitionOffset.begin()+1);
     //
@@ -1030,14 +1030,18 @@ vtkIdType vtkH5PartReader::ReadBoundingBoxes()
 }
 //----------------------------------------------------------------------------
 vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyData *output, vtkIdType extent0, vtkIdType extent1)
-{
-  vtkIdType partitions = this->PartitionCount.size();
+{ 
+  vtkIdType partitions = this->DisplayPartitionBoxes ? this->PartitionCount.size() : 0;
+  vtkIdType pieces = this->DisplayPieceBoxes ? this->PieceBounds.size() : 0;
+  vtkIdType newBoxes = partitions + pieces;
+  //
+  if (newBoxes==0) return 0;
   //
   vtkIdType N1 = coords->GetNumberOfTuples();
-  vtkIdType N2 = partitions*8*2;
+  vtkIdType N2 = newBoxes*8*2;
   vtkIdType N3 = (N1+N2);
   //
-  // We will add 2 new data arrays per point, boxId and occupation(count)
+  // We will add 3 new data arrays per point, PartitionId, PieceId and occupation(count)
   //
   vtkSmartPointer<vtkIdTypeArray> occupation = vtkSmartPointer<vtkIdTypeArray>::New();
   occupation->SetNumberOfTuples(N3);
@@ -1055,7 +1059,7 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
   //
   // set scalars for each particle
   //
-  for (vtkIdType i=0; i<partitions; i++) {
+  for (vtkIdType i=0; i<this->PartitionCount.size(); i++) {
     vtkIdType numParticles = this->PartitionCount[i];
     vtkIdType pieceId = this->PieceId[i];
     if ((index+numParticles)>=extent0 && (index<=extent1)) {
@@ -1083,24 +1087,29 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
   //
   for (vtkIdType i=0; i<partitions; i++) {
     vtkSmartPointer<vtkOutlineSource> cube1 = vtkSmartPointer<vtkOutlineSource>::New();
-    if (i<this->PieceBounds.size()) {
-      double bbb[6];
-      this->PieceBounds[i].GetBounds(bbb);
-      cube1->SetBounds(bbb);
-    }
-    else {
-      double bbb[6] = {0,1,0,1,0,1};
-//      cube1->SetBounds(&this->BoundsTable[i*6]);
-      cube1->SetBounds(bbb);
-    }
+    cube1->SetBounds(&this->PartitionBoundsTable[i*6]);
     cube1->Update();
     polys->AddInput(cube1->GetOutput());
     //
     vtkSmartPointer<vtkOutlineSource> cube2 = vtkSmartPointer<vtkOutlineSource>::New();
-      double bbb[6] = {0,1,0,1,0,1};
-//      cube1->SetBounds(&this->BoundsTable[i*6]);
-      cube2->SetBounds(bbb);
-//    cube2->SetBounds(&this->BoundsTableHalo[i*6]);
+    cube2->SetBounds(&this->PartitionBoundsTableHalo[i*6]);
+    cube2->Update();
+    polys->AddInput(cube2->GetOutput());
+  }
+  //
+  // generate boxes, 2 per piece 
+  //
+  for (vtkIdType i=0; i<pieces; i++) {
+    vtkSmartPointer<vtkOutlineSource> cube1 = vtkSmartPointer<vtkOutlineSource>::New();
+    double bbb[6];
+    this->PieceBounds[i].GetBounds(bbb);
+    cube1->SetBounds(bbb);
+    cube1->Update();
+    polys->AddInput(cube1->GetOutput());
+    //
+    this->PieceBoundsHalo[i].GetBounds(bbb);
+    vtkSmartPointer<vtkOutlineSource> cube2 = vtkSmartPointer<vtkOutlineSource>::New();
+    cube2->SetBounds(bbb);
     cube2->Update();
     polys->AddInput(cube2->GetOutput());
   }
@@ -1133,6 +1142,16 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
     vtkIdType pieceId = this->PieceId[i];
     for (vtkIdType p=0; p<8*2; p++) {
       boxId->SetValue(index, i);
+      occupation->SetValue(index, numParticles);
+      piece->SetValue(index, pieceId);
+      index++;
+    }
+  }
+  for (vtkIdType i=0; i<pieces; i++) {
+    vtkIdType numParticles = 0;
+    vtkIdType pieceId = i;
+    for (vtkIdType p=0; p<8*2; p++) {
+      boxId->SetValue(index, 0);
       occupation->SetValue(index, numParticles);
       piece->SetValue(index, pieceId);
       index++;
@@ -1214,8 +1233,8 @@ int vtkH5PartReader::PartitionByBoundingBoxes(
       this->PieceId[i] = pieceId;
       minIds[pieceId] = std::min(this->PartitionOffset[i], minIds[pieceId]);
       maxIds[pieceId] = std::max(this->PartitionOffset[i+1]-1, maxIds[pieceId]);
-      PieceBounds[pieceId].AddBounds(&this->BoundsTable[i*6]);
-      PieceHaloBounds[pieceId].AddBounds(&this->BoundsTableHalo[i*6]);
+      PieceBounds[pieceId].AddBounds(&this->PartitionBoundsTable[i*6]);
+      PieceHaloBounds[pieceId].AddBounds(&this->PartitionBoundsTableHalo[i*6]);
       //
       if ((this->PartitionOffset[i]>=minIds[pieceId] && this->PartitionOffset[i]<=maxIds[pieceId]) ||
           (this->PartitionOffset[i+1]>=minIds[pieceId] && this->PartitionOffset[i+1]<=maxIds[pieceId])) {
@@ -1236,7 +1255,7 @@ int vtkH5PartReader::PartitionByBoundingBoxes(
   vtkBoundingBox box;
   double centre[3];
   for (vtkIdType i=0; i<NP; i++) {
-    box.SetBounds(&this->BoundsTable[i*6]);
+    box.SetBounds(&this->PartitionBoundsTable[i*6]);
     box.GetCenter(centre);
     boxcentres->SetPoint(i, centre);
   }
@@ -1253,7 +1272,7 @@ int vtkH5PartReader::PartitionByBoundingBoxes(
   vtkSmartPointer<vtkDoubleArray> bounds = vtkSmartPointer<vtkDoubleArray>::New();
   bounds->SetNumberOfComponents(6);
   bounds->SetNumberOfTuples(NP);
-  bounds->SetVoidArray(&this->BoundsTable[0], this->BoundsTable.size(), 1); // we delete array
+  bounds->SetVoidArray(&this->PartitionBoundsTable[0], this->PartitionBoundsTable.size(), 1); // we delete array
   tree->SetParticleBoundsArray(bounds);
   tree->SetNumberOfCellsPerNode(N);
   tree->SetMaxLevel(mylog2(NR));
