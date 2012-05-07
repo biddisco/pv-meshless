@@ -670,7 +670,7 @@ int vtkH5PartReader::RequestData(
       (pos->second[1]==coordarrays[1]) &&
       (pos->second[2]==coordarrays[2]))
       {
-      // change the name of this entry to "coords" to ensure we use it as such
+      // change the keyname of this entry to "coords" to ensure we use it as such
       FieldMap::value_type element("Coords", pos->second);
       scalarFields.erase(pos);
       coordvector = scalarFields.insert(element).first;
@@ -684,6 +684,14 @@ int vtkH5PartReader::RequestData(
     scalarFields.insert(element);
     }
 
+  if (!this->MultiComponentArraysAsFieldData) {
+    FieldMap::iterator posx=scalarFields.find(coordarrays[0]);
+    if (posx!=scalarFields.end()) scalarFields.erase(posx);
+    FieldMap::iterator posy=scalarFields.find(coordarrays[1]);
+    if (posy!=scalarFields.end()) scalarFields.erase(posy);
+    FieldMap::iterator posz=scalarFields.find(coordarrays[2]);
+    if (posz!=scalarFields.end()) scalarFields.erase(posz);
+  }
   //
   // Get the TimeStep Requested from the information if present
   //
@@ -782,13 +790,6 @@ int vtkH5PartReader::RequestData(
     const char *array_name = arraylist[0].c_str();
     vtkstd::string rootname = this->NameOfVectorComponent(array_name);
     int Nc = static_cast<int>(arraylist.size());
-    //
-    // if an array has already been read such as one of {"X","Y","Z"} for 
-    // the coordinates, then do not read it again as a single array
-    //
-    if (output->GetPointData()->GetArray(array_name)) {
-      continue;
-    }
     //
     vtkSmartPointer<vtkDataArray> dataarray = NULL;
     hid_t datatype = H5PartGetNativeDatasetType(H5FileId,array_name);
@@ -898,7 +899,9 @@ int vtkH5PartReader::RequestData(
         H5Tclose(component_datatype);
         // if the array we read for the vector component is a field array
         // then skip reading it twice.
-        output->GetPointData()->AddArray(onearray);
+        if (this->MultiComponentArraysAsFieldData) {
+          output->GetPointData()->AddArray(onearray);
+          }
         }
       H5Sclose(diskshape);
       H5Dclose(dataset);
