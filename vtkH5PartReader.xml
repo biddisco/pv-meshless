@@ -150,7 +150,7 @@
          command="SetXarray"
          default_values="Coords_0"
          default_regex_delimiter=","
-         default_regex="[Xx]$,.*oords_0,.*[Xx]$"
+         default_regex=".*oords_0,^[Xx]$,.*[Xx]$"
          number_of_elements="1">
         <Documentation>
           This property lists which point array to use for coordinates.
@@ -167,7 +167,7 @@
          command="SetYarray"
          default_values="Coords_1"
          default_regex_delimiter=","
-         default_regex="[Yy]$,.*oords_1,.*[Yy]$"
+         default_regex=".*oords_1,^[Yy]$,.*[Yy]$"
          number_of_elements="1">
         <Documentation>
           This property lists which point array to use for coordinates.
@@ -184,7 +184,7 @@
          command="SetZarray"
          default_values="Coords_2"
          default_regex_delimiter=","
-         default_regex="[Zz]$,.*oords_2,.*[Zz]$"
+         default_regex=".*oords_2,^[Zz]$,.*[Zz]$"
          number_of_elements="1">
         <Documentation>
           This property lists which point array to use for coordinates.
