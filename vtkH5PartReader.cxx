@@ -892,6 +892,38 @@ int vtkH5PartReader::RequestData(
           case VTK_DOUBLE:
             this->CopyIntoVector<double>(c,onearray,dataarray);
             break;
+          case VTK_CHAR:
+          case VTK_SIGNED_CHAR:
+          case VTK_UNSIGNED_CHAR:
+            this->CopyIntoVector<char>(c,onearray,dataarray);
+            break;
+          case VTK_SHORT:
+            CopyIntoVector<short int>(c,onearray,dataarray);
+            break;
+          case VTK_UNSIGNED_SHORT:
+            CopyIntoVector<unsigned short int>(c,onearray,dataarray);
+            break;
+          case VTK_INT:
+            CopyIntoVector<int>(c,onearray,dataarray);
+            break;
+          case VTK_UNSIGNED_INT:
+            CopyIntoVector<unsigned int>(c,onearray,dataarray);
+            break;
+          case VTK_LONG:
+            CopyIntoVector<long int>(c,onearray,dataarray);
+            break;
+          case VTK_UNSIGNED_LONG:
+            CopyIntoVector<unsigned long int>(c,onearray,dataarray);
+            break;
+          case VTK_LONG_LONG:
+            CopyIntoVector<long long>(c,onearray,dataarray);
+            break;
+          case VTK_UNSIGNED_LONG_LONG:
+            CopyIntoVector<unsigned long long>(c,onearray,dataarray);
+            break;
+          case VTK_ID_TYPE:
+            CopyIntoVector<vtkIdType>(c,onearray,dataarray);
+            break;
           default:
           vtkErrorMacro("H5Part : Unhandled vector type")
           }
