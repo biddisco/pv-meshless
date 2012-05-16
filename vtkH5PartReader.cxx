@@ -433,12 +433,19 @@ int vtkH5PartReader::RequestInformation(
       this->TimeStepTolerance = 1E-3;
       }
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
+
+    //
+    // If the file has bounding box partition support
+    //
+    vtkIdType partitions = this->IgnorePartitionBoxes ? 0 : this->ReadBoundingBoxes();
+    if (partitions>0) 
+      {
+      outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), this->ExtentTranslator);
+      }
     }
 
   this->CloseFileIntermediate();
-
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), this->ExtentTranslator);
-
+                                                       
   return 1;
 }
 //----------------------------------------------------------------------------
@@ -747,18 +754,13 @@ int vtkH5PartReader::RequestData(
   vtkIdType Nparticles = H5PartGetNumParticles(this->H5FileId);
 
   //
-  // If the file has bounding box partition support
-  //
-  vtkIdType partitions = this->IgnorePartitionBoxes ? 0 : this->ReadBoundingBoxes();
-
-  //
   // Split particles up per process for parallel load
   //
   std::vector<vtkIdType> minIds, maxIds, Ids;
   vtkIdType ParticleStart;
   vtkIdType ParticleEnd;
   //
-  if (partitions>0 && this->PartitionByBoundingBoxes(minIds,maxIds,this->PieceBounds,this->PieceBoundsHalo)) {
+  if (this->PartitionCount.size()>0 && this->PartitionByBoundingBoxes(minIds,maxIds,this->PieceBounds,this->PieceBoundsHalo)) {
     ParticleStart = minIds[this->UpdatePiece];
     ParticleEnd   = maxIds[this->UpdatePiece];
     this->ExtentTranslator->SetBoundsHalosPresent(1);
