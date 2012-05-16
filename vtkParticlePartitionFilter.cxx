@@ -372,10 +372,10 @@ vtkBoundingBox *vtkParticlePartitionFilter::GetPartitionBoundingBox(int partitio
   return NULL;
 }
 //----------------------------------------------------------------------------
-vtkBoundingBox *vtkParticlePartitionFilter::GetPartitionBoundingBoxWithGhostRegion(int partition)
+vtkBoundingBox *vtkParticlePartitionFilter::GetPartitionBoundingBoxWithHalo(int partition)
 {
-  if (partition<this->BoxListWithGhostRegion.size()) {
-    return &this->BoxListWithGhostRegion[partition];
+  if (partition<this->BoxListWithHalo.size()) {
+    return &this->BoxListWithHalo[partition];
   }
   vtkErrorMacro(<<"Partition not found in Bounding Box list");
   return NULL;
@@ -383,21 +383,41 @@ vtkBoundingBox *vtkParticlePartitionFilter::GetPartitionBoundingBoxWithGhostRegi
 //----------------------------------------------------------------------------
 void vtkParticlePartitionFilter::FindOverlappingPoints(vtkPoints *pts, vtkIdTypeArray *IdArray, GhostPartition &ghostinfo)
 {
+  typedef std::pair<vtkBoundingBox*,int> boxproc;
+  // we don't want to test against boxes that are far away, so first reject
+  // any boxes that don't overlap with our local box.
+  std::vector< boxproc > good_boxes;
+  int proc = 0;
+  for (std::vector<vtkBoundingBox>::iterator it=this->BoxListWithHalo.begin(); 
+    it!=this->BoxListWithHalo.end(); ++it, proc++) 
+  {
+    vtkBoundingBox &b = *it;
+#if 0 
+    if (b!=*(this->LocalBoxHalo) && this->LocalBoxHalo->Intersects(b)) {
+#else
+    if (b!=*(this->LocalBoxHalo)) {
+#endif
+      good_boxes.push_back( boxproc(&b,proc));
+    }
+  }
+  // now test all points against those boxes which are valid
   vtkIdType N = pts->GetNumberOfPoints();
   for (vtkIdType i=0; i<N; i++) {
     double *pt = pts->GetPoint(i);
-    int proc = 0;
-    for (std::vector<vtkBoundingBox>::iterator it=this->BoxListWithGhostRegion.begin(); 
-      it!=this->BoxListWithGhostRegion.end(); ++it, ++proc) 
+    for (std::vector<boxproc>::iterator it=good_boxes.begin(); 
+      it!=good_boxes.end(); ++it) 
     {
-      vtkBoundingBox &b = *it;
-      if (&b!=this->LocalBox && b.ContainsPoint(pt)) {
+      vtkBoundingBox *b = (it->first);
+      if (b->ContainsPoint(pt)) {
         ghostinfo.GlobalIds.push_back(IdArray->GetValue(i));
         ghostinfo.LocalIds.push_back(i);
-        ghostinfo.Procs.push_back(proc);
+        ghostinfo.Procs.push_back(it->second);
       }
     }
   }
+//  std::cout << "There are " << ghostinfo.GlobalIds.size() << " ghosts on the list" <<std::endl;
+//  std::ostream_iterator<vtkIdType> out_it (cout,", ");
+//  copy ( ghostinfo.GlobalIds.begin(), ghostinfo.GlobalIds.end(), out_it );
 }
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkIdTypeArray> vtkParticlePartitionFilter::GenerateGlobalIds(vtkIdType N, const char *idname)
@@ -588,14 +608,14 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   double bounds[6];
   input->GetBounds(bounds);
   this->BoxList.clear();
-  this->BoxListWithGhostRegion.clear();
+  this->BoxListWithHalo.clear();
   if (this->UpdateNumPieces==1) {
     output->ShallowCopy(input);
     vtkBoundingBox box(bounds);
     this->BoxList.push_back(box);
     // we add a ghost cell region to our boxes
     box.Inflate(this->GhostCellOverlap);
-    this->BoxListWithGhostRegion.push_back(box);
+    this->BoxListWithHalo.push_back(box);
     this->ExtentTranslator->SetNumberOfPieces(1);
     // Copy the bounds to our piece to bounds translator
     this->ExtentTranslator->SetBoundsForPiece(0, bounds);
@@ -931,12 +951,12 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     for (int p=0; p<this->UpdateNumPieces; p++) {
       vtkBoundingBox box;  
       box.SetBounds(input_bet->GetBoundsHaloForPiece(p));
-      this->BoxListWithGhostRegion.push_back(box);
+      this->BoxListWithHalo.push_back(box);
       this->ExtentTranslator->SetBoundsHaloForPiece(p,input_bet->GetBoundsHaloForPiece(p));
     }
   }
   else {
-    // do a calaculation on all nodes
+    // do a calculation on all nodes
     std::vector<double> ghostOverlaps(this->UpdateNumPieces,this->GhostCellOverlap);
     if (this->AdaptiveGhostCellOverlap) {
       ghostOverlaps[this->UpdatePiece] = this->ComputeAdaptiveOverlap(mesh.Output, this->GhostCellOverlap, this->SimpleGhostOverlapMode);
@@ -948,12 +968,13 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
     for (int p=0; p<this->UpdateNumPieces; p++) {
       vtkBoundingBox box = this->BoxList[p];  
       box.Inflate(ghostOverlaps[p]);
-      this->BoxListWithGhostRegion.push_back(box);
+      this->BoxListWithHalo.push_back(box);
     }
   }
 
   this->ExtentTranslator->InitWholeBounds();
-  this->LocalBox = &this->BoxListWithGhostRegion[this->UpdatePiece];
+  this->LocalBox     = &this->BoxList[this->UpdatePiece];
+  this->LocalBoxHalo = &this->BoxListWithHalo[this->UpdatePiece];
 
   //
   // Find points which overlap other processes' ghost regions

@@ -97,7 +97,7 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
     // Description:
     // Return the Bounding Box for a partition plus the extended region
     // all around the box where ghost cells might be required/present
-    vtkBoundingBox *GetPartitionBoundingBoxWithGhostRegion(int partition);
+    vtkBoundingBox *GetPartitionBoundingBoxWithHalo(int partition);
 //ETX
 
   static double ComputeAdaptiveOverlap(vtkPointSet *data, double defvalue, bool simplemode);
@@ -140,9 +140,10 @@ class VTK_EXPORT vtkParticlePartitionFilter : public vtkDataObjectAlgorithm
 
     typedef std::vector< std::vector<vtkIdType> > ListOfVectors;
     void FindOverlappingPoints(vtkPoints *pts, vtkIdTypeArray *IdArray, GhostPartition &ghostinfo);
+    vtkBoundingBox             *LocalBoxHalo;
     vtkBoundingBox             *LocalBox;
     std::vector<vtkBoundingBox> BoxList;
-    std::vector<vtkBoundingBox> BoxListWithGhostRegion;
+    std::vector<vtkBoundingBox> BoxListWithHalo;
 //ETX
     //
     vtkMultiProcessController *Controller;
