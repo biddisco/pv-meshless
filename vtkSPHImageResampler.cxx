@@ -200,10 +200,6 @@ void vtkSPHImageResampler::ComputeAxesFromBounds(vtkDataSet *inputData, double l
   //
   double bmin[3], bmn[3] = {bounds[0], bounds[2], bounds[4]};
   double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
-  vtkSmartPointer<vtkMultiProcessController> Controller = vtkMultiProcessController::GetGlobalController();
-  if (Controller == NULL) {
-    Controller = vtkSmartPointer<vtkDummyController>::New();
-  }
   Controller->AllReduce(bmn, bmin, 3, vtkCommunicator::MIN_OP);
   Controller->AllReduce(bmx, bmax, 3, vtkCommunicator::MAX_OP);
   box.SetMinPoint(bmin);
