@@ -287,7 +287,6 @@ FOREACH(resolution 0.005 0.001 0.0005)
       -particlesize 0.001
       -ghost_region 0.003
       -gridSpacing "${resolution} ${resolution} ${resolution}"
-      -massScalars "mass"
       -scalar ShepardCoeff
       -contour 0.5
       -densityScalars "FLUID_density"
