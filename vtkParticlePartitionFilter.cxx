@@ -734,8 +734,10 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   for (int i=0; i<mesh.NumberOfFields; i++) {
     vtkSmartPointer<vtkDataArray> darray = inputCopy->GetPointData()->GetArray(i);
     mesh.InputArrayPointers.push_back(darray->GetVoidPointer(0));
-    mesh.ArrayTypeSizes.push_back(darray->GetDataTypeSize());
-    mesh.TotalSizePerId += darray->GetDataTypeSize();
+    int Nc = darray->GetNumberOfComponents();
+    int Ns = darray->GetDataTypeSize();
+    mesh.ArrayTypeSizes.push_back(Nc*Ns);
+    mesh.TotalSizePerId += Nc*Ns;
   }
 
   //***************************************************************
