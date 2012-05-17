@@ -74,6 +74,8 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+// #define DEBUG_WAIT 1
+
 #if 0
   #define OUTPUTTEXT(a) std::cout << (a);
 
@@ -171,11 +173,13 @@ int main (int argc, char* argv[])
   // number of processes
   vtkTypeInt64 myRank = controller->GetLocalProcessId();
   vtkTypeInt64 numProcs = controller->GetNumberOfProcesses();
+#ifdef DEBUG_WAIT
   if (myRank==0) {
-//    char ch;
-//    std::cout << "Attach debugger" << std::endl;
-//    std::cin >> ch;
+    char ch;
+    std::cout << "Attach debugger" << std::endl;
+    std::cin >> ch;
   }
+#endif
   controller->Barrier();
 
   //--------------------------------------------------------------
