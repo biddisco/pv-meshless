@@ -252,6 +252,7 @@ int main (int argc, char* argv[])
   std::string   imageScalars = GetParameter<std::string>("-imageScalars", "Image Scalar Array", argc, argv, "", myRank, unused);
   unused                     = GetArrayParameter<double>("-value_range", "Expected Value Range", vminmax, 2, argc, argv, myRank);
   unused                     = GetArrayParameter<double>("-peak_position", "Expected Peak Position", vpos, 3, argc, argv, myRank);
+  int         imageThreshold = GetParameter<int>("-imageThreshold", "Image Threshold Pass/Fail", argc, argv, 1, myRank, unused);
   //
   // Window/Camera
   //
@@ -653,12 +654,11 @@ int main (int argc, char* argv[])
       renWindow->Render();
       //
       if (skipImageTest) {
-//        retVal = vtkRegressionTester::Test(argc, argv, renWindow, 45);
         retVal=vtkRegressionTester::PASSED;
         ok = true;
       }
       else {
-        retVal = vtkRegressionTester::Test(argc, argv, renWindow, 45);
+        retVal = vtkRegressionTester::Test(argc, argv, renWindow, imageThreshold);
         if (retVal == vtkRegressionTester::DO_INTERACTOR) {
           iren->Start();
         }

@@ -5,7 +5,34 @@
 # ctest -C Release / Debug / etc
 #--------------------------------------------------
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/vtkCSCSMeshless/sph)
+#
+# Setup some convenience flags depending on machine
+#
+SET(COMPUTERNAME $ENV{COMPUTERNAME})
+IF(COMPUTERNAME)
+  SET(HOSTNAME $ENV{COMPUTERNAME})
+ELSE(COMPUTERNAME)
+  SET(HOSTNAME $ENV{HOSTNAME})
+ENDIF(COMPUTERNAME)
+
+#
+# Machines running OSMesa instead of OpenGL might need a larger threshold for image test comparisons
+#
+set(IMAGE_THRESHOLD "0")
+IF(HOSTNAME MATCHES "DINO")
+  set(LARGE_DATA_PATH "C:\\data\\nextmuse")
+ELSEIF(HOSTNAME MATCHES "BRENO")
+  set(LARGE_DATA_PATH "D:\\data\\nextmuse")
+  set(SC12_DATA_PATH "D:\\Data\\sc12")
+  set(SC12_DATA_FILE "wave_tank7.h5part")
+ELSEIF(HOSTNAME MATCHES "todi")
+  set(LARGE_DATA_PATH "/scratch/todi/biddisco/nextmuse")
+  set(SC12_DATA_PATH "/scratch/todi/soumagne/wave_tank_big")
+  set(SC12_DATA_FILE "wave_tank5.h5")
+ELSEIF(HOSTNAME MATCHES "eiger")
+  set(LARGE_DATA_PATH "/project/csvis/biddisco/nextmuse")
+ENDIF()
+# MESSAGE("Host name is ${HOSTNAME} and large data path is ${LARGE_DATA_PATH}")
 
 #--------------------------------------------------
 # a macro to add one test
@@ -295,6 +322,7 @@ FOREACH(resolution 0.005 0.001 0.0005)
       -cameraFocus    "-0.160102 0.106656  0.023384"
       -cameraViewUp   "0 1 0"
       -imageScalars "ProcessId"
+      -imageThreshold "${IMAGE_THRESHOLD}"
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
     )
     #
@@ -352,6 +380,7 @@ FOREACH(resolution 0.05 0.01 0.005)
       -cameraFocus    "-2.0277536  2.7267457 -0.5096563"
       -cameraViewUp   "-0.1130509  0.1302781  0.9850112"
       -imageScalars "ProcessId"
+      -imageThreshold "${IMAGE_THRESHOLD}"
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
     )
     #
@@ -410,31 +439,6 @@ SET(SAMPLERES
     0.02 0.015 0.012 0.009 0.007 0.006 0.0045 0.0035 0.0030 0.0025 0.002
 )
 
-#
-# Setup some convenience flags depending on machine
-#
-SET(COMPUTERNAME $ENV{COMPUTERNAME})
-IF(COMPUTERNAME)
-  SET(HOSTNAME $ENV{COMPUTERNAME})
-ELSE(COMPUTERNAME)
-  SET(HOSTNAME $ENV{HOSTNAME})
-ENDIF(COMPUTERNAME)
-
-IF(HOSTNAME MATCHES "DINO")
-  set(LARGE_DATA_PATH "C:\\data\\nextmuse")
-ELSEIF(HOSTNAME MATCHES "BRENO")
-  set(LARGE_DATA_PATH "D:\\data\\nextmuse")
-  set(SC12_DATA_PATH "D:\\Data\\sc12")
-  set(SC12_DATA_FILE "wave_tank7.h5part")
-ELSEIF(HOSTNAME MATCHES "todi")
-  set(LARGE_DATA_PATH "/scratch/todi/biddisco/nextmuse")
-  set(SC12_DATA_PATH "/scratch/todi/soumagne/wave_tank_big")
-  set(SC12_DATA_FILE "wave_tank5.h5")
-ELSEIF(HOSTNAME MATCHES "eiger")
-  set(LARGE_DATA_PATH "/project/csvis/biddisco/nextmuse")
-ENDIF()
-# MESSAGE("Host name is ${HOSTNAME} and large data path is ${LARGE_DATA_PATH}")
-
 #--------------------------------------------------
 # Test 1 : Take one dataset and contour it to the same resolution
 # on several different CPU counts to test strong scaling
@@ -471,6 +475,7 @@ FOREACH(index 5)
       -cameraFocus    " 2.606   0       0.275"
       -cameraViewUp   "0.0790531 -0.238854 0.967832"
       -imageScalars "ProcessId"
+      -imageThreshold "${IMAGE_THRESHOLD}"
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
     )
 
@@ -526,6 +531,7 @@ FOREACH(index 0 1 2 3 4 5 6 7 8 9 10)
       -cameraFocus    " 2.606   0       0.275"
       -cameraViewUp   "0.0790531 -0.238854 0.967832"
       -imageScalars "ProcessId"
+      -imageThreshold "${IMAGE_THRESHOLD}"
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
     )
 
@@ -564,66 +570,62 @@ ENDFOREACH(index)
 # on several different CPU counts to test strong scaling
 # 1024^3. Use with and without Zoltan load-balancing using ghost info from file
 #--------------------------------------------------
-SET(IGNOREBOX 1 0 )
-SET(counter 1)
-FOREACH(index 0 1)
+IF(EXISTS ${SC12_DATA_PATH})
+  SET(IGNOREBOX 1 0 )
+  SET(counter 1)
+  FOREACH(index 0 1)
 
-  #---------------
-  # workstation  
-  SET(DELTAX 0.5)
-  SET(GST    1.0)
-  SET(GRIDSIZE 32)
-  FOREACH(N 2 4 8)
+    #---------------
+    # workstation  
+    SET(DELTAX 0.5)
+    SET(GST    1.0)
+    SET(GRIDSIZE 32)
+    FOREACH(N 2 4 8)
     #---------------
   
-  #---------------
-  # todi  
-  #  SET(DELTAX 0.02483)
-  #  SET(GST    0.04966)
-  #  SET(GRIDSIZE 1024)
-  #  FOREACH(N 2048 1536 1024 768 512 384 256 192 128 64 32)
+    #---------------
+    # todi  
+    #  SET(DELTAX 0.02483)
+    #  SET(GST    0.04966)
+    #  SET(GRIDSIZE 1024)
+    #  FOREACH(N 2048 1536 1024 768 512 384 256 192 128 64 32)
     #---------------
 
-    LIST(GET IGNOREBOX ${index} IGNORE)
+      LIST(GET IGNOREBOX ${index} IGNORE)
 
-    SET(test_name "benchmark-sc12-P${N}-I${index}")
-    SET(TestParams 
-      -D "${SC12_DATA_PATH}"
-      -F "${SC12_DATA_FILE}"
-      -T "${PLUGIN_TEST_DIR}"
-      -testName ${test_name}
-      -Xarray "X"
-      -Yarray "Y"
-      -Zarray "Z"
-      -particlesize ${DELTAX}
-      -ghost_region ${GST}
-      -gridResolution "${GRIDSIZE} ${GRIDSIZE} ${GRIDSIZE}"
-      -ignoreBoxes "${IGNORE}"
-      -scalar ShepardCoeff
-      -contour 0.8
-      -imageResample 1
-      -skipImageTest 1
-      -windowSize "1024 768"
-      -cameraPosition " 1.48858 2.90908 1.08421"
-      -cameraFocus    " 2.606   0       0.275"
-      -cameraViewUp   "0.0790531 -0.238854 0.967832"
-      -imageScalars "ProcessId"
-      -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
-    )
+      SET(test_name "benchmark-sc12-P${N}-I${index}")
+      SET(TestParams 
+        -D "${SC12_DATA_PATH}"
+        -F "${SC12_DATA_FILE}"
+        -T "${PLUGIN_TEST_DIR}"
+        -testName ${test_name}
+        -Xarray "X"
+        -Yarray "Y"
+        -Zarray "Z"
+        -particlesize ${DELTAX}
+        -ghost_region ${GST}
+        -gridResolution "${GRIDSIZE} ${GRIDSIZE} ${GRIDSIZE}"
+        -ignoreBoxes "${IGNORE}"
+        -scalar ShepardCoeff
+        -contour 0.8
+        -imageResample 1
+        -skipImageTest 1
+      )
 
-    IF(${TRILINOS_ENABLED} AND N GREATER 1)
-      greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-      IF(processors)
-        ADD_TEST(
-          NAME ${test_name}
-          COMMAND 
-            ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
-            $<TARGET_FILE:TestSPHProbeFilter> 
-            ${TestParams}
-        )
-      ENDIF(processors)
-    ENDIF(${TRILINOS_ENABLED} AND N GREATER 1)
-  ENDFOREACH(N)
-  MATH(EXPR counter "${counter} + 1")
-ENDFOREACH(index)
+      IF(${TRILINOS_ENABLED} AND N GREATER 1)
+        greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
+        IF(processors)
+          ADD_TEST(
+            NAME ${test_name}
+            COMMAND 
+              ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+              $<TARGET_FILE:TestSPHProbeFilter> 
+              ${TestParams}
+          )
+        ENDIF(processors)
+      ENDIF(${TRILINOS_ENABLED} AND N GREATER 1)
+    ENDFOREACH(N)
+    MATH(EXPR counter "${counter} + 1")
+  ENDFOREACH(index)
+ENDIF(EXISTS ${SC12_DATA_PATH})
 
