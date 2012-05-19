@@ -5,33 +5,58 @@
 # ctest -C Release / Debug / etc
 #--------------------------------------------------
 
-#
+#--------------------------------------------------
 # Setup some convenience flags depending on machine
-#
+#--------------------------------------------------
 SET(COMPUTERNAME $ENV{COMPUTERNAME})
-IF(COMPUTERNAME)
+IF (COMPUTERNAME)
   SET(HOSTNAME $ENV{COMPUTERNAME})
 ELSE(COMPUTERNAME)
   SET(HOSTNAME $ENV{HOSTNAME})
-ENDIF(COMPUTERNAME)
+ENDIF (COMPUTERNAME)
 
-#
+#--------------------------------------------------
 # Machines running OSMesa instead of OpenGL might need a larger threshold for image test comparisons
-#
+#--------------------------------------------------
 set(IMAGE_THRESHOLD "0")
-IF(HOSTNAME MATCHES "DINO")
+
+#--------------------------------------------------
+# Some data paths which are machine dependent
+#--------------------------------------------------
+set(CORES_PER_NODE 1)
+IF (HOSTNAME MATCHES "DINO")
+  set(CORES_PER_NODE 2)
   set(LARGE_DATA_PATH "C:\\data\\nextmuse")
-ELSEIF(HOSTNAME MATCHES "BRENO")
-  set(LARGE_DATA_PATH "D:\\data\\nextmuse")
-  set(SC12_DATA_PATH "D:\\Data\\sc12")
-  set(SC12_DATA_FILE "wave_tank7.h5part")
-ELSEIF(HOSTNAME MATCHES "todi")
+  set(SC12_DATA_PATH "C:/Data/sc12")
+  set(SC12_DATA_FILE "wave_tank7_")
+  set(SC12_DATA_NMIN 2)
+  set(SC12_DATA_BOXN 0004)
+  set(SC12_DATA_DX_N 0.5)
+  set(SC12_DATA_DX_2 1.0)
+  set(SC12_DATA_DX_4 2.0)
+ELSEIF (HOSTNAME MATCHES "BRENO")
+ELSEIF (HOSTNAME MATCHES "todi")
+  set(CORES_PER_NODE 16)
   set(LARGE_DATA_PATH "/scratch/todi/biddisco/nextmuse")
-  set(SC12_DATA_PATH "/scratch/todi/soumagne/wave_tank_big")
-  set(SC12_DATA_FILE "wave_tank5.h5")
-ELSEIF(HOSTNAME MATCHES "eiger")
+  set(SC12_DATA_PATH "/scratch/todi/biddisco/nextmuse")
+  set(SC12_DATA_FILE "wave_tank1_")
+  set(SC12_DATA_NMIN 4)
+  set(SC12_DATA_BOXN 00032    00064     00128    00256     00512     01024     02048     04096)
+  set(SC12_DATA_DX_N 0.132832 0.105429 0.0836791 0.0664162 0.0527145 0.0418396 0.0332081 0.0263573)
+  set(SC12_DATA_DX_2 0.265664 0.210858 0.1673582 0.1328324 0.1054290 0.0836792 0.0664162 0.0527146)
+  set(SC12_DATA_DX_4 0.531328 0.421716 0.3347164 0.2656648 0.2108580 0.1673584 0.1328324 0.1054292)
+ELSEIF (HOSTNAME MATCHES "rosa")
+  set(CORES_PER_NODE 16)
+  set(SC12_DATA_PATH "/scratch/weisshorn/biddisco")
+  set(SC12_DATA_FILE "wave_tank1_")
+  set(SC12_DATA_NMIN 4)
+  set(SC12_DATA_BOXN 00032    00064     00128    00256     00512     01024     02048     04096)
+  set(SC12_DATA_DX_N 0.132832 0.105429 0.0836791 0.0664162 0.0527145 0.0418396 0.0332081 0.0263573)
+  set(SC12_DATA_DX_2 0.265664 0.210858 0.1673582 0.1328324 0.1054290 0.0836792 0.0664162 0.0527146)
+  set(SC12_DATA_DX_4 0.531328 0.421716 0.3347164 0.2656648 0.2108580 0.1673584 0.1328324 0.1054292)
+ELSEIF (HOSTNAME MATCHES "eiger")
   set(LARGE_DATA_PATH "/project/csvis/biddisco/nextmuse")
-ENDIF()
+ENDIF ()
 # MESSAGE("Host name is ${HOSTNAME} and large data path is ${LARGE_DATA_PATH}")
 
 #--------------------------------------------------
@@ -49,15 +74,15 @@ ENDMACRO(add_local_test)
 # convenience macro for a>=b for testing processor count
 #--------------------------------------------------
 MACRO(greater_equal a b boolresult) 
-  IF((${a} GREATER ${b}) OR (${a} EQUAL ${b}))
+  IF ((${a} GREATER ${b}) OR (${a} EQUAL ${b}))
     SET(${boolresult} 1)
   ELSE((${a} GREATER ${b}) OR (${a} EQUAL ${b}))
     SET(${boolresult} 0)
-  ENDIF((${a} GREATER ${b}) OR (${a} EQUAL ${b}))
+  ENDIF ((${a} GREATER ${b}) OR (${a} EQUAL ${b}))
 ENDMACRO(greater_equal)
 
 #--------------------------------------------------
-# Cxx Tests 
+# Simple non MPI Filter/Kernel Tests 
 #--------------------------------------------------
 SET(TEST_LIST 
   TestKernel3D
@@ -71,16 +96,9 @@ FOREACH(test_name ${TEST_LIST})
 ENDFOREACH(test_name)
 
 #--------------------------------------------------
-# All tests from here on make use of HDF5 for IO
+# Test H5PartWriter
 #--------------------------------------------------
-IF (NOT USE_HDF5) 
-  return()
-ENDIF (NOT USE_HDF5) 
-
-#--------------------------------------------------
-# H5Part
-#--------------------------------------------------
-IF(VTK_USE_MPI)
+IF (USE_HDF5 AND VTK_USE_MPI)
   ADD_EXECUTABLE(TestH5PartParallelWriter TestH5PartParallelWriter.cxx)
   TARGET_LINK_LIBRARIES(TestH5PartParallelWriter
     pv_meshless 
@@ -90,7 +108,7 @@ IF(VTK_USE_MPI)
       #
       # Serial N==1
       #
-      IF(N EQUAL 1)
+      IF (N EQUAL 1)
         ADD_TEST(
           NAME ${test_name}
           COMMAND 
@@ -101,13 +119,13 @@ IF(VTK_USE_MPI)
             -T "${PLUGIN_TEST_DIR}"
             -testName ${test_name}
         )
-      ENDIF(N EQUAL 1)
+      ENDIF (N EQUAL 1)
       #
       # Parallel N>1
       #
-      IF(N GREATER 1)
+      IF (N GREATER 1)
         greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-        IF(processors)
+        IF (processors)
           ADD_TEST(
           NAME ${test_name}
           COMMAND 
@@ -119,11 +137,19 @@ IF(VTK_USE_MPI)
             -T "${PLUGIN_TEST_DIR}"
             -testName ${test_name}
         )
-        ENDIF(processors)
+        ENDIF (processors)
     ENDIF (N GREATER 1)
   ENDFOREACH(N)
   
-ENDIF (VTK_USE_MPI)
+
+  #--------------------------------------------------
+  # Utility Library with Test helpers
+  #--------------------------------------------------
+  ADD_LIBRARY(pvmeshlessTestLib STATIC
+    TestUtils.cxx
+  )
+
+ENDIF (USE_HDF5 AND VTK_USE_MPI)
 
 #--------------------------------------------------
 # Slurm job manager require "-rmk" "slurm" arguments
@@ -135,33 +161,47 @@ string(REPLACE " " ";" MPIEXEC_NUMPROC_FLAG ${MPIEXEC_NUMPROC_FLAG})
 #--------------------------------------------------
 # Trilinos
 #--------------------------------------------------
-IF(${TRILINOS_ENABLED} AND VTK_USE_MPI)
+IF (${TRILINOS_ENABLED} AND VTK_USE_MPI)
 
   ADD_EXECUTABLE(TestParticlePartitionFilter 
     TestParticlePartitionFilter.cxx
   )
   TARGET_LINK_LIBRARIES(TestParticlePartitionFilter
     pv_meshless 
+    pvmeshlessTestLib
     ${Trilinos_LIBRARIES}
     )
   
   greater_equal(${MPIEXEC_MAX_NUMPROCS} 4 processors)
-  IF(processors)
+  SET(test_name "TestParticlePartitionFilter-P4")
+  IF (processors)
     ADD_TEST(
-      NAME TestParticlePartitionFilter 
+      NAME ${test_name}
       COMMAND 
         ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
         $<TARGET_FILE:TestParticlePartitionFilter> 
-        -N 1000
-        -F temp.h5
-        -D ${PLUGIN_TEST_DIR}
-        -T ${PLUGIN_TEST_DIR}
+        -testName ${test_name}
+        -generateParticles 1000
         -V ${PROJECT_SOURCE_DIR}/Testing/baseline/ParticlePartition.png
-        -R
+        -doRender 1
     )
-  ENDIF(processors)
+  ENDIF (processors)
  
-ENDIF(${TRILINOS_ENABLED} AND VTK_USE_MPI)
+ENDIF (${TRILINOS_ENABLED} AND VTK_USE_MPI)
+
+#--------------------------------------------------
+# All tests from here on make use of HDF5 for IO
+#--------------------------------------------------
+IF (NOT USE_HDF5) 
+  return()
+ENDIF (NOT USE_HDF5) 
+
+#--------------------------------------------------
+# All tests from here on make use of MPI
+#--------------------------------------------------
+IF (NOT VTK_USE_MPI) 
+  return()
+ENDIF (NOT VTK_USE_MPI) 
 
 #--------------------------------------------------
 # Test Probe Filter
@@ -169,9 +209,10 @@ ENDIF(${TRILINOS_ENABLED} AND VTK_USE_MPI)
 ADD_EXECUTABLE(TestSPHProbeFilter TestSPHProbeFilter.cxx)
 TARGET_LINK_LIBRARIES(TestSPHProbeFilter
   pv_meshless 
+  pvmeshlessTestLib
   ${Trilinos_LIBRARIES}
 )
-          
+        
 #--------------------------------------------------
 # Test Probe Filter : Kernel Mode
 # Serial / Parallel
@@ -190,32 +231,16 @@ FOREACH(N 1 2 3 4)
     -value_range "0.228203 1.1817"
     -peak_position "-0.163415 0.129112 0.00150253"
   )
-  #
-  # Serial N==1
-  #
-  IF(N EQUAL 1)
+  greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
+  IF (processors)
     ADD_TEST(
-      NAME ${test_name}
+    NAME ${test_name}
       COMMAND 
+        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
         $<TARGET_FILE:TestSPHProbeFilter> 
         ${TestParams}
     )
-  ENDIF(N EQUAL 1)
-  #
-  # Parallel N>1
-  #
-  IF(${TRILINOS_ENABLED} AND N GREATER 1)
-    greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-    IF(processors)
-      ADD_TEST(
-      NAME ${test_name}
-        COMMAND 
-          ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
-          $<TARGET_FILE:TestSPHProbeFilter> 
-          ${TestParams}
-      )
-    ENDIF(processors)
-  ENDIF (${TRILINOS_ENABLED} AND N GREATER 1)
+  ENDIF (processors)
 ENDFOREACH(N)
     
 #--------------------------------------------------
@@ -227,75 +252,51 @@ FOREACH(N 1 2 3 4)
     #
     # Serial N==1
     #
-    IF(N EQUAL 1)
+    greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
+    IF (processors)
       ADD_TEST(
-        NAME ${test_name}
-        COMMAND 
-          $<TARGET_FILE:TestSPHProbeFilter> 
-          -D "${PROJECT_SOURCE_DIR}/Testing/data"
-          -F AGN_subset.h5part
-          -T "${PLUGIN_TEST_DIR}"
-          -testName ${test_name}
-          -neighbours 32
-          -ghost_region 0.01
-          -massScalars "mass"
-          -scalar SmoothedDensity
-          -value_range   "0.019823620095849 1565.79528808594"
-          -peak_position "0.53753125667572 0.529183149337769 0.526147127151489"
-      )
-    ENDIF(N EQUAL 1)
-    #
-    # Parallel N>1
-    #
-    IF(${TRILINOS_ENABLED} AND N GREATER 1)
-      greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-      IF(processors)
-        ADD_TEST(
-        NAME ${test_name}
-        COMMAND 
-          ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
-          $<TARGET_FILE:TestSPHProbeFilter> 
-          -D "${PROJECT_SOURCE_DIR}/Testing/data"
-          -F AGN_subset.h5part
-          -T "${PLUGIN_TEST_DIR}"
-          -testName ${test_name}
-          -neighbours 32
-          -ghost_region 0.01
-          -massScalars "mass"
-          -scalar SmoothedDensity
-          -value_range   "0.019823620095849 1565.79528808594"
-          -peak_position "0.53753125667572 0.529183149337769 0.526147127151489"
-      )
-      ENDIF(processors)
-  ENDIF (${TRILINOS_ENABLED} AND N GREATER 1)
+      NAME ${test_name}
+      COMMAND 
+        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+        $<TARGET_FILE:TestSPHProbeFilter> 
+        -D "${PROJECT_SOURCE_DIR}/Testing/data"
+        -F AGN_subset.h5part
+        -T "${PLUGIN_TEST_DIR}"
+        -testName ${test_name}
+        -neighbours 32
+        -ghost_region 0.01
+        -massScalars "mass"
+        -scalar SmoothedDensity
+        -value_range   "0.019823620095849 1565.79528808594"
+        -peak_position "0.53753125667572 0.529183149337769 0.526147127151489"
+    )
+    ENDIF (processors)
 ENDFOREACH(N)
   
 FOREACH(N 16 32 64 128 192 256 276)
   SET(test_name "TestSPHProbeShepard-densitycheck-P${N}")
-    #
-    # Parallel N>1
-    #
-    IF(${TRILINOS_ENABLED} AND N GREATER 1)
-      greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-      IF(processors)
-        ADD_TEST(
-          NAME ${test_name}
-          COMMAND 
-            ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
-            $<TARGET_FILE:TestSPHProbeFilter> 
-            -D "${PROJECT_SOURCE_DIR}/Testing/data"
-            -F AGN_densitycheck.h5part
-            -T "${PLUGIN_TEST_DIR}"
-            -testName ${test_name}
-            -neighbours 32
-            -ghost_region 0.01
-            -massScalars "mass"
-            -scalar SmoothedDensity
-            -value_range   "0.0178490821272135 624893248"
-            -peak_position "0.557741165161133 0.581159114837646 0.552553355693817"
-        )
-      ENDIF(processors)
-  ENDIF (${TRILINOS_ENABLED} AND N GREATER 1)
+  #
+  # Parallel N>1
+  #
+  greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
+  IF (processors)
+    ADD_TEST(
+      NAME ${test_name}
+      COMMAND 
+        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+        $<TARGET_FILE:TestSPHProbeFilter> 
+        -D "${PROJECT_SOURCE_DIR}/Testing/data"
+        -F AGN_densitycheck.h5part
+        -T "${PLUGIN_TEST_DIR}"
+        -testName ${test_name}
+        -neighbours 32
+        -ghost_region 0.01
+        -massScalars "mass"
+        -scalar SmoothedDensity
+        -value_range   "0.0178490821272135 624893248"
+        -peak_position "0.557741165161133 0.581159114837646 0.552553355693817"
+    )
+  ENDIF (processors)
 ENDFOREACH(N)
 
 #--------------------------------------------------
@@ -325,32 +326,16 @@ FOREACH(resolution 0.005 0.001 0.0005)
       -imageThreshold "${IMAGE_THRESHOLD}"
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
     )
-    #
-    # Serial N==1
-    #
-    IF(N EQUAL 1)
+    greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
+    IF (processors)
       ADD_TEST(
         NAME ${test_name}
         COMMAND 
+          ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
           $<TARGET_FILE:TestSPHProbeFilter> 
           ${TestParams}
       )
-    ENDIF(N EQUAL 1)
-    #
-    # Parallel N>1
-    #
-    IF(${TRILINOS_ENABLED} AND N GREATER 1)
-      greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-      IF(processors)
-        ADD_TEST(
-          NAME ${test_name}
-          COMMAND 
-            ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
-            $<TARGET_FILE:TestSPHProbeFilter> 
-            ${TestParams}
-        )
-      ENDIF(processors)
-    ENDIF(${TRILINOS_ENABLED} AND N GREATER 1)
+    ENDIF (processors)
   ENDFOREACH(N)
   MATH(EXPR counter "${counter} + 1")
 ENDFOREACH(resolution)
@@ -383,32 +368,16 @@ FOREACH(resolution 0.05 0.01 0.005)
       -imageThreshold "${IMAGE_THRESHOLD}"
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
     )
-    #
-    # Serial N==1
-    #
-    IF((N EQUAL 1) AND (resolution EQUAL 0.05))
+    greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
+    IF (processors)
       ADD_TEST(
         NAME ${test_name}
         COMMAND 
+          ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
           $<TARGET_FILE:TestSPHProbeFilter> 
           ${TestParams}
       )
-    ENDIF((N EQUAL 1) AND (resolution EQUAL 0.05))
-    #
-    # Parallel N>1
-    #
-    IF(${TRILINOS_ENABLED} AND N GREATER 1)
-      greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-      IF(processors)
-        ADD_TEST(
-          NAME ${test_name}
-          COMMAND 
-            ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
-            $<TARGET_FILE:TestSPHProbeFilter> 
-            ${TestParams}
-        )
-      ENDIF(processors)
-    ENDIF(${TRILINOS_ENABLED} AND N GREATER 1)
+    ENDIF (processors)
   ENDFOREACH(N)
   MATH(EXPR counter "${counter} + 1")
 ENDFOREACH(resolution)
@@ -479,18 +448,16 @@ FOREACH(index 5)
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
     )
 
-    IF(${TRILINOS_ENABLED} AND N GREATER 1)
-      greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-      IF(processors)
-        ADD_TEST(
-          NAME ${test_name}
-          COMMAND 
-            ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
-            $<TARGET_FILE:TestSPHProbeFilter> 
-            ${TestParams}
-        )
-      ENDIF(processors)
-    ENDIF(${TRILINOS_ENABLED} AND N GREATER 1)
+    greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
+    IF (processors)
+      ADD_TEST(
+        NAME ${test_name}
+        COMMAND 
+          ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+          $<TARGET_FILE:TestSPHProbeFilter> 
+          ${TestParams}
+      )
+    ENDIF (processors)
   ENDFOREACH(N)
   MATH(EXPR counter "${counter} + 1")
 ENDFOREACH(index)
@@ -535,18 +502,16 @@ FOREACH(index 0 1 2 3 4 5 6 7 8 9 10)
       -V ${PROJECT_SOURCE_DIR}/Testing/baseline/${test_name}.png
     )
 
-    IF(${TRILINOS_ENABLED} AND N GREATER 1)
-      greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-      IF(processors)
-        ADD_TEST(
-          NAME ${test_name}
-          COMMAND 
-            ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
-            $<TARGET_FILE:TestSPHProbeFilter> 
-            ${TestParams}
-        )
-      ENDIF(processors)
-    ENDIF(${TRILINOS_ENABLED} AND N GREATER 1)
+    greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
+    IF (processors)
+      ADD_TEST(
+        NAME ${test_name}
+        COMMAND 
+          ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
+          $<TARGET_FILE:TestSPHProbeFilter> 
+          ${TestParams}
+      )
+    ENDIF (processors)
   ENDFOREACH(N)
   MATH(EXPR counter "${counter} + 1")
 ENDFOREACH(index)
@@ -563,69 +528,64 @@ ENDFOREACH(index)
 #/project/csvis/biddisco/nextmuse/16384_7.44241195665136E-004_dambreak0.h5part
 #/project/csvis/biddisco/nextmuse/32768_5.90704628458454E-004_dambreak0.h5part
 
-#/scratch/todi/soumagne/wave_tank_big/wave_tank5.h5
+IF (NOT (${TRILINOS_ENABLED} AND VTK_USE_MPI))
+  return()
+ENDIF (NOT (${TRILINOS_ENABLED} AND VTK_USE_MPI))
 
 #--------------------------------------------------
-# Test SC12 : Take one dataset and contour it to the same resolution
-# on several different CPU counts to test strong scaling
-# 1024^3. Use with and without Zoltan load-balancing using ghost info from file
 #--------------------------------------------------
-IF(EXISTS ${SC12_DATA_PATH})
-  SET(IGNOREBOX 1 0 )
-  SET(counter 1)
+# Benchmark SC12 : Take one dataset with bounding boxes
+# saved and run partitioning filter on different CPU counts
+# with/without boxes. Time the partitioning.
+#--------------------------------------------------
+#--------------------------------------------------
+LIST(GET SC12_DATA_BOXN 0 SC12_TEST)
+IF (EXISTS ${SC12_DATA_PATH}/${SC12_DATA_FILE}${SC12_TEST}.h5part)
   FOREACH(index 0 1)
-
-    #---------------
-    # workstation  
-    SET(DELTAX 0.5)
-    SET(GST    1.0)
-    SET(GRIDSIZE 32)
-    FOREACH(N 2 4 8)
-    #---------------
-  
-    #---------------
-    # todi  
-    #  SET(DELTAX 0.02483)
-    #  SET(GST    0.04966)
-    #  SET(GRIDSIZE 1024)
-    #  FOREACH(N 2048 1536 1024 768 512 384 256 192 128 64 32)
-    #---------------
-
-      LIST(GET IGNOREBOX ${index} IGNORE)
-
-      SET(test_name "benchmark-sc12-P${N}-I${index}")
+    SET(ncount 0)
+    FOREACH(N ${SC12_DATA_BOXN})
+      LIST(GET SC12_DATA_DX_N ${ncount} DELTAX)
+      LIST(GET SC12_DATA_DX_4 ${ncount} GST)
       SET(TestParams 
         -D "${SC12_DATA_PATH}"
-        -F "${SC12_DATA_FILE}"
+        -F "${SC12_DATA_FILE}${N}.h5part"
         -T "${PLUGIN_TEST_DIR}"
-        -testName ${test_name}
         -Xarray "X"
         -Yarray "Y"
         -Zarray "Z"
         -particlesize ${DELTAX}
         -ghost_region ${GST}
-        -gridResolution "${GRIDSIZE} ${GRIDSIZE} ${GRIDSIZE}"
-        -ignoreBoxes "${IGNORE}"
-        -scalar ShepardCoeff
-        -contour 0.8
-        -imageResample 1
-        -skipImageTest 1
+        -ignorePartitions "${index}"
       )
-
-      IF(${TRILINOS_ENABLED} AND N GREATER 1)
-        greater_equal(${MPIEXEC_MAX_NUMPROCS} ${N} processors)
-        IF(processors)
+      # remove 000 from 00032 for Nprocs etc
+      STRING(REGEX REPLACE "(^0+)" "" N "${N}")
+      #
+      SET(M ${N})
+      while (NOT ${M} LESS ${SC12_DATA_NMIN})
+        IF (NOT ${M} GREATER ${MPIEXEC_MAX_NUMPROCS})
+          SET(test_name "benchmark-PartitionBoxes-B${N}-P${M}-I${index}")
+          MATH(EXPR MPI_DEPTH "(${N}/${CORES_PER_NODE})/${M}")
+          IF (${MPI_DEPTH} GREATER 1)
+            SET (MPI_DEPTH_FLAGS -d ${MPI_DEPTH})
+          ELSE (${MPI_DEPTH} GREATER 1)
+            SET (MPI_DEPTH_FLAGS )
+          ENDIF (${MPI_DEPTH} GREATER 1)
+          IF (${MPI_DEPTH} GREATER ${CORES_PER_NODE})
+            SET (MPI_DEPTH_FLAGS -d ${CORES_PER_NODE})
+          ENDIF (${MPI_DEPTH} GREATER ${CORES_PER_NODE})
           ADD_TEST(
             NAME ${test_name}
             COMMAND 
-              ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
-              $<TARGET_FILE:TestSPHProbeFilter> 
+              ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${M} ${MPI_DEPTH_FLAGS}
+              $<TARGET_FILE:TestParticlePartitionFilter> 
+              -testName ${test_name}
               ${TestParams}
           )
-        ENDIF(processors)
-      ENDIF(${TRILINOS_ENABLED} AND N GREATER 1)
+        ENDIF (NOT ${M} GREATER ${MPIEXEC_MAX_NUMPROCS})
+        #
+        MATH(EXPR M "${M} / 2")
+      endwhile (NOT ${M} LESS ${SC12_DATA_NMIN})
+      MATH(EXPR ncount "${ncount} + 1")
     ENDFOREACH(N)
-    MATH(EXPR counter "${counter} + 1")
   ENDFOREACH(index)
-ENDIF(EXISTS ${SC12_DATA_PATH})
-
+ENDIF (EXISTS ${SC12_DATA_PATH}/${SC12_DATA_FILE}${SC12_TEST}.h5part)
