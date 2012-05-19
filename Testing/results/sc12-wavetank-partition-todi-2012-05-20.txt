@@ -1,0 +1,1715 @@
+UpdateCTestConfiguration  from :/project/csvis/biddisco/todi/build/pv-os-plugins/DartConfiguration.tcl
+Parse Config file:/project/csvis/biddisco/todi/build/pv-os-plugins/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/project/csvis/biddisco/todi/build/pv-os-plugins/DartConfiguration.tcl
+Parse Config file:/project/csvis/biddisco/todi/build/pv-os-plugins/DartConfiguration.tcl
+Test project /project/csvis/biddisco/todi/build/pv-os-plugins
+Constructing a list of tests
+Done constructing a list of tests
+Checking test dependency graph...
+Checking test dependency graph end
+test 93
+      Start  93: benchmark-PartitionBoxes-B32-P32-I0
+
+93: Test command: /usr/bin/aprun "-n" "32" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B32-P32-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00032.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.132832" "-ghost_region" "0.531328" "-ignorePartitions" "0"
+93: Test timeout computed to be: 1500
+93:           ==================== : {}
+93:                      Test name : {benchmark-PartitionBoxes-B32-P32-I0}
+93:                       Filename : {wave_tank1_00032.h5part}
+93:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+93:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00032.h5part}
+93:                    Xarray name : {X}
+93:                    Yarray name : {Y}
+93:                    Zarray name : {Z}
+93:              Ignore Partitions : {0}
+93:                  Particle Size : {0.132832}
+93:                   Ghost Region : {0.531328}
+93:           -------------------- : {}
+93:                 Particle Count : {3237676}
+93:                Total Particles : {3237676}
+93:                      Read Time : {0.77941}
+93:                 Partition Time : {0.193401}
+93:           ==================== : {}
+93: Application 834582 resources: utime ~12s, stime ~14s
+ 1/72 Test  #93: benchmark-PartitionBoxes-B32-P32-I0 .......   Passed    4.08 sec
+test 94
+      Start  94: benchmark-PartitionBoxes-B64-P64-I0
+
+94: Test command: /usr/bin/aprun "-n" "64" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B64-P64-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00064.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.105429" "-ghost_region" "0.421716" "-ignorePartitions" "0"
+94: Test timeout computed to be: 1500
+94:           ==================== : {}
+94:                      Test name : {benchmark-PartitionBoxes-B64-P64-I0}
+94:                       Filename : {wave_tank1_00064.h5part}
+94:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+94:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00064.h5part}
+94:                    Xarray name : {X}
+94:                    Yarray name : {Y}
+94:                    Zarray name : {Z}
+94:              Ignore Partitions : {0}
+94:                  Particle Size : {0.105429}
+94:                   Ghost Region : {0.421716}
+94:           -------------------- : {}
+94:                 Particle Count : {6498000}
+94:                Total Particles : {6498000}
+94:                      Read Time : {1.19011}
+94:                 Partition Time : {0.223015}
+94:           ==================== : {}
+94: Application 834583 resources: utime ~31s, stime ~28s
+ 2/72 Test  #94: benchmark-PartitionBoxes-B64-P64-I0 .......   Passed    6.08 sec
+test 95
+      Start  95: benchmark-PartitionBoxes-B64-P32-I0
+
+95: Test command: /usr/bin/aprun "-n" "32" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B64-P32-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00064.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.105429" "-ghost_region" "0.421716" "-ignorePartitions" "0"
+95: Test timeout computed to be: 1500
+95:           ==================== : {}
+95:                      Test name : {benchmark-PartitionBoxes-B64-P32-I0}
+95:                       Filename : {wave_tank1_00064.h5part}
+95:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+95:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00064.h5part}
+95:                    Xarray name : {X}
+95:                    Yarray name : {Y}
+95:                    Zarray name : {Z}
+95:              Ignore Partitions : {0}
+95:                  Particle Size : {0.105429}
+95:                   Ghost Region : {0.421716}
+95:           -------------------- : {}
+95:                 Particle Count : {6498000}
+95:                Total Particles : {6498000}
+95:                      Read Time : {0.248021}
+95:                 Partition Time : {0.374709}
+95:           ==================== : {}
+95: Application 834584 resources: utime ~16s, stime ~18s
+ 3/72 Test  #95: benchmark-PartitionBoxes-B64-P32-I0 .......   Passed    4.08 sec
+test 96
+      Start  96: benchmark-PartitionBoxes-B128-P128-I0
+
+96: Test command: /usr/bin/aprun "-n" "128" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B128-P128-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00128.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0836791" "-ghost_region" "0.3347164" "-ignorePartitions" "0"
+96: Test timeout computed to be: 1500
+96:           ==================== : {}
+96:                      Test name : {benchmark-PartitionBoxes-B128-P128-I0}
+96:                       Filename : {wave_tank1_00128.h5part}
+96:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+96:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00128.h5part}
+96:                    Xarray name : {X}
+96:                    Yarray name : {Y}
+96:                    Zarray name : {Z}
+96:              Ignore Partitions : {0}
+96:                  Particle Size : {0.0836791}
+96:                   Ghost Region : {0.334716}
+96:           -------------------- : {}
+96:                 Particle Count : {12880920}
+96:                Total Particles : {12880920}
+96:                      Read Time : {5.47496}
+96:                 Partition Time : {0.335199}
+96:           ==================== : {}
+96: Application 834585 resources: utime ~150s, stime ~56s
+ 4/72 Test  #96: benchmark-PartitionBoxes-B128-P128-I0 .....   Passed   12.09 sec
+test 97
+      Start  97: benchmark-PartitionBoxes-B128-P64-I0
+
+97: Test command: /usr/bin/aprun "-n" "64" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B128-P64-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00128.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0836791" "-ghost_region" "0.3347164" "-ignorePartitions" "0"
+97: Test timeout computed to be: 1500
+97:           ==================== : {}
+97:                      Test name : {benchmark-PartitionBoxes-B128-P64-I0}
+97:                       Filename : {wave_tank1_00128.h5part}
+97:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+97:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00128.h5part}
+97:                    Xarray name : {X}
+97:                    Yarray name : {Y}
+97:                    Zarray name : {Z}
+97:              Ignore Partitions : {0}
+97:                  Particle Size : {0.0836791}
+97:                   Ghost Region : {0.334716}
+97:           -------------------- : {}
+97:                 Particle Count : {12880920}
+97:                Total Particles : {12880920}
+97:                      Read Time : {0.33498}
+97:                 Partition Time : {0.403895}
+97:           ==================== : {}
+97: Application 834586 resources: utime ~32s, stime ~36s
+ 5/72 Test  #97: benchmark-PartitionBoxes-B128-P64-I0 ......   Passed    5.08 sec
+test 98
+      Start  98: benchmark-PartitionBoxes-B128-P32-I0
+
+98: Test command: /usr/bin/aprun "-n" "32" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B128-P32-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00128.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0836791" "-ghost_region" "0.3347164" "-ignorePartitions" "0"
+98: Test timeout computed to be: 1500
+98:           ==================== : {}
+98:                      Test name : {benchmark-PartitionBoxes-B128-P32-I0}
+98:                       Filename : {wave_tank1_00128.h5part}
+98:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+98:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00128.h5part}
+98:                    Xarray name : {X}
+98:                    Yarray name : {Y}
+98:                    Zarray name : {Z}
+98:              Ignore Partitions : {0}
+98:                  Particle Size : {0.0836791}
+98:                   Ghost Region : {0.334716}
+98:           -------------------- : {}
+98:                 Particle Count : {12880920}
+98:                Total Particles : {12880920}
+98:                      Read Time : {0.470112}
+98:                 Partition Time : {0.682853}
+98:           ==================== : {}
+98: Application 834587 resources: utime ~25s, stime ~25s
+ 6/72 Test  #98: benchmark-PartitionBoxes-B128-P32-I0 ......   Passed    5.08 sec
+test 99
+      Start  99: benchmark-PartitionBoxes-B256-P256-I0
+
+99: Test command: /usr/bin/aprun "-n" "256" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B256-P256-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00256.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0664162" "-ghost_region" "0.2656648" "-ignorePartitions" "0"
+99: Test timeout computed to be: 1500
+99:           ==================== : {}
+99:                      Test name : {benchmark-PartitionBoxes-B256-P256-I0}
+99:                       Filename : {wave_tank1_00256.h5part}
+99:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+99:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00256.h5part}
+99:                    Xarray name : {X}
+99:                    Yarray name : {Y}
+99:                    Zarray name : {Z}
+99:              Ignore Partitions : {0}
+99:                  Particle Size : {0.0664162}
+99:                   Ghost Region : {0.265665}
+99:           -------------------- : {}
+99:                 Particle Count : {25867056}
+99:                Total Particles : {25867056}
+99:                      Read Time : {7.54049}
+99:                 Partition Time : {0.441555}
+99:           ==================== : {}
+99: Application 834588 resources: utime ~531s, stime ~109s
+ 7/72 Test  #99: benchmark-PartitionBoxes-B256-P256-I0 .....   Passed   18.10 sec
+test 100
+      Start 100: benchmark-PartitionBoxes-B256-P128-I0
+
+100: Test command: /usr/bin/aprun "-n" "128" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B256-P128-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00256.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0664162" "-ghost_region" "0.2656648" "-ignorePartitions" "0"
+100: Test timeout computed to be: 1500
+100:           ==================== : {}
+100:                      Test name : {benchmark-PartitionBoxes-B256-P128-I0}
+100:                       Filename : {wave_tank1_00256.h5part}
+100:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+100:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00256.h5part}
+100:                    Xarray name : {X}
+100:                    Yarray name : {Y}
+100:                    Zarray name : {Z}
+100:              Ignore Partitions : {0}
+100:                  Particle Size : {0.0664162}
+100:                   Ghost Region : {0.265665}
+100:           -------------------- : {}
+100:                 Particle Count : {25867056}
+100:                Total Particles : {25867056}
+100:                      Read Time : {0.627137}
+100:                 Partition Time : {0.600331}
+100:           ==================== : {}
+100: Application 834589 resources: utime ~91s, stime ~64s
+ 8/72 Test #100: benchmark-PartitionBoxes-B256-P128-I0 .....   Passed    7.09 sec
+test 101
+      Start 101: benchmark-PartitionBoxes-B256-P64-I0
+
+101: Test command: /usr/bin/aprun "-n" "64" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B256-P64-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00256.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0664162" "-ghost_region" "0.2656648" "-ignorePartitions" "0"
+101: Test timeout computed to be: 1500
+101:           ==================== : {}
+101:                      Test name : {benchmark-PartitionBoxes-B256-P64-I0}
+101:                       Filename : {wave_tank1_00256.h5part}
+101:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+101:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00256.h5part}
+101:                    Xarray name : {X}
+101:                    Yarray name : {Y}
+101:                    Zarray name : {Z}
+101:              Ignore Partitions : {0}
+101:                  Particle Size : {0.0664162}
+101:                   Ghost Region : {0.265665}
+101:           -------------------- : {}
+101:                 Particle Count : {25867056}
+101:                Total Particles : {25867056}
+101:                      Read Time : {0.614245}
+101:                 Partition Time : {0.778561}
+101:           ==================== : {}
+101: Application 834590 resources: utime ~54s, stime ~44s
+ 9/72 Test #101: benchmark-PartitionBoxes-B256-P64-I0 ......   Passed    6.08 sec
+test 102
+      Start 102: benchmark-PartitionBoxes-B256-P32-I0
+
+102: Test command: /usr/bin/aprun "-n" "32" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B256-P32-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00256.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0664162" "-ghost_region" "0.2656648" "-ignorePartitions" "0"
+102: Test timeout computed to be: 1500
+102:           ==================== : {}
+102:                      Test name : {benchmark-PartitionBoxes-B256-P32-I0}
+102:                       Filename : {wave_tank1_00256.h5part}
+102:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+102:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00256.h5part}
+102:                    Xarray name : {X}
+102:                    Yarray name : {Y}
+102:                    Zarray name : {Z}
+102:              Ignore Partitions : {0}
+102:                  Particle Size : {0.0664162}
+102:                   Ghost Region : {0.265665}
+102:           -------------------- : {}
+102:                 Particle Count : {25867056}
+102:                Total Particles : {25867056}
+102:                      Read Time : {0.856209}
+102:                 Partition Time : {1.21418}
+102:           ==================== : {}
+102: Application 834591 resources: utime ~38s, stime ~38s
+10/72 Test #102: benchmark-PartitionBoxes-B256-P32-I0 ......   Passed    7.11 sec
+test 103
+      Start 103: benchmark-PartitionBoxes-B512-P512-I0
+
+103: Test command: /usr/bin/aprun "-n" "512" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B512-P512-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00512.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0527145" "-ghost_region" "0.2108580" "-ignorePartitions" "0"
+103: Test timeout computed to be: 1500
+103:           ==================== : {}
+103:                      Test name : {benchmark-PartitionBoxes-B512-P512-I0}
+103:                       Filename : {wave_tank1_00512.h5part}
+103:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+103:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00512.h5part}
+103:                    Xarray name : {X}
+103:                    Yarray name : {Y}
+103:                    Zarray name : {Z}
+103:              Ignore Partitions : {0}
+103:                  Particle Size : {0.0527145}
+103:                   Ghost Region : {0.210858}
+103:           -------------------- : {}
+103:                 Particle Count : {51388350}
+103:                Total Particles : {51388350}
+103:                      Read Time : {17.4034}
+103:                 Partition Time : {0.61425}
+103:           ==================== : {}
+103: Application 834592 resources: utime ~5755s, stime ~224s
+11/72 Test #103: benchmark-PartitionBoxes-B512-P512-I0 .....   Passed   40.16 sec
+test 104
+      Start 104: benchmark-PartitionBoxes-B512-P256-I0
+
+104: Test command: /usr/bin/aprun "-n" "256" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B512-P256-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00512.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0527145" "-ghost_region" "0.2108580" "-ignorePartitions" "0"
+104: Test timeout computed to be: 1500
+104:           ==================== : {}
+104:                      Test name : {benchmark-PartitionBoxes-B512-P256-I0}
+104:                       Filename : {wave_tank1_00512.h5part}
+104:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+104:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00512.h5part}
+104:                    Xarray name : {X}
+104:                    Yarray name : {Y}
+104:                    Zarray name : {Z}
+104:              Ignore Partitions : {0}
+104:                  Particle Size : {0.0527145}
+104:                   Ghost Region : {0.210858}
+104:           -------------------- : {}
+104:                 Particle Count : {51388350}
+104:                Total Particles : {51388350}
+104:                      Read Time : {1.23185}
+104:                 Partition Time : {0.750822}
+104:           ==================== : {}
+104: Application 834593 resources: utime ~271s, stime ~127s
+12/72 Test #104: benchmark-PartitionBoxes-B512-P256-I0 .....   Passed   13.09 sec
+test 105
+      Start 105: benchmark-PartitionBoxes-B512-P128-I0
+
+105: Test command: /usr/bin/aprun "-n" "128" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B512-P128-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00512.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0527145" "-ghost_region" "0.2108580" "-ignorePartitions" "0"
+105: Test timeout computed to be: 1500
+105:           ==================== : {}
+105:                      Test name : {benchmark-PartitionBoxes-B512-P128-I0}
+105:                       Filename : {wave_tank1_00512.h5part}
+105:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+105:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00512.h5part}
+105:                    Xarray name : {X}
+105:                    Yarray name : {Y}
+105:                    Zarray name : {Z}
+105:              Ignore Partitions : {0}
+105:                  Particle Size : {0.0527145}
+105:                   Ghost Region : {0.210858}
+105:           -------------------- : {}
+105:                 Particle Count : {51388350}
+105:                Total Particles : {51388350}
+105:                      Read Time : {1.35967}
+105:                 Partition Time : {1.0605}
+105:           ==================== : {}
+105: Application 834594 resources: utime ~158s, stime ~81s
+13/72 Test #105: benchmark-PartitionBoxes-B512-P128-I0 .....   Passed    9.09 sec
+test 106
+      Start 106: benchmark-PartitionBoxes-B512-P64-I0
+
+106: Test command: /usr/bin/aprun "-n" "64" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B512-P64-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00512.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0527145" "-ghost_region" "0.2108580" "-ignorePartitions" "0"
+106: Test timeout computed to be: 1500
+106:           ==================== : {}
+106:                      Test name : {benchmark-PartitionBoxes-B512-P64-I0}
+106:                       Filename : {wave_tank1_00512.h5part}
+106:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+106:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00512.h5part}
+106:                    Xarray name : {X}
+106:                    Yarray name : {Y}
+106:                    Zarray name : {Z}
+106:              Ignore Partitions : {0}
+106:                  Particle Size : {0.0527145}
+106:                   Ghost Region : {0.210858}
+106:           -------------------- : {}
+106:                 Particle Count : {51388350}
+106:                Total Particles : {51388350}
+106:                      Read Time : {1.19047}
+106:                 Partition Time : {1.39678}
+106:           ==================== : {}
+106: Application 834595 resources: utime ~92s, stime ~60s
+14/72 Test #106: benchmark-PartitionBoxes-B512-P64-I0 ......   Passed    8.09 sec
+test 107
+      Start 107: benchmark-PartitionBoxes-B512-P32-I0
+
+107: Test command: /usr/bin/aprun "-n" "32" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B512-P32-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00512.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0527145" "-ghost_region" "0.2108580" "-ignorePartitions" "0"
+107: Test timeout computed to be: 1500
+107:           ==================== : {}
+107:                      Test name : {benchmark-PartitionBoxes-B512-P32-I0}
+107:                       Filename : {wave_tank1_00512.h5part}
+107:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+107:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00512.h5part}
+107:                    Xarray name : {X}
+107:                    Yarray name : {Y}
+107:                    Zarray name : {Z}
+107:              Ignore Partitions : {0}
+107:                  Particle Size : {0.0527145}
+107:                   Ghost Region : {0.210858}
+107:           -------------------- : {}
+107:                 Particle Count : {51388350}
+107:                Total Particles : {51388350}
+107:                      Read Time : {1.66182}
+107:                 Partition Time : {2.32899}
+107:           ==================== : {}
+107: Application 834596 resources: utime ~69s, stime ~63s
+15/72 Test #107: benchmark-PartitionBoxes-B512-P32-I0 ......   Passed   10.08 sec
+test 108
+      Start 108: benchmark-PartitionBoxes-B1024-P1024-I0
+
+108: Test command: /usr/bin/aprun "-n" "1024" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P1024-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "0"
+108: Test timeout computed to be: 1500
+108:           ==================== : {}
+108:                      Test name : {benchmark-PartitionBoxes-B1024-P1024-I0}
+108:                       Filename : {wave_tank1_01024.h5part}
+108:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+108:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+108:                    Xarray name : {X}
+108:                    Yarray name : {Y}
+108:                    Zarray name : {Z}
+108:              Ignore Partitions : {0}
+108:                  Particle Size : {0.0418396}
+108:                   Ghost Region : {0.167358}
+108:           -------------------- : {}
+108:                 Particle Count : {103047360}
+108:                Total Particles : {103047360}
+108:                      Read Time : {52.4842}
+108:                 Partition Time : {0.87733}
+108:           ==================== : {}
+108: Application 834597 resources: utime ~9781s, stime ~392s
+16/72 Test #108: benchmark-PartitionBoxes-B1024-P1024-I0 ...   Passed   92.22 sec
+test 109
+      Start 109: benchmark-PartitionBoxes-B1024-P512-I0
+
+109: Test command: /usr/bin/aprun "-n" "512" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P512-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "0"
+109: Test timeout computed to be: 1500
+109:           ==================== : {}
+109:                      Test name : {benchmark-PartitionBoxes-B1024-P512-I0}
+109:                       Filename : {wave_tank1_01024.h5part}
+109:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+109:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+109:                    Xarray name : {X}
+109:                    Yarray name : {Y}
+109:                    Zarray name : {Z}
+109:              Ignore Partitions : {0}
+109:                  Particle Size : {0.0418396}
+109:                   Ghost Region : {0.167358}
+109:           -------------------- : {}
+109:                 Particle Count : {103047360}
+109:                Total Particles : {103047360}
+109:                      Read Time : {2.36487}
+109:                 Partition Time : {1.07867}
+109:           ==================== : {}
+109: Application 834598 resources: utime ~740s, stime ~245s
+17/72 Test #109: benchmark-PartitionBoxes-B1024-P512-I0 ....   Passed   23.14 sec
+test 110
+      Start 110: benchmark-PartitionBoxes-B1024-P256-I0
+
+110: Test command: /usr/bin/aprun "-n" "256" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P256-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "0"
+110: Test timeout computed to be: 1500
+110:           ==================== : {}
+110:                      Test name : {benchmark-PartitionBoxes-B1024-P256-I0}
+110:                       Filename : {wave_tank1_01024.h5part}
+110:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+110:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+110:                    Xarray name : {X}
+110:                    Yarray name : {Y}
+110:                    Zarray name : {Z}
+110:              Ignore Partitions : {0}
+110:                  Particle Size : {0.0418396}
+110:                   Ghost Region : {0.167358}
+110:           -------------------- : {}
+110:                 Particle Count : {103047360}
+110:                Total Particles : {103047360}
+110:                      Read Time : {2.33852}
+110:                 Partition Time : {1.30494}
+110:           ==================== : {}
+110: Application 834599 resources: utime ~1089s, stime ~148s
+18/72 Test #110: benchmark-PartitionBoxes-B1024-P256-I0 ....   Passed   17.12 sec
+test 111
+      Start 111: benchmark-PartitionBoxes-B1024-P128-I0
+
+111: Test command: /usr/bin/aprun "-n" "128" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P128-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "0"
+111: Test timeout computed to be: 1500
+111:           ==================== : {}
+111:                      Test name : {benchmark-PartitionBoxes-B1024-P128-I0}
+111:                       Filename : {wave_tank1_01024.h5part}
+111:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+111:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+111:                    Xarray name : {X}
+111:                    Yarray name : {Y}
+111:                    Zarray name : {Z}
+111:              Ignore Partitions : {0}
+111:                  Particle Size : {0.0418396}
+111:                   Ghost Region : {0.167358}
+111:           -------------------- : {}
+111:                 Particle Count : {103047360}
+111:                Total Particles : {103047360}
+111:                      Read Time : {2.27872}
+111:                 Partition Time : {1.85886}
+111:           ==================== : {}
+111: Application 834600 resources: utime ~246s, stime ~106s
+19/72 Test #111: benchmark-PartitionBoxes-B1024-P128-I0 ....   Passed   11.09 sec
+test 112
+      Start 112: benchmark-PartitionBoxes-B1024-P64-I0
+
+112: Test command: /usr/bin/aprun "-n" "64" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P64-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "0"
+112: Test timeout computed to be: 1500
+112:           ==================== : {}
+112:                      Test name : {benchmark-PartitionBoxes-B1024-P64-I0}
+112:                       Filename : {wave_tank1_01024.h5part}
+112:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+112:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+112:                    Xarray name : {X}
+112:                    Yarray name : {Y}
+112:                    Zarray name : {Z}
+112:              Ignore Partitions : {0}
+112:                  Particle Size : {0.0418396}
+112:                   Ghost Region : {0.167358}
+112:           -------------------- : {}
+112:                 Particle Count : {103047360}
+112:                Total Particles : {103047360}
+112:                      Read Time : {2.33454}
+112:                 Partition Time : {2.74185}
+112:           ==================== : {}
+112: Application 834601 resources: utime ~172s, stime ~91s
+20/72 Test #112: benchmark-PartitionBoxes-B1024-P64-I0 .....   Passed   12.10 sec
+test 113
+      Start 113: benchmark-PartitionBoxes-B1024-P32-I0
+
+113: Test command: /usr/bin/aprun "-n" "32" "-d" "2" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P32-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "0"
+113: Test timeout computed to be: 1500
+113:           ==================== : {}
+113:                      Test name : {benchmark-PartitionBoxes-B1024-P32-I0}
+113:                       Filename : {wave_tank1_01024.h5part}
+113:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+113:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+113:                    Xarray name : {X}
+113:                    Yarray name : {Y}
+113:                    Zarray name : {Z}
+113:              Ignore Partitions : {0}
+113:                  Particle Size : {0.0418396}
+113:                   Ghost Region : {0.167358}
+113:           -------------------- : {}
+113:                 Particle Count : {103047360}
+113:                Total Particles : {103047360}
+113:                      Read Time : {2.46035}
+113:                 Partition Time : {3.23563}
+113:           ==================== : {}
+113: Application 834602 resources: utime ~96s, stime ~60s
+21/72 Test #113: benchmark-PartitionBoxes-B1024-P32-I0 .....   Passed   11.11 sec
+test 114
+      Start 114: benchmark-PartitionBoxes-B2048-P2048-I0
+
+114: Test command: /usr/bin/aprun "-n" "2048" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P2048-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "0"
+114: Test timeout computed to be: 1500
+114: apsched: claim exceeds reservation's node-count
+22/72 Test #114: benchmark-PartitionBoxes-B2048-P2048-I0 ...***Failed    0.02 sec
+test 115
+      Start 115: benchmark-PartitionBoxes-B2048-P1024-I0
+
+115: Test command: /usr/bin/aprun "-n" "1024" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P1024-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "0"
+115: Test timeout computed to be: 1500
+115:           ==================== : {}
+115:                      Test name : {benchmark-PartitionBoxes-B2048-P1024-I0}
+115:                       Filename : {wave_tank1_02048.h5part}
+115:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+115:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+115:                    Xarray name : {X}
+115:                    Yarray name : {Y}
+115:                    Zarray name : {Z}
+115:              Ignore Partitions : {0}
+115:                  Particle Size : {0.0332081}
+115:                   Ghost Region : {0.132832}
+115:           -------------------- : {}
+115:                 Particle Count : {205575024}
+115:                Total Particles : {205575024}
+115:                      Read Time : {85.2868}
+115:                 Partition Time : {1.63361}
+115:           ==================== : {}
+115: Application 834603 resources: utime ~15573s, stime ~469s
+23/72 Test #115: benchmark-PartitionBoxes-B2048-P1024-I0 ...   Passed  126.24 sec
+test 116
+      Start 116: benchmark-PartitionBoxes-B2048-P512-I0
+
+116: Test command: /usr/bin/aprun "-n" "512" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P512-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "0"
+116: Test timeout computed to be: 1500
+116:           ==================== : {}
+116:                      Test name : {benchmark-PartitionBoxes-B2048-P512-I0}
+116:                       Filename : {wave_tank1_02048.h5part}
+116:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+116:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+116:                    Xarray name : {X}
+116:                    Yarray name : {Y}
+116:                    Zarray name : {Z}
+116:              Ignore Partitions : {0}
+116:                  Particle Size : {0.0332081}
+116:                   Ghost Region : {0.132832}
+116:           -------------------- : {}
+116:                 Particle Count : {205575024}
+116:                Total Particles : {205575024}
+116:                      Read Time : {4.54272}
+116:                 Partition Time : {1.95592}
+116:           ==================== : {}
+116: Application 834604 resources: utime ~1238s, stime ~291s
+24/72 Test #116: benchmark-PartitionBoxes-B2048-P512-I0 ....   Passed   26.13 sec
+test 117
+      Start 117: benchmark-PartitionBoxes-B2048-P256-I0
+
+117: Test command: /usr/bin/aprun "-n" "256" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P256-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "0"
+117: Test timeout computed to be: 1500
+117:           ==================== : {}
+117:                      Test name : {benchmark-PartitionBoxes-B2048-P256-I0}
+117:                       Filename : {wave_tank1_02048.h5part}
+117:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+117:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+117:                    Xarray name : {X}
+117:                    Yarray name : {Y}
+117:                    Zarray name : {Z}
+117:              Ignore Partitions : {0}
+117:                  Particle Size : {0.0332081}
+117:                   Ghost Region : {0.132832}
+117:           -------------------- : {}
+117:                 Particle Count : {205575024}
+117:                Total Particles : {205575024}
+117:                      Read Time : {4.48553}
+117:                 Partition Time : {2.57738}
+117:           ==================== : {}
+117: Application 834605 resources: utime ~734s, stime ~210s
+25/72 Test #117: benchmark-PartitionBoxes-B2048-P256-I0 ....   Passed   19.10 sec
+test 118
+      Start 118: benchmark-PartitionBoxes-B2048-P128-I0
+
+118: Test command: /usr/bin/aprun "-n" "128" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P128-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "0"
+118: Test timeout computed to be: 1500
+118:           ==================== : {}
+118:                      Test name : {benchmark-PartitionBoxes-B2048-P128-I0}
+118:                       Filename : {wave_tank1_02048.h5part}
+118:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+118:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+118:                    Xarray name : {X}
+118:                    Yarray name : {Y}
+118:                    Zarray name : {Z}
+118:              Ignore Partitions : {0}
+118:                  Particle Size : {0.0332081}
+118:                   Ghost Region : {0.132832}
+118:           -------------------- : {}
+118:                 Particle Count : {205575024}
+118:                Total Particles : {205575024}
+118:                      Read Time : {4.5403}
+118:                 Partition Time : {3.66458}
+118:           ==================== : {}
+118: Application 834606 resources: utime ~472s, stime ~167s
+26/72 Test #118: benchmark-PartitionBoxes-B2048-P128-I0 ....   Passed   17.09 sec
+test 119
+      Start 119: benchmark-PartitionBoxes-B2048-P64-I0
+
+119: Test command: /usr/bin/aprun "-n" "64" "-d" "2" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P64-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "0"
+119: Test timeout computed to be: 1500
+119:           ==================== : {}
+119:                      Test name : {benchmark-PartitionBoxes-B2048-P64-I0}
+119:                       Filename : {wave_tank1_02048.h5part}
+119:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+119:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+119:                    Xarray name : {X}
+119:                    Yarray name : {Y}
+119:                    Zarray name : {Z}
+119:              Ignore Partitions : {0}
+119:                  Particle Size : {0.0332081}
+119:                   Ghost Region : {0.132832}
+119:           -------------------- : {}
+119:                 Particle Count : {205575024}
+119:                Total Particles : {205575024}
+119:                      Read Time : {4.78472}
+119:                 Partition Time : {4.1499}
+119:           ==================== : {}
+119: Application 834607 resources: utime ~267s, stime ~110s
+27/72 Test #119: benchmark-PartitionBoxes-B2048-P64-I0 .....   Passed   16.10 sec
+test 120
+      Start 120: benchmark-PartitionBoxes-B2048-P32-I0
+
+120: Test command: /usr/bin/aprun "-n" "32" "-d" "4" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P32-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "0"
+120: Test timeout computed to be: 1500
+120:           ==================== : {}
+120:                      Test name : {benchmark-PartitionBoxes-B2048-P32-I0}
+120:                       Filename : {wave_tank1_02048.h5part}
+120:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+120:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+120:                    Xarray name : {X}
+120:                    Yarray name : {Y}
+120:                    Zarray name : {Z}
+120:              Ignore Partitions : {0}
+120:                  Particle Size : {0.0332081}
+120:                   Ghost Region : {0.132832}
+120:           -------------------- : {}
+120:                 Particle Count : {205575024}
+120:                Total Particles : {205575024}
+120:                      Read Time : {5.18811}
+120:                 Partition Time : {6.80225}
+120:           ==================== : {}
+120: Application 834608 resources: utime ~198s, stime ~99s
+28/72 Test #120: benchmark-PartitionBoxes-B2048-P32-I0 .....   Passed   18.09 sec
+test 121
+      Start 121: benchmark-PartitionBoxes-B4096-P4096-I0
+
+121: Test command: /usr/bin/aprun "-n" "4096" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P4096-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "0"
+121: Test timeout computed to be: 1500
+121: apsched: claim exceeds reservation's node-count
+29/72 Test #121: benchmark-PartitionBoxes-B4096-P4096-I0 ...***Failed    0.04 sec
+test 122
+      Start 122: benchmark-PartitionBoxes-B4096-P2048-I0
+
+122: Test command: /usr/bin/aprun "-n" "2048" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P2048-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "0"
+122: Test timeout computed to be: 1500
+122: apsched: claim exceeds reservation's node-count
+30/72 Test #122: benchmark-PartitionBoxes-B4096-P2048-I0 ...***Failed    0.03 sec
+test 123
+      Start 123: benchmark-PartitionBoxes-B4096-P1024-I0
+
+123: Test command: /usr/bin/aprun "-n" "1024" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P1024-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "0"
+123: Test timeout computed to be: 1500
+123:           ==================== : {}
+123:                      Test name : {benchmark-PartitionBoxes-B4096-P1024-I0}
+123:                       Filename : {wave_tank1_04096.h5part}
+123:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+123:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+123:                    Xarray name : {X}
+123:                    Yarray name : {Y}
+123:                    Zarray name : {Z}
+123:              Ignore Partitions : {0}
+123:                  Particle Size : {0.0263573}
+123:                   Ghost Region : {0.105429}
+123:           -------------------- : {}
+123:                 Particle Count : {410746180}
+123:                Total Particles : {410746180}
+123:                      Read Time : {8.94858}
+123:                 Partition Time : {3.10329}
+123:           ==================== : {}
+123: Application 834609 resources: utime ~4165s, stime ~550s
+31/72 Test #123: benchmark-PartitionBoxes-B4096-P1024-I0 ...   Passed   49.16 sec
+test 124
+      Start 124: benchmark-PartitionBoxes-B4096-P512-I0
+
+124: Test command: /usr/bin/aprun "-n" "512" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P512-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "0"
+124: Test timeout computed to be: 1500
+124:           ==================== : {}
+124:                      Test name : {benchmark-PartitionBoxes-B4096-P512-I0}
+124:                       Filename : {wave_tank1_04096.h5part}
+124:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+124:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+124:                    Xarray name : {X}
+124:                    Yarray name : {Y}
+124:                    Zarray name : {Z}
+124:              Ignore Partitions : {0}
+124:                  Particle Size : {0.0263573}
+124:                   Ghost Region : {0.105429}
+124:           -------------------- : {}
+124:                 Particle Count : {410746180}
+124:                Total Particles : {410746180}
+124:                      Read Time : {8.86345}
+124:                 Partition Time : {3.84011}
+124:           ==================== : {}
+124: Application 834610 resources: utime ~3584s, stime ~420s
+32/72 Test #124: benchmark-PartitionBoxes-B4096-P512-I0 ....   Passed   36.15 sec
+test 125
+      Start 125: benchmark-PartitionBoxes-B4096-P256-I0
+
+125: Test command: /usr/bin/aprun "-n" "256" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P256-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "0"
+125: Test timeout computed to be: 1500
+125:           ==================== : {}
+125:                      Test name : {benchmark-PartitionBoxes-B4096-P256-I0}
+125:                       Filename : {wave_tank1_04096.h5part}
+125:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+125:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+125:                    Xarray name : {X}
+125:                    Yarray name : {Y}
+125:                    Zarray name : {Z}
+125:              Ignore Partitions : {0}
+125:                  Particle Size : {0.0263573}
+125:                   Ghost Region : {0.105429}
+125:           -------------------- : {}
+125:                 Particle Count : {410746180}
+125:                Total Particles : {410746180}
+125:                      Read Time : {8.79393}
+125:                 Partition Time : {4.93939}
+125:           ==================== : {}
+125: Application 834611 resources: utime ~1350s, stime ~326s
+33/72 Test #125: benchmark-PartitionBoxes-B4096-P256-I0 ....   Passed   26.13 sec
+test 126
+      Start 126: benchmark-PartitionBoxes-B4096-P128-I0
+
+126: Test command: /usr/bin/aprun "-n" "128" "-d" "2" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P128-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "0"
+126: Test timeout computed to be: 1500
+126:           ==================== : {}
+126:                      Test name : {benchmark-PartitionBoxes-B4096-P128-I0}
+126:                       Filename : {wave_tank1_04096.h5part}
+126:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+126:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+126:                    Xarray name : {X}
+126:                    Yarray name : {Y}
+126:                    Zarray name : {Z}
+126:              Ignore Partitions : {0}
+126:                  Particle Size : {0.0263573}
+126:                   Ghost Region : {0.105429}
+126:           -------------------- : {}
+126:                 Particle Count : {410746180}
+126:                Total Particles : {410746180}
+126:                      Read Time : {9.12032}
+126:                 Partition Time : {5.00493}
+126:           ==================== : {}
+126: Application 834612 resources: utime ~677s, stime ~211s
+34/72 Test #126: benchmark-PartitionBoxes-B4096-P128-I0 ....   Passed   26.03 sec
+test 127
+      Start 127: benchmark-PartitionBoxes-B4096-P64-I0
+
+127: Test command: /usr/bin/aprun "-n" "64" "-d" "4" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P64-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "0"
+127: Test timeout computed to be: 1500
+127:           ==================== : {}
+127:                      Test name : {benchmark-PartitionBoxes-B4096-P64-I0}
+127:                       Filename : {wave_tank1_04096.h5part}
+127:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+127:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+127:                    Xarray name : {X}
+127:                    Yarray name : {Y}
+127:                    Zarray name : {Z}
+127:              Ignore Partitions : {0}
+127:                  Particle Size : {0.0263573}
+127:                   Ghost Region : {0.105429}
+127:           -------------------- : {}
+127:                 Particle Count : {410746180}
+127:                Total Particles : {410746180}
+127:                      Read Time : {9.90413}
+127:                 Partition Time : {7.23217}
+127:           ==================== : {}
+127: Application 834613 resources: utime ~586s, stime ~193s
+35/72 Test #127: benchmark-PartitionBoxes-B4096-P64-I0 .....   Passed   28.14 sec
+test 128
+      Start 128: benchmark-PartitionBoxes-B4096-P32-I0
+
+128: Test command: /usr/bin/aprun "-n" "32" "-d" "8" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P32-I0" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "0"
+128: Test timeout computed to be: 1500
+128:           ==================== : {}
+128:                      Test name : {benchmark-PartitionBoxes-B4096-P32-I0}
+128:                       Filename : {wave_tank1_04096.h5part}
+128:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+128:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+128:                    Xarray name : {X}
+128:                    Yarray name : {Y}
+128:                    Zarray name : {Z}
+128:              Ignore Partitions : {0}
+128:                  Particle Size : {0.0263573}
+128:                   Ghost Region : {0.105429}
+128:           -------------------- : {}
+128:                 Particle Count : {410746180}
+128:                Total Particles : {410746180}
+128:                      Read Time : {10.4197}
+128:                 Partition Time : {11.9536}
+128:           ==================== : {}
+128: Application 834614 resources: utime ~391s, stime ~175s
+36/72 Test #128: benchmark-PartitionBoxes-B4096-P32-I0 .....   Passed   33.23 sec
+test 129
+      Start 129: benchmark-PartitionBoxes-B32-P32-I1
+
+129: Test command: /usr/bin/aprun "-n" "32" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B32-P32-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00032.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.132832" "-ghost_region" "0.531328" "-ignorePartitions" "1"
+129: Test timeout computed to be: 1500
+129:           ==================== : {}
+129:                      Test name : {benchmark-PartitionBoxes-B32-P32-I1}
+129:                       Filename : {wave_tank1_00032.h5part}
+129:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+129:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00032.h5part}
+129:                    Xarray name : {X}
+129:                    Yarray name : {Y}
+129:                    Zarray name : {Z}
+129:              Ignore Partitions : {1}
+129:                  Particle Size : {0.132832}
+129:                   Ghost Region : {0.531328}
+129:           -------------------- : {}
+129:                 Particle Count : {3237676}
+129:                Total Particles : {3237676}
+129:                      Read Time : {0.159225}
+129:                 Partition Time : {0.334639}
+129:           ==================== : {}
+129: Application 834615 resources: utime ~14s, stime ~17s
+37/72 Test #129: benchmark-PartitionBoxes-B32-P32-I1 .......   Passed    4.08 sec
+test 130
+      Start 130: benchmark-PartitionBoxes-B64-P64-I1
+
+130: Test command: /usr/bin/aprun "-n" "64" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B64-P64-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00064.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.105429" "-ghost_region" "0.421716" "-ignorePartitions" "1"
+130: Test timeout computed to be: 1500
+130:           ==================== : {}
+130:                      Test name : {benchmark-PartitionBoxes-B64-P64-I1}
+130:                       Filename : {wave_tank1_00064.h5part}
+130:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+130:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00064.h5part}
+130:                    Xarray name : {X}
+130:                    Yarray name : {Y}
+130:                    Zarray name : {Z}
+130:              Ignore Partitions : {1}
+130:                  Particle Size : {0.105429}
+130:                   Ghost Region : {0.421716}
+130:           -------------------- : {}
+130:                 Particle Count : {6498000}
+130:                Total Particles : {6498000}
+130:                      Read Time : {0.187566}
+130:                 Partition Time : {0.401284}
+130:           ==================== : {}
+130: Application 834616 resources: utime ~32s, stime ~32s
+38/72 Test #130: benchmark-PartitionBoxes-B64-P64-I1 .......   Passed    5.09 sec
+test 131
+      Start 131: benchmark-PartitionBoxes-B64-P32-I1
+
+131: Test command: /usr/bin/aprun "-n" "32" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B64-P32-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00064.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.105429" "-ghost_region" "0.421716" "-ignorePartitions" "1"
+131: Test timeout computed to be: 1500
+131:           ==================== : {}
+131:                      Test name : {benchmark-PartitionBoxes-B64-P32-I1}
+131:                       Filename : {wave_tank1_00064.h5part}
+131:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+131:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00064.h5part}
+131:                    Xarray name : {X}
+131:                    Yarray name : {Y}
+131:                    Zarray name : {Z}
+131:              Ignore Partitions : {1}
+131:                  Particle Size : {0.105429}
+131:                   Ghost Region : {0.421716}
+131:           -------------------- : {}
+131:                 Particle Count : {6498000}
+131:                Total Particles : {6498000}
+131:                      Read Time : {0.250954}
+131:                 Partition Time : {0.620086}
+131:           ==================== : {}
+131: Application 834617 resources: utime ~22s, stime ~21s
+39/72 Test #131: benchmark-PartitionBoxes-B64-P32-I1 .......   Passed    4.08 sec
+test 132
+      Start 132: benchmark-PartitionBoxes-B128-P128-I1
+
+132: Test command: /usr/bin/aprun "-n" "128" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B128-P128-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00128.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0836791" "-ghost_region" "0.3347164" "-ignorePartitions" "1"
+132: Test timeout computed to be: 1500
+132:           ==================== : {}
+132:                      Test name : {benchmark-PartitionBoxes-B128-P128-I1}
+132:                       Filename : {wave_tank1_00128.h5part}
+132:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+132:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00128.h5part}
+132:                    Xarray name : {X}
+132:                    Yarray name : {Y}
+132:                    Zarray name : {Z}
+132:              Ignore Partitions : {1}
+132:                  Particle Size : {0.0836791}
+132:                   Ghost Region : {0.334716}
+132:           -------------------- : {}
+132:                 Particle Count : {12880920}
+132:                Total Particles : {12880920}
+132:                      Read Time : {0.325766}
+132:                 Partition Time : {0.538987}
+132:           ==================== : {}
+132: Application 834618 resources: utime ~81s, stime ~61s
+40/72 Test #132: benchmark-PartitionBoxes-B128-P128-I1 .....   Passed    7.08 sec
+test 133
+      Start 133: benchmark-PartitionBoxes-B128-P64-I1
+
+133: Test command: /usr/bin/aprun "-n" "64" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B128-P64-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00128.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0836791" "-ghost_region" "0.3347164" "-ignorePartitions" "1"
+133: Test timeout computed to be: 1500
+133:           ==================== : {}
+133:                      Test name : {benchmark-PartitionBoxes-B128-P64-I1}
+133:                       Filename : {wave_tank1_00128.h5part}
+133:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+133:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00128.h5part}
+133:                    Xarray name : {X}
+133:                    Yarray name : {Y}
+133:                    Zarray name : {Z}
+133:              Ignore Partitions : {1}
+133:                  Particle Size : {0.0836791}
+133:                   Ghost Region : {0.334716}
+133:           -------------------- : {}
+133:                 Particle Count : {12880920}
+133:                Total Particles : {12880920}
+133:                      Read Time : {0.329295}
+133:                 Partition Time : {0.692714}
+133:           ==================== : {}
+133: Application 834619 resources: utime ~48s, stime ~38s
+41/72 Test #133: benchmark-PartitionBoxes-B128-P64-I1 ......   Passed    5.10 sec
+test 134
+      Start 134: benchmark-PartitionBoxes-B128-P32-I1
+
+134: Test command: /usr/bin/aprun "-n" "32" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B128-P32-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00128.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0836791" "-ghost_region" "0.3347164" "-ignorePartitions" "1"
+134: Test timeout computed to be: 1500
+134:           ==================== : {}
+134:                      Test name : {benchmark-PartitionBoxes-B128-P32-I1}
+134:                       Filename : {wave_tank1_00128.h5part}
+134:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+134:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00128.h5part}
+134:                    Xarray name : {X}
+134:                    Yarray name : {Y}
+134:                    Zarray name : {Z}
+134:              Ignore Partitions : {1}
+134:                  Particle Size : {0.0836791}
+134:                   Ghost Region : {0.334716}
+134:           -------------------- : {}
+134:                 Particle Count : {12880920}
+134:                Total Particles : {12880920}
+134:                      Read Time : {0.462472}
+134:                 Partition Time : {1.0816}
+134:           ==================== : {}
+134: Application 834620 resources: utime ~35s, stime ~28s
+42/72 Test #134: benchmark-PartitionBoxes-B128-P32-I1 ......   Passed    5.08 sec
+test 135
+      Start 135: benchmark-PartitionBoxes-B256-P256-I1
+
+135: Test command: /usr/bin/aprun "-n" "256" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B256-P256-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00256.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0664162" "-ghost_region" "0.2656648" "-ignorePartitions" "1"
+135: Test timeout computed to be: 1500
+135:           ==================== : {}
+135:                      Test name : {benchmark-PartitionBoxes-B256-P256-I1}
+135:                       Filename : {wave_tank1_00256.h5part}
+135:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+135:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00256.h5part}
+135:                    Xarray name : {X}
+135:                    Yarray name : {Y}
+135:                    Zarray name : {Z}
+135:              Ignore Partitions : {1}
+135:                  Particle Size : {0.0664162}
+135:                   Ghost Region : {0.265665}
+135:           -------------------- : {}
+135:                 Particle Count : {25867056}
+135:                Total Particles : {25867056}
+135:                      Read Time : {0.711275}
+135:                 Partition Time : {0.791591}
+135:           ==================== : {}
+135: Application 834621 resources: utime ~263s, stime ~116s
+43/72 Test #135: benchmark-PartitionBoxes-B256-P256-I1 .....   Passed   12.09 sec
+test 136
+      Start 136: benchmark-PartitionBoxes-B256-P128-I1
+
+136: Test command: /usr/bin/aprun "-n" "128" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B256-P128-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00256.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0664162" "-ghost_region" "0.2656648" "-ignorePartitions" "1"
+136: Test timeout computed to be: 1500
+136:           ==================== : {}
+136:                      Test name : {benchmark-PartitionBoxes-B256-P128-I1}
+136:                       Filename : {wave_tank1_00256.h5part}
+136:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+136:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00256.h5part}
+136:                    Xarray name : {X}
+136:                    Yarray name : {Y}
+136:                    Zarray name : {Z}
+136:              Ignore Partitions : {1}
+136:                  Particle Size : {0.0664162}
+136:                   Ghost Region : {0.265665}
+136:           -------------------- : {}
+136:                 Particle Count : {25867056}
+136:                Total Particles : {25867056}
+136:                      Read Time : {0.616234}
+136:                 Partition Time : {0.927615}
+136:           ==================== : {}
+136: Application 834622 resources: utime ~128s, stime ~71s
+44/72 Test #136: benchmark-PartitionBoxes-B256-P128-I1 .....   Passed    8.11 sec
+test 137
+      Start 137: benchmark-PartitionBoxes-B256-P64-I1
+
+137: Test command: /usr/bin/aprun "-n" "64" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B256-P64-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00256.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0664162" "-ghost_region" "0.2656648" "-ignorePartitions" "1"
+137: Test timeout computed to be: 1500
+137:           ==================== : {}
+137:                      Test name : {benchmark-PartitionBoxes-B256-P64-I1}
+137:                       Filename : {wave_tank1_00256.h5part}
+137:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+137:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00256.h5part}
+137:                    Xarray name : {X}
+137:                    Yarray name : {Y}
+137:                    Zarray name : {Z}
+137:              Ignore Partitions : {1}
+137:                  Particle Size : {0.0664162}
+137:                   Ghost Region : {0.265665}
+137:           -------------------- : {}
+137:                 Particle Count : {25867056}
+137:                Total Particles : {25867056}
+137:                      Read Time : {0.609578}
+137:                 Partition Time : {1.34059}
+137:           ==================== : {}
+137: Application 834623 resources: utime ~85s, stime ~49s
+45/72 Test #137: benchmark-PartitionBoxes-B256-P64-I1 ......   Passed    7.37 sec
+test 138
+      Start 138: benchmark-PartitionBoxes-B256-P32-I1
+
+138: Test command: /usr/bin/aprun "-n" "32" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B256-P32-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00256.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0664162" "-ghost_region" "0.2656648" "-ignorePartitions" "1"
+138: Test timeout computed to be: 1500
+138:           ==================== : {}
+138:                      Test name : {benchmark-PartitionBoxes-B256-P32-I1}
+138:                       Filename : {wave_tank1_00256.h5part}
+138:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+138:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00256.h5part}
+138:                    Xarray name : {X}
+138:                    Yarray name : {Y}
+138:                    Zarray name : {Z}
+138:              Ignore Partitions : {1}
+138:                  Particle Size : {0.0664162}
+138:                   Ghost Region : {0.265665}
+138:           -------------------- : {}
+138:                 Particle Count : {25867056}
+138:                Total Particles : {25867056}
+138:                      Read Time : {0.857609}
+138:                 Partition Time : {2.25328}
+138:           ==================== : {}
+138: Application 834624 resources: utime ~67s, stime ~42s
+46/72 Test #138: benchmark-PartitionBoxes-B256-P32-I1 ......   Passed    8.08 sec
+test 139
+      Start 139: benchmark-PartitionBoxes-B512-P512-I1
+
+139: Test command: /usr/bin/aprun "-n" "512" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B512-P512-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00512.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0527145" "-ghost_region" "0.2108580" "-ignorePartitions" "1"
+139: Test timeout computed to be: 1500
+139:           ==================== : {}
+139:                      Test name : {benchmark-PartitionBoxes-B512-P512-I1}
+139:                       Filename : {wave_tank1_00512.h5part}
+139:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+139:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00512.h5part}
+139:                    Xarray name : {X}
+139:                    Yarray name : {Y}
+139:                    Zarray name : {Z}
+139:              Ignore Partitions : {1}
+139:                  Particle Size : {0.0527145}
+139:                   Ghost Region : {0.210858}
+139:           -------------------- : {}
+139:                 Particle Count : {51388350}
+139:                Total Particles : {51388350}
+139:                      Read Time : {1.21871}
+139:                 Partition Time : {1.02416}
+139:           ==================== : {}
+139: Application 834625 resources: utime ~657s, stime ~238s
+47/72 Test #139: benchmark-PartitionBoxes-B512-P512-I1 .....   Passed   21.12 sec
+test 140
+      Start 140: benchmark-PartitionBoxes-B512-P256-I1
+
+140: Test command: /usr/bin/aprun "-n" "256" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B512-P256-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00512.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0527145" "-ghost_region" "0.2108580" "-ignorePartitions" "1"
+140: Test timeout computed to be: 1500
+140:           ==================== : {}
+140:                      Test name : {benchmark-PartitionBoxes-B512-P256-I1}
+140:                       Filename : {wave_tank1_00512.h5part}
+140:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+140:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00512.h5part}
+140:                    Xarray name : {X}
+140:                    Yarray name : {Y}
+140:                    Zarray name : {Z}
+140:              Ignore Partitions : {1}
+140:                  Particle Size : {0.0527145}
+140:                   Ghost Region : {0.210858}
+140:           -------------------- : {}
+140:                 Particle Count : {51388350}
+140:                Total Particles : {51388350}
+140:                      Read Time : {1.18043}
+140:                 Partition Time : {1.27118}
+140:           ==================== : {}
+140: Application 834626 resources: utime ~386s, stime ~137s
+48/72 Test #140: benchmark-PartitionBoxes-B512-P256-I1 .....   Passed   13.73 sec
+test 141
+      Start 141: benchmark-PartitionBoxes-B512-P128-I1
+
+141: Test command: /usr/bin/aprun "-n" "128" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B512-P128-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00512.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0527145" "-ghost_region" "0.2108580" "-ignorePartitions" "1"
+141: Test timeout computed to be: 1500
+141:           ==================== : {}
+141:                      Test name : {benchmark-PartitionBoxes-B512-P128-I1}
+141:                       Filename : {wave_tank1_00512.h5part}
+141:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+141:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00512.h5part}
+141:                    Xarray name : {X}
+141:                    Yarray name : {Y}
+141:                    Zarray name : {Z}
+141:              Ignore Partitions : {1}
+141:                  Particle Size : {0.0527145}
+141:                   Ghost Region : {0.210858}
+141:           -------------------- : {}
+141:                 Particle Count : {51388350}
+141:                Total Particles : {51388350}
+141:                      Read Time : {1.1595}
+141:                 Partition Time : {1.67323}
+141:           ==================== : {}
+141: Application 834627 resources: utime ~216s, stime ~89s
+49/72 Test #141: benchmark-PartitionBoxes-B512-P128-I1 .....   Passed    9.14 sec
+test 142
+      Start 142: benchmark-PartitionBoxes-B512-P64-I1
+
+142: Test command: /usr/bin/aprun "-n" "64" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B512-P64-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00512.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0527145" "-ghost_region" "0.2108580" "-ignorePartitions" "1"
+142: Test timeout computed to be: 1500
+142:           ==================== : {}
+142:                      Test name : {benchmark-PartitionBoxes-B512-P64-I1}
+142:                       Filename : {wave_tank1_00512.h5part}
+142:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+142:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00512.h5part}
+142:                    Xarray name : {X}
+142:                    Yarray name : {Y}
+142:                    Zarray name : {Z}
+142:              Ignore Partitions : {1}
+142:                  Particle Size : {0.0527145}
+142:                   Ghost Region : {0.210858}
+142:           -------------------- : {}
+142:                 Particle Count : {51388350}
+142:                Total Particles : {51388350}
+142:                      Read Time : {1.15798}
+142:                 Partition Time : {2.60051}
+142:           ==================== : {}
+142: Application 834628 resources: utime ~155s, stime ~69s
+50/72 Test #142: benchmark-PartitionBoxes-B512-P64-I1 ......   Passed    9.08 sec
+test 143
+      Start 143: benchmark-PartitionBoxes-B512-P32-I1
+
+143: Test command: /usr/bin/aprun "-n" "32" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B512-P32-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_00512.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0527145" "-ghost_region" "0.2108580" "-ignorePartitions" "1"
+143: Test timeout computed to be: 1500
+143:           ==================== : {}
+143:                      Test name : {benchmark-PartitionBoxes-B512-P32-I1}
+143:                       Filename : {wave_tank1_00512.h5part}
+143:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+143:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_00512.h5part}
+143:                    Xarray name : {X}
+143:                    Yarray name : {Y}
+143:                    Zarray name : {Z}
+143:              Ignore Partitions : {1}
+143:                  Particle Size : {0.0527145}
+143:                   Ghost Region : {0.210858}
+143:           -------------------- : {}
+143:                 Particle Count : {51388350}
+143:                Total Particles : {51388350}
+143:                      Read Time : {1.79873}
+143:                 Partition Time : {4.42722}
+143:           ==================== : {}
+143: Application 834629 resources: utime ~125s, stime ~83s
+51/72 Test #143: benchmark-PartitionBoxes-B512-P32-I1 ......   Passed   12.12 sec
+test 144
+      Start 144: benchmark-PartitionBoxes-B1024-P1024-I1
+
+144: Test command: /usr/bin/aprun "-n" "1024" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P1024-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "1"
+144: Test timeout computed to be: 1500
+144:           ==================== : {}
+144:                      Test name : {benchmark-PartitionBoxes-B1024-P1024-I1}
+144:                       Filename : {wave_tank1_01024.h5part}
+144:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+144:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+144:                    Xarray name : {X}
+144:                    Yarray name : {Y}
+144:                    Zarray name : {Z}
+144:              Ignore Partitions : {1}
+144:                  Particle Size : {0.0418396}
+144:                   Ghost Region : {0.167358}
+144:           -------------------- : {}
+144:                 Particle Count : {103047360}
+144:                Total Particles : {103047360}
+144:                      Read Time : {2.3939}
+144:                 Partition Time : {1.56581}
+144:           ==================== : {}
+144: Application 834630 resources: utime ~4570s, stime ~439s
+52/72 Test #144: benchmark-PartitionBoxes-B1024-P1024-I1 ...   Passed   43.16 sec
+test 145
+      Start 145: benchmark-PartitionBoxes-B1024-P512-I1
+
+145: Test command: /usr/bin/aprun "-n" "512" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P512-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "1"
+145: Test timeout computed to be: 1500
+145:           ==================== : {}
+145:                      Test name : {benchmark-PartitionBoxes-B1024-P512-I1}
+145:                       Filename : {wave_tank1_01024.h5part}
+145:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+145:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+145:                    Xarray name : {X}
+145:                    Yarray name : {Y}
+145:                    Zarray name : {Z}
+145:              Ignore Partitions : {1}
+145:                  Particle Size : {0.0418396}
+145:                   Ghost Region : {0.167358}
+145:           -------------------- : {}
+145:                 Particle Count : {103047360}
+145:                Total Particles : {103047360}
+145:                      Read Time : {2.29875}
+145:                 Partition Time : {1.72907}
+145:           ==================== : {}
+145: Application 834631 resources: utime ~2385s, stime ~275s
+53/72 Test #145: benchmark-PartitionBoxes-B1024-P512-I1 ....   Passed   26.13 sec
+test 146
+      Start 146: benchmark-PartitionBoxes-B1024-P256-I1
+
+146: Test command: /usr/bin/aprun "-n" "256" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P256-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "1"
+146: Test timeout computed to be: 1500
+146:           ==================== : {}
+146:                      Test name : {benchmark-PartitionBoxes-B1024-P256-I1}
+146:                       Filename : {wave_tank1_01024.h5part}
+146:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+146:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+146:                    Xarray name : {X}
+146:                    Yarray name : {Y}
+146:                    Zarray name : {Z}
+146:              Ignore Partitions : {1}
+146:                  Particle Size : {0.0418396}
+146:                   Ghost Region : {0.167358}
+146:           -------------------- : {}
+146:                 Particle Count : {103047360}
+146:                Total Particles : {103047360}
+146:                      Read Time : {2.25869}
+146:                 Partition Time : {2.26}
+146:           ==================== : {}
+146: Application 834632 resources: utime ~631s, stime ~181s
+54/72 Test #146: benchmark-PartitionBoxes-B1024-P256-I1 ....   Passed   15.10 sec
+test 147
+      Start 147: benchmark-PartitionBoxes-B1024-P128-I1
+
+147: Test command: /usr/bin/aprun "-n" "128" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P128-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "1"
+147: Test timeout computed to be: 1500
+147:           ==================== : {}
+147:                      Test name : {benchmark-PartitionBoxes-B1024-P128-I1}
+147:                       Filename : {wave_tank1_01024.h5part}
+147:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+147:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+147:                    Xarray name : {X}
+147:                    Yarray name : {Y}
+147:                    Zarray name : {Z}
+147:              Ignore Partitions : {1}
+147:                  Particle Size : {0.0418396}
+147:                   Ghost Region : {0.167358}
+147:           -------------------- : {}
+147:                 Particle Count : {103047360}
+147:                Total Particles : {103047360}
+147:                      Read Time : {2.27553}
+147:                 Partition Time : {3.17121}
+147:           ==================== : {}
+147: Application 834633 resources: utime ~394s, stime ~130s
+55/72 Test #147: benchmark-PartitionBoxes-B1024-P128-I1 ....   Passed   13.09 sec
+test 148
+      Start 148: benchmark-PartitionBoxes-B1024-P64-I1
+
+148: Test command: /usr/bin/aprun "-n" "64" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P64-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "1"
+148: Test timeout computed to be: 1500
+148:           ==================== : {}
+148:                      Test name : {benchmark-PartitionBoxes-B1024-P64-I1}
+148:                       Filename : {wave_tank1_01024.h5part}
+148:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+148:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+148:                    Xarray name : {X}
+148:                    Yarray name : {Y}
+148:                    Zarray name : {Z}
+148:              Ignore Partitions : {1}
+148:                  Particle Size : {0.0418396}
+148:                   Ghost Region : {0.167358}
+148:           -------------------- : {}
+148:                 Particle Count : {103047360}
+148:                Total Particles : {103047360}
+148:                      Read Time : {2.25021}
+148:                 Partition Time : {5.05531}
+148:           ==================== : {}
+148: Application 834634 resources: utime ~290s, stime ~119s
+56/72 Test #148: benchmark-PartitionBoxes-B1024-P64-I1 .....   Passed   14.13 sec
+test 149
+      Start 149: benchmark-PartitionBoxes-B1024-P32-I1
+
+149: Test command: /usr/bin/aprun "-n" "32" "-d" "2" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B1024-P32-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_01024.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0418396" "-ghost_region" "0.1673584" "-ignorePartitions" "1"
+149: Test timeout computed to be: 1500
+149:           ==================== : {}
+149:                      Test name : {benchmark-PartitionBoxes-B1024-P32-I1}
+149:                       Filename : {wave_tank1_01024.h5part}
+149:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+149:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_01024.h5part}
+149:                    Xarray name : {X}
+149:                    Yarray name : {Y}
+149:                    Zarray name : {Z}
+149:              Ignore Partitions : {1}
+149:                  Particle Size : {0.0418396}
+149:                   Ghost Region : {0.167358}
+149:           -------------------- : {}
+149:                 Particle Count : {103047360}
+149:                Total Particles : {103047360}
+149:                      Read Time : {2.42341}
+149:                 Partition Time : {5.88424}
+149:           ==================== : {}
+149: Application 834635 resources: utime ~171s, stime ~73s
+57/72 Test #149: benchmark-PartitionBoxes-B1024-P32-I1 .....   Passed   14.09 sec
+test 150
+      Start 150: benchmark-PartitionBoxes-B2048-P2048-I1
+
+150: Test command: /usr/bin/aprun "-n" "2048" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P2048-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "1"
+150: Test timeout computed to be: 1500
+150: apsched: claim exceeds reservation's node-count
+58/72 Test #150: benchmark-PartitionBoxes-B2048-P2048-I1 ...***Failed    0.02 sec
+test 151
+      Start 151: benchmark-PartitionBoxes-B2048-P1024-I1
+
+151: Test command: /usr/bin/aprun "-n" "1024" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P1024-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "1"
+151: Test timeout computed to be: 1500
+151:           ==================== : {}
+151:                      Test name : {benchmark-PartitionBoxes-B2048-P1024-I1}
+151:                       Filename : {wave_tank1_02048.h5part}
+151:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+151:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+151:                    Xarray name : {X}
+151:                    Yarray name : {Y}
+151:                    Zarray name : {Z}
+151:              Ignore Partitions : {1}
+151:                  Particle Size : {0.0332081}
+151:                   Ghost Region : {0.132832}
+151:           -------------------- : {}
+151:                 Particle Count : {205575024}
+151:                Total Particles : {205575024}
+151:                      Read Time : {4.58173}
+151:                 Partition Time : {2.62485}
+151:           ==================== : {}
+151: Application 834636 resources: utime ~3358s, stime ~528s
+59/72 Test #151: benchmark-PartitionBoxes-B2048-P1024-I1 ...   Passed   44.17 sec
+test 152
+      Start 152: benchmark-PartitionBoxes-B2048-P512-I1
+
+152: Test command: /usr/bin/aprun "-n" "512" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P512-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "1"
+152: Test timeout computed to be: 1500
+152:           ==================== : {}
+152:                      Test name : {benchmark-PartitionBoxes-B2048-P512-I1}
+152:                       Filename : {wave_tank1_02048.h5part}
+152:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+152:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+152:                    Xarray name : {X}
+152:                    Yarray name : {Y}
+152:                    Zarray name : {Z}
+152:              Ignore Partitions : {1}
+152:                  Particle Size : {0.0332081}
+152:                   Ghost Region : {0.132832}
+152:           -------------------- : {}
+152:                 Particle Count : {205575024}
+152:                Total Particles : {205575024}
+152:                      Read Time : {4.50297}
+152:                 Partition Time : {3.18637}
+152:           ==================== : {}
+152: Application 834637 resources: utime ~3200s, stime ~366s
+60/72 Test #152: benchmark-PartitionBoxes-B2048-P512-I1 ....   Passed   30.27 sec
+test 153
+      Start 153: benchmark-PartitionBoxes-B2048-P256-I1
+
+153: Test command: /usr/bin/aprun "-n" "256" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P256-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "1"
+153: Test timeout computed to be: 1500
+153:           ==================== : {}
+153:                      Test name : {benchmark-PartitionBoxes-B2048-P256-I1}
+153:                       Filename : {wave_tank1_02048.h5part}
+153:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+153:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+153:                    Xarray name : {X}
+153:                    Yarray name : {Y}
+153:                    Zarray name : {Z}
+153:              Ignore Partitions : {1}
+153:                  Particle Size : {0.0332081}
+153:                   Ghost Region : {0.132832}
+153:           -------------------- : {}
+153:                 Particle Count : {205575024}
+153:                Total Particles : {205575024}
+153:                      Read Time : {4.47515}
+153:                 Partition Time : {4.34313}
+153:           ==================== : {}
+153: Application 834638 resources: utime ~1805s, stime ~261s
+61/72 Test #153: benchmark-PartitionBoxes-B2048-P256-I1 ....   Passed   23.10 sec
+test 154
+      Start 154: benchmark-PartitionBoxes-B2048-P128-I1
+
+154: Test command: /usr/bin/aprun "-n" "128" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P128-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "1"
+154: Test timeout computed to be: 1500
+154:           ==================== : {}
+154:                      Test name : {benchmark-PartitionBoxes-B2048-P128-I1}
+154:                       Filename : {wave_tank1_02048.h5part}
+154:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+154:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+154:                    Xarray name : {X}
+154:                    Yarray name : {Y}
+154:                    Zarray name : {Z}
+154:              Ignore Partitions : {1}
+154:                  Particle Size : {0.0332081}
+154:                   Ghost Region : {0.132832}
+154:           -------------------- : {}
+154:                 Particle Count : {205575024}
+154:                Total Particles : {205575024}
+154:                      Read Time : {4.40874}
+154:                 Partition Time : {6.42257}
+154:           ==================== : {}
+154: Application 834639 resources: utime ~757s, stime ~225s
+62/72 Test #154: benchmark-PartitionBoxes-B2048-P128-I1 ....   Passed   19.10 sec
+test 155
+      Start 155: benchmark-PartitionBoxes-B2048-P64-I1
+
+155: Test command: /usr/bin/aprun "-n" "64" "-d" "2" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P64-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "1"
+155: Test timeout computed to be: 1500
+155:           ==================== : {}
+155:                      Test name : {benchmark-PartitionBoxes-B2048-P64-I1}
+155:                       Filename : {wave_tank1_02048.h5part}
+155:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+155:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+155:                    Xarray name : {X}
+155:                    Yarray name : {Y}
+155:                    Zarray name : {Z}
+155:              Ignore Partitions : {1}
+155:                  Particle Size : {0.0332081}
+155:                   Ghost Region : {0.132832}
+155:           -------------------- : {}
+155:                 Particle Count : {205575024}
+155:                Total Particles : {205575024}
+155:                      Read Time : {4.70825}
+155:                 Partition Time : {7.13952}
+155:           ==================== : {}
+155: Application 834640 resources: utime ~430s, stime ~138s
+63/72 Test #155: benchmark-PartitionBoxes-B2048-P64-I1 .....   Passed   19.13 sec
+test 156
+      Start 156: benchmark-PartitionBoxes-B2048-P32-I1
+
+156: Test command: /usr/bin/aprun "-n" "32" "-d" "4" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B2048-P32-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_02048.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0332081" "-ghost_region" "0.1328324" "-ignorePartitions" "1"
+156: Test timeout computed to be: 1500
+156:           ==================== : {}
+156:                      Test name : {benchmark-PartitionBoxes-B2048-P32-I1}
+156:                       Filename : {wave_tank1_02048.h5part}
+156:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+156:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_02048.h5part}
+156:                    Xarray name : {X}
+156:                    Yarray name : {Y}
+156:                    Zarray name : {Z}
+156:              Ignore Partitions : {1}
+156:                  Particle Size : {0.0332081}
+156:                   Ghost Region : {0.132832}
+156:           -------------------- : {}
+156:                 Particle Count : {205575024}
+156:                Total Particles : {205575024}
+156:                      Read Time : {5.13699}
+156:                 Partition Time : {10.8002}
+156:           ==================== : {}
+156: Application 834641 resources: utime ~313s, stime ~119s
+64/72 Test #156: benchmark-PartitionBoxes-B2048-P32-I1 .....   Passed   22.10 sec
+test 157
+      Start 157: benchmark-PartitionBoxes-B4096-P4096-I1
+
+157: Test command: /usr/bin/aprun "-n" "4096" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P4096-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "1"
+157: Test timeout computed to be: 1500
+157: apsched: claim exceeds reservation's node-count
+65/72 Test #157: benchmark-PartitionBoxes-B4096-P4096-I1 ...***Failed    0.06 sec
+test 158
+      Start 158: benchmark-PartitionBoxes-B4096-P2048-I1
+
+158: Test command: /usr/bin/aprun "-n" "2048" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P2048-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "1"
+158: Test timeout computed to be: 1500
+158: apsched: claim exceeds reservation's node-count
+66/72 Test #158: benchmark-PartitionBoxes-B4096-P2048-I1 ...***Failed    0.02 sec
+test 159
+      Start 159: benchmark-PartitionBoxes-B4096-P1024-I1
+
+159: Test command: /usr/bin/aprun "-n" "1024" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P1024-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "1"
+159: Test timeout computed to be: 1500
+159:           ==================== : {}
+159:                      Test name : {benchmark-PartitionBoxes-B4096-P1024-I1}
+159:                       Filename : {wave_tank1_04096.h5part}
+159:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+159:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+159:                    Xarray name : {X}
+159:                    Yarray name : {Y}
+159:                    Zarray name : {Z}
+159:              Ignore Partitions : {1}
+159:                  Particle Size : {0.0263573}
+159:                   Ghost Region : {0.105429}
+159:           -------------------- : {}
+159:                 Particle Count : {410746180}
+159:                Total Particles : {410746180}
+159:                      Read Time : {8.92731}
+159:                 Partition Time : {4.38916}
+159:           ==================== : {}
+159: Application 834642 resources: utime ~7912s, stime ~708s
+67/72 Test #159: benchmark-PartitionBoxes-B4096-P1024-I1 ...   Passed   53.17 sec
+test 160
+      Start 160: benchmark-PartitionBoxes-B4096-P512-I1
+
+160: Test command: /usr/bin/aprun "-n" "512" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P512-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "1"
+160: Test timeout computed to be: 1500
+160:           ==================== : {}
+160:                      Test name : {benchmark-PartitionBoxes-B4096-P512-I1}
+160:                       Filename : {wave_tank1_04096.h5part}
+160:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+160:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+160:                    Xarray name : {X}
+160:                    Yarray name : {Y}
+160:                    Zarray name : {Z}
+160:              Ignore Partitions : {1}
+160:                  Particle Size : {0.0263573}
+160:                   Ghost Region : {0.105429}
+160:           -------------------- : {}
+160:                 Particle Count : {410746180}
+160:                Total Particles : {410746180}
+160:                      Read Time : {8.81441}
+160:                 Partition Time : {5.76605}
+160:           ==================== : {}
+160: Application 834643 resources: utime ~3127s, stime ~532s
+68/72 Test #160: benchmark-PartitionBoxes-B4096-P512-I1 ....   Passed   35.12 sec
+test 161
+      Start 161: benchmark-PartitionBoxes-B4096-P256-I1
+
+161: Test command: /usr/bin/aprun "-n" "256" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P256-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "1"
+161: Test timeout computed to be: 1500
+161:           ==================== : {}
+161:                      Test name : {benchmark-PartitionBoxes-B4096-P256-I1}
+161:                       Filename : {wave_tank1_04096.h5part}
+161:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+161:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+161:                    Xarray name : {X}
+161:                    Yarray name : {Y}
+161:                    Zarray name : {Z}
+161:              Ignore Partitions : {1}
+161:                  Particle Size : {0.0263573}
+161:                   Ghost Region : {0.105429}
+161:           -------------------- : {}
+161:                 Particle Count : {410746180}
+161:                Total Particles : {410746180}
+161:                      Read Time : {8.75883}
+161:                 Partition Time : {7.88241}
+161:           ==================== : {}
+161: Application 834644 resources: utime ~1930s, stime ~441s
+69/72 Test #161: benchmark-PartitionBoxes-B4096-P256-I1 ....   Passed   29.12 sec
+test 162
+      Start 162: benchmark-PartitionBoxes-B4096-P128-I1
+
+162: Test command: /usr/bin/aprun "-n" "128" "-d" "2" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P128-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "1"
+162: Test timeout computed to be: 1500
+162:           ==================== : {}
+162:                      Test name : {benchmark-PartitionBoxes-B4096-P128-I1}
+162:                       Filename : {wave_tank1_04096.h5part}
+162:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+162:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+162:                    Xarray name : {X}
+162:                    Yarray name : {Y}
+162:                    Zarray name : {Z}
+162:              Ignore Partitions : {1}
+162:                  Particle Size : {0.0263573}
+162:                   Ghost Region : {0.105429}
+162:           -------------------- : {}
+162:                 Particle Count : {410746180}
+162:                Total Particles : {410746180}
+162:                      Read Time : {9.11165}
+162:                 Partition Time : {8.14426}
+162:           ==================== : {}
+162: Application 834645 resources: utime ~1036s, stime ~272s
+70/72 Test #162: benchmark-PartitionBoxes-B4096-P128-I1 ....   Passed   27.11 sec
+test 163
+      Start 163: benchmark-PartitionBoxes-B4096-P64-I1
+
+163: Test command: /usr/bin/aprun "-n" "64" "-d" "4" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P64-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "1"
+163: Test timeout computed to be: 1500
+163:           ==================== : {}
+163:                      Test name : {benchmark-PartitionBoxes-B4096-P64-I1}
+163:                       Filename : {wave_tank1_04096.h5part}
+163:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+163:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+163:                    Xarray name : {X}
+163:                    Yarray name : {Y}
+163:                    Zarray name : {Z}
+163:              Ignore Partitions : {1}
+163:                  Particle Size : {0.0263573}
+163:                   Ghost Region : {0.105429}
+163:           -------------------- : {}
+163:                 Particle Count : {410746180}
+163:                Total Particles : {410746180}
+163:                      Read Time : {9.79595}
+163:                 Partition Time : {12.4722}
+163:           ==================== : {}
+163: Application 834646 resources: utime ~881s, stime ~233s
+71/72 Test #163: benchmark-PartitionBoxes-B4096-P64-I1 .....   Passed   33.11 sec
+test 164
+      Start 164: benchmark-PartitionBoxes-B4096-P32-I1
+
+164: Test command: /usr/bin/aprun "-n" "32" "-d" "8" "/project/csvis/biddisco/todi/build/pv-os-plugins/bin/TestParticlePartitionFilter" "-testName" "benchmark-PartitionBoxes-B4096-P32-I1" "-D" "/scratch/todi/biddisco/nextmuse" "-F" "wave_tank1_04096.h5part" "-T" "/project/csvis/biddisco/todi/build/pv-os-plugins/pv-meshless/Testing/Temporary" "-Xarray" "X" "-Yarray" "Y" "-Zarray" "Z" "-particlesize" "0.0263573" "-ghost_region" "0.1054292" "-ignorePartitions" "1"
+164: Test timeout computed to be: 1500
+164:           ==================== : {}
+164:                      Test name : {benchmark-PartitionBoxes-B4096-P32-I1}
+164:                       Filename : {wave_tank1_04096.h5part}
+164:                       Filepath : {/scratch/todi/biddisco/nextmuse}
+164:                       FullName : {/scratch/todi/biddisco/nextmuse/wave_tank1_04096.h5part}
+164:                    Xarray name : {X}
+164:                    Yarray name : {Y}
+164:                    Zarray name : {Z}
+164:              Ignore Partitions : {1}
+164:                  Particle Size : {0.0263573}
+164:                   Ghost Region : {0.105429}
+164:           -------------------- : {}
+164:                 Particle Count : {410746180}
+164:                Total Particles : {410746180}
+164:                      Read Time : {10.4658}
+164:                 Partition Time : {19.8335}
+164:           ==================== : {}
+164: Application 834647 resources: utime ~567s, stime ~207s
+72/72 Test #164: benchmark-PartitionBoxes-B4096-P32-I1 .....   Passed   38.12 sec
+
+The following tests passed:
+	benchmark-PartitionBoxes-B32-P32-I0
+	benchmark-PartitionBoxes-B64-P64-I0
+	benchmark-PartitionBoxes-B64-P32-I0
+	benchmark-PartitionBoxes-B128-P128-I0
+	benchmark-PartitionBoxes-B128-P64-I0
+	benchmark-PartitionBoxes-B128-P32-I0
+	benchmark-PartitionBoxes-B256-P256-I0
+	benchmark-PartitionBoxes-B256-P128-I0
+	benchmark-PartitionBoxes-B256-P64-I0
+	benchmark-PartitionBoxes-B256-P32-I0
+	benchmark-PartitionBoxes-B512-P512-I0
+	benchmark-PartitionBoxes-B512-P256-I0
+	benchmark-PartitionBoxes-B512-P128-I0
+	benchmark-PartitionBoxes-B512-P64-I0
+	benchmark-PartitionBoxes-B512-P32-I0
+	benchmark-PartitionBoxes-B1024-P1024-I0
+	benchmark-PartitionBoxes-B1024-P512-I0
+	benchmark-PartitionBoxes-B1024-P256-I0
+	benchmark-PartitionBoxes-B1024-P128-I0
+	benchmark-PartitionBoxes-B1024-P64-I0
+	benchmark-PartitionBoxes-B1024-P32-I0
+	benchmark-PartitionBoxes-B2048-P1024-I0
+	benchmark-PartitionBoxes-B2048-P512-I0
+	benchmark-PartitionBoxes-B2048-P256-I0
+	benchmark-PartitionBoxes-B2048-P128-I0
+	benchmark-PartitionBoxes-B2048-P64-I0
+	benchmark-PartitionBoxes-B2048-P32-I0
+	benchmark-PartitionBoxes-B4096-P1024-I0
+	benchmark-PartitionBoxes-B4096-P512-I0
+	benchmark-PartitionBoxes-B4096-P256-I0
+	benchmark-PartitionBoxes-B4096-P128-I0
+	benchmark-PartitionBoxes-B4096-P64-I0
+	benchmark-PartitionBoxes-B4096-P32-I0
+	benchmark-PartitionBoxes-B32-P32-I1
+	benchmark-PartitionBoxes-B64-P64-I1
+	benchmark-PartitionBoxes-B64-P32-I1
+	benchmark-PartitionBoxes-B128-P128-I1
+	benchmark-PartitionBoxes-B128-P64-I1
+	benchmark-PartitionBoxes-B128-P32-I1
+	benchmark-PartitionBoxes-B256-P256-I1
+	benchmark-PartitionBoxes-B256-P128-I1
+	benchmark-PartitionBoxes-B256-P64-I1
+	benchmark-PartitionBoxes-B256-P32-I1
+	benchmark-PartitionBoxes-B512-P512-I1
+	benchmark-PartitionBoxes-B512-P256-I1
+	benchmark-PartitionBoxes-B512-P128-I1
+	benchmark-PartitionBoxes-B512-P64-I1
+	benchmark-PartitionBoxes-B512-P32-I1
+	benchmark-PartitionBoxes-B1024-P1024-I1
+	benchmark-PartitionBoxes-B1024-P512-I1
+	benchmark-PartitionBoxes-B1024-P256-I1
+	benchmark-PartitionBoxes-B1024-P128-I1
+	benchmark-PartitionBoxes-B1024-P64-I1
+	benchmark-PartitionBoxes-B1024-P32-I1
+	benchmark-PartitionBoxes-B2048-P1024-I1
+	benchmark-PartitionBoxes-B2048-P512-I1
+	benchmark-PartitionBoxes-B2048-P256-I1
+	benchmark-PartitionBoxes-B2048-P128-I1
+	benchmark-PartitionBoxes-B2048-P64-I1
+	benchmark-PartitionBoxes-B2048-P32-I1
+	benchmark-PartitionBoxes-B4096-P1024-I1
+	benchmark-PartitionBoxes-B4096-P512-I1
+	benchmark-PartitionBoxes-B4096-P256-I1
+	benchmark-PartitionBoxes-B4096-P128-I1
+	benchmark-PartitionBoxes-B4096-P64-I1
+	benchmark-PartitionBoxes-B4096-P32-I1
+
+92% tests passed, 6 tests failed out of 72
+
+Total Test time (real) = 1375.58 sec
+
+The following tests FAILED:
+	114 - benchmark-PartitionBoxes-B2048-P2048-I0 (Failed)
+	121 - benchmark-PartitionBoxes-B4096-P4096-I0 (Failed)
+	122 - benchmark-PartitionBoxes-B4096-P2048-I0 (Failed)
+	150 - benchmark-PartitionBoxes-B2048-P2048-I1 (Failed)
+	157 - benchmark-PartitionBoxes-B4096-P4096-I1 (Failed)
+	158 - benchmark-PartitionBoxes-B4096-P2048-I1 (Failed)

@@ -36,8 +36,6 @@
 #include "vtkParallelFactory.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper.h"
-#include "Testing/Cxx/vtkTestUtilities.h"
-#include "Testing/Cxx/vtkRegressionTestImage.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
@@ -45,9 +43,6 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkInformation.h"
 #include "vtkDebugLeaks.h"
-#include "vtkElevationFilter.h"
-#include "vtkH5PartReader.h"
-#include "vtkMaskPoints.h"
 #include "vtkProperty.h"
 #include "vtkPointData.h"
 #include "vtkDoubleArray.h"
@@ -69,364 +64,236 @@
 #include <ctype.h>
 #include <algorithm>
 //
-#include "zoltan.h"
-#undef min
-#undef max
+#include "TestUtils.h"
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 #define DATA_SEND_TAG 301
 //----------------------------------------------------------------------------
-
 //----------------------------------------------------------------------------
-std::string usage = "\n"\
-"\t-D path to use for temp h5part file \n" \
-"\t-F name to use for temp h5part file \n" \
-"\t-N Generate exactly N points per process (no cube structure) \n" \
-"\t-R Render. Displays points using vtk renderwindow \n" \
-"\t-I Interactive (waits until user closes render window if -R selected) \n" \
-"\t-X delete h5part file on completion \n";
-
-class Random {
-  public:
-    unsigned int __seed;
-    Random(int seed) {
-      __seed = seed;
-    }
-
-    unsigned int getseed() {
-      return __seed;
-    }
-    void setseed(int seed) {
-        __seed = seed;
-    }
-    double nextNumber()
-    {
-      __seed = (__seed*9301+49297) % 233280;
-      return __seed / 233280.0;
-    }
-};
-//----------------------------------------------------------------------------
-#ifdef _WIN32
-void known_seed()
-{
-  srand(1);
-}
-#else
-void known_seed()
-{
-  srandom(12345);
-}
-#endif
-//----------------------------------------------------------------------------
-#ifdef _WIN32
-unsigned long int random_seed()
-{
-  LARGE_INTEGER lpPerformanceCount;
-  QueryPerformanceCounter(&lpPerformanceCount);
-  long int seed = lpPerformanceCount.LowPart + lpPerformanceCount.HighPart;
-  srand(seed);
-  return seed;
-}
-#else
-unsigned long int random_seed()
-{
-  unsigned int seed;
-  struct timeval tv;
-  FILE *devrandom;
-  if ((devrandom = fopen("/dev/random","r")) == NULL) {
-    gettimeofday(&tv,0);
-    seed = tv.tv_sec + tv.tv_usec;
-  } 
-  else {
-    if (fread(&seed,sizeof(seed),1,devrandom) == 1) {
-      fclose(devrandom);
-    } 
-    else {
-      gettimeofday(&tv,0);
-      seed = tv.tv_sec + tv.tv_usec;
-    }
-  }
-  srandom(seed);
-  return seed;
-}
-#endif
-
-//----------------------------------------------------------------------------
-void SpherePoints(int n, float radius, float X[]) {
-  double x, y, z, w, t;
-  Random r(12345);
-  double rmin=1E6, rmax=-1E6;
-  for(int i=0; i<n; i++ ) {
-    double r1 = r.nextNumber(); // double(rand())/RAND_MAX;
-    double r2 = r.nextNumber(); // double(rand())/RAND_MAX;
-    rmin = std::min(rmin, r1);
-    rmin = std::min(rmin, r2);
-    rmax = std::max(rmax, r1);
-    rmax = std::max(rmax, r2);
-//    std::cout << r1 << " " << r2 << std::endl;
-    z = 2.0 * r1 - 1.0;
-    t = 2.0 * M_PI * r2;
-    w = radius * sqrt( 1 - z*z );
-    x = w * cos( t );
-    y = w * sin( t );
-    X[3*i+0] = x;
-    X[3*i+1] = y;
-    X[3*i+2] = z*radius;
-  }
-//  std::cout << "min max " << rmin << " " << rmax << std::endl;
-}
 //----------------------------------------------------------------------------
 int main (int argc, char* argv[])
 {
   int retVal = 1;
+  char *empty = "";
+  bool ok = true;
 
-  // This is here to avoid false leak messages from vtkDebugLeaks when
-  // using mpich. It appears that the root process which spawns all the
-  // main processes waits in MPI_Init() and calls exit() when
-  // the others are done, causing apparent memory leaks for any objects
-  // created before MPI_Init().
-  MPI_Init(&argc, &argv);
-  vtkSmartPointer<vtkMPIController> controller = vtkSmartPointer<vtkMPIController>::New();
-  controller->Initialize(&argc, &argv, 1);
+  //--------------------------------------------------------------
+  // Setup Test Params
+  //--------------------------------------------------------------
+  TestStruct test;
+  initTest(argc, argv, test);
 
-  // Obtain the id of the running process and the total
-  // number of processes
-  vtkTypeInt64 myRank = controller->GetLocalProcessId();
-  vtkTypeInt64 numProcs = controller->GetNumberOfProcesses();
-  if (numProcs!=4) {
-    std::cout << "This test must be run using 4 processors" << std::endl;
-    controller->Finalize();
-    return 1;
+  // if testing partition from file
+  double read_elapsed = 0.0;
+  double partition_elapsed = 0.0;
+  vtkSmartPointer<vtkAlgorithm> data_algorithm; 
+  vtkIdType totalParticles = 0;
+  if (vtksys::SystemTools::FileExists(test.fullName.c_str())) {
+    //--------------------------------------------------------------
+    // Create H5Part Reader
+    //--------------------------------------------------------------
+    test.CreateReader();
+    read_elapsed = test.UpdateReader();
+    data_algorithm = test.reader; 
+    //
+    vtkIdType localParticles = test.reader->GetOutput()->GetNumberOfPoints();
+    test.controller->AllReduce(&localParticles, &totalParticles, 1, vtkCommunicator::SUM_OP);
+    DisplayParameter<vtkIdType>("Particle Count", "", &totalParticles, 1, (test.myRank==0)?0:-1);
+
+    //--------------------------------------------------------------
+    // Parallel partition
+    //--------------------------------------------------------------
+    test.CreatePartitioner();
+    test.partitioner->SetGhostCellOverlap(test.ghostOverlap);
+    partition_elapsed = test.UpdatePartitioner();
   }
-  if (myRank==0) {
-    std::cout << usage.c_str() << std::endl;
-  }
-  controller->Barrier();
-
-  //--------------------------------------------------------------
-  // command line params : Setup testing utilities/args etc
-  //--------------------------------------------------------------
-  vtkSmartPointer<vtkTesting> test = vtkSmartPointer<vtkTesting>::New();
-  for (int c=1; c<argc; c++ ) {
-    test->AddArgument(argv[c]);
-  }
-  // Get test filename etc
-  char *filename = vtkTestUtilities::GetArgOrEnvOrDefault(
-    "-F", argc, argv, "DUMMY_ENV_VAR", "temp.h5");
-  char* fullname = vtkTestUtilities::ExpandDataFileName(argc, argv, filename);
-  if (myRank==0) {
-    std::cout << "Process Id : " << myRank << " FileName : " << fullname << std::endl;
-  }
-
-  vtkTypeInt64 numPoints = 1000;
-
-  char *number = vtkTestUtilities::GetArgOrEnvOrDefault(
-    "-N", argc, argv, "DUMMY_ENV_VAR", "");
-  if (std::string(number)!=std::string("")) {
-    vtkstd::stringstream temp;
-    temp << number;
-    temp >> numPoints;
-    if (myRank<2) {
-      std::cout << "Process Id : " << myRank << " Requested Particles : " << numPoints << std::endl;
-    }
-  }
-
-  //--------------------------------------------------------------
-  // allocate points + arrays
-  //--------------------------------------------------------------
-  vtkSmartPointer<vtkPolyData>  Sprites = vtkSmartPointer<vtkPolyData>::New();
-  vtkSmartPointer<vtkPoints>     points = vtkSmartPointer<vtkPoints>::New();
-  vtkSmartPointer<vtkCellArray>   verts = vtkSmartPointer<vtkCellArray>::New();
-  vtkSmartPointer<vtkIdTypeArray>   Ids = vtkSmartPointer<vtkIdTypeArray>::New();
-  vtkSmartPointer<vtkIntArray>    Ranks = vtkSmartPointer<vtkIntArray>::New();
-  //
-  points->SetNumberOfPoints(numPoints);
-  //
-  verts->Allocate(numPoints,numPoints);
-  Sprites->SetPoints(points);
-  Sprites->SetVerts(verts);
-  //
-  Ids->SetNumberOfTuples(numPoints);
-  Ids->SetNumberOfComponents(1);
-  Ids->SetName("PointIds");
-  Sprites->GetPointData()->AddArray(Ids);  
-  //
-  Ranks->SetNumberOfTuples(numPoints);
-  Ranks->SetNumberOfComponents(1);
-  Ranks->SetName("Rank");
-  Sprites->GetPointData()->AddArray(Ranks);  
-  //
-  //--------------------------------------------------------------
-  // Create default scalar arrays
-  //--------------------------------------------------------------
-  double radius  = 500.0;
-  const double a = 0.9;
+  else {
+    //--------------------------------------------------------------
+    // allocate points + arrays
+    //--------------------------------------------------------------
+    vtkSmartPointer<vtkPolyData>  Sprites = vtkSmartPointer<vtkPolyData>::New();
+    vtkSmartPointer<vtkPoints>     points = vtkSmartPointer<vtkPoints>::New();
+    vtkSmartPointer<vtkCellArray>   verts = vtkSmartPointer<vtkCellArray>::New();
+    vtkSmartPointer<vtkIdTypeArray>   Ids = vtkSmartPointer<vtkIdTypeArray>::New();
+    vtkSmartPointer<vtkIntArray>    Ranks = vtkSmartPointer<vtkIntArray>::New();
+    //
+    points->SetNumberOfPoints(test.generateN);
+    //
+    verts->Allocate(test.generateN,test.generateN);
+    Sprites->SetPoints(points);
+    Sprites->SetVerts(verts);
+    //
+    Ids->SetNumberOfTuples(test.generateN);
+    Ids->SetNumberOfComponents(1);
+    Ids->SetName("PointIds");
+    Sprites->GetPointData()->AddArray(Ids);  
+    //
+    Ranks->SetNumberOfTuples(test.generateN);
+    Ranks->SetNumberOfComponents(1);
+    Ranks->SetName("Rank");
+    Sprites->GetPointData()->AddArray(Ranks);  
+    //
+    //--------------------------------------------------------------
+    // Create default scalar arrays
+    //--------------------------------------------------------------
+    double radius  = 500.0;
+    const double a = 0.9;
+    test.ghostOverlap = radius*0.1; // ghost_region
   
-/*
-  // Randomly give some processes zero points to improve test coverage
-  random_seed();
-  if (0 && numProcs>1 && rand()%2==1) {
-    numPoints = 0;
-    Sprites = vtkSmartPointer<vtkPolyData>::New();
-    writer->SetInput(Sprites);
-  }
-*/
-
-  known_seed();
-  SpherePoints(numPoints, radius*(1.5+myRank)/(numProcs+0.5), vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0));
-  for (vtkIdType Id=0; Id<numPoints; Id++) {
-    Ids->SetTuple1(Id, Id + myRank*numPoints);
-    Ranks->SetTuple1(Id, myRank);
-    verts->InsertNextCell(1,&Id);
-  }
-
-  //--------------------------------------------------------------
-  // Make up some max kernel size for testing
-  //--------------------------------------------------------------
-  double KernelMaximum  = radius*0.1;
-
-  //--------------------------------------------------------------
-  // Create partitioning filter
-  //--------------------------------------------------------------
-  vtkSmartPointer<vtkParticlePartitionFilter> partitioner = vtkSmartPointer<vtkParticlePartitionFilter>::New();
-  partitioner->SetInput(Sprites);
-  partitioner->SetIdChannelArray("PointIds");
-  partitioner->SetGhostCellOverlap(KernelMaximum);
-  partitioner->SetController(controller);
-
-  //--------------------------------------------------------------
-  // Add process Id's
-  //--------------------------------------------------------------
-  vtkSmartPointer<vtkProcessIdScalars> processId = vtkSmartPointer<vtkProcessIdScalars>::New();
-  processId->SetInputConnection(partitioner->GetOutputPort());
-  processId->SetController(controller);
-  //
-  controller->Barrier();
-  if (myRank==0) {
-    std::cout << "Process Id : " << myRank << " Generated N Points : " << numPoints << std::endl;
-  }
-
-  //--------------------------------------------------------------
-  // Update in parallel
-  //
-  // To get parallel operation correct, we need to make sure that piece
-  // information is passed upstream. first update information,
-  // then set piece update extent,
-  //--------------------------------------------------------------
-  std::cout << "Setting piece information " << myRank << " of " << numProcs << std::endl;
-  vtkStreamingDemandDrivenPipeline *sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(processId->GetExecutive());
-  // no piece info set yet, assumes info is not piece dependent
-  sddp->UpdateInformation();
-  // now set piece info and update
-  sddp->SetUpdateExtent(0, myRank, numProcs, 0);
-  sddp->Update();
-
-  bool doRender = false;
-  if (test->IsFlagSpecified("-R")) {
-   std::cout << "Process Id : " << myRank << " Rendering" << std::endl;
-   doRender = true;
-  }
-
-  if (doRender) {
-    //
-    // Send all the data to process zero for display
-    //
-    vtkPolyData *OutputData = vtkPolyData::SafeDownCast(sddp->GetOutputData(0)->NewInstance());
-    OutputData->ShallowCopy(sddp->GetOutputData(0));
-    if (myRank>0) {
-      const char *array_name = "ProcessId";
-      controller->Send(OutputData, 0, DATA_SEND_TAG);
+  /*
+    // Randomly give some processes zero points to improve test coverage
+    random_seed();
+    if (0 && test.numProcs>1 && rand()%2==1) {
+      test.generateN = 0;
+      Sprites = vtkSmartPointer<vtkPolyData>::New();
+      writer->SetInput(Sprites);
     }
+  */
+
+    known_seed();
+    SpherePoints(test.generateN, radius*(1.5+test.myRank)/(test.numProcs+0.5), vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0));
+    for (vtkIdType Id=0; Id<test.generateN; Id++) {
+      Ids->SetTuple1(Id, Id + test.myRank*test.generateN);
+      Ranks->SetTuple1(Id, test.myRank);
+      verts->InsertNextCell(1,&Id);
+    }
+
+    //--------------------------------------------------------------
+    // Parallel partition
+    //--------------------------------------------------------------
+    test.CreatePartitioner();
+    test.partitioner->SetInput(Sprites);
+    test.partitioner->SetIdChannelArray("PointIds");
+    test.partitioner->SetGhostCellOverlap(test.ghostOverlap);
+    partition_elapsed = test.UpdatePartitioner();
+
+    //--------------------------------------------------------------
+    // Add process Id's
+    //--------------------------------------------------------------
+    vtkSmartPointer<vtkProcessIdScalars> processId = vtkSmartPointer<vtkProcessIdScalars>::New();
+    processId->SetInputConnection(test.partitioner->GetOutputPort());
+    processId->SetController(test.controller);
     //
-    // Rank 0 collect all data pieces from parallel processes
+    test.controller->Barrier();
+    if (test.myRank==0) {
+      testDebugMacro( "Process Id : " << test.myRank << " Generated N Points : " << test.generateN );
+    }
+
+    //--------------------------------------------------------------
+    // Update in parallel
     //
-    else if (myRank==0) {
+    // To get parallel operation correct, we need to make sure that piece
+    // information is passed upstream. first update information,
+    // then set piece update extent,
+    //--------------------------------------------------------------
+    testDebugMacro( "Setting piece information " << test.myRank << " of " << test.numProcs );
+    vtkStreamingDemandDrivenPipeline *sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(processId->GetExecutive());
+    // no piece info set yet, assumes info is not piece dependent
+    sddp->UpdateInformation();
+    // now set piece info and update
+    sddp->SetUpdateExtent(0, test.myRank, test.numProcs, 0);
+    sddp->Update();
+
+    if (test.doRender) {
       //
-      vtkSmartPointer<vtkRenderer>                ren = vtkSmartPointer<vtkRenderer>::New();
-      vtkSmartPointer<vtkRenderWindow>      renWindow = vtkSmartPointer<vtkRenderWindow>::New();
-      vtkSmartPointer<vtkRenderWindowInteractor> iren = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-      iren->SetRenderWindow(renWindow);
-      ren->SetBackground(0.1, 0.1, 0.1);
-      renWindow->SetSize( 400, 400);
-      renWindow->AddRenderer(ren);
+      // Send all the data to process zero for display
       //
-      for (int i=0; i<numProcs; i++) {
-        vtkSmartPointer<vtkPolyData> pd;
-        if (i==0) {
-          pd = OutputData;
-        }
-        else {
-          pd = vtkSmartPointer<vtkPolyData>::New();
-          controller->Receive(pd, i, DATA_SEND_TAG);
-        }
-        vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-        vtkSmartPointer<vtkActor>                 actor = vtkSmartPointer<vtkActor>::New();
-        mapper->SetInput(pd);
-        mapper->SetColorModeToMapScalars();
-        mapper->SetScalarModeToUsePointFieldData();
-        mapper->SetUseLookupTableScalarRange(0);
-        mapper->SetScalarRange(0,numProcs-1);
-        mapper->SetInterpolateScalarsBeforeMapping(0);
-        mapper->SelectColorArray("ProcessId");
-        actor->SetMapper(mapper);
-        actor->GetProperty()->SetPointSize(2);
-        ren->AddActor(actor);
+      vtkPolyData *OutputData = vtkPolyData::SafeDownCast(sddp->GetOutputData(0)->NewInstance());
+      OutputData->ShallowCopy(sddp->GetOutputData(0));
+      if (test.myRank>0) {
+        test.controller->Send(OutputData, 0, DATA_SEND_TAG);
+      }
+      //
+      // Rank 0 collect all data pieces from parallel processes
+      //
+      else if (test.myRank==0) {
         //
-        vtkSmartPointer<vtkPolyDataMapper>       mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
-        vtkSmartPointer<vtkActor>                 actor2 = vtkSmartPointer<vtkActor>::New();
-        mapper2->SetInput(pd);
-        mapper2->SetColorModeToMapScalars();
-        mapper2->SetScalarModeToUsePointFieldData();
-        mapper2->SetUseLookupTableScalarRange(0);
-        mapper2->SetScalarRange(0,1);
-        mapper2->SetInterpolateScalarsBeforeMapping(0);
-        mapper2->SelectColorArray("vtkGhostLevels");
-        actor2->SetMapper(mapper2);
-        actor2->GetProperty()->SetPointSize(2);
-        actor2->SetPosition(2.0*radius, 0.0, 0.0);
-        ren->AddActor(actor2);
-      }
-      //
-      // Display boxes for each partition
-      //
-      for (int i=0; i<numProcs; i++) {
-        vtkBoundingBox *box = partitioner->GetPartitionBoundingBox(i);
-        double bounds[6];
-        box->GetBounds(bounds);
-        vtkSmartPointer<vtkOutlineSource> boxsource = vtkSmartPointer<vtkOutlineSource>::New();
-        boxsource->SetBounds(bounds);
-        vtkSmartPointer<vtkPolyDataMapper> bmapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-        vtkSmartPointer<vtkActor>          bactor = vtkSmartPointer<vtkActor>::New();
-        bmapper->SetInputConnection(boxsource->GetOutputPort());
-        bactor->SetMapper(bmapper);
-        ren->AddActor(bactor);
-      }
+        vtkSmartPointer<vtkRenderer>                ren = vtkSmartPointer<vtkRenderer>::New();
+        vtkSmartPointer<vtkRenderWindow>      renWindow = vtkSmartPointer<vtkRenderWindow>::New();
+        vtkSmartPointer<vtkRenderWindowInteractor> iren = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+        iren->SetRenderWindow(renWindow);
+        ren->SetBackground(0.1, 0.1, 0.1);
+        renWindow->SetSize( 400, 400);
+        renWindow->AddRenderer(ren);
+        //
+        for (int i=0; i<test.numProcs; i++) {
+          vtkSmartPointer<vtkPolyData> pd;
+          if (i==0) {
+            pd = OutputData;
+          }
+          else {
+            pd = vtkSmartPointer<vtkPolyData>::New();
+            test.controller->Receive(pd, i, DATA_SEND_TAG);
+          }
+          vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+          vtkSmartPointer<vtkActor>                 actor = vtkSmartPointer<vtkActor>::New();
+          mapper->SetInput(pd);
+          mapper->SetColorModeToMapScalars();
+          mapper->SetScalarModeToUsePointFieldData();
+          mapper->SetUseLookupTableScalarRange(0);
+          mapper->SetScalarRange(0,test.numProcs-1);
+          mapper->SetInterpolateScalarsBeforeMapping(0);
+          mapper->SelectColorArray("ProcessId");
+          actor->SetMapper(mapper);
+          actor->GetProperty()->SetPointSize(2);
+          ren->AddActor(actor);
+          //
+          vtkSmartPointer<vtkPolyDataMapper>       mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
+          vtkSmartPointer<vtkActor>                 actor2 = vtkSmartPointer<vtkActor>::New();
+          mapper2->SetInput(pd);
+          mapper2->SetColorModeToMapScalars();
+          mapper2->SetScalarModeToUsePointFieldData();
+          mapper2->SetUseLookupTableScalarRange(0);
+          mapper2->SetScalarRange(0,1);
+          mapper2->SetInterpolateScalarsBeforeMapping(0);
+          mapper2->SelectColorArray("vtkGhostLevels");
+          actor2->SetMapper(mapper2);
+          actor2->GetProperty()->SetPointSize(2);
+          actor2->SetPosition(2.0*radius, 0.0, 0.0);
+          ren->AddActor(actor2);
+        }
+        //
+        // Display boxes for each partition
+        //
+        for (int i=0; i<test.numProcs; i++) {
+          vtkBoundingBox *box = test.partitioner->GetPartitionBoundingBox(i);
+          double bounds[6];
+          box->GetBounds(bounds);
+          vtkSmartPointer<vtkOutlineSource> boxsource = vtkSmartPointer<vtkOutlineSource>::New();
+          boxsource->SetBounds(bounds);
+          vtkSmartPointer<vtkPolyDataMapper> bmapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+          vtkSmartPointer<vtkActor>          bactor = vtkSmartPointer<vtkActor>::New();
+          bmapper->SetInputConnection(boxsource->GetOutputPort());
+          bactor->SetMapper(bmapper);
+          ren->AddActor(bactor);
+        }
       
-      ren->GetActiveCamera()->SetPosition(0,4*radius,0);
-      ren->GetActiveCamera()->SetFocalPoint(0,0,0);
-      ren->GetActiveCamera()->SetViewUp(0,0,-1);
-      ren->ResetCamera();
-      std::cout << "Process Id : " << myRank << " About to Render" << std::endl;
-      renWindow->Render();
+        ren->GetActiveCamera()->SetPosition(0,4*radius,0);
+        ren->GetActiveCamera()->SetFocalPoint(0,0,0);
+        ren->GetActiveCamera()->SetViewUp(0,0,-1);
+        ren->ResetCamera();
+        testDebugMacro( "Process Id : " << test.myRank << " About to Render" );
+        renWindow->Render();
 
-      retVal = vtkRegressionTester::Test(argc, argv, renWindow, 10);
-      if ( retVal == vtkRegressionTester::DO_INTERACTOR) {
-        iren->Start();
+        retVal = vtkRegressionTester::Test(argc, argv, renWindow, 10);
+        if ( retVal == vtkRegressionTester::DO_INTERACTOR) {
+          iren->Start();
+        }
+        testDebugMacro( "Process Id : " << test.myRank << " Rendered" );
       }
-      std::cout << "Process Id : " << myRank << " Rendered" << std::endl;
     }
   }
 
-  if (myRank==0 && test->IsFlagSpecified("-X")) {
-   std::cout << "Process Id : " << myRank << " About to Delete file" << std::endl;
-   vtksys::SystemTools::RemoveFile(fullname);
+  if (ok && test.myRank==0) {
+    DisplayParameter<vtkIdType>("Total Particles", "", &totalParticles, 1, test.myRank);
+    DisplayParameter<double>("Read Time", "", &read_elapsed, 1, test.myRank);
+    DisplayParameter<double>("Partition Time", "", &partition_elapsed, 1, test.myRank);
+    DisplayParameter<char *>("====================", "", &empty, 1, test.myRank);
   }
 
-  controller->Barrier();
-  controller->Finalize();
-
-  delete []fullname;
-  delete []filename;
+  test.controller->Finalize();
 
   return !retVal;
 }

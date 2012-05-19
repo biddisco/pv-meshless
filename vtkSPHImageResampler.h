@@ -36,7 +36,6 @@ class vtkSPHProbeFilter;
 class vtkSPHProbeProgress;
 class vtkMultiProcessController;
 
-
 class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
   public:
     // Description:
