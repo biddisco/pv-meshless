@@ -1259,17 +1259,18 @@ int vtkH5PartReader::PartitionByExtentsRandomized(vtkIdType N, std::vector<vtkId
   int pend = 0;
   for (int i=0; i<this->UpdateNumPieces; i++) {
     int count = (r.nextNumberInt()%rand_diff) - (divs/8) + divs;
+    pend = pstart + count-1;
+    if (pend>((i+2)*divs)) {
+      pend = (i+2)*divs -1;
+    }
     if (i==(this->UpdateNumPieces-1)) {
       pend = N-1;
-    }
-    else {
-      pend = pstart + count-1;
     }
     if (i==this->UpdatePiece) {
       startend.push_back(pstart);
       startend.push_back(pend);
     }
-    pstart = pstart + count;
+    pstart = pend+1;
   }
 
   vtkDebugMacro(<< "PartitionByExtents " << startend[0] << " : " << startend[1] << " = " << (startend[1]-startend[0]+1));
