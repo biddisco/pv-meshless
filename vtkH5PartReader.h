@@ -118,6 +118,15 @@ public:
   vtkBooleanMacro(DisplayPieceBoxes,int);
   
   // Description:
+  // For testing, randomize extents when partitioning by pieces.
+  // This is intended to permute slightly the start and end particle indices
+  // or each partition so that some randomness is introduced into reads.
+  // For debugging only.
+  vtkSetMacro(RandomizePartitionExtents,int);
+  vtkGetMacro(RandomizePartitionExtents,int);
+  vtkBooleanMacro(RandomizePartitionExtents,int);
+
+  // Description:
   // When this option is set, scalar fields with names which form a pattern
   // of the form scalar_0, scalar_1, scalar_2 will be combined into a single
   // vector field with N components
@@ -211,6 +220,7 @@ protected:
 
   // Use simple 1...N, divide particle list to partition data for reading
   int PartitionByExtents(vtkIdType N, std::vector<vtkIdType> &startend);
+  int PartitionByExtentsRandomized(vtkIdType N, std::vector<vtkIdType> &startend);
   
   // Use the BoundingBoxes read to partition data for reading
   int PartitionByBoundingBoxes(
@@ -269,6 +279,7 @@ protected:
   int           DisplayPartitionBoxes;
   int           DisplayPieceBoxes;
   int           UseLinearBoxPartitioning;
+  int           RandomizePartitionExtents;
   //
   char         *Xarray;
   char         *Yarray;

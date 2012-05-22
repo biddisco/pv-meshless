@@ -556,6 +556,7 @@ IF (EXISTS ${SC12_DATA_PATH}/${SC12_DATA_FILE}${SC12_TEST}.h5part)
         -particlesize ${DELTAX}
         -ghost_region ${GST}
         -ignorePartitions "${index}"
+        -randomizeExtents "${index}"
       )
       # remove 000 from 00032 for Nprocs etc
       STRING(REGEX REPLACE "(^0+)" "" N "${N}")

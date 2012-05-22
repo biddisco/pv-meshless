@@ -74,6 +74,7 @@
 //
 #include "vtkBoundsExtentTranslator.h"
 //
+#include "Testing/TestUtils.h"
 //----------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkH5PartReader, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
@@ -189,6 +190,7 @@ vtkH5PartReader::vtkH5PartReader()
   this->DisplayPartitionBoxes           = 0;
   this->DisplayPieceBoxes               = 0;
   this->UseLinearBoxPartitioning        = 1;
+  this->RandomizePartitionExtents       = 0;
   this->PointDataArraySelection         = vtkDataArraySelection::New();
   this->ExtentTranslator                = vtkBoundsExtentTranslator::New();
   this->SetXarray("Coords_0");
@@ -443,7 +445,14 @@ int vtkH5PartReader::RequestInformation(
       {
       outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), this->ExtentTranslator);
       }
+    else {
+      this->PartitionCount.clear();
+      this->PartitionOffset.clear();
+      this->PieceId.clear();
+      this->PartitionBoundsTable.clear();
+      this->PartitionBoundsTableHalo.clear();
     }
+  }
 
   this->CloseFileIntermediate();
                                                        
@@ -505,7 +514,7 @@ int GetVTKDataType(int datatype)
 
 //----------------------------------------------------------------------------
 template <class T1, class T2>
-void CopyIntoCoords_T(int offset, vtkDataArray *source, vtkDataArray *dest)
+void CopyIntoTuple(int offset, vtkDataArray *source, vtkDataArray *dest)
 {
   vtkIdType N = source->GetNumberOfTuples();
   T1 *sptr = static_cast<T1*>(source->GetVoidPointer(0));
@@ -524,40 +533,40 @@ void vtkH5PartReader::CopyIntoVector(int offset, vtkDataArray *source, vtkDataAr
     case VTK_CHAR:
     case VTK_SIGNED_CHAR:
     case VTK_UNSIGNED_CHAR:
-      CopyIntoCoords_T<char,T2>(offset, source, dest);
+      CopyIntoTuple<char,T2>(offset, source, dest);
       break;
     case VTK_SHORT:
-      CopyIntoCoords_T<short int,T2>(offset, source, dest);
+      CopyIntoTuple<short int,T2>(offset, source, dest);
       break;
     case VTK_UNSIGNED_SHORT:
-      CopyIntoCoords_T<unsigned short int,T2>(offset, source, dest);
+      CopyIntoTuple<unsigned short int,T2>(offset, source, dest);
       break;
     case VTK_INT:
-      CopyIntoCoords_T<int,T2>(offset, source, dest);
+      CopyIntoTuple<int,T2>(offset, source, dest);
       break;
     case VTK_UNSIGNED_INT:
-      CopyIntoCoords_T<unsigned int,T2>(offset, source, dest);
+      CopyIntoTuple<unsigned int,T2>(offset, source, dest);
       break;
     case VTK_LONG:
-      CopyIntoCoords_T<long int,T2>(offset, source, dest);
+      CopyIntoTuple<long int,T2>(offset, source, dest);
       break;
     case VTK_UNSIGNED_LONG:
-      CopyIntoCoords_T<unsigned long int,T2>(offset, source, dest);
+      CopyIntoTuple<unsigned long int,T2>(offset, source, dest);
       break;
     case VTK_LONG_LONG:
-      CopyIntoCoords_T<long long,T2>(offset, source, dest);
+      CopyIntoTuple<long long,T2>(offset, source, dest);
       break;
     case VTK_UNSIGNED_LONG_LONG:
-      CopyIntoCoords_T<unsigned long long,T2>(offset, source, dest);
+      CopyIntoTuple<unsigned long long,T2>(offset, source, dest);
       break;
     case VTK_FLOAT:
-      CopyIntoCoords_T<float,T2>(offset, source, dest);
+      CopyIntoTuple<float,T2>(offset, source, dest);
       break;
     case VTK_DOUBLE:
-      CopyIntoCoords_T<double,T2>(offset, source, dest);
+      CopyIntoTuple<double,T2>(offset, source, dest);
       break;
     case VTK_ID_TYPE:
-      CopyIntoCoords_T<vtkIdType,T2>(offset, source, dest);
+      CopyIntoTuple<vtkIdType,T2>(offset, source, dest);
       break;
     default:
       break;
@@ -776,7 +785,12 @@ int vtkH5PartReader::RequestData(
     this->ExtentTranslator->InitWholeBounds();
   }
   else {
-    this->PartitionByExtents(Nparticles, Ids);
+    if (this->RandomizePartitionExtents) {
+      this->PartitionByExtentsRandomized(Nparticles, Ids);
+    }
+    else {
+      this->PartitionByExtents(Nparticles, Ids);
+    }
     ParticleStart = Ids[0];
     ParticleEnd   = Ids[1];
   }
@@ -977,7 +991,7 @@ int vtkH5PartReader::RequestData(
   //
   //
   //
-  if (this->DisplayPartitionBoxes || this->DisplayPieceBoxes) {
+  if (!this->IgnorePartitionBoxes && (this->DisplayPartitionBoxes || this->DisplayPieceBoxes)) {
     this->DisplayBoundingBoxes(coords, output, ParticleStart, ParticleEnd);
   }
   //
@@ -1073,6 +1087,7 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
   vtkIdType pieces = this->DisplayPieceBoxes ? this->PieceBounds.size() : 0;
   vtkIdType newBoxes = partitions + pieces;
   //
+  std::cout << "Creating boxes " << newBoxes << std::endl;
   if (newBoxes==0) return 0;
   //
   vtkIdType N1 = coords->GetNumberOfTuples();
@@ -1234,6 +1249,45 @@ int vtkH5PartReader::PartitionByExtents(vtkIdType N, std::vector<vtkIdType> &sta
   return 1;
 }
 //----------------------------------------------------------------------------
+int vtkH5PartReader::PartitionByExtentsRandomized(vtkIdType N, std::vector<vtkIdType> &startend)
+{
+  Random r(12345);
+  int partitionsize = N/this->UpdateNumPieces;
+  int rand_max = partitionsize/2;
+  int rand_half = partitionsize/4;
+  //
+  int epstart = 0;
+  int epend = 0;
+  int pstart = 0;
+  int pend = 0;
+  int rnddev;
+  for (int i=0; i<this->UpdateNumPieces; i++) {
+    epstart = i*partitionsize;
+    epend   = (i+1)*partitionsize;
+    rnddev  = (r.nextNumberInt()%rand_max) - rand_half;
+    //
+    pend    = epend + rnddev;
+
+    // Don't go past last particle
+    if (pend>=N) {
+      pend = N-1;
+    }
+    // Force last process to read up to last particle
+    if (i==(this->UpdateNumPieces-1)) {
+      pend = N-1;
+    }
+    //
+    if (i==this->UpdatePiece) {
+      startend.push_back(pstart);
+      startend.push_back(pend);
+    }
+    pstart = pend+1;
+  }
+
+  vtkDebugMacro(<< "PartitionByExtents " << startend[0] << " : " << startend[1] << " = " << (startend[1]-startend[0]+1));
+  return 1;
+}
+//----------------------------------------------------------------------------
 unsigned int mylog2(unsigned int val) {
   unsigned int ret = -1;
   while (val != 0) {
@@ -1249,6 +1303,9 @@ int vtkH5PartReader::PartitionByBoundingBoxes(
   std::vector<vtkBoundingBox> &PieceBounds,
   std::vector<vtkBoundingBox> &PieceHaloBounds)
 {
+  if (this->IgnorePartitionBoxes) {
+    return 0;
+  }
   vtkIdType NP = this->PartitionCount.size();
   vtkIdType NR = this->UpdateNumPieces;
   vtkIdType  N = NP/NR;
