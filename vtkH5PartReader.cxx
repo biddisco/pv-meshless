@@ -1252,20 +1252,31 @@ int vtkH5PartReader::PartitionByExtents(vtkIdType N, std::vector<vtkIdType> &sta
 int vtkH5PartReader::PartitionByExtentsRandomized(vtkIdType N, std::vector<vtkIdType> &startend)
 {
   Random r(12345);
-  int divs = N/this->UpdateNumPieces;
-  int rand_diff = divs/4;
+  int partitionsize = N/this->UpdateNumPieces;
+  int rand_max = partitionsize/2;
+  int rand_half = partitionsize/4;
   //
+  int epstart = 0;
+  int epend = 0;
   int pstart = 0;
   int pend = 0;
+  int rnddev;
   for (int i=0; i<this->UpdateNumPieces; i++) {
-    int count = (r.nextNumberInt()%rand_diff) - (divs/8) + divs;
-    pend = pstart + count-1;
-    if (pend>((i+2)*divs)) {
-      pend = (i+2)*divs -1;
+    epstart = i*partitionsize;
+    epend   = (i+1)*partitionsize;
+    rnddev  = (r.nextNumberInt()%rand_max) - rand_half;
+    //
+    pend    = epend + rnddev;
+
+    // Don't go past last particle
+    if (pend>=N) {
+      pend = N-1;
     }
+    // Force last process to read up to last particle
     if (i==(this->UpdateNumPieces-1)) {
       pend = N-1;
     }
+    //
     if (i==this->UpdatePiece) {
       startend.push_back(pstart);
       startend.push_back(pend);
