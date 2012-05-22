@@ -92,6 +92,7 @@ class TestStruct {
   std::string Yarray;
   std::string Zarray;
   bool        ignorePartitions;
+  bool        randomizeExtents;
 
   //
   // SPH kernel or neighbour info
@@ -124,8 +125,31 @@ class TestStruct {
   double  UpdateSPHResampler();
   //
 };
-//
+//----------------------------------------------------------------------------
 int initTest(int argc, char* argv[], TestStruct &test);
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+class Random {
+  public:
+    unsigned int __seed;
+    Random(int seed) {
+      __seed = seed;
+    }
+    unsigned int getseed() {
+      return __seed;
+    }
+    void setseed(int seed) {
+      __seed = seed;
+    }
+    double nextNumber() {
+      __seed = (__seed*9301+49297) % 233280;
+      return __seed / 233280.0;
+    }
+    int nextNumberInt() {
+      __seed = (__seed*9301+49297) % 233280;
+      return __seed;
+    }
+};
 //----------------------------------------------------------------------------
 unsigned long int random_seed();
 void known_seed();

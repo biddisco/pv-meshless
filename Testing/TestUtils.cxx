@@ -64,25 +64,6 @@ unsigned long int random_seed()
 }
 #endif
 //----------------------------------------------------------------------------
-class Random {
-  public:
-    unsigned int __seed;
-    Random(int seed) {
-      __seed = seed;
-    }
-    unsigned int getseed() {
-      return __seed;
-    }
-    void setseed(int seed) {
-      __seed = seed;
-    }
-    double nextNumber()
-    {
-      __seed = (__seed*9301+49297) % 233280;
-      return __seed / 233280.0;
-    }
-};
-//----------------------------------------------------------------------------
 void SpherePoints(int n, float radius, float X[]) {
   double x, y, z, w, t;
   Random r(12345);
@@ -178,6 +159,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
   test.Yarray = GetParameter<std::string>("-Yarray", "Yarray name", argc, argv, "", test.myRank, unused);
   test.Zarray = GetParameter<std::string>("-Zarray", "Zarray name", argc, argv, "", test.myRank, unused);
   test.ignorePartitions = GetParameter<bool>("-ignorePartitions", "Ignore Partitions", argc, argv, 0, test.myRank, unused);
+  test.randomizeExtents = GetParameter<bool>("-randomizeExtents", "Randomize Extents", argc, argv, 0, test.myRank, unused);
 
   //
   // SPH kernel or neighbour info
@@ -237,6 +219,7 @@ void TestStruct::CreateReader()
     this->reader->SetZarray(this->Zarray.c_str());
   }
   this->reader->SetIgnorePartitionBoxes(this->ignorePartitions);
+  this->reader->SetRandomizePartitionExtents(this->randomizeExtents);
 }
 //----------------------------------------------------------------------------
 double TestStruct::UpdateReader()
