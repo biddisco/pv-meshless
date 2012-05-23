@@ -310,8 +310,9 @@ int main (int argc, char* argv[])
         if (retVal == vtkRegressionTester::DO_INTERACTOR) {
           iren->Start();
         }
+        ok = (retVal==vtkRegressionTester::PASSED);
       }
-      testDebugMacro( "Process Id : " << test.myRank << " Rendered" );
+      testDebugMacro( "Process Id : " << test.myRank << " Rendered " << (ok?"Pass":"Fail"));
     }
   }
 
