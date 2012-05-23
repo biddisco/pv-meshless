@@ -53,7 +53,7 @@
 #include <float.h>
 #include <numeric>
 //----------------------------------------------------------------------------
-//#define JB_DEBUG__
+// #define JB_DEBUG__
 #if defined JB_DEBUG__
 #define OUTPUTTEXT(a) std::cout <<(a); std::cout.flush();
 
@@ -684,9 +684,11 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   //
   // if a process has zero points, we need to make dummy point data arrays to allow 
   // space for when data gets sent in from other processes in the zoltan unpack function 
+  // This also stops hangs during collective operations by ensuring all ranks participate
   //
   int NumberOfFields = inputCopy->GetPointData()->GetNumberOfArrays();
   this->Controller->AllReduce(&NumberOfFields, &mesh.NumberOfFields, 1, vtkCommunicator::MAX_OP);
+  vtkSmartPointer<vtkPointData> PointDataCopy = inputCopy->GetPointData();
   for (int i=0; i<mesh.NumberOfFields; i++) {
     vtkSmartPointer<vtkDataArray> darray = inputCopy->GetPointData()->GetArray(i);
     //
@@ -701,7 +703,7 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
       darray.TakeReference(vtkDataArray::CreateDataArray(correctType));
       darray->SetNumberOfComponents(numComponents);
       darray->SetName(correctName.c_str());
-      inputCopy->GetPointData()->AddArray(darray);
+      PointDataCopy->AddArray(darray);
     }
   }
 
@@ -717,10 +719,10 @@ int vtkParticlePartitionFilter::RequestData(vtkInformation*,
   } 
 
   vtkSmartPointer<vtkDataArray> Ids = NULL;
-  Ids = input->GetPointData()->GetArray(IdsName.c_str());
+  Ids = PointDataCopy->GetArray(IdsName.c_str());
   if (!Ids) {
     // Try loading the global ids.
-    Ids = input->GetPointData()->GetGlobalIds();
+    Ids = PointDataCopy->GetGlobalIds();
   }
   if (!Ids) {
     // Generate our own since none exist
