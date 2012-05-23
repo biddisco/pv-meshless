@@ -1,12 +1,6 @@
-// -D C:\share -F sph-test.h5 -N 10000 -I -R
 // mpishim : C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\Remote Debugger\x64\mpishim100.exe
 // mpiexec : C:\Program Files\MPICH2\bin\mpiexec.exe 
 // mpiargs : -localonly -n 2 -env PATH C:\cmakebuild\pv-meshless\bin\debug;c:\bin
-//
-// windows mpi command line
-// cd D:\cmakebuild\csviz\bin\relwithdebinfo
-// mpiexec --localonly -n 4 TestParticlePartition -D C:\scratch -F sph-test.h5 -N 10000 -I -R
-
 
 #ifdef _WIN32
   #include <windows.h>
@@ -142,16 +136,6 @@ int main (int argc, char* argv[])
     const double a = 0.9;
     test.ghostOverlap = radius*0.1; // ghost_region
   
-  /*
-    // Randomly give some processes zero points to improve test coverage
-    random_seed();
-    if (0 && test.numProcs>1 && rand()%2==1) {
-      test.generateN = 0;
-      Sprites = vtkSmartPointer<vtkPolyData>::New();
-      writer->SetInput(Sprites);
-    }
-  */
-
     known_seed();
     SpherePoints(test.generateN, radius*(1.5+test.myRank)/(test.numProcs+0.5), vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0));
     for (vtkIdType Id=0; Id<test.generateN; Id++) {
@@ -159,7 +143,14 @@ int main (int argc, char* argv[])
       Ranks->SetTuple1(Id, test.myRank);
       verts->InsertNextCell(1,&Id);
     }
-
+/*
+    // Randomly give some processes zero points to improve test coverage
+    random_seed();
+    if (test.numProcs>1 && rand()%2==1) {
+      test.generateN = 0;
+      Sprites = vtkSmartPointer<vtkPolyData>::New();
+    }
+*/  
     //--------------------------------------------------------------
     // Parallel partition
     //--------------------------------------------------------------
