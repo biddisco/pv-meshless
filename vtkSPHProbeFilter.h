@@ -98,10 +98,18 @@ public:
   vtkBooleanMacro(ComputeDensityFromNeighbourVolume,int);
 
   // Description:
+  // When set to true (the default value), Shepard Normalization is applied
+  // to all scalars which have been interpolated using the SPH method.
+  // When Shepard Interpolation, this value has no effect.
+  vtkSetMacro(ApplyShepardNormalization,int);
+  vtkGetMacro(ApplyShepardNormalization,int);
+  vtkBooleanMacro(ApplyShepardNormalization,int);
+
+  // Description:
   // If ComputeDensityFromNeighbourVolume is enabled, then setting
   // PassScalars to true will leave the original scalars unchanged, so
   // that the filter can be used simply to add SmoothedDensity and SmoothedRadius
-  // fileds to an existing dataset. Priucipally intended for astrophysics data.
+  // fields to an existing dataset. Priucipally intended for astrophysics data.
   vtkSetMacro(PassScalars,int);
   vtkGetMacro(PassScalars,int);
   vtkBooleanMacro(PassScalars,int);
@@ -197,6 +205,7 @@ protected:
   // Compute Density
   int    ComputeDensityFromNeighbourVolume;
   int    PassScalars;
+  int    ApplyShepardNormalization;
 
   // Shepard Mode
   int    MaximumNeighbours;

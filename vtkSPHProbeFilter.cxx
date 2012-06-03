@@ -120,22 +120,23 @@ vtkSPHProbeFilter::vtkSPHProbeFilter()
   this->SetNumberOfInputPorts(2);
   this->SetNumberOfOutputPorts(1);
   // Point based interpolation
-  this->Locator                     = vtkSmartPointer<vtkPointLocator>::New();
-  this->Timer                       = vtkSmartPointer<vtkTimerLog>::New();
+  this->Locator                           = vtkSmartPointer<vtkPointLocator>::New();
+  this->Timer                             = vtkSmartPointer<vtkTimerLog>::New();
   //
-  this->KernelFunction              = NULL;
-  this->DefaultParticleVolume       = 1.0;
-  this->DefaultParticleMass         = 1.0;
-  this->DensityScalars              = NULL;
-  this->MassScalars                 = NULL;
-  this->VolumeScalars               = NULL;
-  this->HScalars                    = NULL;
+  this->KernelFunction                    = NULL;
+  this->DefaultParticleVolume             = 1.0;
+  this->DefaultParticleMass               = 1.0;
+  this->DensityScalars                    = NULL;
+  this->MassScalars                       = NULL;
+  this->VolumeScalars                     = NULL;
+  this->HScalars                          = NULL;
   this->ComputeDensityFromNeighbourVolume = 0;
+  this->ApplyShepardNormalization         = 1;
   this->PassScalars                       = 0;
   this->MaximumSearchRadius               = 0.0;
-  this->ParticleTree                = NULL;
-  this->UseParticleTree             = 0;
-  this->ProgressFrequency           = 20;
+  this->ParticleTree                      = NULL;
+  this->UseParticleTree                   = 0;
+  this->ProgressFrequency                 = 20;
   //
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
@@ -582,6 +583,11 @@ void vtkSPHProbeFilter::KernelCompute(
   gradW[0] = _gradW[0];
   gradW[1] = _gradW[1];
   gradW[2] = _gradW[2];
+  if (this->ApplyShepardNormalization) {
+    for (int i=0; i<validpoints; i++) {
+      this->weights[i] /= shepard_coeff;
+    }
+  }
   this->ScaleCoefficient  = shepard_coeff;
   this->GradientMagnitude = _gradW.magnitude();
 }

@@ -127,7 +127,6 @@
           This property indicates the name of the array to be used for particle densities if present
         </Documentation>
       </StringVectorProperty>
-
       
       <IntVectorProperty
          name="ComputeDensityFromNeighbourVolume"
@@ -141,6 +140,17 @@
       </IntVectorProperty>
 
       <IntVectorProperty
+         name="ApplyShepardNormalization"
+         command="SetApplyShepardNormalization"
+         number_of_elements="1"
+         default_values="1" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          When ApplyShepardNormalization is enabled, all interpolated field values are normalized by the sum of weights contributing to the interpolation.
+        </Documentation>
+      </IntVectorProperty>
+      
+      <IntVectorProperty
          name="PassScalars"
          command="SetPassScalars"
          number_of_elements="1"
@@ -150,7 +160,6 @@
           When ComputeDensityFromNeighbourVolume is enabled, this option skips smoothing of input scalars and they are passed through unchanged
         </Documentation>
       </IntVectorProperty>
-
 
       <IntVectorProperty
          name="ProgressFrequency"
