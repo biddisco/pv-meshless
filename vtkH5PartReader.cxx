@@ -181,6 +181,7 @@ vtkH5PartReader::vtkH5PartReader()
   this->Xarray                          = NULL;
   this->Yarray                          = NULL;
   this->Zarray                          = NULL;
+  this->StepName                        = NULL;
   this->UpdatePiece                     = 0;
   this->UpdateNumPieces                 = 0;
   this->TimeOutOfRange                  = 0;
@@ -218,6 +219,9 @@ vtkH5PartReader::~vtkH5PartReader()
   delete [] this->Zarray;
   this->Zarray = NULL;
 
+  delete [] this->StepName;
+  this->StepName = NULL;
+  
   this->PointDataArraySelection->Delete();
   this->PointDataArraySelection = 0;
 
