@@ -1,0 +1,39 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- ExtractDataOverTime                                               -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="filters">
+  
+    <SourceProxy name="TemporalPlotValueFilter" 
+                 class="vtkTemporalPlotValueFilter"
+                 label="Temporal Plot Value Filter">
+      <Documentation
+        short_help="Adds a value to a plot over time"
+        long_help="Adds a value to a plot over time" >
+      </Documentation>
+
+      <InputProperty name="Input"
+          command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+      </InputProperty>
+
+      <Hints>
+        <Visibility replace_input="0" />
+        <!-- View can be used to specify the preferred view for the proxy -->
+        <View type="XYChartView" />
+        <Plotable />
+      </Hints>
+      <!-- End of ExtractDataOverTime -->
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

@@ -20,5 +20,7 @@
     <Filter name="H5PartWriter" />
     <Filter name="H5PartWriter2" />
     <Filter name="MultiBlockExtractDataOverTime" />
+    <Filter name="TemporalPlotValueFilter" />
+    
   </Category>
 </ParaViewFilters>

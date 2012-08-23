@@ -310,6 +310,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHImageResampler.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionRepresentation.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkClipPolyData.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalPlotValueFilter.xml
     ${TRILINOS_XML}
     ${HDF5_XML}
   SERVER_MANAGER_SOURCES
@@ -335,6 +336,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkImageSamplerSource.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHImageResampler.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionRepresentation.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalPlotValueFilter.cxx
     ${TRILINOS_CXX}
     ${HDF5_CXX}
   SERVER_SOURCES
