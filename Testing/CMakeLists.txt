@@ -145,7 +145,7 @@ IF (USE_HDF5 AND VTK_USE_MPI)
   #--------------------------------------------------
   # Utility Library with Test helpers
   #--------------------------------------------------
-  ADD_LIBRARY(pvmeshlessTestLib STATIC
+  ADD_LIBRARY(pv_meshlessTestLib STATIC
     TestUtils.cxx
   )
 
@@ -168,7 +168,7 @@ IF (${TRILINOS_ENABLED} AND VTK_USE_MPI)
   )
   TARGET_LINK_LIBRARIES(TestParticlePartitionFilter
     pv_meshless 
-    pvmeshlessTestLib
+    pv_meshlessTestLib
     ${Trilinos_LIBRARIES}
     )
   
@@ -209,7 +209,7 @@ ENDIF (NOT VTK_USE_MPI)
 ADD_EXECUTABLE(TestSPHProbeFilter TestSPHProbeFilter.cxx)
 TARGET_LINK_LIBRARIES(TestSPHProbeFilter
   pv_meshless 
-  pvmeshlessTestLib
+  pv_meshlessTestLib
   ${Trilinos_LIBRARIES}
 )
         
