@@ -65,6 +65,11 @@ public:
   vtkSetStringMacro(Zarray);
 
   // Description:
+  // Set/Get the name used for each time step (Usually Step#0, Step#1 etc)
+  vtkGetStringMacro(StepName);
+  vtkSetStringMacro(StepName);
+
+  // Description:
   // Set/Get the timestep to be read
   vtkSetMacro(TimeStep,int);
   vtkGetMacro(TimeStep,int);
@@ -284,6 +289,7 @@ protected:
   char         *Xarray;
   char         *Yarray;
   char         *Zarray;
+  char         *StepName;
 //BTX
   vtkstd::vector<double>                  TimeStepValues;
   typedef vtkstd::vector<vtkstd::string>  stringlist;
