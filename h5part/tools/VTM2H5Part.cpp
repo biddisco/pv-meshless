@@ -9,6 +9,8 @@
 #include <sstream>
 #ifdef WIN32
   #include <Windows.h>
+#else
+  #include <unistd.h>
 #endif
 
 #include <vtksys/SystemTools.hxx>
