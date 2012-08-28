@@ -1,0 +1,266 @@
+
+release-3.14
+
+2012-08-28 John Biddiscombe         3864093     Scripts for generating changelog
+2012-08-28 John Biddiscombe         4d95a82     Duplicate the first point to remove warnings about line<2 points
+2012-08-23 John Biddiscombe         5e109bc     rename pv test lib for consistency
+2012-08-23 John Biddiscombe         37bd743     Add new vtkTemporalPlotValueFilter which accumulates data over time for plotting of time dependent variables
+2012-08-23 John Biddiscombe         93ac932     Add StepName to allow H5Part files with unusual particle group names to be read
+
+SPHERIC-2012
+
+2012-06-03 John Biddiscombe         56a27c5     Add option to Normalize all interpolated Fields using Shepard Normalization
+2012-05-23 John Biddiscombe         67d1bca     Image test reported pass when it should have reported fail
+2012-05-23 John Biddiscombe         d0e0f7b     Add sc12 benchmark results
+2012-05-23 John Biddiscombe         c5f903a     Fix code to assign zero points to one process in partition test
+2012-05-22 John Biddiscombe         6366d54     Add option to randomize extents when partitioning for test purposes
+2012-05-19 John Biddiscombe         32725ba     Revamp testing to make it easier to add new features
+2012-05-23 John Biddiscombe         e19642b     Fix Hang when one process has zero Points
+2012-05-18 John Biddiscombe         6502868     Lower image pass/fail tolerance, skip LARGE_DATA tests if absent
+2012-05-18 John Biddiscombe         52290de     Test does not need massscalars set, add #ifdef for debug wait
+2012-05-18 John Biddiscombe         0808262     Fix bug which used wrong (MPI/Dummy)Controller in tests
+2012-05-18 John Biddiscombe         7aa6898     Fix uninitialized var causing vector fields arrays to be copied unnecessarily
+2012-05-17 John Biddiscombe         f3bd164     Fix vector array copy : was not using NumberOfComponents in size
+2012-05-16 John Biddiscombe         981a5f0     Improve speed of halo box overlap by rejecting some bounds before testing points
+2012-05-16 John Biddiscombe         78ee47d     Don't set extent translator if not using partition boxes
+2012-05-15 John Biddiscombe         79970e3     Remove Trilinos Dependencies causing build trouble on todi
+2012-05-15 John Biddiscombe         b89c9b1     Support all data type in vector {a,b,c} join operations
+2012-05-14 John Biddiscombe         3b38e86     Reorder the regex defs so that the usual defaults are selected first
+2012-05-07 John Biddiscombe         7cdafb9     Add UseStridedMultiComponentRead option to GUI XML
+2012-05-07 John Biddiscombe         4369d56     Add MultiComponentArraysAsFieldData option
+2012-05-07 John Biddiscombe         295cf43     Support display of Parition or Piece Boxes and Halo regions
+2012-05-04 John Biddiscombe         c25321d     Add test/benchmark for SC12
+2012-05-04 John Biddiscombe         17384bf     Add option to ignore partition boxes on read
+2012-05-04 John Biddiscombe         56b3170     Skip Load-Balancing step and only perform halo exchange if Halos present.
+2012-05-04 John Biddiscombe         d7ef583     Add a BoundsHalosPresent flag to ExtentTranslator, use it in H5PartReader and PartitionDisplay
+2012-05-04 John Biddiscombe         e1b3200     Add support for Halo bounds to Extent translator and H5Part Reader
+2012-05-03 John Biddiscombe         fe645d0     New partitioning methods added to H5Part reader when BBoxes are present
+2012-05-03 John Biddiscombe         d47635c     Fix slow read of coordinate arrays in H5PartReader
+2012-05-03 John Biddiscombe         f6c791f     Use System Trilinos should be OFF by default
+2012-04-28 Jerome Soumagne          830d3e4     Enable build within paraview and add use system trilinos option
+2012-05-02 John Biddiscombe         2e0fd64     Clean up BBox read - separate it from BBox display
+2012-04-27 John Biddiscombe         184569e     Fix colouring of Particles based on input partition info when running in parallel
+2012-04-26 John Biddiscombe         a0db0ce     Remove pv-astro build dependency from this branch
+2012-04-26 John Biddiscombe         8120879     Add ExportPartitionBoxes option to show partitions if present.
+2012-04-24 John Biddiscombe         b50c218     Must call MPI_init at start of test
+2012-04-24 John Biddiscombe         fa501c7     Support subclassed H5Part readers (DSM based) by adding virtual calls.
+2012-04-20 John Biddiscombe         b8d12a9     Only include ramses converter if astro exists. Fix MPI include
+2012-04-17 John Biddiscombe         48fa503     Add subdir of Zoltan 3.601 from Trilinos 10.10.1
+2012-04-19 John Biddiscombe         64abb94     Update to the cscs plugins global cmakelists
+2012-04-16 John Biddiscombe         bd4ecca     Fix H5_HAVE_PARALLEL check for system HDF5
+2012-04-16 John Biddiscombe         c8fbf6d     Clean up VTK_USE_MPI and add H5_HAVE_PARALLEL check
+2012-04-16 John Biddiscombe         b2c8cc4     Add CMake Check for HDF5 compiled with Parallel support
+2012-04-16 John Biddiscombe         345e7d1     Remove Cosmo/Tipsy code from meshless
+2012-04-13 John Biddiscombe         eec5404     fix build errors with no MPI enabled
+2012-04-13 John Biddiscombe         fcfa85d     Remove dodgy AstroVizHelpers code from repo and change Intertia filter to use vtkMath::
+2012-03-30 John Biddiscombe         12fade8     Extract value fixes to work correctly in parallel
+2012-03-07 John Biddiscombe         702a548     Extract Max/Min filter takes a scalar array
+2012-02-13 John Biddiscombe         c9b4454     remove leading zeros from N for aprun and hide debug info
+2012-02-13 John Biddiscombe         16a14ea     Setup benchmark tests for strong/weak scaling
+2012-02-13 John Biddiscombe         a680215     Add benchmark case for large HO data
+2012-02-13 John Biddiscombe         e7a0456     Give Probe filter its own MPI controlled instead of using global one
+2012-02-12 John Biddiscombe         62537db     Progress to std::out formatted
+2012-02-12 John Biddiscombe         4dd4958     Improve progress bar coverage during SPH resampling
+2012-02-12 John Biddiscombe         5bd56ab     Add simple ghost overlap calculation/mode
+2012-02-12 John Biddiscombe         a654317     Clip particles now works as expected
+2012-02-12 John Biddiscombe         f66a28c     Add aspect ratio control to Partition
+2012-02-11 John Biddiscombe         91fc1d3     Don't allow adaptive overlap to be larger than the default value
+2012-02-11 John Biddiscombe         7a226f6     Add clippolydata to use as a particle extraction filter
+2012-02-11 John Biddiscombe         24d6937     Add adaptive partitioning ghost overlap
+2012-02-07 John Biddiscombe         bb027e4     Add occupied level (number in partition) to display and clean up xml defaults
+2012-02-07 John Biddiscombe         f512728     Pass Progress events to parent filter when SPHImageResampler uses ProbeFilter internally
+2012-02-06 John Biddiscombe         43d0e48     Add a close file at the end of each iteration to protect file against crash or stop
+2012-02-05 John Biddiscombe         0a7bb15     Fix Partition display to work with or without BoundsExtentTranslator
+2012-02-04 John Biddiscombe         57348e2     New class to show partition boxes when running in parallel
+2012-02-04 John Biddiscombe         ec0a336     DOC: remove vtkCSCS ref and use pv-meshless
+2012-02-04 John Biddiscombe         fd2b92c     Fix a crash when passdata is used
+2012-02-04 John Biddiscombe         212b97f     Filter to display bounding boxes of particle partitions
+2012-02-03 John Biddiscombe         a856e92     When using integral timesteps, nearest time step tolerance/check needed improving
+2012-02-03 John Biddiscombe         4010d0a     Add option to H5PartReader to export integral timesteps
+2012-02-03 John Biddiscombe         29bcdf6     Fix a crash caused by smoothedradius calculation accessing bad points
+2012-02-02 John Biddiscombe         490ca36     Ramses converter was crashing due to bad update params. fixed
+2012-02-02 John Biddiscombe         dd88b7d     Must use integer time on second loop of ramses converter
+2012-02-02 John Biddiscombe         82aec13     Ramses converter tool makes two passes so that time can be extracted on the first
+2012-02-02 John Biddiscombe         2fa31e1     Add a time value to the H5Part file when writing - just integer for now, not actual simulation time
+2012-02-02 John Biddiscombe         9e1ebdb     Fix problem with arguments for TestH5PartWriter
+2012-01-30 John Biddiscombe         ad229e3     Avoid MPI_Init_thread when not needed
+2012-01-30 John Biddiscombe         23330a8     set HasParticleData before conversion
+2012-01-30 John Biddiscombe         35d6e87     Case sensite subdir for tools
+2012-01-30 John Biddiscombe         70bec29     Fix spelling typo in add_definitions for trilinos
+2012-01-30 John Biddiscombe         5ecb873     Add ConvertToH5Part tool using Ramses from pv-astro (optional)
+2012-01-30 John Biddiscombe         3b522c4     Small change to proxy manager and includes for latest master/pv3.13 branch
+2011-11-28 John Biddiscombe         2b65351     Ensure correct build if Trilinos not used
+2011-11-25 John Biddiscombe         c2b4604     Testing framework improved for SPH probe and partitioning in parallel
+
+release-3.11
+
+2011-11-06 John Biddiscombe         7df823d     #include <math.h> needs to be first with MSVC10
+2011-11-04 John Biddiscombe         6d07b80     Add eiger test timing results
+2011-11-04 John Biddiscombe         ed26d5f     force use 4 procs for parallel test
+2011-11-04 John Biddiscombe         6c201e3     Add test times for future comparison (optimizations)
+2011-11-04 John Biddiscombe         9056522     Add Parallel Tests of Probe filter and Partition Filter
+2011-11-04 John Biddiscombe         62eb303     Tidy up the difference between Kernel mode and Shepard mode
+2011-09-06 John Biddiscombe         a944814     Fix AddServer and cleanup on close
+2011-07-09 John Biddiscombe         9d6d435     Remove unused #includes
+2011-07-04 John Biddiscombe         193cc69     Automatically init/reset SPH Panel when connection made
+2011-06-15 John Biddiscombe         dba4dac     Fix segfault caused by using NULL pqServer instance
+2011-04-19 John Biddiscombe         b25a2e6     Changes to proxy classes introduced with ParaView 3.11 and Processmodule changes
+
+release-3.10
+
+2011-10-21 John Biddiscombe         5678e51     correct use of Testing/Temporary directory
+2011-10-21 John Biddiscombe         406c6fe     Create test for vtkParticlePartitionFilter
+2011-10-20 John Biddiscombe         1924ca7     Allow Single/Double for all Density/Mass/Volume/H arrays
+2011-10-20 John Biddiscombe         f051927     Force extents when using image-poly-image pipeline, remove unused variables
+2011-10-19 John Biddiscombe         60b0927     Fix a warning about int to bool conversion
+2011-10-10 John Biddiscombe         d0527b0     Fix crash when no Mass Scalars used and Compute Smoothed Density selected
+2011-10-07 John Biddiscombe         87ec476     Add SmoothedRadius as well as SmoothedDensity, Add PassScalars option.
+2011-10-07 John Biddiscombe         83494e3     Fix build errors when no MPI enabled
+2011-10-07 John Biddiscombe         dd83843     Use unique name for Generated PointIds to avoid possible conflicts with existing ones
+2011-09-15 John Biddiscombe         d314198     Make sure MPI code is protected by #ifdefs
+2011-09-12 John Biddiscombe         b778a97     Put back information about output after finishing probe operation
+2011-09-11 John Biddiscombe         b13b0c0     Make ParticlePartitionFilter a DataObject Filter like D2
+2011-09-15 John Biddiscombe         ab8f733     Auto accept on startup to save clicks
+2011-09-11 John Biddiscombe         0230fa6     use vtkSPH as prefix for triggering modified in SPH filtrers when manager params change
+2011-09-09 John Biddiscombe         b707e28     New SPHImageSampler does all operations in one filter
+2011-08-31 John Biddiscombe         dadc379     Save LimitMaxNeighbours flag in config for reuse next time
+2011-08-31 John Biddiscombe         f7d7dec     Add Image Sampler to work around issues with RegularGridSampler
+2011-08-23 John Biddiscombe         a46f7ef     If plugin not loaded on server, give warning instead of segfault during proxy creation
+2011-08-19 John Biddiscombe         7a7c954     Fix up some inconsistencies in Kernel defs and improve test coverage to all kernels
+2011-08-30 John Biddiscombe         acac881     Fix bug for processes with zero points : data was incorrectly copied from processes with points
+2011-08-03 John Biddiscombe         80af71c     Clean up (reduce) debug messages
+2011-07-28 John Biddiscombe         7ff584a     Fix segfault in serial operation
+2011-07-25 John Biddiscombe         8b63f36     Improve handling of Extents and Pieces in parallel operation
+2011-07-21 John Biddiscombe         2eb6aad     Bounds extent translator now generates valid update extents for Structured data
+2011-07-20 John Biddiscombe         43dbae0     put back missing features and correct left over errors
+2011-07-20 John Biddiscombe         6b802ce     WIP on new probe stuff
+2011-07-20 John Biddiscombe         76795ff     Fix PartitionFilter crash when running on only one process
+2011-07-15 John Biddiscombe         6e67bac     Remove as much duplicated code from custom widgets as possible
+2011-08-02 John Biddiscombe         7ba570e     Save Max Neighbours in config for reuse next time
+2011-07-13 John Biddiscombe         c5a439c     Fix blank output when resampling to grid from SPH probe
+2011-07-13 John Biddiscombe         058a079     Add BoundsExtentTranslator for dynamic partitioning info
+2011-07-13 John Biddiscombe         0f8ae2a     Fix problem with auto-generated Ids having no name
+2011-07-02 John Biddiscombe         e84f3dc     Add Parallel support for RegularGridSource
+2011-06-20 John Biddiscombe         41cccef     Generate Ids if not already present. Turn off RCB_RECOMPUTE_BOX to avoid crashes
+2011-06-19 John Biddiscombe         812de47     Add some Debug info
+2011-06-17 John Biddiscombe         f85c736     Fix Bug in FindOverlapping Points
+2011-06-17 John Biddiscombe         f500f7a     Use MPI_IN_PLACE for AllGather
+2011-06-16 John Biddiscombe         2c9ab99     Fix crash if no ID array is present
+
+SPHERIC-2011
+
+2011-06-05 John Biddiscombe         a71d3c2     Used & instead of && in ghost test
+2011-06-04 John Biddiscombe         9c785da     Only auto init panel if no MPI/parallel support
+2011-06-04 John Biddiscombe         48995bd     CMake checks for MPI/Trilinos for simple build out of the box
+2011-06-03 John Biddiscombe         2c75cec     Don't use MPI communicator when running in serial mode
+2011-06-03 John Biddiscombe         100ada5     Fix Custom Box widget instantiation by declaring class in XML
+2011-06-03 John Biddiscombe         dd5e3fe     Fix GCC compilation template problem
+2011-06-03 John Biddiscombe         d6267a3     Fix a crash when using doubles
+2011-06-03 John Biddiscombe         14b53be     Pass scalars through properly and add gui option to disable cell ids
+2011-06-03 John Biddiscombe         bc5e09c     Handle double or single precision points
+2011-06-02 John Biddiscombe         f8f951a     Add debug infor for parallel and barrier at end of probe filter
+2011-06-02 John Biddiscombe         b25565e     Removed unwanted debug messages, clean code, add barrier at end of SPHProbe
+2011-06-01 John Biddiscombe         95041b3     Use H5Part reader for testing
+2011-06-01 John Biddiscombe         e5d162d     Try to fix segfault, when removing ghost cells from probe pts, recreate cells too
+2011-06-01 John Biddiscombe         ca7190b     remove unwanted debug messages
+2011-06-01 John Biddiscombe         55e4c40     Fix segfault caused by miuses of the alive array in pre-migrate
+2011-06-01 John Biddiscombe         2ad002e     Parallel read was accidentally disabled
+2011-05-31 John Biddiscombe         d746241     When 1 process is used, make sure BBoxes are initialized correctly
+2011-05-31 John Biddiscombe         cfb479d     Allow filename for test data to be supplied on command line
+2011-05-31 John Biddiscombe         0362113     Initialize all Zoltan ptrs with NULL to avoid possible segfaults on cleanup
+2011-05-31 John Biddiscombe         70f5311     Add test for parallel SPH probe with ghost particles
+2011-05-31 John Biddiscombe         9df2770     Add Ghost particle support for SPH Probe filter
+2011-05-31 John Biddiscombe         4afdf45     Add particle Id filter with parallel support
+2011-05-31 John Biddiscombe         6cb7fd7     Fix segfault on exit when sph panel not created
+2011-05-31 John Biddiscombe         6ca4d28     BBoxes with ghost regions were exported incorrectly
+2011-05-31 John Biddiscombe         f6d7ddb     REmove unnecessary params in set kernel method
+2011-05-30 John Biddiscombe         0dfd2e1     Free memory allocated by Zoltan
+2011-05-27 John Biddiscombe         893f323     Don't build partition filter if trilinos not found
+2011-05-27 John Biddiscombe         099f201     Fix crash caused by not clearing boxlists before recalculating regions
+2011-05-25 John Biddiscombe         fbed2a3     Scalars called vtkGhostLevels are invisible in ParaView GUI
+2011-05-25 John Biddiscombe         46d04e7     Add XML for new partition filter for use in ParaView GUI
+2011-05-24 John Biddiscombe         88a6f26     Fix segfault caused by using empty part array instead of a copy of the proc array
+2011-05-24 John Biddiscombe         086ce27     Ghost cell Migration implemented
+2011-05-24 John Biddiscombe         38666df     Add export of Bounding Boxes to filter and display them in test
+2011-05-24 John Biddiscombe         4001213     PreMigrate copy was using incorrect index and some particles were mis-assigned
+2011-05-23 John Biddiscombe         f2c5dee     Colour by ghost cells. First test
+2011-05-23 John Biddiscombe         673af41     Fetch BBoxes from partitions and clamp to real data bounds
+2011-05-23 John Biddiscombe         30374f9     Fix partition bug which caused segfault when more than 2 procs were used
+2011-05-23 John Biddiscombe         a2505bf     vtkParticlePartitionFilter working with Zoltan(Trilinos) library
+2011-05-17 John Biddiscombe         03e994e     Add empty template for partition filter
+2011-05-17 John Biddiscombe         7745009     Improve parition test to display BBoxes and ghost extents
+2011-05-14 John Biddiscombe         1d779b0     Add BBoxes display for partitions
+2011-02-11 John Biddiscombe         fe8eeec     Z coordinate was not being correctly initialized
+2011-02-11 John Biddiscombe         2a6d822     Improve Trilino partitioning test
+2011-02-10 John Biddiscombe         b9f0bf6     Add Particle Partitioning code based on Zoltan library from Trilinos
+2011-05-29 John Biddiscombe         be6922f     Fix proxy creation when self connection closed and server connection opened
+2011-05-29 John Biddiscombe         a8552fd     Improve ComputedDensity calculation for float/double mass values
+2011-05-17 John Biddiscombe         4330feb     Add a ModifiedNumber to probe filter base class so that SPHManager can force updates
+2011-05-29 John Biddiscombe         b706b51     Allow float or double precision for mass array when computing interpolated density
+2011-02-14 John Biddiscombe         2b82583     Fix HDF/MPI linking after hdf changes in paraview/vtk
+2011-05-12 John Biddiscombe         432f648     Add Option to compute Smoothed Density from mass
+2011-04-21 John Biddiscombe         0d51039     Option to disable build of HDF5 readers/writers
+2011-04-07 Laurent Monnard          6c26897     BTX debug in vtkMomentsOfInertiaFilter.h
+2011-03-27 John Biddiscombe         a7570aa     Fix USE_MATH_DEFINES build error using VS2010
+2011-03-26 John Biddiscombe         7884ccb     CMake cleanup for build with paraview and externally
+2011-03-25 John Biddiscombe         ba610da     Put back Find_Paraview so that plugin build within paraview is supported
+2011-03-25 John Biddiscombe         fb471a8     Fix HDF5 name and remove zlib references in CmaeLists
+2011-03-25 Arno Mayrhofer           7a91348     Fix #include mpi.h problem (openmpi)
+2011-02-21 Litvinov Sergey          5a88890     Fix for the serial version
+2011-03-25 Arno Mayrhofer           1de7ab4     Add support for Wendland Kernel
+2011-03-25 John Biddiscombe         141c5a9     Add script for building all plugins
+2011-03-24 John Biddiscombe         959c649     Renaming to pv-meshless and using pv-common from HPCForge
+2011-02-17 John Biddiscombe         27d159c     Center of Mass test was misspelled
+2011-02-11 John Biddiscombe         ddb37d4     When communicator is NULL, use just one piece/process
+2011-02-11 John Biddiscombe         86c3a32     support H5_USE_16_API and remove olsolete RevisionMacro
+2011-02-09 John Biddiscombe         c28b422     Fix memory leak with smartpointer alloc. Remove obsolete .ui from build
+2010-09-14 John Biddiscombe         505e1ff     Shepahrd method was using flawed in/out test which has been removed
+2010-09-09 Litvinov Sergey          398719d     Initialize MoI tensor to zero before use
+2010-09-08 John Biddiscombe         2044b15     TypeRevisionMacro is now obsolete
+2010-09-07 Litvinov Sergey          b65260e     Fixed a type in TestMomentsOfInertiaFilter.cxx
+2010-09-07 Litvinov Sergey          1b08361     Add points in massArray reset in TestMomentsOfInertiaFilter.cxx
+2010-09-07 Litvinov Sergey          7f2c98e     Add a test with a point on Z to TestMomentsOfInertiaFilter.cxx
+2010-09-07 Litvinov Sergey          26c6bd5     Move a test with point on Y to the top of the TestMomentsOfInertiaFilter.cxx
+2010-09-07 Litvinov Sergey          1e9cf0b     Add TestMomentsOfInertiaFilter
+2010-09-06 Litvinov Sergey          c683a91     Add a template fot TestMomentsOfInertia.cxx
+2010-09-06 Litvinov Sergey          7ecec9a     Make ComputeInertiaTensor public
+2010-09-06 Litvinov Sergey          861300e     Small correction in TestCenerOfMassFilter.cxx
+2010-09-06 Litvinov Sergey          87bc5cc     Add a test for vtkCenterOfMassFilter.cxx
+2010-09-02 John Biddiscombe         298f947     Fix Dynamic linking on win32
+2010-09-02 John Biddiscombe         4cfe8a2     Fix typo in macro end statement
+2010-09-01 Litvinov Sergey          1c67025     Add an option for cosmo build
+2010-09-01 John Biddiscombe         c17ca63     Preserve block names if present
+2010-09-01 John Biddiscombe         0babf20     Add a multiblock extract over time for multiple probes
+2010-09-02 Litvinov Sergey          238b5be     Add a macro to Testing/CMakeList.txt, add kernel tests for 2D
+2010-09-02 Litvinov Sergey          5c3e0f6     Clean up Testing/CMakeList.txt
+2010-09-02 Litvinov Sergey          842d80a     Add testing for the sph kernels: check normalization in 3D
+2010-08-31 John Biddiscombe         4f0576a     Make sure VTKConfig is loaded to get VTK_USE_MPI etc
+2010-08-26 John Biddiscombe         b3f30e1     Add Probe reader to the GUI
+2010-08-25 John Biddiscombe         322d038     Fix SPH probe filter family
+2010-08-25 John Biddiscombe         68d13f4     Tidy up xml
+2010-07-15 John Biddiscombe         207f4fb     Fix a build error on linux, USE_VTK_COSMO not defined
+2010-07-19 John Biddiscombe         4c19f87     Fix XML as Transform has been moved in ParaView source
+2010-07-07 John Biddiscombe         e013df0     Add definition USE_VTK_COSMO to fix build problem after merge
+2010-07-07 John Biddiscombe         5bf7399     Fix CMAKe problem with MPI_EXTRA_LIBRARY
+2010-06-25 John Biddiscombe         a7e84b3     Add config and fix converter for ens-lyon ascii files
+2010-06-25 John Biddiscombe         c91811e     Add H5Part conversion tools back into the build
+2010-06-25 John Biddiscombe         483b662     Don't link to tipsy/cosmo libs when using older paraview
+2010-06-25 John Biddiscombe         76c5c94     Don't include TIPSY/COSMO files for older paraview versions
+2010-06-19 John Biddiscombe         7143f4b     Fix box mode sampling using inverse transform from widget
+2010-06-18 John Biddiscombe         b8365bb     Replacing SPH filter + Grid Widget with new versions
+2010-06-17 John Biddiscombe         fa9e69a     Revamped the SPHManager DockWindow and Panl
+2010-06-15 John Biddiscombe         6986dec     Spelling mistake in Gaussian
+2010-06-15 John Biddiscombe         0467643     ParaView detection changed after hdf5 build changes
+2010-05-12 John Biddiscombe         30dc3e8     Make sure SERIAL_COSMO is defined if we are not building with MPI
+2010-05-12 John Biddiscombe         b405fac     Fix a compiler error when MPI is not used and some Serial Cosmo code used the wrong var
+2010-05-10 John Biddiscombe         22cd00a     File read was not seeking to correct index, this produced strange output where particles were duplicated and didn#t fill the whole space
+2010-05-10 John Biddiscombe         7b20a30     Remove the debug code which generated random points in unit box
+2010-05-10 John Biddiscombe         9d76f23     Make sure Distribute class obeys the recentre flag
+2010-05-10 John Biddiscombe         e0bb90b     Redistribution was segfaulting because local particle count was being used instead of max particles for buffer allocation
+2010-05-08 John Biddiscombe         d6a3309     Tipsy reader distributing particles round robin ok. Need to check gost labeling
+2010-05-07 John Biddiscombe         9a492f7     Temp work on tipsy parallel ghost cells
+2010-05-06 John Biddiscombe         a2e10b2     Set defaults to unit box in xml
+2010-05-06 John Biddiscombe         c2c20bf     Fix a bad typedef for MPI_Comm when #ifdefs were not picking up the correct defines
+2010-05-05 John Biddiscombe         4282a11     The tipsy helper class is compiled statically and does not need VTK_EXPORT which causes a compile fail on some machines
+2010-05-05 John Biddiscombe         dfe7bde     Fix statix lib -fPIC link with dynamic plugin issue on linux
+2010-05-04 John Biddiscombe         05729f8     Moving all meshless filters for new plugin into git repository
