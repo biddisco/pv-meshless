@@ -114,12 +114,14 @@ int vtkTemporalPlotValueFilter::RequestData(
   //
   TimeData->InsertNextTuple1(currenttime);
   vtkIdType numT = TimeData->GetNumberOfTuples();
+
   //
-  // Make sure our point data is ok, for copying into
+  // At start we must initialize the field arrays
   //
   if (numT==1) {
     Values->CopyAllocate(input->GetPointData());  
   }
+
   // copy point field data from input
   Values->CopyData(input->GetPointData(), 0, numT-1);
   //
@@ -128,6 +130,15 @@ int vtkTemporalPlotValueFilter::RequestData(
   double pt[3] = { currenttime, 0.0, 0.0 };
   vtkIdType Id = Points->InsertNextPoint(pt);
   Vertices->InsertNextCell(1,&Id);
+
+  // to stop annoying can't plot with one point error messages
+  // we will always do the first point twice
+  if (numT==1) {
+    TimeData->InsertNextTuple1(currenttime);
+    Values->CopyData(input->GetPointData(), 0, numT);
+    Vertices->InsertNextCell(1,&Id);
+  }
+
   //
   //
   //
