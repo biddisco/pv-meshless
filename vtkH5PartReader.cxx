@@ -68,6 +68,7 @@
 //
 #include "vtkDummyController.h"
 //
+#include <functional>
 #include <algorithm>
 #include <numeric>
 #include "H5Part.h"
