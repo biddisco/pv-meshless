@@ -54,6 +54,7 @@
 #include "H5Part.h"
 #include <stdlib.h>
 #include <algorithm>
+#include <functional>
 //
 // vtksys
 //

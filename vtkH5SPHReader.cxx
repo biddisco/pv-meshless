@@ -48,6 +48,7 @@
 #include <vtksys/RegularExpression.hxx>
 #include <vtkstd/vector>
 #include <stdexcept>
+#include <functional>
 #include <algorithm>
 //
 #include "vtkCharArray.h"
