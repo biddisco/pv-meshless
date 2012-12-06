@@ -47,7 +47,7 @@ public:
 
   // Description:
   // Standard methods for the class.
-  vtkTypeRevisionMacro(vtkCustomBoxRepresentation,vtkBoxRepresentation);
+  vtkTypeMacro(vtkCustomBoxRepresentation,vtkBoxRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

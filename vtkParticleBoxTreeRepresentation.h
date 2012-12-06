@@ -42,7 +42,7 @@ class VTK_EXPORT vtkParticleBoxTreeRepresentation : public vtkPolyDataAlgorithm 
   public:
     // Description:
     // Standard Type-Macro
-    vtkTypeRevisionMacro(vtkParticleBoxTreeRepresentation,vtkPolyDataAlgorithm);
+    vtkTypeMacro(vtkParticleBoxTreeRepresentation,vtkPolyDataAlgorithm);
 
     // Description:
     // Create an instance of vtkParticleBoxTreeRepresentation

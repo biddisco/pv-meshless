@@ -19,9 +19,9 @@
 #define _vtkASCIIParticleReader_h
 
 #include "vtkCSVBaseReader.h"
-#include <vtkstd/utility>
-#include <vtkstd/vector>
-#include <vtkstd/string>
+#include <utility>
+#include <vector>
+#include <string>
 
 //BTX
 #ifdef CSCS_PARAVIEW_INTERNAL
@@ -31,7 +31,7 @@
 #endif
 //ETX
 
-#include <vtkstd/vector>
+#include <vector>
 #include "vtkSmartPointer.h"
 class vtkPolyData;
 class vtkFloatArray;
@@ -39,7 +39,7 @@ class vtkPoints;
 class vtkCellArray;
 class vtkIdList;
 
-typedef vtkstd::vector< vtkSmartPointer<vtkFloatArray> > ScalarList;
+typedef std::vector< vtkSmartPointer<vtkFloatArray> > ScalarList;
 
 class vtkASCIIParticleReader : public vtkCSVBaseReader {
   public:
@@ -47,7 +47,7 @@ class vtkASCIIParticleReader : public vtkCSVBaseReader {
 
     // Description:
     // Standard Type-Macro
-    vtkTypeRevisionMacro(vtkASCIIParticleReader,vtkCSVBaseReader);
+    vtkTypeMacro(vtkASCIIParticleReader,vtkCSVBaseReader);
 
     // Description:
     // Set/Get the Time step to read
@@ -115,7 +115,7 @@ class vtkASCIIParticleReader : public vtkCSVBaseReader {
     // These values can be accessed as TimeStep 0 to TimeStep 21
     vtkGetVector2Macro(TimeStepRange, int);
     
-    void GetTimeStepValues(vtkstd::vector<double> &values);
+    void GetTimeStepValues(std::vector<double> &values);
 
     vtkPolyData *GetPolyDataOutput();
 
@@ -130,7 +130,7 @@ class vtkASCIIParticleReader : public vtkCSVBaseReader {
     int                    MultiFileCollectNode;
     double                 TimeValue;
     int                    InvalidTime;
-    vtkstd::string         LastFileRead;
+    std::string         LastFileRead;
     char                  *FieldIndices;
     char                  *FieldNames;
     char                  *TimeExpression;
@@ -138,8 +138,8 @@ class vtkASCIIParticleReader : public vtkCSVBaseReader {
     vtkPoints             *Points;
     vtkCellArray          *Cells;
     vtkFloatArray        **Scalars;
-    typedef vtkstd::pair<vtkstd::string, vtkstd::vector<int> > ScalarPair;
-    vtkstd::vector< ScalarPair > ScalarNamesList;
+    typedef std::pair<std::string, std::vector<int> > ScalarPair;
+    std::vector< ScalarPair > ScalarNamesList;
 
     //
     virtual bool ParseFields(vtkInformationVector* outputVector) ;

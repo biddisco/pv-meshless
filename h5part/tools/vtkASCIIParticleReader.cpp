@@ -54,7 +54,6 @@ VISEFF(K)/VIS0 is the (normalised) viscosity of particle K.
 */
 
 //---------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkASCIIParticleReader, "$Revision: 1.1 $");
 vtkStandardNewMacro(vtkASCIIParticleReader);
 //----------------------------------------------------------------------------
 vtkASCIIParticleReader::vtkASCIIParticleReader() {
@@ -119,10 +118,10 @@ void vtkASCIIParticleReader::GetTimeStepValues(std::vector<double> &values)
 //----------------------------------------------------------------------------
 bool vtkASCIIParticleReader::ReadMetaInformation()
 {
-  vtkstd::string metaFile = vtkstd::string(this->FileName) + ".txt";
+  std::string metaFile = std::string(this->FileName) + ".txt";
   if (!vtksys::SystemTools::FileExists(metaFile.c_str())) return false;
   //
-  vtkstd::ifstream infile(metaFile.c_str());
+  std::ifstream infile(metaFile.c_str());
   int N;
   infile >> N;
   double t;
@@ -150,8 +149,8 @@ bool vtkASCIIParticleReader::ReadMetaInformation()
 //----------------------------------------------------------------------------
 bool vtkASCIIParticleReader::WriteMetaInformation()
 {
-  vtkstd::string metaFile = vtkstd::string(this->FileName) + ".txt";
-  vtkstd::ofstream outfile(metaFile.c_str());
+  std::string metaFile = std::string(this->FileName) + ".txt";
+  std::ofstream outfile(metaFile.c_str());
   int N = static_cast<int>(TimeStepValues.size());
   outfile << N << std::endl;
   if (!outfile.good()) return false;
@@ -163,7 +162,7 @@ bool vtkASCIIParticleReader::WriteMetaInformation()
       outfile << "0" << " " << FileMarkers[i] << " " << RowsPerStep[i] << std::endl;
     }
   }
-  outfile << vtkstd::endl;
+  outfile << std::endl;
   return true;
 }
 //----------------------------------------------------------------------------
@@ -302,17 +301,17 @@ bool vtkASCIIParticleReader::ParseFields(vtkInformationVector* outputVector)
   vtkPolyData *output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
   
   // generate list of scalar names
-  vtkstd::vector<vtkstd::string> scalarnameslist;
+  std::vector<std::string> scalarnameslist;
   this->ScalarNamesList.clear();
   vtksys::SystemTools::Split(this->FieldNames, scalarnameslist, ',');
   // generate list of indices for scalars
-  vtkstd::vector<vtkstd::string> templist;
+  std::vector<std::string> templist;
   vtksys::SystemTools::Split(this->FieldIndices, templist, ','); // comma delimeter
   // from indices lists, generate integer lists
   for (unsigned int i=0; i<templist.size(); i++) {
-    vtkstd::vector<vtkstd::string> intlist;
+    std::vector<std::string> intlist;
     vtksys::SystemTools::Split(templist[i].c_str(), intlist, ' '); // space delimiter
-    vtkstd::vector<int> IntList;
+    std::vector<int> IntList;
     for (unsigned int j=0; j<intlist.size(); j++) {
       int index = atoi(intlist[j].c_str());
 //      std::cout << index << ":";
@@ -391,7 +390,7 @@ int vtkASCIIParticleReader::RequestData(vtkInformation* request,
   //
   const int buf_size = 65536;
   char    buf[buf_size];
-  vtkstd::vector<double> onerow;
+  std::vector<double> onerow;
   //
   // File OK
   //
@@ -448,7 +447,7 @@ void vtkASCIIParticleReader::ProcessOneRow(vtkInformationVector* outputVector, v
     for (int i=0; i<NumScalars; i++)
     {
       ScalarPair &temp = this->ScalarNamesList[i];
-      vtkstd::vector<int> &indices = temp.second;
+      std::vector<int> &indices = temp.second;
       for (unsigned int s=0; s<indices.size(); s++) {
         if (indices[s]>-1) temptuple[s] = onerow[indices[s]];
       }
@@ -479,7 +478,7 @@ void vtkASCIIParticleReader::CollectMultiFileScalars(ScalarList &scalars)
     for (int i=0; i<NumScalars; i++)
     {
       ScalarPair &temp = this->ScalarNamesList[i];
-      vtkstd::vector<int> &indices = temp.second;
+      std::vector<int> &indices = temp.second;
       for (unsigned int s=0; s<indices.size(); s++) {
         if (indices[s]>-1) temptuple[s] = scalars[indices[s]]->GetTuple(t)[0];
 //        if (indices[s]>-1) temptuple[s] = scalars[s]->GetTuple(t)[0];

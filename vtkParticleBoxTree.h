@@ -36,7 +36,7 @@ class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
   public:
     // Description:
     // Standard Type-Macro
-    vtkTypeRevisionMacro(vtkParticleBoxTree,vtkModifiedBSPTree);
+    vtkTypeMacro(vtkParticleBoxTree,vtkModifiedBSPTree);
     void PrintSelf(ostream& os, vtkIndent indent);
 
     // Description:

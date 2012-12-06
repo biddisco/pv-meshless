@@ -99,8 +99,7 @@ int vtkMultiBlockExtractDataOverTime::ProcessRequest(vtkInformation* request,
       double timeReq[1];
       timeReq[0] = inTimes[this->CurrentTimeIndex];
       inputVector[0]->GetInformationObject(0)->Set
-        ( vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS(), 
-          timeReq, 1);
+        ( vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(), timeReq);
       }
     return 1;
     }
@@ -145,11 +144,11 @@ int vtkMultiBlockExtractDataOverTime::ProcessRequest(vtkInformation* request,
         outdata->GetPointData()->CopyData(indata->GetPointData(), this->PointIndex, this->CurrentTimeIndex);
         if (indata->GetPointData()->GetArray("Time")) {
           outdata->GetPointData()->GetArray("TimeData")->SetTuple1
-            (this->CurrentTimeIndex, indata->GetInformation()->Get(vtkDataObject::DATA_TIME_STEPS())[0]);
+            (this->CurrentTimeIndex, indata->GetInformation()->Get(vtkDataObject::DATA_TIME_STEP()));
         }
         else {
           outdata->GetPointData()->GetArray("Time")->SetTuple1
-            (this->CurrentTimeIndex, indata->GetInformation()->Get(vtkDataObject::DATA_TIME_STEPS())[0]);
+            (this->CurrentTimeIndex, indata->GetInformation()->Get(vtkDataObject::DATA_TIME_STEP()));
         }
       }
       blocknum++;

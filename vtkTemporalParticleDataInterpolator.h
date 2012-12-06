@@ -32,7 +32,7 @@ class VTK_EXPORT vtkTemporalParticleDataInterpolator : public vtkTemporalInterpo
 {
 public:
   static vtkTemporalParticleDataInterpolator *New();
-  vtkTypeRevisionMacro(vtkTemporalParticleDataInterpolator, vtkTemporalInterpolator);
+  vtkTypeMacro(vtkTemporalParticleDataInterpolator, vtkTemporalInterpolator);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

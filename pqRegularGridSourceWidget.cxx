@@ -208,7 +208,7 @@ pqRegularGridSourceWidget::pqRegularGridSourceWidget(vtkSMProxy* refProxy, vtkSM
   //pqSMAdaptor::setInputProperty(wProxy->GetProperty("Input"), input, 0);
   //vtkSMInputProperty* ivp2 = vtkSMInputProperty::SafeDownCast(
   //  wProxy->GetProperty("Input"));
-//  ivp2->SetInputConnection(0, input, 0); 
+//  ivp2->SetInputDataConnection(0, input, 0); 
 
   //this->boxWidget->setView(this->renderView());
   //this->boxWidget->setWidgetVisible(1);

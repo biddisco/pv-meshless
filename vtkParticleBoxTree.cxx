@@ -37,7 +37,6 @@
 #include "vtkMath.h"
 //
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkParticleBoxTree, "$Revision: 1.2 $");
 vtkStandardNewMacro(vtkParticleBoxTree);
 vtkCxxSetObjectMacro(vtkParticleBoxTree, ParticleSizeArray, vtkDataArray);
 vtkCxxSetObjectMacro(vtkParticleBoxTree, ParticleBoundsArray, vtkDataArray);

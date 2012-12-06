@@ -98,7 +98,8 @@ ENDFOREACH(test_name)
 #--------------------------------------------------
 # Test H5PartWriter
 #--------------------------------------------------
-IF (USE_HDF5 AND VTK_USE_MPI)
+IF (USE_HDF5 AND PARAVIEW_USE_MPI)
+  find_package(MPI)
   ADD_EXECUTABLE(TestH5PartParallelWriter TestH5PartParallelWriter.cxx)
   TARGET_LINK_LIBRARIES(TestH5PartParallelWriter
     pv_meshless 
@@ -149,7 +150,7 @@ IF (USE_HDF5 AND VTK_USE_MPI)
     TestUtils.cxx
   )
 
-ENDIF (USE_HDF5 AND VTK_USE_MPI)
+ENDIF (USE_HDF5 AND PARAVIEW_USE_MPI)
 
 #--------------------------------------------------
 # Slurm job manager require "-rmk" "slurm" arguments

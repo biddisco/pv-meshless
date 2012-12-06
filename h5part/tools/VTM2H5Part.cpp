@@ -33,13 +33,13 @@
 //----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-  vtkstd::cout << "Usage : VTM2H5Part " << vtkstd::endl << "\t"
-    << "[-a append to file] " << vtkstd::endl << "\t"
-    << "[-w wait for new data] " << vtkstd::endl << "\t"
-    << "[-n just scan input, don't write] " << vtkstd::endl << "\t"
-    << "[-o specify an output directory] " << vtkstd::endl << "\t"
-    << "[-t ascii time file name] " << vtkstd::endl << "\t"
-    << "-f file.vtm|vtp" << vtkstd::endl;
+  std::cout << "Usage : VTM2H5Part " << std::endl << "\t"
+    << "[-a append to file] " << std::endl << "\t"
+    << "[-w wait for new data] " << std::endl << "\t"
+    << "[-n just scan input, don't write] " << std::endl << "\t"
+    << "[-o specify an output directory] " << std::endl << "\t"
+    << "[-t ascii time file name] " << std::endl << "\t"
+    << "-f file.vtm|vtp" << std::endl;
 
   vtkSmartPointer<vtkTesting> test = vtkSmartPointer<vtkTesting>::New();
   for (int c=1; c<argc; c++ ) {
@@ -53,9 +53,9 @@ int main(int argc, char **argv)
     std::cout << "Can't find file " << inputfile << std::endl;
     return 0;
   }
-  vtkstd::string inputpath = vtksys::SystemTools::GetFilenamePath(inputfile);
-  vtkstd::string inputname = vtksys::SystemTools::GetFilenameName(inputfile);
-  vtkstd::string outputdir = inputpath;
+  std::string inputpath = vtksys::SystemTools::GetFilenamePath(inputfile);
+  std::string inputname = vtksys::SystemTools::GetFilenameName(inputfile);
+  std::string outputdir = inputpath;
   // output dir
   char *outdir = vtkTestUtilities::GetArgOrEnvOrDefault("-o", argc, argv, "DUMMY_ENV_VAR", "");
   if (vtksys::SystemTools::FileIsDirectory(outdir))
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
     outputdir = outdir;
     std::cout << "Using output directory " << outdir << std::endl;
   }
-  vtkstd::string hdf5file  = vtksys::SystemTools::GetFilenameWithoutExtension(inputfile);
+  std::string hdf5file  = vtksys::SystemTools::GetFilenameWithoutExtension(inputfile);
   hdf5file  = outputdir + "/" + hdf5file + ".h5part";
   std::cout << "Output file name is : " << hdf5file.c_str() << std::endl;
   // time file
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
     bool pad = false;
     if (len>1 && re.match(2)[0]=='0') pad = true;
     // create format string for number
-    vtkstd::stringstream t1;
+    std::stringstream t1;
     if (pad) t1 << "%0" << len << "i";
     else t1 << "%" << len << "i";
     sprintf(fpattern, "%s%s.%s", re.match(1).c_str(), t1.str().c_str(), re.match(3).c_str());  
@@ -178,25 +178,25 @@ int main(int argc, char **argv)
     {
       for (int i=0; i<values.size(); i++) {
         double tval = 0.213202+ 0.0001*i;
-	      vtkstd::cout << "overwriting " << i << " with " << tval << vtkstd::endl;
+	      std::cout << "overwriting " << i << " with " << tval << std::endl;
         values[i] = tval;
       }
     }
 #endif
 
     if (useTimeFile) {
-      vtkstd::ifstream timedata(timefile);
+      std::ifstream timedata(timefile);
       unsigned int tstart=0;
       while (timedata.good()) {
         char timebuff[512];
         timedata.getline(timebuff,512);
-        vtkstd::stringstream temp;
+        std::stringstream temp;
         temp << timebuff;
         double tval;
         temp >> tval;
         if (tstart>=0 && tstart<values.size()) {
           values[tstart] = tval;
-  	      vtkstd::cout << "overwriting " << tstart << " with " << tval << vtkstd::endl;
+  	      std::cout << "overwriting " << tstart << " with " << tval << std::endl;
         }
 	      tstart++;
       }
@@ -255,11 +255,11 @@ int main(int argc, char **argv)
         }
         append->Update();
         //
-        writer->SetInputConnection(append->GetOutputPort());
+        writer->SetInputDataConnection(append->GetOutputPort());
         numParticles = append->GetOutput()->GetNumberOfCells();
       }
       else {    
-        writer->SetInputConnection(reader->GetOutputPort());
+        writer->SetInputDataConnection(reader->GetOutputPort());
         numParticles = reader->GetOutputAsDataSet()->GetNumberOfCells();
       }
       //

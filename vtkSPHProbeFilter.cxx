@@ -12,9 +12,9 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// For VTK_USE_MPI 
-#include "vtkToolkits.h"     
-#ifdef VTK_USE_MPI
+// For PARAVIEW_USE_MPI 
+#include "vtkPVConfig.h"     
+#ifdef PARAVIEW_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
   #include "vtkMPICommunicator.h"
@@ -188,7 +188,7 @@ void vtkSPHProbeFilter::SetProbeConnection(vtkAlgorithmOutput* algOutput)
 //----------------------------------------------------------------------------
 void vtkSPHProbeFilter::SetProbe(vtkDataObject *probe)
 {
-  this->SetInput(1, probe);
+  this->SetInputData(1, probe);
 }
 //----------------------------------------------------------------------------
 vtkDataObject *vtkSPHProbeFilter::GetProbe()
@@ -262,9 +262,9 @@ int vtkSPHProbeFilter::RequestDataObject(
   vtkInformationVector  **inputVector, 
   vtkInformationVector *outputVector)
 {
-  vtkInformation* info = outputVector->GetInformationObject(0);
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
   vtkDataSet *output = vtkDataSet::SafeDownCast(
-    info->Get(vtkDataObject::DATA_OBJECT()));
+    outInfo->Get(vtkDataObject::DATA_OBJECT()));
   //
   vtkInformation     *probePtsInfo = NULL;
   vtkDataSet            *probepts = NULL;
@@ -291,7 +291,7 @@ int vtkSPHProbeFilter::RequestDataObject(
   vtkDataObject *newOutput = NULL;
   if (!ok) {
     newOutput = vtkDataObjectTypes::NewDataObject(outputType);
-    newOutput->SetPipelineInformation(info);
+    outInfo->Set(vtkDataObject::DATA_OBJECT(), newOutput);
     newOutput->Delete();
     this->GetOutputPortInformation(0)->Set(
       vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
@@ -475,15 +475,15 @@ double vtkSPHProbeFilter::GetMaxKernelCutoffDistance()
       }
       else if (usingV) {
         volume = FloatOrDouble(this->VolumeDataF, this->VolumeDataD, index);
-        h      = vtkstd::pow(volume, dpower)*this->HCoefficient;
+        h      = std::pow(volume, dpower)*this->HCoefficient;
       }
       else if (usingM && usingR) {
         mass   = FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
         rho    = FloatOrDoubleorDefault(this->DensityDataF, this->DensityDataD, this->DefaultDensity, index);
         volume = mass/rho;
-        h      = vtkstd::pow(volume, dpower)*this->HCoefficient;
+        h      = std::pow(volume, dpower)*this->HCoefficient;
       }
-      cutoff = vtkstd::max(cutoff, h*kappa);
+      cutoff = std::max(cutoff, h*kappa);
     }
   }
   else {
@@ -539,11 +539,11 @@ void vtkSPHProbeFilter::KernelCompute(
       mass   = FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
       rho    = FloatOrDoubleorDefault(this->DensityDataF, this->DensityDataD, this->DefaultDensity, index);
       volume = mass/rho;
-      h      = vtkstd::pow(volume, dpower)*this->HCoefficient;
+      h      = std::pow(volume, dpower)*this->HCoefficient;
     }
     else if (usingV) {
       volume = FloatOrDouble(this->VolumeDataF, this->VolumeDataD, index);
-      h      = vtkstd::pow(volume, dpower)*this->HCoefficient;
+      h      = std::pow(volume, dpower)*this->HCoefficient;
       mass   = FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
     }
     else {
@@ -707,7 +707,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   }
   vtkDebugMacro(<<"Bins are  " << (int)bins[0] << " " << (int)bins[1] << " " << (int)bins[2]);
 
-#ifdef VTK_USE_MPI
+#ifdef PARAVIEW_USE_MPI
   //
   // for debug in parallel
   //
@@ -742,7 +742,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   for (vtkIdType i=0; ghostdata!=NULL && i<G; i++) {
     if (ghostdata[i]==0) nonGhost++;
   }
-#ifdef VTK_USE_MPI
+#ifdef PARAVIEW_USE_MPI
   vtkDebugMacro(<< "Non ghost N = " << nonGhost << " from total " << G);
 #endif
 
@@ -1109,7 +1109,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
 
   timer->StopTimer();
   double elapsed = timer->GetElapsedTime();
-#ifdef VTK_USE_MPI
+#ifdef PARAVIEW_USE_MPI
   if (com) com->Barrier();
 #endif
   vtkDebugMacro(<< "Probe filter complete : exported N = " << outId << "\t Time : " << elapsed << " seconds" );
@@ -1142,7 +1142,7 @@ bool vtkSPHProbeFilter::InitOutput(vtkDataSet *data, vtkDataSet *probepts, vtkDa
   if (this->NumOutputPoints==numInputPoints) {
     // Copy the probe structure to the output
     output->CopyStructure( probepts );
-    output->CopyInformation( probepts );
+//    output->CopyInformation( probepts );
   }
   else if (vtkPointSet::SafeDownCast(output)) {
     vtkSmartPointer<vtkPoints> newPts = vtkSmartPointer<vtkPoints>::New();

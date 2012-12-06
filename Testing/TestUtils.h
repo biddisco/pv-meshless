@@ -2,9 +2,9 @@
 #include <iostream>
 #include <sstream>
 //
-// For VTK_USE_MPI 
-#include "vtkToolkits.h"     
-#ifdef VTK_USE_MPI
+// For PARAVIEW_USE_MPI 
+#include "vtkPVConfig.h"     
+#ifdef PARAVIEW_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
   #include "vtkMPICommunicator.h"
@@ -12,8 +12,8 @@
 // Otherwise
 #include "vtkDummyController.h"
 //
-#include "Testing/Cxx/vtkTestUtilities.h"
-#include "Testing/Cxx/vtkRegressionTestImage.h"
+#include "vtkTestUtilities.h"
+#include "vtkRegressionTestImage.h"
 //
 #include "vtkSmartPointer.h"
 #include "vtkTimerLog.h"

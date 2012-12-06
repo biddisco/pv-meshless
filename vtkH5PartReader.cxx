@@ -49,7 +49,7 @@
 //
 #include <vtksys/SystemTools.hxx>
 #include <vtksys/RegularExpression.hxx>
-#include <vtkstd/vector>
+#include <vector>
 //
 #include "vtkCharArray.h"
 #include "vtkUnsignedCharArray.h"
@@ -75,7 +75,7 @@
 //
 #include "vtkBoundsExtentTranslator.h"
 //
-#include "Testing/TestUtils.h"
+#include "Testing/TestUtils.h" // random class
 //----------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkH5PartReader, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
@@ -330,7 +330,7 @@ int vtkH5PartReader::IndexOfVectorComponent(const char *name)
   return 0;
 }
 //----------------------------------------------------------------------------
-vtkstd::string vtkH5PartReader::NameOfVectorComponent(const char *name)
+std::string vtkH5PartReader::NameOfVectorComponent(const char *name)
 {
   if (!this->CombineVectorComponents)
     {
@@ -580,7 +580,7 @@ void vtkH5PartReader::CopyIntoVector(int offset, vtkDataArray *source, vtkDataAr
 }
 //----------------------------------------------------------------------------
 /*
-vtkstd::pair<double, double> GetClosest(vtkstd::vector<double> &sortedlist, const double& val) const
+std::pair<double, double> GetClosest(std::vector<double> &sortedlist, const double& val) const
 {
   std::vector<double>::const_iterator it = std::lower_bound(sortedlist.begin(), sortedlist.end(), val);
   if (it == sortedlist.end())        return std::make_pair(sortedlist.back(), sortedlist.back());
@@ -618,14 +618,14 @@ int vtkH5PartReader::RequestData(
   this->UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
   this->UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   //
-  typedef vtkstd::map< vtkstd::string, vtkstd::vector<vtkstd::string> > FieldMap;
+  typedef std::map< std::string, std::vector<std::string> > FieldMap;
   FieldMap scalarFields;
   //
   if (this->TimeStepValues.size()==0) return 0;
   //
   // Make sure that the user selected arrays for coordinates are represented
   //
-  vtkstd::vector<vtkstd::string> coordarrays(3, "");
+  std::vector<std::string> coordarrays(3, "");
   //
   int N = this->PointDataArraySelection->GetNumberOfArrays();
   for (int i=0; i<N; i++)
@@ -661,24 +661,24 @@ int vtkH5PartReader::RequestData(
     int vectorcomponent;
     if ((vectorcomponent=this->IndexOfVectorComponent(name))>0)
       {
-      vtkstd::string vectorname = this->NameOfVectorComponent(name) + "_v";
+      std::string vectorname = this->NameOfVectorComponent(name) + "_v";
       FieldMap::iterator pos = scalarFields.find(vectorname);
       if (pos==scalarFields.end())
         {
-        vtkstd::vector<vtkstd::string> arraylist(1, name);
+        std::vector<std::string> arraylist(1, name);
         FieldMap::value_type element(vectorname, arraylist);
         scalarFields.insert(element);
         }
       else
         {
         pos->second.reserve(vectorcomponent);
-        pos->second.resize(vtkstd::max((int)(pos->second.size()), vectorcomponent));
+        pos->second.resize(std::max((int)(pos->second.size()), vectorcomponent));
         pos->second[vectorcomponent-1] = name;
         }
       }
     else
       {
-      vtkstd::vector<vtkstd::string> arraylist(1, name);
+      std::vector<std::string> arraylist(1, name);
       FieldMap::value_type element(name, arraylist);
       scalarFields.insert(element);
       }
@@ -719,12 +719,12 @@ int vtkH5PartReader::RequestData(
   //
   this->TimeOutOfRange = 0;
   this->ActualTimeStep = this->TimeStep;
-  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
+  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
     {
-    double requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())[0];
-    this->ActualTimeStep = vtkstd::find_if(
+    double requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+    this->ActualTimeStep = std::find_if(
       this->TimeStepValues.begin(), this->TimeStepValues.end(),
-      vtkstd::bind2nd( H5PartToleranceCheck( 
+      std::bind2nd( H5PartToleranceCheck( 
           this->IntegerTimeStepValues ? 0.5 : this->TimeStepTolerance ), requestedTimeValue ))
       - this->TimeStepValues.begin();
     //
@@ -732,7 +732,7 @@ int vtkH5PartReader::RequestData(
       {
       this->TimeOutOfRange = 1;
       }
-    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &requestedTimeValue, 1);
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), requestedTimeValue);
     }
   else
     {
@@ -746,7 +746,7 @@ int vtkH5PartReader::RequestData(
       {
       timevalue[0] = this->TimeStepValues[0];
       }
-    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &timevalue[0], 1);
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), timevalue[0]);
     }
 
   if (this->TimeOutOfRange && this->MaskOutOfTimeRangeOutput)
@@ -808,9 +808,9 @@ int vtkH5PartReader::RequestData(
   for (FieldMap::iterator it=scalarFields.begin(); it!=scalarFields.end(); it++)
     {
     // use the type of the first array for all if it is a vector field
-    vtkstd::vector<vtkstd::string> &arraylist = (*it).second;
+    std::vector<std::string> &arraylist = (*it).second;
     const char *array_name = arraylist[0].c_str();
-    vtkstd::string rootname = this->NameOfVectorComponent(array_name);
+    std::string rootname = this->NameOfVectorComponent(array_name);
     int Nc = static_cast<int>(arraylist.size());
     //
     vtkSmartPointer<vtkDataArray> dataarray = NULL;
@@ -1147,12 +1147,12 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
     vtkSmartPointer<vtkOutlineSource> cube1 = vtkSmartPointer<vtkOutlineSource>::New();
     cube1->SetBounds(&this->PartitionBoundsTable[i*6]);
     cube1->Update();
-    polys->AddInput(cube1->GetOutput());
+    polys->AddInputData(cube1->GetOutput());
     //
     vtkSmartPointer<vtkOutlineSource> cube2 = vtkSmartPointer<vtkOutlineSource>::New();
     cube2->SetBounds(&this->PartitionBoundsTableHalo[i*6]);
     cube2->Update();
-    polys->AddInput(cube2->GetOutput());
+    polys->AddInputData(cube2->GetOutput());
   }
   //
   // generate boxes, 2 per piece 
@@ -1163,13 +1163,13 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
     this->PieceBounds[i].GetBounds(bbb);
     cube1->SetBounds(bbb);
     cube1->Update();
-    polys->AddInput(cube1->GetOutput());
+    polys->AddInputData(cube1->GetOutput());
     //
     this->PieceBoundsHalo[i].GetBounds(bbb);
     vtkSmartPointer<vtkOutlineSource> cube2 = vtkSmartPointer<vtkOutlineSource>::New();
     cube2->SetBounds(bbb);
     cube2->Update();
-    polys->AddInput(cube2->GetOutput());
+    polys->AddInputData(cube2->GetOutput());
   }
   polys->Update();
   //

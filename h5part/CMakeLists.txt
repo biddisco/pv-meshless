@@ -2,9 +2,9 @@
 #--------------------------------------------------------
 # Parallel compilation flag
 #--------------------------------------------------------
-IF (VTK_USE_MPI)
+IF (PARAVIEW_USE_MPI)
   ADD_DEFINITIONS("-DH5PART_HAS_MPI")
-ENDIF (VTK_USE_MPI)
+ENDIF (PARAVIEW_USE_MPI)
 
 IF(WIN32)
   ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
@@ -37,12 +37,12 @@ SET(H5Part_LIBS
   ${PARAVIEW_HDF5_LIBRARIES}
 )
 
-IF (VTK_USE_MPI)
+IF (PARAVIEW_USE_MPI)
   SET(H5Part_LIBS
     ${H5Part_LIBS} 
     ${MPI_LIBRARY}
   )
-ENDIF (VTK_USE_MPI)
+ENDIF (PARAVIEW_USE_MPI)
 
 #--------------------------------------------------------
 # Include class, configuration headers
@@ -74,4 +74,4 @@ ENDIF(BUILD_SHARED_LIBS AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILE
 #--------------------------------------------------------
 # Add H5Part conversion tools
 #--------------------------------------------------------
-ADD_SUBDIRECTORY(tools)
+#ADD_SUBDIRECTORY(tools)

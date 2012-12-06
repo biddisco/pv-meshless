@@ -17,7 +17,6 @@
 #include "vtkObjectFactory.h"
 
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkCustomBoxWidget, "$Revision: 1.3 $");
 vtkStandardNewMacro(vtkCustomBoxWidget);
 //----------------------------------------------------------------------------
 vtkCustomBoxWidget::vtkCustomBoxWidget()

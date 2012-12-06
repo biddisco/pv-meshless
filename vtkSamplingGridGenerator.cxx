@@ -39,7 +39,6 @@
 #include "vtkTransform.h"
 #include "vtkHomogeneousTransform.h"
 //
-vtkCxxRevisionMacro(vtkSamplingGridGenerator, "$Revision: 1.4 $");
 vtkStandardNewMacro(vtkSamplingGridGenerator);
 vtkCxxSetObjectMacro(vtkSamplingGridGenerator, CutFunction, vtkImplicitFunction);
 //----------------------------------------------------------------------------
@@ -56,7 +55,7 @@ vtkSamplingGridGenerator::vtkSamplingGridGenerator(void)
   this->Box = vtkImageData::New();
   this->Box->SetDimensions(2,2,2);
   this->Cutter = vtkCutter::New();
-  this->Cutter->SetInput(this->Box);
+  this->Cutter->SetInputData(this->Box);
 }
 // --------------------------------------------------------------------------------------
 vtkSamplingGridGenerator::~vtkSamplingGridGenerator(void) 
@@ -96,7 +95,7 @@ int vtkSamplingGridGenerator::ComputeInformation(
     this->Box->SetOrigin(bounds[0], bounds[2], bounds[4]);
     this->Box->SetSpacing(bounds[1]-bounds[0], bounds[3]-bounds[2], bounds[5]-bounds[4]);
     this->Cutter->SetCutFunction(plane);
-    this->Cutter->SetInput(this->Box);
+    this->Cutter->SetInputData(this->Box);
     this->Cutter->Update();
     vtkSmartPointer<vtkPolyData>  polys = this->Cutter->GetOutput();
     vtkSmartPointer<vtkPoints> pts = polys->GetPoints();

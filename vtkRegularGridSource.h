@@ -35,7 +35,7 @@ class VTK_EXPORT vtkRegularGridSource : public vtkDataSetAlgorithm {
     // Description:
     // Standard Type-Macro
     static vtkRegularGridSource *New();
-    vtkTypeRevisionMacro(vtkRegularGridSource, vtkDataSetAlgorithm);
+    vtkTypeMacro(vtkRegularGridSource, vtkDataSetAlgorithm);
 
     // Description:
     // The source can be controlled by manually, by setting the axes

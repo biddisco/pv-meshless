@@ -69,7 +69,6 @@ class VTK_EXPORT vtkTemporalPlotValueFilter : public vtkPolyDataAlgorithm {
 
     // internal data variables
     int           NumberOfTimeSteps;
-    int           FirstTime;
     double        LatestTime;
     //
 //BTX

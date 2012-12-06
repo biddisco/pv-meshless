@@ -28,8 +28,8 @@
 
 #include "vtkPolyDataAlgorithm.h"
 #include "vtkBoundingBox.h"
-#include <vtkstd/string>
-#include <vtkstd/vector>
+#include <string>
+#include <vector>
 
 class vtkDataArraySelection;
 class vtkMultiProcessController;
@@ -199,9 +199,9 @@ public:
   void        SetCoordinateArrayStatus(const char* name, int status);
 
   // Description:
-  // Set/Get the controller use in compositing (set to
-  // the global controller by default)
-  // If not using the default, this must be called before any
+  // Set/Get the controller use in parallel operations 
+  // (set to the global controller by default)
+  // If not using the default, this must be set before any
   // other methods.
   virtual void SetController(vtkMultiProcessController* controller);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
@@ -257,7 +257,7 @@ protected:
   // velocity_0 returns 0, velocity_1 returns 0 etc
   int             IndexOfVectorComponent(const char *name);
 //BTX
-  vtkstd::string  NameOfVectorComponent(const char *name);
+  std::string  NameOfVectorComponent(const char *name);
 //ETX
 
   //
@@ -291,9 +291,9 @@ protected:
   char         *Zarray;
   char         *StepName;
 //BTX
-  vtkstd::vector<double>                  TimeStepValues;
-  typedef vtkstd::vector<vtkstd::string>  stringlist;
-  vtkstd::vector<stringlist>              FieldArrays;
+  std::vector<double>                  TimeStepValues;
+  typedef std::vector<std::string>  stringlist;
+  std::vector<stringlist>              FieldArrays;
   // For Bounding boxes if present
   std::vector<vtkIdType>      PartitionCount;
   std::vector<vtkIdType>      PartitionOffset;

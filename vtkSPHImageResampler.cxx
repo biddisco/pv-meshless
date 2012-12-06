@@ -43,7 +43,6 @@
 #include <functional>
 #include <sstream>
 //
-vtkCxxRevisionMacro(vtkSPHImageResampler, "$Revision: 1.4 $");
 vtkStandardNewMacro(vtkSPHImageResampler);
 vtkCxxSetObjectMacro(vtkSPHImageResampler, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkSPHImageResampler, SPHManager, vtkSPHManager);
@@ -315,7 +314,8 @@ int vtkSPHImageResampler::RequestData(
                 1+outUpdateExt[3]-outUpdateExt[2], 
                 1+outUpdateExt[5]-outUpdateExt[4]};
   //
-  outImage->SetWholeExtent(outWholeExt);
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), outWholeExt, 6);
+//  outImage->SetWholeExtent(outWholeExt);
   outImage->SetExtent(outUpdateExt);
   outImage->SetOrigin(this->GlobalOrigin);
   outImage->SetSpacing(this->spacing);

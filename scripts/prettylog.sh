@@ -13,8 +13,8 @@
 if [ -n "$2" ]
  then 
   echo -e "\n"$2"\n" 
-  git log $1..$2 --no-merges --pretty=format:"%ad %x09 %an%x09 %h %s" --date=short | gawk '{printf("%s %-24s %s ", $1, $2" "$3, $4); $1=$2=$3=$4=""; print $0}'
+  git log $1..$2 --no-merges --pretty=format:"%ad %x09 %an%x09 %h %s" --date=short | gawk '{printf("%s %-24s %s ", $1, $2" "$3, $4); $1=$2=$3=$4=""; print substr($0,0,80)}'
 else
   echo -e "\n"$1"\n"
-  git log $1 --no-merges --pretty=format:"%ad %x09 %an%x09 %h %s" --date=short | gawk '{printf("%s %-24s %s ", $1, $2" "$3, $4); $1=$2=$3=$4=""; print $0}'
+  git log $1 --no-merges --pretty=format:"%ad %x09 %an%x09 %h %s" --date=short | gawk '{printf("%s %-24s %s ", $1, $2" "$3, $4); $1=$2=$3=$4=""; print substr($0,0,80)}'
 fi

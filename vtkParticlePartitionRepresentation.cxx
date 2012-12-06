@@ -34,7 +34,6 @@
 //
 #include <cmath>
 //---------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkParticlePartitionRepresentation, "$Revision: 1.1 $");
 vtkStandardNewMacro(vtkParticlePartitionRepresentation);
 //---------------------------------------------------------------------------
 vtkParticlePartitionRepresentation::vtkParticlePartitionRepresentation(void)
@@ -121,7 +120,7 @@ int vtkParticlePartitionRepresentation::RequestData(vtkInformation *request,
         vtkSmartPointer<vtkOutlineSource> cube = vtkSmartPointer<vtkOutlineSource>::New();
         cube->SetBounds(p1[0],p2[0],p1[1],p2[1],p1[2],p2[2]);
         cube->Update();
-        polys->AddInput(cube->GetOutput());
+        polys->AddInputData(cube->GetOutput());
         for (int p=0; p<8; p++) processIds->InsertNextValue(i);
         vtkIdType number = input->GetNumberOfPoints();
         for (int p=0; p<8; p++) quantity->InsertNextValue(number);

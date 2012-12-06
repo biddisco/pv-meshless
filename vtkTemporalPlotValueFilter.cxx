@@ -21,7 +21,6 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkTemporalDataSet.h"
 #include "vtkDoubleArray.h"
 #include "vtkFloatArray.h"
 #include "vtkMath.h"
@@ -38,7 +37,6 @@ vtkStandardNewMacro(vtkTemporalPlotValueFilter);
 vtkTemporalPlotValueFilter::vtkTemporalPlotValueFilter()
 {
   this->NumberOfTimeSteps    = 0;
-  this->FirstTime            = 1;
   this->LatestTime           = 01E10;
   this->Vertices             = vtkSmartPointer<vtkCellArray>::New();
   this->Points               = vtkSmartPointer<vtkPoints>::New();
@@ -93,14 +91,14 @@ int vtkTemporalPlotValueFilter::RequestData(
   vtkInformation* outputInfo = outputVector->GetInformationObject(0);
 
   double currenttime = 0;
-  if (inputInfo && inputInfo->Has(vtkDataObject::DATA_TIME_STEPS()))
+  if (inputInfo && inputInfo->Has(vtkDataObject::DATA_TIME_STEP()))
     {
-    currenttime = inputInfo->Get(vtkDataObject::DATA_TIME_STEPS())[0];
+    currenttime = inputInfo->Get(vtkDataObject::DATA_TIME_STEP());
     }
-  else if (outputInfo && outputInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
+  else if (outputInfo && outputInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
     {
     currenttime = outputInfo->Get(
-      vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())[0];
+      vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
     }
   //
   // if the user rewound the animation, the time will be wrong, reset
@@ -153,7 +151,6 @@ void vtkTemporalPlotValueFilter::Flush()
   this->Points->Initialize();
   this->Values->Initialize();
   this->TimeData->Initialize();
-  this->FirstTime = 1;
 }
 //---------------------------------------------------------------------------
 void vtkTemporalPlotValueFilter::PrintSelf(ostream& os, vtkIndent indent)

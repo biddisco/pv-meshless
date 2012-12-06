@@ -27,8 +27,8 @@
 #define __vtkH5SPHReader_h
 
 #include "vtkH5PartReader.h"
-#include <vtkstd/string>
-#include <vtkstd/vector>
+#include <string>
+#include <vector>
 #include <hdf5.h>
 #include "H5Part.h"
 #include <map>
@@ -69,13 +69,13 @@ class VTK_EXPORT vtkH5SPHReader : public vtkH5PartReader
 {
 public:
 //BTX
-  typedef vtkstd::vector<vtkstd::string>              stringlist;
-  typedef vtkstd::pair<vtkstd::string, compound_info> CompoundType;
-  typedef vtkstd::map<vtkstd::string, compound_info>  CompoundInfo;
+  typedef std::vector<std::string>              stringlist;
+  typedef std::pair<std::string, compound_info> CompoundType;
+  typedef std::map<std::string, compound_info>  CompoundInfo;
 //ETX
 
   static vtkH5SPHReader *New();
-  vtkTypeRevisionMacro(vtkH5SPHReader,vtkH5PartReader);
+  vtkTypeMacro(vtkH5SPHReader,vtkH5PartReader);
   void PrintSelf(ostream& os, vtkIndent indent);   
 
   // Description:
@@ -136,13 +136,13 @@ protected:
   char         *FileNamePattern;
 //
   //BTX
-  vtkstd::string                             CompoundName;
+  std::string                             CompoundName;
   CompoundInfo                               CompoundData;
   int                                        CompoundSize;
   std::vector<int>                           CompoundOffset;
   FileSeriesFinder                          *Finder;
-  vtkstd::string                             FileNameInternal;
-  vtkstd::string                             FileNameLast;
+  std::string                             FileNameInternal;
+  std::string                             FileNameLast;
   //ETX
 
 private:

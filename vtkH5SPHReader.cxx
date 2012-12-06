@@ -46,7 +46,7 @@
 //
 #include <vtksys/SystemTools.hxx>
 #include <vtksys/RegularExpression.hxx>
-#include <vtkstd/vector>
+#include <vector>
 #include <stdexcept>
 #include <functional>
 #include <algorithm>
@@ -98,7 +98,6 @@ extern hid_t H5PartGetDiskShape(H5PartFile *f, hid_t dataset);
   #define vtkErrorMacro(a) vtkDebugMacro(a)  
 #endif
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkH5SPHReader, "$Revision: 501 $");
 vtkStandardNewMacro(vtkH5SPHReader);
 //----------------------------------------------------------------------------
 int H5DataTypeToVTKType(hid_t dataset_type)
@@ -245,7 +244,7 @@ struct _iter_op_data {
         size_t        len;
         char         *pattern;
         vtkH5SPHReader::CompoundInfo *compounddata;
-        vtkstd::string               *compundname;
+        std::string               *compundname;
         int                          *compoundsize;
 };
 //----------------------------------------------------------------------------
@@ -415,14 +414,14 @@ int vtkH5SPHReader::RequestData(
   }
 
   //
-  typedef vtkstd::map< vtkstd::string, vtkstd::vector<vtkstd::string> > FieldMap;
+  typedef std::map< std::string, std::vector<std::string> > FieldMap;
   FieldMap scalarFields;
   //
 //  if (this->TimeStepValues.size()==0) return 0;
   //
   // Make sure that the user selected arrays for coordinates are represented
   //
-  vtkstd::vector<vtkstd::string> coordarrays(3, "");
+  std::vector<std::string> coordarrays(3, "");
   //
   int N = this->PointDataArraySelection->GetNumberOfArrays();
   for (int i=0; i<N; i++) {
@@ -449,21 +448,21 @@ int vtkH5SPHReader::RequestData(
     // make sure we cater for multi-component vector fields
     int vectorcomponent;
     if ((vectorcomponent=this->IndexOfVectorComponent(name))>0) {
-      vtkstd::string vectorname = this->NameOfVectorComponent(name) + "_v";
+      std::string vectorname = this->NameOfVectorComponent(name) + "_v";
       FieldMap::iterator pos = scalarFields.find(vectorname);
       if (pos==scalarFields.end()) {
-        vtkstd::vector<vtkstd::string> arraylist(1, name);
+        std::vector<std::string> arraylist(1, name);
         FieldMap::value_type element(vectorname, arraylist);
         scalarFields.insert(element);
       }
       else {
         pos->second.reserve(vectorcomponent);
-        pos->second.resize(vtkstd::max((int)(pos->second.size()), vectorcomponent));
+        pos->second.resize(std::max((int)(pos->second.size()), vectorcomponent));
         pos->second[vectorcomponent-1] = name;
       }
     }
     else {
-      vtkstd::vector<vtkstd::string> arraylist(1, name);
+      std::vector<std::string> arraylist(1, name);
       FieldMap::value_type element(name, arraylist);
       scalarFields.insert(element);
     }
@@ -499,10 +498,10 @@ int vtkH5SPHReader::RequestData(
   if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
     {
     double requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())[0];
-    this->ActualTimeStep = vtkstd::find_if(
+    this->ActualTimeStep = std::find_if(
       this->TimeStepValues.begin(), 
       this->TimeStepValues.end(), 
-      vtkstd::bind2nd( H5SPH_WithinTolerance(0.001), requestedTimeValue )) 
+      std::bind2nd( H5SPH_WithinTolerance(0.001), requestedTimeValue )) 
       - this->TimeStepValues.begin();
     this->ActualTimeStep = this->ActualTimeStep;
     output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &requestedTimeValue, 1);
@@ -566,9 +565,9 @@ int vtkH5SPHReader::RequestData(
   int c, datatype = 0;
   for (FieldMap::iterator it=scalarFields.begin(); it!=scalarFields.end(); it++) {
     // use the type of the first array for all if it is a vector field
-    vtkstd::vector<vtkstd::string> &arraylist = (*it).second;
+    std::vector<std::string> &arraylist = (*it).second;
     const char *name = arraylist[0].c_str();
-    vtkstd::string rootname = this->NameOfVectorComponent(name);
+    std::string rootname = this->NameOfVectorComponent(name);
     int Nc = arraylist.size();
     //
     vtkSmartPointer<vtkDataArray> dataarray = NULL;

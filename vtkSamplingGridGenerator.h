@@ -42,7 +42,7 @@ class VTK_EXPORT vtkSamplingGridGenerator : public vtkRegularGridSource {
     // Description:
     // Standard Type-Macro
     static vtkSamplingGridGenerator *New();
-    vtkTypeRevisionMacro(vtkSamplingGridGenerator, vtkRegularGridSource);
+    vtkTypeMacro(vtkSamplingGridGenerator, vtkRegularGridSource);
 
     // Description
     // Specify the implicit function to perform the cutting.

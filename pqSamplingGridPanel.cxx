@@ -353,7 +353,7 @@ void pqSamplingGridPanel::onWidgetModified()
     vtkSmartPointer<vtkImageData> Box = vtkSmartPointer<vtkImageData>::New();
     Box->SetDimensions(2,2,2);
     vtkSmartPointer<vtkCutter> Cutter = vtkSmartPointer<vtkCutter>::New();
-    Cutter->SetInput(Box);
+    Cutter->SetInputData(Box);
     Box->SetOrigin(bounds[0], bounds[2], bounds[4]);
     Box->SetSpacing(bounds[1]-bounds[0], bounds[3]-bounds[2], bounds[5]-bounds[4]);
     vtkSmartPointer<vtkPlane> plane = vtkSmartPointer<vtkPlane>::New();
@@ -361,7 +361,7 @@ void pqSamplingGridPanel::onWidgetModified()
     plane->SetNormal(Nor);
 
     Cutter->SetCutFunction(plane);
-    Cutter->SetInput(Box);
+    Cutter->SetInputData(Box);
     Cutter->Update();
     vtkSmartPointer<vtkPolyData>  polys = Cutter->GetOutput();
     vtkSmartPointer<vtkPoints> pts = polys->GetPoints();

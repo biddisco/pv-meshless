@@ -136,7 +136,7 @@ vtkSmartPointer<vtkPointSet> vtkSPHProbeFilter3::GenerateProbePts(vtkDataSet *da
   vtkSmartPointer<vtkSamplingGridGenerator> grid = vtkSmartPointer<vtkSamplingGridGenerator>::New();
   // always copy data when adding to internal filters to prevent spurious updates
   vtkSmartPointer<vtkDataSet> copy = vtkSPH3_Copy(data);
-  grid->SetInput(copy);
+  grid->SetInputData(copy);
   grid->SetCutFunction(this->GetCutFunction());    
   //
   double delta = 0.0;
@@ -175,9 +175,9 @@ int vtkSPHProbeFilter3::RequestDataObject(
   vtkInformationVector  **vtkNotUsed(inputVector), 
   vtkInformationVector *outputVector)
 {
-  vtkInformation* info = outputVector->GetInformationObject(0);
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
   vtkDataSet *output = vtkDataSet::SafeDownCast(
-    info->Get(vtkDataObject::DATA_OBJECT()));
+    outInfo->Get(vtkDataObject::DATA_OBJECT()));
   bool ok = (output!=NULL);
   //
   ok = (ok && output->GetDataObjectType()==this->RequiredDataType());
@@ -193,7 +193,7 @@ int vtkSPHProbeFilter3::RequestDataObject(
         newOutput = vtkStructuredGrid::New();
         break;
     }
-    newOutput->SetPipelineInformation(info);
+    outInfo->Set(vtkDataObject::DATA_OBJECT(), newOutput);
     newOutput->Delete();
     this->GetOutputPortInformation(0)->Set(
       vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
@@ -242,7 +242,9 @@ int vtkSPHProbeFilter3::RequestData(
     if (grid) {
       int dims[3];
       grid->GetDimensions(dims);
-      output->SetWholeExtent(0, dims[0]-1, 0,dims[1]-1, 0,dims[2]-1);
+      int wholeext[6] = {0, dims[0]-1, 0,dims[1]-1, 0,dims[2]-1};
+      outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), wholeext, 6);
+
     }
   }
   this->Timer->StopTimer();
