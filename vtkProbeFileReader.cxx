@@ -76,7 +76,6 @@ vtkSmartPointer<vtkTransform> RotationMatrix(double from[3], double to[3], doubl
   return transform;
 }
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkProbeFileReader, "$Revision: 557 $");
 vtkStandardNewMacro(vtkProbeFileReader);
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -116,7 +115,7 @@ vtkSmartPointer<vtkTransform> TransformFromVectorToVector(double from[3], double
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkProbeFileReader::ESPHI_TransformCopy(vtkAlgorithm *a, int port, vtkTransform *trans) {
   vtkSmartPointer<vtkTransformPolyDataFilter> tranfilter = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-  tranfilter->SetInputConnection(a->GetOutputPort(port));
+  tranfilter->SetInputDataConnection(a->GetOutputPort(port));
   tranfilter->SetTransform(trans);
   vtkSmartPointer<vtkPolyData> result = vtkPolyData::SafeDownCast(ESPHI_CopyOutput(tranfilter, 0));
   return result;
@@ -494,16 +493,16 @@ int vtkProbeFileReader::RequestData(vtkInformation* request,
   for (int i=0; i<table->GetNumberOfRows(); i++) {
     vtkVariantArray *row = table->GetRow(i);
     vtkVariant entry = row->GetValue(0);
-    if (entry.ToString()==vtkstd::string("RectProbe")) {
+    if (entry.ToString()==std::string("RectProbe")) {
       pType = ESPHI_RECT;
     }
-    else if (entry.ToString()==vtkstd::string("DiskProbe")) {
+    else if (entry.ToString()==std::string("DiskProbe")) {
       pType = ESPHI_DISC;
     }
-    else if (entry.ToString()==vtkstd::string("LineProbe")) {
+    else if (entry.ToString()==std::string("LineProbe")) {
       pType = ESPHI_LINE;
     }
-    else if (entry.ToString()==vtkstd::string("PointProbe")) {
+    else if (entry.ToString()==std::string("PointProbe")) {
       pType = ESPHI_POINT;
     }
     // skip comments, lines with # at the start

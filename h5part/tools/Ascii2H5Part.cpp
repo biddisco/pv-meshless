@@ -30,7 +30,7 @@
 
 #include "vtkSmartPointer.h"
 #include "vtkTesting.h"
-#include "Testing/Cxx/vtkTestUtilities.h"
+#include "vtkTestUtilities.h"
 #include "vtkAppendPolyData.h"
 #include "vtkPointData.h"
 #include "vtkASCIIParticleReader.h"
@@ -39,26 +39,26 @@
 //
 #include "FileSeriesFinder.h"
 //
-typedef vtkstd::vector<vtkstd::string> stringlist;
-typedef vtkstd::pair< vtkstd::string, vtkstd::string > maptype;
+typedef std::vector<std::string> stringlist;
+typedef std::pair< std::string, std::string > maptype;
 //
-vtkstd::map<vtkstd::string, vtkstd::string> RegExMap;
+std::map<std::string, std::string> RegExMap;
 stringlist patterns, regexmatches, Tstrings, Bstrings, Vstrings;
-vtkstd::string regex;
+std::string regex;
 //
 int Tindex = -1, Tnum = 0;
 int Bindex = -1, Bnum = 0;
 int Vindex = -1, Vnum = 0;
-vtkstd::string timeform, blockform, varform, filepattern;
+std::string timeform, blockform, varform, filepattern;
 
 //----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-  vtkstd::cout << "Usage : ASCII2H5Part "  
+  std::cout << "Usage : ASCII2H5Part "  
     << "-c full/path/to/.cfg "
     << "-a full/path/to/IdFile for optional point Id flagging "
     << "-t full/path/to/timefile.txt " 
-    << "-f full/path/to/input/file " << vtkstd::endl;
+    << "-f full/path/to/input/file " << std::endl;
   vtkSmartPointer<vtkTesting> test = vtkSmartPointer<vtkTesting>::New();
   for (int c=1; c<argc; c++ ) {
     test->AddArgument(argv[c]);
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
     std::cout << "Can't find config file " << ascii2h5config.c_str() << "\n";
     return 0;
   }
-  vtkstd::cout << "Config file found    : "  << ascii2h5config.c_str() << "\n";;
+  std::cout << "Config file found    : "  << ascii2h5config.c_str() << "\n";;
 
   // input file
   char *filename = vtkTestUtilities::GetArgOrEnvOrDefault("-f", argc, argv, "DUMMY_ENV_VAR", "");
@@ -96,20 +96,20 @@ int main(int argc, char **argv)
     std::cout << "Can't find input file " << asciifile.c_str() << "\n";
     return 0;
   }
-  vtkstd::cout << "Input file found     : "  << asciifile.c_str() << "\n";;
+  std::cout << "Input file found     : "  << asciifile.c_str() << "\n";;
 
   // Point Id file
   char *idf_name = vtkTestUtilities::GetArgOrEnvOrDefault("-a", argc, argv, "DUMMY_ENV_VAR", "");
-  vtkstd::map<long int, double> idMap;
+  std::map<long int, double> idMap;
   if (vtksys::SystemTools::FileExists(idf_name)) {
     ascii2h5IdFile = idf_name;
-    vtkstd::cout << "Using Id file        : "  << ascii2h5IdFile.c_str() << "\n";
-    vtkstd::ifstream idfile(idf_name);
+    std::cout << "Using Id file        : "  << ascii2h5IdFile.c_str() << "\n";
+    std::ifstream idfile(idf_name);
     long int low, high;
     double flag;
     while (idfile.good()) {
       idfile >> low >> high >> flag;
-      idMap.insert( vtkstd::pair<long int,double>(high, flag));
+      idMap.insert( std::pair<long int,double>(high, flag));
     }
   }
   delete []idf_name;
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
   if (timeoverride.size()>0) {
     OverrideTime = true;
     OverrideTimeStep = atof(timeoverride.c_str());
-    vtkstd::cout << "Time override set to : " << OverrideTimeStep << " per step \n";;
+    std::cout << "Time override set to : " << OverrideTimeStep << " per step \n";;
   }
   delete []time_steps;
 
@@ -131,22 +131,22 @@ int main(int argc, char **argv)
   //
   hdf5file  = vtksys::SystemTools::GetFilenameWithoutExtension(asciifile);
   hdf5file  = asciipath + "/" + hdf5file + ".h5part";
-  vtkstd::cout << "Output HDF5 filename : "  << hdf5file.c_str() << "\n";;
+  std::cout << "Output HDF5 filename : "  << hdf5file.c_str() << "\n";;
   //
   // Now scan the file names to build up our pattern
   //
-  vtkstd::string FieldNames;
-  vtkstd::string FieldIndices;
-  vtkstd::string TimeExpr;
-  vtkstd::string IgnoreExp;
+  std::string FieldNames;
+  std::string FieldIndices;
+  std::string TimeExpr;
+  std::string IgnoreExp;
   //
-  vtkstd::string FileNamePattern;
-  vtkstd::string PrefixRegEx, BlockRegEx, VarRegEx, ExtRegEx, TimeRegEx, Text0RegEx;
+  std::string FileNamePattern;
+  std::string PrefixRegEx, BlockRegEx, VarRegEx, ExtRegEx, TimeRegEx, Text0RegEx;
   //
   int headerlines=0;
   int DFormat=0;
   // open config file
-  vtkstd::ifstream cfg(ascii2h5config.c_str());
+  std::ifstream cfg(ascii2h5config.c_str());
   char buf[512];
   while (cfg.good()) {
     cfg.getline(buf,512);
@@ -180,8 +180,8 @@ int main(int argc, char **argv)
   bool multitime  = (Finder->GetNumberOfTimeSteps()>0);
 
   std::vector<double> time_values;
-  typedef vtkstd::vector< vtkSmartPointer<vtkASCIIParticleReader> > varReader;
-  typedef vtkstd::vector< varReader > blockReader;
+  typedef std::vector< vtkSmartPointer<vtkASCIIParticleReader> > varReader;
+  typedef std::vector< varReader > blockReader;
   blockReader readers;
   //
   if (multitime) {
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
     do {
       vtkSmartPointer<vtkASCIIParticleReader> reader = vtkSmartPointer<vtkASCIIParticleReader>::New();
       varreaders.push_back(reader);     
-      vtkstd::string filename = Finder->GenerateFileName(t, b, v);
+      std::string filename = Finder->GenerateFileName(t, b, v);
       reader->SetFileName(filename.c_str());
       reader->SetFieldNames(FieldNames.c_str());
       reader->SetFieldIndices(FieldIndices.c_str());
@@ -241,13 +241,13 @@ int main(int argc, char **argv)
       do { // Var
         std::cout << "Reading Var " << v << std::endl;
         reader = readers[b][v];
-        vtkstd::string filename = Finder->GenerateFileName(t,b,v);
+        std::string filename = Finder->GenerateFileName(t,b,v);
 	      reader->SetFileName(filename.c_str());
         if (!multitime) {
           reader->SetTimeStep(t);
         }
         reader->Update();
-        vtkstd::vector<double> values;
+        std::vector<double> values;
 	      reader->GetTimeStepValues(values);
         if (values.size()>0) time_values[t] = values[values.size()>t ? t : 0];
 
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
       IdScalars->SetName("PointIdFlags");
       double scalar = 0.0;
       for (int i=0; i<realData->GetNumberOfPoints(); i++) {
-        for (vtkstd::map<long int, double>::iterator it=idMap.begin(); it!=idMap.end(); ++it) {
+        for (std::map<long int, double>::iterator it=idMap.begin(); it!=idMap.end(); ++it) {
           if (i<=it->first) {
             scalar = it->second;
             IdScalars->InsertNextTuple1(scalar);
@@ -289,7 +289,7 @@ int main(int argc, char **argv)
         realData->GetPointData()->AddArray(IdScalars);
       }
     }
-    writer->SetInput(realData);
+    writer->SetInputData(realData);
     writer->SetTimeStep(t);
     if (time_values.size()>t) {
       writer->SetTimeValue(time_values[t]);

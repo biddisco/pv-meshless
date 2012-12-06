@@ -42,9 +42,9 @@
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
 //
-// For VTK_USE_MPI 
-#include "vtkToolkits.h"     
-#ifdef VTK_USE_MPI
+// For PARAVIEW_USE_MPI 
+#include "vtkPVConfig.h"     
+#ifdef PARAVIEW_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
   #include "vtkMPICommunicator.h"
@@ -60,7 +60,6 @@
 //
 #include <vtksys/SystemTools.hxx>
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkH5PartWriter, "$Revision: 153 $");
 vtkStandardNewMacro(vtkH5PartWriter);
 vtkCxxSetObjectMacro(vtkH5PartWriter, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
@@ -238,7 +237,7 @@ struct vtkH5PW_datainfo {
 bool vtkH5PartWriter::GatherDataArrayInfo(vtkDataArray *data, 
   int &datatype, std::string &dataname, int &numComponents)
 {
-#ifdef VTK_USE_MPI
+#ifdef PARAVIEW_USE_MPI
   std::vector< vtkH5PW_datainfo > datatypes(this->UpdateNumPieces);
   if (data) {
     ((vtkH5PW_datainfo*)&datatypes[this->UpdatePiece])->datatype = data->GetDataType();
@@ -264,7 +263,7 @@ bool vtkH5PartWriter::GatherDataArrayInfo(vtkDataArray *data,
 //----------------------------------------------------------------------------
 bool vtkH5PartWriter::GatherScalarInfo(vtkPointData *pd, int N, int &numScalar)
 {
-#ifdef VTK_USE_MPI
+#ifdef PARAVIEW_USE_MPI
   numScalar = N;
   std::vector<int> numScalars(this->UpdateNumPieces, 0);
   if (pd) numScalars[this->UpdatePiece] = pd->GetNumberOfArrays();
@@ -426,7 +425,7 @@ void vtkH5PartWriter::WriteDataArray(int i, vtkDataArray *indata)
   for (int c=0; c<Nc; c++) {
     // set the array name
     sprintf(buffer,"%i", i);
-    vtkstd::string name = vtkstd::string("Scalars_").append(buffer);
+    std::string name = std::string("Scalars_").append(buffer);
     if (data->GetName()) name = data->GetName();
     char *tempname = const_cast<char *>(name.c_str());
     name = vtksys::SystemTools::ReplaceChars(tempname, BadChars, '_');
@@ -557,12 +556,12 @@ void vtkH5PartWriter::WriteData()
   vtkInformation *outInfo = this->GetExecutive()->GetOutputInformation(0);
 
   this->ActualTimeStep = this->TimeStep;
-  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
+  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
     {
-    this->TimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())[0];
-    this->ActualTimeStep = vtkstd::find_if(
+    this->TimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+    this->ActualTimeStep = std::find_if(
       this->InputTimeValues.begin(), this->InputTimeValues.end(), 
-      vtkstd::bind2nd( H5PartWriterToleranceCheck( 1E-6 ), this->TimeValue)) 
+      std::bind2nd( H5PartWriterToleranceCheck( 1E-6 ), this->TimeValue)) 
       - this->InputTimeValues.begin();
     //
   }

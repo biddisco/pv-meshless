@@ -40,7 +40,6 @@
 #include "vtkLineSource.h"
 #include "vtkBoundingBox.h"
 
-vtkCxxRevisionMacro(vtkCustomBoxRepresentation, "$Revision: 1.9 $");
 vtkStandardNewMacro(vtkCustomBoxRepresentation);
 
 //----------------------------------------------------------------------------
@@ -58,7 +57,7 @@ vtkCustomBoxRepresentation::vtkCustomBoxRepresentation()
   this->ConeSource->SetResolution(12);
   this->ConeSource->SetAngle(25.0);
   this->ConeMapper = vtkPolyDataMapper::New();
-  this->ConeMapper->SetInput(this->ConeSource->GetOutput());
+  this->ConeMapper->SetInputData(this->ConeSource->GetOutput());
   this->ConeActor = vtkActor::New();
   this->ConeActor->SetMapper(this->ConeMapper);
   this->ConeActor->SetProperty(this->NormalProperty);

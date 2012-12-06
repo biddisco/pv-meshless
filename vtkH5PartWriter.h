@@ -27,8 +27,8 @@
 #define __vtkH5PartWriter_h
 
 #include "vtkSmartPointer.h" // For vtkSmartPointer
-#include <vtkstd/string>     // for strings
-#include <vtkstd/vector>     // for vectors
+#include <string>     // for strings
+#include <vector>     // for vectors
 #include "vtkAbstractParticleWriter.h"
 //
 class vtkMultiProcessController;
@@ -43,7 +43,7 @@ class VTK_EXPORT vtkH5PartWriter : public vtkAbstractParticleWriter
 {
 public:
   static vtkH5PartWriter *New();
-  vtkTypeRevisionMacro(vtkH5PartWriter,vtkAbstractParticleWriter);
+  vtkTypeMacro(vtkH5PartWriter,vtkAbstractParticleWriter);
   void PrintSelf(ostream& os, vtkIndent indent);   
 
   // Description:
@@ -128,7 +128,7 @@ protected:
   // before writing to ensure that all processes 'agree' on what they are writing.
 //BTX
   bool GatherDataArrayInfo(vtkDataArray *data, int &datatype, 
-    vtkstd::string &dataname, int &numComponents);
+    std::string &dataname, int &numComponents);
   bool GatherScalarInfo(vtkPointData *pd, int N, int &numScalar);
 //ETX
 
@@ -141,7 +141,7 @@ protected:
   int           VectorsWithStridedWrite;
   H5PartFile   *H5FileId;
   //BTX
-  vtkstd::vector<double>  InputTimeValues;
+  std::vector<double>  InputTimeValues;
   //ETX
   int           ActualTimeStep;
 

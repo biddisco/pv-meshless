@@ -7,8 +7,8 @@
 
 #include "vtkMultiBlockDataSetAlgorithm.h"
 #include "vtkSmartPointer.h"
-#include <vtkstd/vector>
-#include <vtkstd/string>
+#include <vector>
+#include <string>
 
 class vtkTable;
 class vtkDataSet;
@@ -21,7 +21,7 @@ class VTK_EXPORT vtkProbeFileReader : public vtkMultiBlockDataSetAlgorithm
 {
 public:
   static vtkProbeFileReader *New();
-  vtkTypeRevisionMacro(vtkProbeFileReader, vtkMultiBlockDataSetAlgorithm);
+  vtkTypeMacro(vtkProbeFileReader, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
     
   vtkSetStringMacro(ProbeFileName);

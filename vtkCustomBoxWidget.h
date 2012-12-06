@@ -104,7 +104,7 @@ public:
 
   // Description:
   // Standard class methods for type information and printing.
-  vtkTypeRevisionMacro(vtkCustomBoxWidget,vtkBoxWidget2);
+  vtkTypeMacro(vtkCustomBoxWidget,vtkBoxWidget2);
 
   // Description:
   // Specify an instance of vtkWidgetRepresentation used to represent this

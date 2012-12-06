@@ -123,7 +123,7 @@ int main(int argc, char **argv)
         if (ds && p==DataIndex) {
           writer->SetTimeStep(i);
           writer->SetTimeValue(Values[i]);
-          writer->SetInput(ds);
+          writer->SetInputData(ds);
           writer->Write();
           writer->CloseFile();
         }

@@ -41,7 +41,7 @@ class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
     // Description:
     // Standard Type-Macro
     static vtkSPHImageResampler *New();
-    vtkTypeRevisionMacro(vtkSPHImageResampler, vtkImageAlgorithm);
+    vtkTypeMacro(vtkSPHImageResampler, vtkImageAlgorithm);
 
     // Description:
     // Specify the point spacing on the X/Y/Z axis

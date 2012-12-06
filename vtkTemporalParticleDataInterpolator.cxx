@@ -37,22 +37,20 @@
 #include "vtkPointSet.h"
 #include "vtkSmartPointer.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkTemporalDataSet.h"
 #include "vtkCellArray.h"
 #include "vtkPolyData.h"
 #include "vtkUnstructuredGrid.h"
 
-#include "vtkstd/algorithm"
-#include "vtkstd/vector"
+#include <algorithm>
+#include <vector>
 
-vtkCxxRevisionMacro(vtkTemporalParticleDataInterpolator, "$Revision: 1.12 $");
 vtkStandardNewMacro(vtkTemporalParticleDataInterpolator);
 //----------------------------------------------------------------------------
 template <class T>
 void vtkTemporalParticleDataInterpolatorFillIndexMap(
   vtkDataArray *indices,
   vtkIdType numTuple, vtkIdType offset,
-  vtkstd::vector<vtkIdType> &IdToIndexMap, T *)
+  std::vector<vtkIdType> &IdToIndexMap, T *)
 {
   T *data = static_cast<T*>(indices->GetVoidPointer(0));
   for (vtkIdType i=0; i<numTuple; i++)
@@ -103,7 +101,7 @@ class IndexMap {
     vtkIdType GetMaxIndex() const { return this->MaxIndex; }
 
 	private:
-    vtkstd::vector<vtkIdType> IdToIndexMap;
+    std::vector<vtkIdType> IdToIndexMap;
 		vtkIdType                 MinIndex;
 		vtkIdType                 MaxIndex;
 };
@@ -173,8 +171,8 @@ void vtkTemporalParticleDataInterpolatorMinMax(vtkTemporalParticleDataInterpolat
   maxindex = -1;
   T *data = static_cast<T*>(indices->GetVoidPointer(0));
   for (vtkIdType idx=0; idx<numTuple; ++idx) {
-    minindex = vtkstd::min(minindex, static_cast<vtkIdType>(data[idx]));
-    maxindex = vtkstd::max(maxindex, static_cast<vtkIdType>(data[idx]));
+    minindex = std::min(minindex, static_cast<vtkIdType>(data[idx]));
+    maxindex = std::max(maxindex, static_cast<vtkIdType>(data[idx]));
   }
 }
 //----------------------------------------------------------------------------
@@ -214,8 +212,8 @@ void vtkTemporalParticleDataInterpolatorLinear(vtkTemporalParticleDataInterpolat
   T *inData0 = static_cast<T*>(arrays[0]->GetVoidPointer(0));
   T *inData1 = static_cast<T*>(arrays[1]->GetVoidPointer(0));
   //
-  vtkIdType MinIndex = vtkstd::min(ParticleIdMaps[0]->GetMinIndex(), ParticleIdMaps[1]->GetMinIndex());
-	vtkIdType MaxIndex = vtkstd::max(ParticleIdMaps[0]->GetMaxIndex(), ParticleIdMaps[1]->GetMaxIndex());
+  vtkIdType MinIndex = std::min(ParticleIdMaps[0]->GetMinIndex(), ParticleIdMaps[1]->GetMinIndex());
+	vtkIdType MaxIndex = std::max(ParticleIdMaps[0]->GetMaxIndex(), ParticleIdMaps[1]->GetMaxIndex());
   //
   double oneMinusRatio = 1.0 - ratio;
   vtkIdType missingIds = 0;
@@ -261,8 +259,8 @@ void vtkTemporalParticleDataInterpolatorPolynomial(vtkTemporalParticleDataInterp
   T *inVel0  = static_cast<T*>(velocities[0]->GetVoidPointer(0));
   T *inVel1  = static_cast<T*>(velocities[1]->GetVoidPointer(0));
   //
-  vtkIdType MinIndex = vtkstd::min(ParticleIdMaps[0]->GetMinIndex(), ParticleIdMaps[1]->GetMinIndex());
-	vtkIdType MaxIndex = vtkstd::max(ParticleIdMaps[0]->GetMaxIndex(), ParticleIdMaps[1]->GetMaxIndex());
+  vtkIdType MinIndex = std::min(ParticleIdMaps[0]->GetMinIndex(), ParticleIdMaps[1]->GetMinIndex());
+	vtkIdType MaxIndex = std::max(ParticleIdMaps[0]->GetMaxIndex(), ParticleIdMaps[1]->GetMaxIndex());
   //
   double h2 = h*h, h3 = h*h*h;
   double s2 = s*s, s3 = s*s*s;
@@ -424,7 +422,7 @@ vtkDataSet *vtkTemporalParticleDataInterpolator
       arrays[1] = inPointSet2->GetPoints()->GetData();
       vtkIdType nt0 = arrays[0]->GetNumberOfTuples();
       vtkIdType nt1 = arrays[1]->GetNumberOfTuples();
-      Nt = vtkstd::max(nt0,nt1);
+      Nt = std::max(nt0,nt1);
       if (this->PolynomialInterpolation) {
         outarray = this->InterpolateDataArrayPolynomial(this->Tfrac, this->DeltaT, arrays, velocity, Nt);
       }
@@ -481,7 +479,7 @@ vtkDataSet *vtkTemporalParticleDataInterpolator
   output->GetPointData()->ShallowCopy(input[0]->GetPointData());
   for (int s=0; s < input[0]->GetPointData()->GetNumberOfArrays(); ++s) 
     {
-    vtkstd::vector<vtkDataArray*> arrays;
+    std::vector<vtkDataArray*> arrays;
     char *scalarname = NULL;
     for (int i=0; i<2; ++i) 
       {
@@ -505,7 +503,7 @@ vtkDataSet *vtkTemporalParticleDataInterpolator
       }
     vtkIdType nt0 = arrays[0]->GetNumberOfTuples();
     vtkIdType nt1 = arrays[1]->GetNumberOfTuples();
-    vtkIdType Nt = vtkstd::max(nt0,nt1);
+    vtkIdType Nt = std::max(nt0,nt1);
     vtkDataArray *outarray = this->InterpolateDataArray(ratio, &arrays[0], Nt);
     output->GetPointData()->AddArray(outarray);
     outarray->Delete();
@@ -517,7 +515,7 @@ vtkDataSet *vtkTemporalParticleDataInterpolator
   for (int s=0; s<input[0]->GetCellData()->GetNumberOfArrays(); ++s) 
     {
     // copy the structure
-    vtkstd::vector<vtkDataArray*> arrays;
+    std::vector<vtkDataArray*> arrays;
     char *scalarname = NULL;
     for (int i=0; i<2; ++i) 
       {
@@ -541,7 +539,7 @@ vtkDataSet *vtkTemporalParticleDataInterpolator
       }
     vtkIdType nt0 = arrays[0]->GetNumberOfTuples();
     vtkIdType nt1 = arrays[1]->GetNumberOfTuples();
-    vtkIdType Nt = vtkstd::max(nt0,nt1);
+    vtkIdType Nt = std::max(nt0,nt1);
     vtkDataArray *outarray = this->InterpolateDataArray(ratio, &arrays[0], Nt);
     output->GetCellData()->AddArray(outarray);
     outarray->Delete();

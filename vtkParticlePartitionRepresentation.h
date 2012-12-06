@@ -31,7 +31,7 @@ class VTK_EXPORT vtkParticlePartitionRepresentation : public vtkPolyDataAlgorith
   public:
     // Description:
     // Standard Type-Macro
-    vtkTypeRevisionMacro(vtkParticlePartitionRepresentation,vtkPolyDataAlgorithm);
+    vtkTypeMacro(vtkParticlePartitionRepresentation,vtkPolyDataAlgorithm);
 
     // Description:
     // Create an instance of vtkParticlePartitionRepresentation

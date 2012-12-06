@@ -21,7 +21,6 @@
 #include "vtkTransform.h"
 
 vtkStandardNewMacro(vtkSMCustomBoxRepresentationProxy);
-vtkCxxRevisionMacro(vtkSMCustomBoxRepresentationProxy, "$Revision: 1.2 $");
 //----------------------------------------------------------------------------
 vtkSMCustomBoxRepresentationProxy::vtkSMCustomBoxRepresentationProxy()
 {

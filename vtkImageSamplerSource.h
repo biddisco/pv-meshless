@@ -35,7 +35,7 @@ class VTK_EXPORT vtkImageSamplerSource : public vtkImageAlgorithm {
     // Description:
     // Standard Type-Macro
     static vtkImageSamplerSource *New();
-    vtkTypeRevisionMacro(vtkImageSamplerSource, vtkImageAlgorithm);
+    vtkTypeMacro(vtkImageSamplerSource, vtkImageAlgorithm);
 
     // Description:
     // Specify the point spacing on the X/Y/Z axis

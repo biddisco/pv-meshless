@@ -27,12 +27,12 @@ vtkCenterOfMassFilter::vtkCenterOfMassFilter()
 {
   this->UpdatePiece      = 0;
   this->UpdateNumPieces  = 0;
-  this->SetInputArrayToProcess(
-    0,
-    0,
-    0,
-    vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS,
-    vtkDataSetAttributes::SCALARS);
+  //this->SetInputDataArrayToProcess(
+  //  0,
+  //  0,
+  //  0,
+  //  vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS,
+  //  vtkDataSetAttributes::SCALARS);
   this->MassArray  = NULL;
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());

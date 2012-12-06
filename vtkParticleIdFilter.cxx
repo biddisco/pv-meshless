@@ -102,11 +102,11 @@ int vtkParticleIdFilter::RequestData(
   //
   if ( this->PointIds )
     {
-    vtkstd::vector<int> PartialSum(this->UpdateNumPieces+1);
+    std::vector<int> PartialSum(this->UpdateNumPieces+1);
     if (this->Controller) {
-      vtkstd::vector<vtkIdType> PointsPerProcess(this->UpdateNumPieces);
+      std::vector<vtkIdType> PointsPerProcess(this->UpdateNumPieces);
       this->Controller->AllGather(&numPts, &PointsPerProcess[0], 1);
-      vtkstd::partial_sum(PointsPerProcess.begin(), PointsPerProcess.end(), PartialSum.begin()+1);
+      std::partial_sum(PointsPerProcess.begin(), PointsPerProcess.end(), PartialSum.begin()+1);
     }
     vtkIdType initialValue = PartialSum[this->UpdatePiece];
 //    std::cout << "Id filter rank " << this->UpdatePiece << " Using offset " << initialValue << std::endl;
@@ -134,11 +134,11 @@ int vtkParticleIdFilter::RequestData(
   //
   if ( this->CellIds)
     {
-    vtkstd::vector<int> PartialSum(this->UpdateNumPieces+1);
+    std::vector<int> PartialSum(this->UpdateNumPieces+1);
     if (this->Controller) {
-      vtkstd::vector<vtkIdType> CellsPerProcess(this->UpdateNumPieces);
+      std::vector<vtkIdType> CellsPerProcess(this->UpdateNumPieces);
       this->Controller->AllGather(&numCells, &CellsPerProcess[0], 1);
-      vtkstd::partial_sum(CellsPerProcess.begin(), CellsPerProcess.end(), PartialSum.begin()+1);  
+      std::partial_sum(CellsPerProcess.begin(), CellsPerProcess.end(), PartialSum.begin()+1);  
     }
     vtkIdType initialValue = PartialSum[this->UpdatePiece];
     //

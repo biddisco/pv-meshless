@@ -42,7 +42,6 @@
 #include <algorithm>
 #include <functional>
 //
-vtkCxxRevisionMacro(vtkImageSamplerSource, "$Revision: 1.4 $");
 vtkStandardNewMacro(vtkImageSamplerSource);
 //----------------------------------------------------------------------------
 #define REGULARGRID_SAXPY(a,x,y,z) \
@@ -102,9 +101,9 @@ int vtkImageSamplerSource::RequestDataObject(
   vtkInformationVector  **vtkNotUsed(inputVector), 
   vtkInformationVector *outputVector)
 {
-  vtkInformation* info = outputVector->GetInformationObject(0);
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
   vtkDataSet *output = vtkDataSet::SafeDownCast(
-    info->Get(vtkDataObject::DATA_OBJECT()));
+    outInfo->Get(vtkDataObject::DATA_OBJECT()));
   bool ok = (output!=NULL);
   //
   ok = (ok && output->GetDataObjectType()==this->RequiredDataType());
@@ -116,7 +115,7 @@ int vtkImageSamplerSource::RequestDataObject(
         newOutput = vtkImageData::New();
         break;
     }
-    newOutput->SetPipelineInformation(info);
+    outInfo->Set(vtkDataObject::DATA_OBJECT(), newOutput);
     newOutput->Delete();
     this->GetOutputPortInformation(0)->Set(
       vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
@@ -322,7 +321,8 @@ int vtkImageSamplerSource::RequestData(
                 1+outUpdateExt[3]-outUpdateExt[2], 
                 1+outUpdateExt[5]-outUpdateExt[4]};
   //
-  outGrid->SetWholeExtent(outWholeExt);
+  //
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), outWholeExt, 6); 
   outGrid->SetExtent(outUpdateExt);
   outGrid->SetOrigin(this->GlobalOrigin);
   outGrid->SetSpacing(this->spacing);

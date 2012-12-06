@@ -43,7 +43,6 @@
 #include <algorithm>
 #include <functional>
 //
-vtkCxxRevisionMacro(vtkRegularGridSource, "$Revision: 1.4 $");
 vtkStandardNewMacro(vtkRegularGridSource);
 //----------------------------------------------------------------------------
 #define REGULARGRID_SAXPY(a,x,y,z) \
@@ -149,9 +148,9 @@ int vtkRegularGridSource::RequestDataObject(
   vtkInformationVector  **vtkNotUsed(inputVector), 
   vtkInformationVector *outputVector)
 {
-  vtkInformation* info = outputVector->GetInformationObject(0);
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
   vtkDataSet *output = vtkDataSet::SafeDownCast(
-    info->Get(vtkDataObject::DATA_OBJECT()));
+    outInfo->Get(vtkDataObject::DATA_OBJECT()));
   bool ok = (output!=NULL);
   //
   ok = (ok && output->GetDataObjectType()==this->RequiredDataType());
@@ -166,7 +165,7 @@ int vtkRegularGridSource::RequestDataObject(
         newOutput = vtkStructuredGrid::New();
         break;
     }
-    newOutput->SetPipelineInformation(info);
+    outInfo->Set(vtkDataObject::DATA_OBJECT(), newOutput);
     newOutput->Delete();
     this->GetOutputPortInformation(0)->Set(
       vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());

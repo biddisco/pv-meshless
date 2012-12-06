@@ -52,10 +52,10 @@ INCLUDE_DIRECTORIES(
 #------------------------------------------------------
 # MPI support if ParaView compiled with MPI
 #------------------------------------------------------
-IF (VTK_USE_MPI)
+IF (PARAVIEW_USE_MPI)
   FIND_PACKAGE(MPI)   
   INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-ENDIF (VTK_USE_MPI)
+ENDIF (PARAVIEW_USE_MPI)
 
 #--------------------------------------------------
 # Set Definitions 
@@ -111,7 +111,7 @@ IF(USE_HDF5)
   SET(HDF5_CXX
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartWriter.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5SPHReader.cxx
+#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5SPHReader.cxx
   )
 ENDIF(USE_HDF5) 
   
@@ -119,7 +119,7 @@ ENDIF(USE_HDF5)
 # Optional Trilinos support 
 # --------------------------------------------------
 SET(TRILINOS_ENABLED 0)
-IF (VTK_USE_MPI)
+IF (PARAVIEW_USE_MPI)
   OPTION(USE_TRILINOS "Use Trilinos library" OFF)
   IF(USE_TRILINOS)
 
@@ -155,9 +155,9 @@ IF (VTK_USE_MPI)
     ENDIF(Trilinos_FOUND)
 
   ENDIF(USE_TRILINOS)
-ELSE (VTK_USE_MPI)
+ELSE (PARAVIEW_USE_MPI)
   SET(USE_TRILINOS OFF CACHE BOOL "Use Trilinos library" FORCE)
-ENDIF (VTK_USE_MPI)
+ENDIF (PARAVIEW_USE_MPI)
 
 #--------------------------------------------------
 # Setup GUI custom Qt panel sources and wrapping
@@ -304,8 +304,8 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractValueFilter.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractDataOverTime.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.xml
+#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.xml
+#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkImageSamplerSource.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHImageResampler.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionRepresentation.xml
@@ -331,8 +331,8 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractValueFilter.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.cxx
+#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.cxx
+#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkImageSamplerSource.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHImageResampler.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionRepresentation.cxx
@@ -371,7 +371,7 @@ ADD_PARAVIEW_PLUGIN(
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME}
   ${H5PART_LIBS}
   pv_common
-  vtkWidgets
+  vtkInteractionWidgets
   ${TIPSY_LIB}
   ${Trilinos_LIBRARIES}
 )

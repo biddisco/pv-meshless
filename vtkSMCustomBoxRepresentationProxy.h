@@ -26,7 +26,7 @@ class VTK_EXPORT vtkSMCustomBoxRepresentationProxy : public vtkSMWidgetRepresent
 {
 public:
   static vtkSMCustomBoxRepresentationProxy* New();
-  vtkTypeRevisionMacro(vtkSMCustomBoxRepresentationProxy, vtkSMWidgetRepresentationProxy);
+  vtkTypeMacro(vtkSMCustomBoxRepresentationProxy, vtkSMWidgetRepresentationProxy);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   virtual void UpdateVTKObjects()

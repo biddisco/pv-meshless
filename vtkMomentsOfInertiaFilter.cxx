@@ -37,12 +37,6 @@ vtkMomentsOfInertiaFilter::vtkMomentsOfInertiaFilter()
 {
   this->UpdatePiece      = 0;
   this->UpdateNumPieces  = 0;
-	this->SetInputArrayToProcess(
-    0,
-    0,
-    0,
-    vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS,
-    vtkDataSetAttributes::SCALARS);
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
   if (this->Controller == NULL) {
@@ -83,7 +77,7 @@ int vtkMomentsOfInertiaFilter::FillOutputPortInformation(
 
 //----------------------------------------------------------------------------
 void vtkMomentsOfInertiaFilter::ComputeInertiaTensor(vtkPointSet* input,
-	vtkstd::string massArrayName, double* centerPoint, 
+	std::string massArrayName, double* centerPoint, 
 	double inertiaTensor[3][3])
 {
 	this->UpdateInertiaTensor(input,massArrayName,centerPoint,inertiaTensor);
@@ -92,7 +86,7 @@ void vtkMomentsOfInertiaFilter::ComputeInertiaTensor(vtkPointSet* input,
 
 //----------------------------------------------------------------------------
 void vtkMomentsOfInertiaFilter::UpdateInertiaTensor(vtkPointSet* input, 
-	vtkstd::string massArrayName, double* centerPoint, 
+	std::string massArrayName, double* centerPoint, 
 	double inertiaTensor[3][3])
 {
          for (int i=0; i<3; i++) 
@@ -162,7 +156,7 @@ double ComputeMaxR(vtkPointSet* input,double point[])
 				double testCorner[3] = {bounds[x],bounds[y],bounds[z]};
 				testR = sqrt(vtkMath::Distance2BetweenPoints(testCorner,point));
 				// only if our test R is greater than the current max do we update
-				maxR=vtkstd::max(maxR,testR);
+				maxR=std::max(maxR,testR);
 				}
 			}
 		}
@@ -184,7 +178,7 @@ double ComputeMaxRadiusInParallel(
 				{
 				double recMaxR=0;
 				controller->Receive(&recMaxR,1,proc,MAX_R);
-				maxR=vtkstd::max(maxR,recMaxR);
+				maxR=std::max(maxR,recMaxR);
 				}
 			// Syncronizing global maxR results
 			controller->Broadcast(&maxR,1,0);

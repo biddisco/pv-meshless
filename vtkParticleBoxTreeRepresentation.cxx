@@ -38,7 +38,6 @@
 #include "vtkSmartPointer.h"
 #include <cmath>
 //---------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkParticleBoxTreeRepresentation, "$Revision: 1.1 $");
 vtkStandardNewMacro(vtkParticleBoxTreeRepresentation);
 //---------------------------------------------------------------------------
 vtkParticleBoxTreeRepresentation::vtkParticleBoxTreeRepresentation(void)

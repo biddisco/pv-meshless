@@ -19,7 +19,7 @@
 #define __vtkMomentsOfInertiaFilter_h
 
 #include "vtkPointSetAlgorithm.h"
-#include <vtkstd/string> // some functions use as argument
+#include <string> // some functions use as argument
 
 enum MomentsMPIData 
 {
@@ -45,7 +45,7 @@ public:
   // Description:
   // Helper function, for serial applications calls UpdateInertiaTensor
   // then UpdateInertiaTensorFinal
-  void ComputeInertiaTensor(vtkPointSet* input, vtkstd::string massArrayName,
+  void ComputeInertiaTensor(vtkPointSet* input, std::string massArrayName,
         double* centerPoint,double inertiaTensor[3][3]);
 
 protected:
@@ -83,7 +83,7 @@ private:
 	// I02=sum i=1 to n: m_i*x_i*y_i
 	// I12=sum i=1 to n: m_i*x_i*y_i
 	void UpdateInertiaTensor(vtkPointSet* input,
-	 	vtkstd::string massArrayName, double* centerPoint,
+	 	std::string massArrayName, double* centerPoint,
 		double inertiaTensor[3][3]);
 
 	// Description

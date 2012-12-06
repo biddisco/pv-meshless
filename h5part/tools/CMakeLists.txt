@@ -26,12 +26,12 @@ SET(TOOL_VTK_LIBS
   vtksys
 )
 
-IF(VTK_USE_MPI)
+IF(PARAVIEW_USE_MPI)
   SET(TOOL_VTK_LIBS ${TOOL_VTK_LIBS} ${MPI_LIBRARY} )
   IF(MPI_EXTRA_LIBRARY)
     SET(TOOL_VTK_LIBS ${TOOL_VTK_LIBS} ${MPI_EXTRA_LIBRARY} )
   ENDIF(MPI_EXTRA_LIBRARY)
-ENDIF(VTK_USE_MPI)
+ENDIF(PARAVIEW_USE_MPI)
 
 #-----------------------------------------------
 # Create vtk conversion utilities
