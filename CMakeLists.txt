@@ -180,7 +180,7 @@ IF(PARAVIEW_BUILD_QT_GUI)
   #--------------------------------------------------
   QT4_WRAP_CPP(
     MESHLESS_MOC_SRCS 
-      ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.h
+#      ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.h
       ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.h      
       ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridFilterPanel.h
       ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.h
@@ -190,15 +190,15 @@ IF(PARAVIEW_BUILD_QT_GUI)
   #--------------------------------------------------
   # invoke macro that adds our grid source 3D widget
   #--------------------------------------------------
-  ADD_3DWIDGET(
-    MESHLESS_IFACE_W
-    MESHLESS_IFACE_SRCS_W
-    CLASS_NAME 
-      pqRegularGridSourceWidget
-    WIDGET_TYPE 
-      # string found in <hints> section of xml
-      "RegularGridSource"
-  )
+#  ADD_3DWIDGET(
+#    MESHLESS_IFACE_W
+#    MESHLESS_IFACE_SRCS_W
+#    CLASS_NAME 
+#      pqRegularGridSourceWidget
+#    WIDGET_TYPE 
+#      # string found in <hints> section of xml
+#      "RegularGridSource"
+#  )
 
   #--------------------------------------------------
   # invoke macro that adds our SPH manager panel
@@ -314,9 +314,10 @@ ADD_PARAVIEW_PLUGIN(
     ${TRILINOS_XML}
     ${HDF5_XML}
   SERVER_MANAGER_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkRegularGridSource.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkBoundsExtentTranslator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkRegularGridSource.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxWidget.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxRepresentation.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMCustomBoxRepresentationProxy.cxx
@@ -329,7 +330,6 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleIdFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractValueFilter.cxx
 #    ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.cxx
 #    ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.cxx
@@ -349,7 +349,7 @@ ADD_PARAVIEW_PLUGIN(
   GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.cxx
+#    ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridFilterPanel.cxx
     ${MESHLESS_IFACE_SRCS_W}
@@ -362,7 +362,7 @@ ADD_PARAVIEW_PLUGIN(
     # none for now  
   GUI_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.ui
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.ui
+#    ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Sources.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Filters.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Readers.xml
