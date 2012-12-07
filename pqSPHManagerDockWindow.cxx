@@ -74,7 +74,7 @@ public:
   void DeleteProxy() {
     if (this->ProxyCreated()) {
       vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
-//      pm->UnRegisterProxy("meshless_helpers", "SPHManager",this->SPHProxy);
+      pm->UnRegisterProxy("meshless_helpers", "SPHManager",this->SPHProxy);
       this->SPHProxy = NULL;
       delete this->SPHManagerPanel;
       delete this->pqSPHProxy;
@@ -201,6 +201,7 @@ pqSPHManagerDockWindow::~pqSPHManagerDockWindow()
   if (this->UI->SPHManagerPanel) {
     this->UI->SPHManagerPanel->SaveSettings();
   }
+  this->UI->DeleteProxy();
 }
 //----------------------------------------------------------------------------
 void pqSPHManagerDockWindow::init()
