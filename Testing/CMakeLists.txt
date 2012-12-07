@@ -160,37 +160,6 @@ ENDIF (USE_HDF5 AND PARAVIEW_USE_MPI)
 string(REPLACE " " ";" MPIEXEC_NUMPROC_FLAG ${MPIEXEC_NUMPROC_FLAG})
 
 #--------------------------------------------------
-# Trilinos
-#--------------------------------------------------
-IF (${TRILINOS_ENABLED} AND VTK_USE_MPI)
-
-  ADD_EXECUTABLE(TestParticlePartitionFilter 
-    TestParticlePartitionFilter.cxx
-  )
-  TARGET_LINK_LIBRARIES(TestParticlePartitionFilter
-    pv_meshless 
-    pv_meshlessTestLib
-    ${Trilinos_LIBRARIES}
-    )
-  
-  greater_equal(${MPIEXEC_MAX_NUMPROCS} 4 processors)
-  SET(test_name "TestParticlePartitionFilter-P4")
-  IF (processors)
-    ADD_TEST(
-      NAME ${test_name}
-      COMMAND 
-        ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
-        $<TARGET_FILE:TestParticlePartitionFilter> 
-        -testName ${test_name}
-        -generateParticles 1000
-        -V ${PROJECT_SOURCE_DIR}/Testing/baseline/ParticlePartition.png
-        -doRender 1
-    )
-  ENDIF (processors)
- 
-ENDIF (${TRILINOS_ENABLED} AND VTK_USE_MPI)
-
-#--------------------------------------------------
 # All tests from here on make use of HDF5 for IO
 #--------------------------------------------------
 IF (NOT USE_HDF5) 
@@ -200,9 +169,9 @@ ENDIF (NOT USE_HDF5)
 #--------------------------------------------------
 # All tests from here on make use of MPI
 #--------------------------------------------------
-IF (NOT VTK_USE_MPI) 
+IF (NOT PARAVIEW_USE_MPI) 
   return()
-ENDIF (NOT VTK_USE_MPI) 
+ENDIF (NOT PARAVIEW_USE_MPI) 
 
 #--------------------------------------------------
 # Test Probe Filter
@@ -211,7 +180,6 @@ ADD_EXECUTABLE(TestSPHProbeFilter TestSPHProbeFilter.cxx)
 TARGET_LINK_LIBRARIES(TestSPHProbeFilter
   pv_meshless 
   pv_meshlessTestLib
-  ${Trilinos_LIBRARIES}
 )
         
 #--------------------------------------------------
@@ -529,9 +497,9 @@ ENDFOREACH(index)
 #/project/csvis/biddisco/nextmuse/16384_7.44241195665136E-004_dambreak0.h5part
 #/project/csvis/biddisco/nextmuse/32768_5.90704628458454E-004_dambreak0.h5part
 
-IF (NOT (${TRILINOS_ENABLED} AND VTK_USE_MPI))
+IF (NOT (${ZOLTAN_SUPPORT}))
   return()
-ENDIF (NOT (${TRILINOS_ENABLED} AND VTK_USE_MPI))
+ENDIF (NOT (${ZOLTAN_SUPPORT}))
 
 #--------------------------------------------------
 #--------------------------------------------------

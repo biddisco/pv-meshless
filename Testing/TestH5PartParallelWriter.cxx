@@ -20,11 +20,10 @@
 #include "vtkDataSet.h"
 #include "vtkMath.h"
 #include "vtkMPIController.h"
-#include "vtkParallelFactory.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper.h"
-#include "Testing/Cxx/vtkTestUtilities.h"
-#include "Testing/Cxx/vtkRegressionTestImage.h"
+#include "vtkTestUtilities.h"
+#include "vtkRegressionTestImage.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
@@ -157,7 +156,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   char *number = vtkTestUtilities::GetArgOrEnvOrDefault(
     "-N", args->argc, args->argv, "DUMMY_ENV_VAR", "");
   if (std::string(number)!=std::string("")) {
-    vtkstd::stringstream temp;
+    std::stringstream temp;
     temp << number;
     temp >> numPoints;
     rows = floor(pow(numPoints,1.0/3.0)+0.5);
@@ -206,7 +205,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   }
 
   vtkSmartPointer<vtkElevationFilter> elev = vtkSmartPointer<vtkElevationFilter>::New();
-  elev->SetInput(Sprites);
+  elev->SetInputData(Sprites);
   elev->SetLowPoint(offset, 0.0, 0.0);
   elev->SetHighPoint(offset+rows*spacing, 0.0, 0.0);
   elev->Update();
@@ -362,7 +361,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       iren->SetRenderWindow(renWindow);
       ren->SetBackground(0.1, 0.1, 0.1);
       renWindow->SetSize( 400, 400);
-      mapper->SetInput(polys);
+      mapper->SetInputData(polys);
       mapper->SelectColorArray("Elevation");
       actor->SetMapper(mapper);
       actor->GetProperty()->SetPointSize(2);
@@ -413,10 +412,6 @@ int main (int argc, char* argv[])
   vtkMPIController* controller = vtkMPIController::New();
 
   controller->Initialize(&argc, &argv, 1);
-
-  vtkParallelFactory* pf = vtkParallelFactory::New();
-  vtkObjectFactory::RegisterFactory(pf);
-  pf->Delete();
  
   // Added for regression test.
   // ----------------------------------------------

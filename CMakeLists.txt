@@ -58,6 +58,27 @@ IF (PARAVIEW_USE_MPI)
 ENDIF (PARAVIEW_USE_MPI)
 
 #--------------------------------------------------
+# pv-zoltan
+#--------------------------------------------------
+set(ZOLTAN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pv-zoltan")
+if (EXISTS "${ZOLTAN_DIR}" AND IS_DIRECTORY "${ZOLTAN_DIR}")
+  set(ZOLTAN_SUPPORT 1)
+  include_directories(
+    ${ZOLTAN_DIR}
+    ${ZOLTAN_DIR}/trilinos/packages/zoltan/src/include
+    ${CMAKE_CURRENT_BINARY_DIR}/../pv-zoltan/trilinos/packages/zoltan/src
+  )
+  if(WIN32)
+    include_directories(
+      ${ZOLTAN_DIR}/trilinos/cmake/tribits/common_tools/win_interface/include
+   )
+  endif(WIN32)
+  ADD_DEFINITIONS(-DPV_MESHLESS_ZOLTAN_SUPPORT)
+  set(ZOLTAN_LIBS pv_zoltan)
+  message("Zoltan support enabled")
+endif (EXISTS "${ZOLTAN_DIR}" AND IS_DIRECTORY "${ZOLTAN_DIR}")
+
+#--------------------------------------------------
 # Set Definitions 
 #--------------------------------------------------
 ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
@@ -111,54 +132,9 @@ IF(USE_HDF5)
   SET(HDF5_CXX
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartWriter.cxx
-#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5SPHReader.cxx
   )
 ENDIF(USE_HDF5) 
   
-# --------------------------------------------------
-# Optional Trilinos support 
-# --------------------------------------------------
-SET(TRILINOS_ENABLED 0)
-IF (PARAVIEW_USE_MPI)
-  OPTION(USE_TRILINOS "Use Trilinos library" OFF)
-  IF(USE_TRILINOS)
-
-    OPTION(USE_SYSTEM_TRILINOS "Use System Trilinos library" OFF)
-    IF(USE_SYSTEM_TRILINOS)
-      FIND_PACKAGE(Trilinos)
-    ELSE(USE_SYSTEM_TRILINOS)
-      SET(TPL_ENABLE_MPI ON CACHE BOOL "Do not change")
-      SET(Trilinos_ENABLE_TESTS OFF CACHE BOOL "Do not change")
-      SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES OFF CACHE BOOL "Do not change")
-      SET(Trilinos_ENABLE_Zoltan ON CACHE BOOL "Do not change")
-      SET(Trilinos_ENABLE_Fortran OFF CACHE BOOL "Do not change")
-      IF (WIN32)
-        ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-        INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/trilinos/cmake/tribits/common_tools/win_interface/include")
-      ENDIF(WIN32)
-      ADD_SUBDIRECTORY(trilinos)
-      SET(Trilinos_FOUND 1)
-      SET(Trilinos_DEPS_HTML_OUTPUT_FILE "" CACHE STRING "Leave empty" FORCE)
-    ENDIF(USE_SYSTEM_TRILINOS)
-
-    IF(Trilinos_FOUND)
-      INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
-      LINK_DIRECTORIES("${Trilinos_LIBRARY_DIRS}")
-      # MESSAGE("Trilinos Include Dirs ${Trilinos_INCLUDE_DIRS} and Trilinos Link Dirs ${Trilinos_LIBRARY_DIRS} ")
-      #
-      # Add source which depends on trilinos to our plugin
-      #
-      SET(TRILINOS_CXX ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.cxx)
-      SET(TRILINOS_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionFilter.xml)
-      SET(TRILINOS_ENABLED 1)
-      ADD_DEFINITIONS(-DPVMESHLESS_USE_TRILINOS)
-    ENDIF(Trilinos_FOUND)
-
-  ENDIF(USE_TRILINOS)
-ELSE (PARAVIEW_USE_MPI)
-  SET(USE_TRILINOS OFF CACHE BOOL "Use Trilinos library" FORCE)
-ENDIF (PARAVIEW_USE_MPI)
-
 #--------------------------------------------------
 # Setup GUI custom Qt panel sources and wrapping
 #--------------------------------------------------
@@ -180,7 +156,6 @@ IF(PARAVIEW_BUILD_QT_GUI)
   #--------------------------------------------------
   QT4_WRAP_CPP(
     MESHLESS_MOC_SRCS 
-#      ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.h
       ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.h      
       ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridFilterPanel.h
       ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.h
@@ -304,19 +279,14 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractValueFilter.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractDataOverTime.xml
-#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.xml
-#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkImageSamplerSource.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHImageResampler.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionRepresentation.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkClipPolyData.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalPlotValueFilter.xml
-    ${TRILINOS_XML}
     ${HDF5_XML}
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkRegularGridSource.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSamplingGridGenerator.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkBoundsExtentTranslator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxWidget.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxRepresentation.cxx
@@ -331,13 +301,9 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkMomentsOfInertiaFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkExtractValueFilter.cxx
-#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkProbeFileReader.cxx
-#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkMultiBlockExtractDataOverTime.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkImageSamplerSource.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHImageResampler.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticlePartitionRepresentation.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalPlotValueFilter.cxx
-    ${TRILINOS_CXX}
     ${HDF5_CXX}
   SERVER_SOURCES
     ${KernelFiles_SRCS}
@@ -349,7 +315,6 @@ ADD_PARAVIEW_PLUGIN(
   GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.cxx
-#    ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridFilterPanel.cxx
     ${MESHLESS_IFACE_SRCS_W}
@@ -362,7 +327,6 @@ ADD_PARAVIEW_PLUGIN(
     # none for now  
   GUI_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.ui
-#    ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Sources.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Filters.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Readers.xml
@@ -371,6 +335,7 @@ ADD_PARAVIEW_PLUGIN(
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME}
   ${H5PART_LIBS}
   pv_common
+  ${ZOLTAN_LIBS}
   vtkInteractionWidgets
   ${TIPSY_LIB}
   ${Trilinos_LIBRARIES}

@@ -14,10 +14,5 @@
   <Reader name="TipsyReader"
 			extensions="std"
 			file_description="Tipsy Binary">
-	</Reader>
-  <Reader name="CustomProbeReader"
-			extensions="probe"
-			file_description="Probe file for use with SPH/meshless filters">
   </Reader>
-  
 </ParaViewReaders>

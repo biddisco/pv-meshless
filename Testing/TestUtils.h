@@ -163,7 +163,7 @@ void DisplayParameter(const char *prefix1, const char *prefix2, T *data, int com
   if (rank==-1) {
     return;
   }
-  vtkstd::stringstream temp;
+  std::stringstream temp;
   temp << prefix1 << prefix2 << std::ends;
   std::cout.width(30);
   std::cout << temp.str().c_str() << " : {";
@@ -182,7 +182,7 @@ T GetParameter(const char *argstr, const char *message, int argc, char **argv, T
   T newValue = defaultvalue;
   valueset = false;
   if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
+    std::stringstream temp(tempChar);
     temp >> newValue;
     if (rank==0) {
       DisplayParameter<T>(message, "", &newValue, 1, rank);
@@ -199,7 +199,7 @@ bool GetArrayParameter(const char *argstr, const char *message, T *data, int com
   char *tempChar = vtkTestUtilities::GetArgOrEnvOrDefault(argstr, argc, argv, "", "");
   bool valueset = false;
   if (std::string(tempChar).size()) {
-    vtkstd::stringstream temp(tempChar);
+    std::stringstream temp(tempChar);
     for (int i=0; i<components; i++) temp >> data[i];
     if (rank==0) {
       std::cout.width(30);
