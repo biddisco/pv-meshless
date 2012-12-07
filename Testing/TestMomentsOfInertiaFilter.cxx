@@ -63,7 +63,7 @@ vtkSmartPointer<vtkTensor> getInertiaTensor(vtkSmartPointer<vtkPoints> points, v
   VTK_CREATE(vtkMomentsOfInertiaFilter, vtkmi);
   VTK_CREATE(vtkPolyData, vpd);
   vpd->SetPoints(points);
-  const vtkstd::string arrayname("mass");
+  const std::string arrayname("mass");
   dataArray->SetName(arrayname.c_str());
   vpd->GetPointData()->AddArray(dataArray);
   double ceneterPoint[ndim] = {0.0, 0.0, 0.0};

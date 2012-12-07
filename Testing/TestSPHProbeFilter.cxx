@@ -6,7 +6,6 @@
 #include "vtkPointSource.h"
 #include "vtkDataSet.h"
 #include "vtkMath.h"
-#include "vtkParallelFactory.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper.h"
 #include "vtkRenderWindow.h"
@@ -16,9 +15,7 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkInformation.h"
 #include "vtkDebugLeaks.h"
-#include "vtkElevationFilter.h"
 #include "vtkH5PartReader.h"
-#include "vtkMaskPoints.h"
 #include "vtkProperty.h"
 #include "vtkPointData.h"
 #include "vtkDoubleArray.h"
@@ -33,7 +30,7 @@
 //
 #include "vtkParticleIdFilter.h"
 //
-#ifdef PVMESHLESS_USE_TRILINOS
+#ifdef PV_MESHLESS_ZOLTAN_SUPPORT
   #include "vtkParticlePartitionFilter.h"
 #endif
 //
@@ -71,7 +68,7 @@ int main (int argc, char* argv[])
   test.CreatePartitioner();
   double partition_elapsed = test.UpdatePartitioner();
   //
-#ifdef PVMESHLESS_USE_TRILINOS
+#ifdef PV_MESHLESS_ZOLTAN_SUPPORT
   data_algorithm = test.partitioner;
 #endif
 
@@ -94,7 +91,7 @@ int main (int argc, char* argv[])
 
   int wholeExtent[6] = {0,-1,0,-1,0,-1};
   if (test.imageResample) {
-    vtkImageData::SafeDownCast(sph_results)->GetWholeExtent(wholeExtent);
+    vtkImageData::SafeDownCast(sph_results)->GetInformation()->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),wholeExtent);
   }
 
 
@@ -248,7 +245,7 @@ int main (int argc, char* argv[])
           pd = vtkSmartPointer<vtkPolyData>::New();
           test.controller->Receive(pd, i, CONTOURDATA_TAG);
         }
-        append->AddInput(pd);
+        append->AddInputData(pd);
         const char *array_name = "ProcessId";
         vtkDataArray *da = pd->GetPointData()->GetArray(array_name);
         if (da) {
@@ -259,7 +256,7 @@ int main (int argc, char* argv[])
         // Display boxes for each partition
         //
         vtkSmartPointer<vtkOutlineFilter> boxsource = vtkSmartPointer<vtkOutlineFilter>::New();
-        boxsource->SetInput(pd);
+        boxsource->SetInputData(pd);
         vtkSmartPointer<vtkPolyDataMapper> bmapper = vtkSmartPointer<vtkPolyDataMapper>::New();
         vtkSmartPointer<vtkActor>          bactor = vtkSmartPointer<vtkActor>::New();
         bmapper->SetInputConnection(boxsource->GetOutputPort());
@@ -323,7 +320,7 @@ int main (int argc, char* argv[])
   if (ok && test.myRank==0) {
     DisplayParameter<vtkIdType>("Total Particles", "", &totalParticles, 1, test.myRank);
     DisplayParameter<double>("Read Time", "", &read_elapsed, 1, test.myRank);
-#ifdef PVMESHLESS_USE_TRILINOS
+#ifdef PV_MESHLESS_ZOLTAN_SUPPORT
     DisplayParameter<double>("Partition Time", "", &partition_elapsed, 1, test.myRank);
 #endif
     DisplayParameter<double>("SPH Probe Time", "", &sph_elapsed, 1, test.myRank);

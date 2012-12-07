@@ -1,6 +1,0 @@
-INCLUDE(TribitsTplDeclareLibraries)
-
-TRIBITS_TPL_DECLARE_LIBRARIES( Pnetcdf
-  REQUIRED_HEADERS pnetcdf.h
-  REQUIRED_LIBS_NAMES pnetcdf
-  )

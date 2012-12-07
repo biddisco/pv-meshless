@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <vtksys/SystemTools.hxx>
 //
-#ifdef PVMESHLESS_USE_TRILINOS
+#ifdef PV_MESHLESS_ZOLTAN_SUPPORT
  #include "vtkParticlePartitionFilter.h"
 #endif
 //
@@ -110,7 +110,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
   test.cameraViewUp[0] = 0.0;
   test.cameraViewUp[1] = 0.0;
   test.cameraViewUp[2] = 1.0;
-  test.windowSize[0] = test.windowSize[1] = 400;
+  test.windowSize[0] = test.windowSize[1] = 400+8;
 
   // uncomment this to wait for debugger
   // DEBUG_WAIT
@@ -193,7 +193,10 @@ int initTest(int argc, char* argv[], TestStruct &test)
   unused = GetArrayParameter<double>("-cameraFocus", "Camera Focus", test.cameraFocus, 3, argc, argv, test.myRank);
   unused = GetArrayParameter<double>("-cameraViewUp", "Camera ViewUp", test.cameraViewUp, 3, argc, argv, test.myRank);
   unused = GetArrayParameter<int>("-windowSize", "Window Size", test.windowSize, 2, argc, argv, test.myRank);
-  
+  if (unused) { // why have window sizes changed?
+    test.windowSize[0] += 8;
+    test.windowSize[1] += 8;
+  }
   // bug fix for cmd line params on windows with debugger (only first read properly)
   test.gridSpacing[2] = test.gridSpacing[1] = test.gridSpacing[0];
   test.gridResolution[2] = test.gridResolution[1] = test.gridResolution[0];
@@ -252,7 +255,7 @@ double TestStruct::UpdateReader()
 //----------------------------------------------------------------------------
 void TestStruct::CreatePartitioner()
 {
-#ifdef PVMESHLESS_USE_TRILINOS
+#ifdef PV_MESHLESS_ZOLTAN_SUPPORT
   testDebugMacro( "Creating Partitioner " << this->myRank << " of " << this->numProcs );
   this->partitioner = vtkSmartPointer<vtkParticlePartitionFilter>::New();
   if (this->reader) {
@@ -265,7 +268,7 @@ void TestStruct::CreatePartitioner()
 //----------------------------------------------------------------------------
 double TestStruct::UpdatePartitioner()
 {
-#ifdef PVMESHLESS_USE_TRILINOS
+#ifdef PV_MESHLESS_ZOLTAN_SUPPORT
   vtkSmartPointer<vtkTimerLog> partitiontimer = vtkSmartPointer<vtkTimerLog>::New();
   partitiontimer->StartTimer();
   //
@@ -290,7 +293,7 @@ double TestStruct::UpdatePartitioner()
 //----------------------------------------------------------------------------
 void TestStruct::DeletePartitioner()
 {
-#ifdef PVMESHLESS_USE_TRILINOS
+#ifdef PV_MESHLESS_ZOLTAN_SUPPORT
   this->partitioner->SetInputConnection(NULL);
   this->partitioner = NULL;
 #endif
