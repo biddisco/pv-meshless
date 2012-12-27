@@ -77,10 +77,10 @@ IF(USE_HDF5)
   #-----------------------------------------------
   # If (paraview) using system hdf5, find it
   #-----------------------------------------------
-  IF (NOT TARGET "vtkhdf5")
+#  IF (NOT TARGET "vtkhdf5")
     FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
     INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-  ENDIF (NOT TARGET "vtkhdf5")
+#  ENDIF (NOT TARGET "vtkhdf5")
   
   #-----------------------------------------------
   # Check if HDF5 was compiled with Parallel support
