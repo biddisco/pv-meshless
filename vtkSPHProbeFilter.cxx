@@ -155,6 +155,7 @@ vtkSPHProbeFilter::vtkSPHProbeFilter()
 //----------------------------------------------------------------------------
 vtkSPHProbeFilter::~vtkSPHProbeFilter()
 {
+  this->SetController(NULL);
   if (this->DensityScalars)       delete []this->DensityScalars;
   if (this->MassScalars)          delete []this->MassScalars;
   if (this->VolumeScalars)        delete []this->VolumeScalars;

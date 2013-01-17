@@ -111,6 +111,11 @@ vtkSPHImageResampler::vtkSPHImageResampler(void) {
   this->SPHProbe->AddObserver(vtkCommand::ProgressEvent, this->ProbeProgress);
 }
 //----------------------------------------------------------------------------
+vtkSPHImageResampler::~vtkSPHImageResampler(void) 
+{
+  this->SetController(NULL);
+}
+//----------------------------------------------------------------------------
 unsigned long vtkSPHImageResampler::GetMTime()
 {
   unsigned long mtime = this->Superclass::GetMTime();

@@ -117,6 +117,7 @@ class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
 
   protected:
     vtkSPHImageResampler();
+   ~vtkSPHImageResampler();
 
     // Pipeline mechanism
     virtual int FillInputPortInformation(int port, vtkInformation *info);
