@@ -86,12 +86,39 @@ void SpherePoints(int n, float radius, float X[]) {
   }
 }
 //----------------------------------------------------------------------------
+void finalizeTest(TestStruct &test)
+{
+/*
+  test.reader->SetController(NULL);
+  test.partitioner->SetController(NULL);
+  if (test.imageResample) {
+    vtkSmartPointer<vtkSPHImageResampler> sphProbe = vtkSPHImageResampler::SafeDownCast(test.sphResampler);
+    sphProbe->SetController(NULL);
+  }
+  else {
+    vtkSmartPointer<vtkSPHProbeFilter> sphProbe = vtkSPHProbeFilter::SafeDownCast(test.sphResampler);
+    sphProbe->SetController(NULL);
+  }
+*/
+  //
+  test.reader       = NULL;
+  test.partitioner  = NULL;
+  test.sphManager   = NULL;
+  test.sphResampler = NULL;
+  test.controller   = NULL;
+  vtkMultiProcessController::SetGlobalController(NULL);
+}
+//----------------------------------------------------------------------------
 int initTest(int argc, char* argv[], TestStruct &test)
 {
-#ifdef VTK_USE_MPI
+  char *empty = "";
+#ifdef PARAVIEW_USE_MPI
+  int dummy=0;
+  DisplayParameter<char *>("====================", "Init MPI", &empty, 1, 0);
   MPI_Init(&argc,&argv);
   test.controller = vtkSmartPointer<vtkMPIController>::New();
   test.controller->Initialize(&argc, &argv, 1);
+  vtkMultiProcessController::SetGlobalController(test.controller);
 #else
   test.controller = vtkDummyController::New();
 #endif
@@ -112,7 +139,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
   test.cameraViewUp[2] = 1.0;
   test.windowSize[0] = test.windowSize[1] = 400+8;
 
-  // uncomment this to wait for debugger
+  // uncomment this to wait for debugger (needs to be after MPI_Init because it checks rank
   // DEBUG_WAIT
   //
   test.controller->Barrier();
@@ -124,7 +151,6 @@ int initTest(int argc, char* argv[], TestStruct &test)
   for (int c=1; c<argc; c++ ) {
     vtktest->AddArgument(argv[c]);
   }
-  char *empty = "";
 
   //
   // Force the creation of our output window object

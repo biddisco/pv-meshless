@@ -4,6 +4,7 @@
 #include "vtkPoints.h"
 #include "vtkDoubleArray.h"
 #include "vtkSmartPointer.h"
+#include "vtkNew.h"
 
 #define VTK_CREATE(type, var) \
   vtkSmartPointer<type> var = vtkSmartPointer<type>::New()
@@ -19,14 +20,14 @@ int main() {
   // =========================================================================
   // one point data set
   // =========================================================================
-  vtkPoints* points = vtkPoints::New();
+  vtkNew<vtkPoints> points;
   points->InsertNextPoint(1.0, 2.0, 3.0);
 
-  vtkDoubleArray* mass = vtkDoubleArray::New();
+  vtkNew<vtkDoubleArray> mass;
   mass->InsertNextValue(2.0);
 
   double com[3];
-  vtkcom->ComputeCenterOfMass(points, mass, com);
+  vtkcom->ComputeCenterOfMass(points.GetPointer(), mass.GetPointer(), com);
 
   if (!isEqual(com[0], 1.0)) {
     std::cerr << "com[0] is wrong for one point data set\n";
@@ -49,7 +50,7 @@ int main() {
   points->InsertNextPoint(-1.0, -2.0, -3.0);
   mass->InsertNextValue(2.0);
   mass->InsertNextValue(1.0);
-  vtkcom->ComputeCenterOfMass(points, mass, com);
+  vtkcom->ComputeCenterOfMass(points.GetPointer(), mass.GetPointer(), com);
   if (!isEqual(com[0], 0.0)) {
     std::cerr << "com[0] is wrong for two points data set\n";
     return EXIT_FAILURE;

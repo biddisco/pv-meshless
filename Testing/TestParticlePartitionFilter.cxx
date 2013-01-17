@@ -12,9 +12,9 @@
 #include <math.h>
 //
 //
-// For VTK_USE_MPI 
-#include "vtkToolkits.h"     
-#ifdef VTK_USE_MPI
+// For PARAVIEW_USE_MPI 
+#include "vtkPVConfig.h"     
+#ifdef PARAVIEW_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
   #include "vtkMPICommunicator.h"
@@ -27,7 +27,6 @@
 #include "vtkPointSource.h"
 #include "vtkDataSet.h"
 #include "vtkMath.h"
-#include "vtkParallelFactory.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper.h"
 #include "vtkRenderWindow.h"
@@ -155,7 +154,7 @@ int main (int argc, char* argv[])
     // Parallel partition
     //--------------------------------------------------------------
     test.CreatePartitioner();
-    test.partitioner->SetInput(Sprites);
+    test.partitioner->SetInputData(Sprites);
     test.partitioner->SetIdChannelArray("PointIds");
     test.partitioner->SetGhostCellOverlap(test.ghostOverlap);
     partition_elapsed = test.UpdatePartitioner();
@@ -206,7 +205,7 @@ int main (int argc, char* argv[])
         vtkSmartPointer<vtkRenderWindowInteractor> iren = vtkSmartPointer<vtkRenderWindowInteractor>::New();
         iren->SetRenderWindow(renWindow);
         ren->SetBackground(0.1, 0.1, 0.1);
-        renWindow->SetSize( 400, 400);
+        renWindow->SetSize( 400+8, 400+8);
         renWindow->AddRenderer(ren);
         //
         for (int i=0; i<test.numProcs; i++) {
@@ -220,7 +219,7 @@ int main (int argc, char* argv[])
           }
           vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
           vtkSmartPointer<vtkActor>                 actor = vtkSmartPointer<vtkActor>::New();
-          mapper->SetInput(pd);
+          mapper->SetInputData(pd);
           mapper->SetColorModeToMapScalars();
           mapper->SetScalarModeToUsePointFieldData();
           mapper->SetUseLookupTableScalarRange(0);
@@ -233,7 +232,7 @@ int main (int argc, char* argv[])
           //
           vtkSmartPointer<vtkPolyDataMapper>       mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
           vtkSmartPointer<vtkActor>                 actor2 = vtkSmartPointer<vtkActor>::New();
-          mapper2->SetInput(pd);
+          mapper2->SetInputData(pd);
           mapper2->SetColorModeToMapScalars();
           mapper2->SetScalarModeToUsePointFieldData();
           mapper2->SetUseLookupTableScalarRange(0);

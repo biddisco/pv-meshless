@@ -234,7 +234,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
   if (numProcs>1 && rand()%2==3) {
     numPoints = 0;
     Sprites = vtkSmartPointer<vtkPolyData>::New();
-    writer->SetInput(Sprites);
+    writer->SetInputData(Sprites);
   }
   else {
     writer->SetInputConnection(elev->GetOutputPort());
@@ -360,7 +360,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       vtkSmartPointer<vtkRenderWindowInteractor> iren = vtkSmartPointer<vtkRenderWindowInteractor>::New();
       iren->SetRenderWindow(renWindow);
       ren->SetBackground(0.1, 0.1, 0.1);
-      renWindow->SetSize( 400, 400);
+      renWindow->SetSize( 400+8, 400+8);
       mapper->SetInputData(polys);
       mapper->SelectColorArray("Elevation");
       actor->SetMapper(mapper);
@@ -412,7 +412,7 @@ int main (int argc, char* argv[])
   vtkMPIController* controller = vtkMPIController::New();
 
   controller->Initialize(&argc, &argv, 1);
- 
+
   // Added for regression test.
   // ----------------------------------------------
   int retVal = 1;
