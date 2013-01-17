@@ -126,8 +126,8 @@ class TestStruct {
   //
 };
 //----------------------------------------------------------------------------
-int initTest(int argc, char* argv[], TestStruct &test);
-//----------------------------------------------------------------------------
+int  initTest(int argc, char* argv[], TestStruct &test);
+void finalizeTest(TestStruct &test);
 //----------------------------------------------------------------------------
 class Random {
   public:

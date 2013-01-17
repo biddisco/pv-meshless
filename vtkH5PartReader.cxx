@@ -18,6 +18,15 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
+// For PARAVIEW_USE_MPI 
+#include "vtkPVConfig.h"     
+#ifdef PARAVIEW_USE_MPI
+  #include "vtkMPI.h"
+  #include "vtkMPIController.h"
+  #include "vtkMPICommunicator.h"
+#endif
+#include "vtkDummyController.h"
+//
 #include "vtkH5PartReader.h"
 //
 #include "vtkInformation.h"
@@ -65,8 +74,6 @@
 #include "vtkParticleBoxTree.h"
 #include "vtkBoundingBox.h"
 #include "vtkIdListCollection.h"
-//
-#include "vtkDummyController.h"
 //
 #include <functional>
 #include <algorithm>

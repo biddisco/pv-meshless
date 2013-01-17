@@ -94,12 +94,8 @@ int main (int argc, char* argv[])
     vtkImageData::SafeDownCast(sph_results)->GetInformation()->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),wholeExtent);
   }
 
-
-
-
   vtkSmartPointer<vtkTimerLog> viztimer = vtkSmartPointer<vtkTimerLog>::New();
   viztimer->StartTimer();
-
 
   //--------------------------------------------------------------
   // 
@@ -334,6 +330,8 @@ int main (int argc, char* argv[])
   }
   
   test.controller->Finalize();
+  finalizeTest(test);
+
   retVal = ok;
 
   return !retVal;
