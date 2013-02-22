@@ -1243,7 +1243,7 @@ int vtkH5PartReader::PartitionByExtents(vtkIdType N, std::vector<vtkIdType> &sta
 {
   vtkExtentTranslator *extTran = vtkExtentTranslator::New();
   extTran->SetSplitModeToBlock();
-  int WholeExtent[6] = { 0, N, 0, 0, 0, 0 };
+  int WholeExtent[6] = { 0, static_cast<int>(N), 0, 0, 0, 0 };
 #if !defined(LIMIT_PARTITIONS)
   extTran->SetNumberOfPieces(this->UpdateNumPieces);
 #else 
