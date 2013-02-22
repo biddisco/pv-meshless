@@ -100,9 +100,21 @@ ENDFOREACH(test_name)
 #--------------------------------------------------
 IF (USE_HDF5 AND PARAVIEW_USE_MPI)
   find_package(MPI)
+
+  #--------------------------------------------------
+  # Utility Library with Test helpers
+  #--------------------------------------------------
+  ADD_LIBRARY(pv_meshlessTestLib STATIC
+    TestUtils.cxx
+  )
+
+  #--------------------------------------------------
+  # Parallel IO test
+  #--------------------------------------------------
   ADD_EXECUTABLE(TestH5PartParallelWriter TestH5PartParallelWriter.cxx)
   TARGET_LINK_LIBRARIES(TestH5PartParallelWriter
     pv_meshless 
+    pv_meshlessTestLib
     )
   FOREACH(N 1 2 3 4 8 16 32 64)
     SET(test_name "TestH5PartParallelWriter-P${N}")
@@ -114,7 +126,7 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
           NAME ${test_name}
           COMMAND 
             $<TARGET_FILE:TestH5PartParallelWriter> 
-            -N 1000000
+            -generateParticles 1000000
             -F temp.h5
             -D ${PLUGIN_TEST_DIR}
             -T "${PLUGIN_TEST_DIR}"
@@ -132,7 +144,7 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
           COMMAND 
             ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${N}
             $<TARGET_FILE:TestH5PartParallelWriter> 
-            -N 1000000
+            -generateParticles 1000000
             -F temp.h5
             -D ${PLUGIN_TEST_DIR}
             -T "${PLUGIN_TEST_DIR}"
@@ -142,14 +154,6 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
     ENDIF (N GREATER 1)
   ENDFOREACH(N)
   
-
-  #--------------------------------------------------
-  # Utility Library with Test helpers
-  #--------------------------------------------------
-  ADD_LIBRARY(pv_meshlessTestLib STATIC
-    TestUtils.cxx
-  )
-
 ENDIF (USE_HDF5 AND PARAVIEW_USE_MPI)
 
 #--------------------------------------------------
