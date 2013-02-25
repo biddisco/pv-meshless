@@ -114,7 +114,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
   char *empty = "";
 #ifdef PARAVIEW_USE_MPI
   int dummy=0;
-  DisplayParameter<char *>("====================", "Init MPI", &empty, 1, 0);
+//  DisplayParameter<char *>("====================", "Init MPI", &empty, 1, 0);
   MPI_Init(&argc,&argv);
   test.controller = vtkSmartPointer<vtkMPIController>::New();
   test.controller->Initialize(&argc, &argv, 1);
