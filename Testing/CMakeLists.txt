@@ -179,14 +179,16 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
       while(NOT cores GREATER ${SLURM_JOB_CPUS_PER_NODE})
         set(test_name "SLURM-H5PartParallelWriter-P${nodes}-n${cores}")
         math(EXPR processes "${nodes} * ${cores}")
-        math(EXPR memory "${SLURM_JOB_CPUS_PER_NODE}*${SLURM_MEM_PER_CPU} / ${cores}")
+        # use half free on the node for exe/buffers etc, otherwise test will crash
+        math(EXPR nodememory "(${SLURM_JOB_CPUS_PER_NODE}*${SLURM_MEM_PER_CPU}) / ${cores}")
+        math(EXPR jobmemory "(${SLURM_JOB_CPUS_PER_NODE}*${SLURM_MEM_PER_CPU}/2) / ${cores}")
         message("Adding SLURM test ${test_name} with ${memory} MB per core")
         ADD_TEST(
         NAME ${test_name}
         COMMAND 
-          ${MPIEXEC} -m${memory}M ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${processes}
+          ${MPIEXEC} -m${nodememory}M ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${processes}
           $<TARGET_FILE:TestH5PartParallelWriter> 
-          -memoryMB ${memory}
+          -memoryMB ${jobmemory}
           -pieceValidation 1
           -F temp.h5
           -D "${SLURM_TEST_PARALLEL_DIR}"
@@ -608,4 +610,5 @@ IF (EXISTS ${SC12_DATA_PATH}/${SC12_DATA_FILE}${SC12_TEST}.h5part)
     ENDFOREACH(N)
   ENDFOREACH(index)
 ENDIF (EXISTS ${SC12_DATA_PATH}/${SC12_DATA_FILE}${SC12_TEST}.h5part)
+
 
