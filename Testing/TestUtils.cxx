@@ -171,7 +171,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
   // ParticleGenerate info
   //
   test.generateN = GetParameter<vtkIdType>("-generateParticles", "Generated particles", argc, argv, 0, test.myRank, unused);
-  test.memoryMB  = GetParameter<vtkIdType>("-memoryMB", "Maximum Memory", argc, argv, 0, test.myRank, unused);
+  test.memoryMB  = GetParameter<vtkIdType>("-memoryMB", "Maximum memory (MB)", argc, argv, 0, test.myRank, unused);
   test.pieceValidation = GetParameter<bool>("-pieceValidation", "Validate by pieces", argc, argv, false, test.myRank, unused);
   test.iterations = GetParameter<int>("-iterations", "Number of iterations", argc, argv, 1, test.myRank, unused);
 

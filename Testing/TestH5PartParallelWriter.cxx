@@ -93,17 +93,23 @@ int main (int argc, char* argv[])
   // memory usage - Ids(int) Size(double) Elevation(float) Verts(double*3)
   double MBPerParticle = (sizeof(int) + sizeof(double) + sizeof(float) + 3*sizeof(float))/(1024.0*1024.0);
   vtkTypeInt64 numPoints = test.generateN;
-  if (numPoints==0 && test.memoryMB>0) {
-    numPoints = (test.memoryMB-128.0) / MBPerParticle;
-  }
-
   double rows = ROWS;
-  rows = floor(pow(numPoints,1.0/3.0)+0.5);
-  numPoints = static_cast<vtkTypeInt64>(pow(rows,3));
-  double memoryused = numPoints*MBPerParticle; 
+  //
+  if (numPoints==0 && test.memoryMB>0) {
+    numPoints = (test.memoryMB) / MBPerParticle;
+  }
+  else {
+    rows = floor(pow(numPoints,1.0/3.0)+0.5);
+    numPoints = static_cast<vtkTypeInt64>(pow(rows,3));
+  }
+  double memoryusedMB = numPoints*MBPerParticle; 
+  double totalmemoryperIterationGB = test.numProcs*memoryusedMB/1024; 
+  double totalmemorywriteGB = test.numProcs*totalmemoryperIterationGB; 
 
   DisplayParameter<vtkIdType>("Particles requested", "", &numPoints, 1, (test.myRank==0)?0:-1);
-  DisplayParameter<double>("Memory per process ", "(MB)", &memoryused, 1, (test.myRank==0)?0:-1);
+  DisplayParameter<double>("Memory per process ", "(MB)", &memoryusedMB, 1, (test.myRank==0)?0:-1);
+  DisplayParameter<double>("Memory per iteration ", "(GB)", &totalmemoryperIterationGB, 1, (test.myRank==0)?0:-1);
+  DisplayParameter<double>("Memory total to write ", "(GB)", &totalmemorywriteGB, 1, (test.myRank==0)?0:-1);
 
   //
   vtkSmartPointer<vtkPolyData>  Sprites = vtkSmartPointer<vtkPolyData>::New();
@@ -197,7 +203,7 @@ int main (int argc, char* argv[])
   test.controller->Barrier();
   //
   // memory usage - Ids(int) Size(double) Elevation(float) Verts(double*3)
-  double MBytes = numPoints*MBPerParticle*test.iterations;
+  double MBytes = numPoints*MBPerParticle*test.iterations*test.numProcs;
   double elapsed = timer->GetElapsedTime();
   double IOSpeed = MBytes/timer->GetElapsedTime();
   DisplayParameter<double>("File Written in", "", &elapsed, 1, (test.myRank==0)?0:-1);

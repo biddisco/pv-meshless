@@ -173,7 +173,7 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
     #
     # Generate the tests, loop over Nodes and ores to create a complete coverage
     #
-    set(nodes 2)
+    set(nodes 1)
     while(NOT nodes GREATER ${SLURM_JOB_NUM_NODES})
       set (cores 1)
       while(NOT cores GREATER ${SLURM_JOB_CPUS_PER_NODE})
@@ -181,24 +181,24 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
         math(EXPR processes "${nodes} * ${cores}")
         # use half free on the node for exe/buffers etc, otherwise test will crash
         math(EXPR nodememory "(${SLURM_JOB_CPUS_PER_NODE}*${SLURM_MEM_PER_CPU}) / ${cores}")
-        math(EXPR jobmemory "(${SLURM_JOB_CPUS_PER_NODE}*${SLURM_MEM_PER_CPU}/2) / ${cores}")
-        message("Adding SLURM test ${test_name} with ${memory} MB per core")
+        math(EXPR jobmemory "${SLURM_MEM_PER_CPU}/8 ")
+        message("Adding SLURM test ${test_name} with ${nodememory} MB per core")
         ADD_TEST(
         NAME ${test_name}
         COMMAND 
           ${MPIEXEC} -m${nodememory}M ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${processes}
           $<TARGET_FILE:TestH5PartParallelWriter> 
           -memoryMB ${jobmemory}
-          -iterations 5
+          -iterations 8
           -pieceValidation 1
           -F temp.h5
           -D "${SLURM_TEST_PARALLEL_DIR}"
           -T "${SLURM_TEST_PARALLEL_DIR}"
           -testName ${test_name}
         )
-        math(EXPR cores "${cores} * 4")
+        math(EXPR cores "${cores} * 2")
       endwhile(NOT cores GREATER ${SLURM_JOB_CPUS_PER_NODE})
-      math(EXPR nodes "${nodes} * 4")
+      math(EXPR nodes "${nodes} * 2")
     endwhile(NOT nodes GREATER ${SLURM_JOB_NUM_NODES})
   endif (H5PART_WRITER_SYSTEM_TESTS_USING_SLURM) 
 
