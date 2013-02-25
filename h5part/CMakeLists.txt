@@ -41,7 +41,6 @@ IF (PARAVIEW_USE_MPI)
   SET(H5Part_LIBS
     ${H5Part_LIBS} 
     hdf5
-    ${MPI_LIBRARY}
     ${MPI_C_LIBRARIES}
   )
 ENDIF (PARAVIEW_USE_MPI)
