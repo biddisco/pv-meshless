@@ -166,7 +166,7 @@ int vtkRegularGridSource::RequestDataObject(
         break;
     }
     outInfo->Set(vtkDataObject::DATA_OBJECT(), newOutput);
-    newOutput->Delete();
+    newOutput->FastDelete();
     this->GetOutputPortInformation(0)->Set(
       vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
   }
@@ -470,7 +470,7 @@ int vtkRegularGridSource::RequestData(
       arraydata[i*2+1] = i;
     }
     outPoly->SetVerts(outVerts);
-    outVerts->Delete();
+    outVerts->FastDelete();
     outPoly->SetPoints(newpoints);
   }
   else if (outGrid) {

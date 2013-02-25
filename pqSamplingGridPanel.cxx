@@ -207,7 +207,7 @@ pqSamplingGridPanel::pqSamplingGridPanel(pqProxy* proxy, QWidget* _parent) :
   link->AddLinkedProperty(reg_grid_source, "OriginInfo", vtkSMPropertyLink::INPUT);
   link->AddLinkedProperty(widget, "OriginInfo", vtkSMPropertyLink::OUTPUT);
   this->Implementation->PropertyLinks.push_back(link);
-  link->Delete();
+  link->FastDelete();
 */
   //
   // Start in Box mode by default

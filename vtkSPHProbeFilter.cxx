@@ -254,7 +254,7 @@ vtkSmartPointer<vtkDataSet> vtkSPHProbeFilter::NewOutput(vtkDataSet *probepts)
   int outputType = this->OutputType(probepts);
   vtkSmartPointer<vtkDataSet> newoutput = 
     vtkDataSet::SafeDownCast(vtkDataObjectTypes::NewDataObject(outputType));
-  newoutput->Delete(); // dec ref count
+  newoutput->FastDelete(); // dec ref count
   return newoutput;
 }
 //----------------------------------------------------------------------------
@@ -293,7 +293,7 @@ int vtkSPHProbeFilter::RequestDataObject(
   if (!ok) {
     newOutput = vtkDataObjectTypes::NewDataObject(outputType);
     outInfo->Set(vtkDataObject::DATA_OBJECT(), newOutput);
-    newOutput->Delete();
+    newOutput->FastDelete();
     this->GetOutputPortInformation(0)->Set(
       vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
   }

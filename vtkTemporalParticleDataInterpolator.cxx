@@ -447,10 +447,10 @@ vtkDataSet *vtkTemporalParticleDataInterpolator
     outpoints->SetDataType(outarray->GetDataType());
     outpoints->SetNumberOfPoints(outarray->GetNumberOfTuples());
     outpoints->SetData(outarray);
-    outpoints->Delete();
+    outpoints->FastDelete();
     if (outarray)
       {
-      outarray->Delete();
+      outarray->FastDelete();
       }
 
     vtkSmartPointer<vtkCellArray> verts = vtkSmartPointer<vtkCellArray>::New();
@@ -506,7 +506,7 @@ vtkDataSet *vtkTemporalParticleDataInterpolator
     vtkIdType Nt = std::max(nt0,nt1);
     vtkDataArray *outarray = this->InterpolateDataArray(ratio, &arrays[0], Nt);
     output->GetPointData()->AddArray(outarray);
-    outarray->Delete();
+    outarray->FastDelete();
     }
   //
   // Interpolate celldata if present
@@ -542,7 +542,7 @@ vtkDataSet *vtkTemporalParticleDataInterpolator
     vtkIdType Nt = std::max(nt0,nt1);
     vtkDataArray *outarray = this->InterpolateDataArray(ratio, &arrays[0], Nt);
     output->GetCellData()->AddArray(outarray);
-    outarray->Delete();
+    outarray->FastDelete();
     }
   if (in1->GetInformation()->Has(vtkDataObject::DATA_GEOMETRY_UNMODIFIED()) &&
       in2->GetInformation()->Has(vtkDataObject::DATA_GEOMETRY_UNMODIFIED()))

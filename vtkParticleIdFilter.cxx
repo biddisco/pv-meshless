@@ -126,7 +126,7 @@ int vtkParticleIdFilter::RequestData(
     ptIds->SetName(this->IdsArrayName);
     int idx = outPD->AddArray(ptIds);
     outPD->SetActiveAttribute(idx, vtkDataSetAttributes::SCALARS);
-    ptIds->Delete();
+    ptIds->FastDelete();
     }
 
   //
@@ -162,7 +162,7 @@ int vtkParticleIdFilter::RequestData(
       outCD->AddArray(cellIds);
       outCD->CopyFieldOff(this->IdsArrayName);
       }
-    cellIds->Delete();
+    cellIds->FastDelete();
     }
 
   return 1;

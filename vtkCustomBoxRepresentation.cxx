@@ -69,12 +69,12 @@ vtkCustomBoxRepresentation::vtkCustomBoxRepresentation()
 //----------------------------------------------------------------------------
 vtkCustomBoxRepresentation::~vtkCustomBoxRepresentation()
 {  
-  this->ConeSource->Delete();
-  this->ConeMapper->Delete();
-  this->ConeActor->Delete();
+  this->ConeSource->FastDelete();
+  this->ConeMapper->FastDelete();
+  this->ConeActor->FastDelete();
 
-  this->NormalProperty->Delete();
-  this->SelectedNormalProperty->Delete();
+  this->NormalProperty->FastDelete();
+  this->SelectedNormalProperty->FastDelete();
 }
 //----------------------------------------------------------------------
 void vtkCustomBoxRepresentation::SetPlaneMode(int planemode)

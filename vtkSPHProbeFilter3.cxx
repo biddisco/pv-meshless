@@ -194,7 +194,7 @@ int vtkSPHProbeFilter3::RequestDataObject(
         break;
     }
     outInfo->Set(vtkDataObject::DATA_OBJECT(), newOutput);
-    newOutput->Delete();
+    newOutput->FastDelete();
     this->GetOutputPortInformation(0)->Set(
       vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
   }

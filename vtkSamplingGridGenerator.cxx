@@ -61,8 +61,8 @@ vtkSamplingGridGenerator::vtkSamplingGridGenerator(void)
 vtkSamplingGridGenerator::~vtkSamplingGridGenerator(void) 
 {
   this->SetCutFunction(NULL);
-  this->Box->Delete();
-  this->Cutter->Delete();
+  this->Box->FastDelete();
+  this->Cutter->FastDelete();
 }
 //----------------------------------------------------------------------------
 int vtkSamplingGridGenerator::RequiredDataType()
