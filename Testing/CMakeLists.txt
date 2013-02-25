@@ -154,6 +154,50 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
     ENDIF (N GREATER 1)
   ENDFOREACH(N)
   
+  #--------------------------------------------------
+  # Large IO bandwidth tests.
+  # These use SLURM params to generate a set of tests
+  #--------------------------------------------------
+  option(H5PART_WRITER_SYSTEM_TESTS_USING_SLURM OFF)
+  if (H5PART_WRITER_SYSTEM_TESTS_USING_SLURM)
+    set (SLURM_JOB_NUM_NODES     $ENV{SLURM_JOB_NUM_NODES})
+    set (SLURM_JOB_CPUS_PER_NODE $ENV{SLURM_JOB_CPUS_PER_NODE})
+    set (SLURM_MEM_PER_CPU       $ENV{SLURM_MEM_PER_CPU})
+    set (SLURM_TEST_PARALLEL_DIR "/scratch/daint/biddisco/test" CACHE PATH "testing DIr on parallel filesystem")    
+    
+    # SLURM_JOB_CPUS_PER_NODE has (xN) added to it which we don't want
+    string(REPLACE "(x${SLURM_JOB_NUM_NODES})" "" SLURM_JOB_CPUS_PER_NODE "${SLURM_JOB_CPUS_PER_NODE}")
+    #
+    message("Slurm params are N ${SLURM_JOB_NUM_NODES}, n ${SLURM_JOB_CPUS_PER_NODE}, M ${SLURM_MEM_PER_CPU} ")
+
+    #
+    # Generate the tests, loop over Nodes and ores to create a complete coverage
+    #
+    set(nodes 1)
+    while(NOT nodes GREATER ${SLURM_JOB_NUM_NODES})
+      set (cores 1)
+      while(NOT cores GREATER ${SLURM_JOB_CPUS_PER_NODE})
+        set(test_name "SLURM-H5PartParallelWriter-P${nodes}-n${cores}")
+        math(EXPR processes "${nodes} * ${cores}")
+        math(EXPR memory "${SLURM_JOB_CPUS_PER_NODE}*${SLURM_MEM_PER_CPU} / ${cores}")
+        message("Adding SLURM test ${test_name} with ${memory} MB per core")
+        ADD_TEST(
+        NAME ${test_name}
+        COMMAND 
+          ${MPIEXEC} -m${memory}M ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${processes}
+          $<TARGET_FILE:TestH5PartParallelWriter> 
+          -memoryMB ${memory}
+          -F temp.h5
+          -D "${SLURM_TEST_PARALLEL_DIR}"
+          -T "${SLURM_TEST_PARALLEL_DIR}"
+          -testName ${test_name}
+        )
+        math(EXPR cores "${cores} * 2")
+      endwhile(NOT cores GREATER ${SLURM_JOB_CPUS_PER_NODE})
+      math(EXPR nodes "${nodes} * 2")
+    endwhile(NOT nodes GREATER ${SLURM_JOB_NUM_NODES})
+  endif (H5PART_WRITER_SYSTEM_TESTS_USING_SLURM) 
+
 ENDIF (USE_HDF5 AND PARAVIEW_USE_MPI)
 
 #--------------------------------------------------
@@ -563,3 +607,4 @@ IF (EXISTS ${SC12_DATA_PATH}/${SC12_DATA_FILE}${SC12_TEST}.h5part)
     ENDFOREACH(N)
   ENDFOREACH(index)
 ENDIF (EXISTS ${SC12_DATA_PATH}/${SC12_DATA_FILE}${SC12_TEST}.h5part)
+
