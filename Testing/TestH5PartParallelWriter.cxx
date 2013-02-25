@@ -94,7 +94,7 @@ int main (int argc, char* argv[])
   double MBPerParticle = (sizeof(int) + sizeof(double) + sizeof(float) + 3*sizeof(float))/(1024.0*1024.0);
   vtkTypeInt64 numPoints = test.generateN;
   if (numPoints==0 && test.memoryMB>0) {
-    numPoints = (test.memoryMB-16.0) / MBPerParticle;
+    numPoints = (test.memoryMB-128.0) / MBPerParticle;
   }
 
   double rows = ROWS;
@@ -223,95 +223,96 @@ int main (int argc, char* argv[])
       std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * " << std::endl;
       std::cout << "Process Id : " << myId << " Expected " << static_cast<vtkTypeInt64>(numPoints*numProcs) << std::endl;
 
-      // Read the file we just wrote on N processes
-      vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
-      reader->SetFileName((char*)(test.fullName.c_str()));
-      reader->Update();
-      vtkTypeInt64 ReadPoints = reader->GetOutput()->GetNumberOfPoints();
-      std::cout << "Process Id : " << myId << " Read : " << ReadPoints << std::endl;
-      std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * " << std::endl;
-      //
-      // Validate the point Ids to make sure nothing went wrong in the writing
-      //
-      vtkIntArray *pointIds = vtkIntArray::SafeDownCast(reader->GetOutput()->GetPointData()->GetArray("PointIds"));
-      bool IdsGood = true;
-      vtkTypeInt64 valid = 0;
-      for (vtkTypeInt64 i=0; IdsGood && pointIds && i<ReadPoints; i++) {
-        if (pointIds->GetValue(i)==i) {
-          valid++;
+      if (!test.pieceValidation) {
+        // Read the file we just wrote on N processes
+        vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
+        reader->SetFileName((char*)(test.fullName.c_str()));
+        reader->Update();
+        vtkTypeInt64 ReadPoints = reader->GetOutput()->GetNumberOfPoints();
+        std::cout << "Process Id : " << myId << " Read : " << ReadPoints << std::endl;
+        std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * " << std::endl;
+        //
+        // Validate the point Ids to make sure nothing went wrong in the writing
+        //
+        vtkIntArray *pointIds = vtkIntArray::SafeDownCast(reader->GetOutput()->GetPointData()->GetArray("PointIds"));
+        bool IdsGood = true;
+        vtkTypeInt64 valid = 0;
+        for (vtkTypeInt64 i=0; IdsGood && pointIds && i<ReadPoints; i++) {
+          if (pointIds->GetValue(i)==i) {
+            valid++;
+          }
+          else {
+            IdsGood = false;
+          }
+        }
+        if (IdsGood && ReadPoints==numPoints*numProcs) {
+          ok = true;
+          std::cout << " " << std::endl;
+          std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * "   << std::endl;
+          std::cout << " All Points read back and Validated OK "               << std::endl;
+          std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * \n" << std::endl;
+          //
+          if (myId==0) {
+            unsigned long size = vtksys::SystemTools::FileLength((char*)(test.fullName.c_str()));
+            double filesize = size/(1024.0*1024.0);
+            std::cout << "Process Id : " << myId << " Total IO/Disk-Speed " << filesize/elapsed << " MB/s" << std::endl;
+          }
         }
         else {
-          IdsGood = false;
+          ok = false;
+          std::cout << " " << std::endl;
+          std::cout << " # # # # # # # # # # # # # # # # # # # # # # # # # " << std::endl;
+          std::cout << " FAIL "                                              << std::endl;
+          std::cout << " Valid Ids "                                << valid << std::endl;
+          std::cout << " # # # # # # # # # # # # # # # # # # # # # # # # # " << std::endl;
+          std::cout << " " << std::endl;
+        }
+
+        if (test.doRender) {
+          std::cout << "Process Id : " << myId << " Rendering" << std::endl;
+
+          // Generate vertices from the points
+          vtkSmartPointer<vtkMaskPoints> verts = vtkSmartPointer<vtkMaskPoints>::New();
+          verts->SetGenerateVertices(1);
+          verts->SetOnRatio(1);
+          verts->SetMaximumNumberOfPoints(numPoints*numProcs);
+          verts->SetInputConnection(reader->GetOutputPort());
+          verts->Update();
+
+          // Display something to see if we got a good output
+          vtkSmartPointer<vtkPolyData> polys = vtkSmartPointer<vtkPolyData>::New();
+          polys->ShallowCopy(verts->GetOutput());
+          polys->GetPointData()->SetScalars(polys->GetPointData()->GetArray("Elevation"));
+          std::cout << "Process Id : " << myId << " Created vertices : " << polys->GetNumberOfPoints() << std::endl;
+          //
+          vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+          vtkSmartPointer<vtkActor>                 actor = vtkSmartPointer<vtkActor>::New();
+          vtkSmartPointer<vtkRenderer>                ren = vtkSmartPointer<vtkRenderer>::New();
+          vtkSmartPointer<vtkRenderWindow>      renWindow = vtkSmartPointer<vtkRenderWindow>::New();
+          vtkSmartPointer<vtkRenderWindowInteractor> iren = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+          iren->SetRenderWindow(renWindow);
+          ren->SetBackground(0.1, 0.1, 0.1);
+          renWindow->SetSize( 400+8, 400+8);
+          mapper->SetInputData(polys);
+          mapper->SelectColorArray("Elevation");
+          actor->SetMapper(mapper);
+          actor->GetProperty()->SetPointSize(2);
+          ren->AddActor(actor);
+          renWindow->AddRenderer(ren);
+
+          std::cout << "Process Id : " << myId << " About to Render" << std::endl;
+          renWindow->Render();
+
+          int retVal = (vtkRegressionTester::Test(argc, argv, renWindow, 10));
+
+          if ( retVal == vtkRegressionTester::DO_INTERACTOR)
+          {
+            iren->Start();
+          }
+          std::cout << "Process Id : " << myId << " Rendered" << std::endl;
+          ok = (retVal==vtkRegressionTester::PASSED);
         }
       }
-      if (IdsGood && ReadPoints==numPoints*numProcs) {
-        ok = true;
-        std::cout << " " << std::endl;
-        std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * "   << std::endl;
-        std::cout << " All Points read back and Validated OK "               << std::endl;
-        std::cout << " * * * * * * * * * * * * * * * * * * * * * * * * * \n" << std::endl;
-        //
-        if (myId==0) {
-          unsigned long size = vtksys::SystemTools::FileLength((char*)(test.fullName.c_str()));
-          double filesize = size/(1024.0*1024.0);
-          std::cout << "Process Id : " << myId << " Total IO/Disk-Speed " << filesize/elapsed << " MB/s" << std::endl;
-        }
-      }
-      else {
-        ok = false;
-        std::cout << " " << std::endl;
-        std::cout << " # # # # # # # # # # # # # # # # # # # # # # # # # " << std::endl;
-        std::cout << " FAIL "                                              << std::endl;
-        std::cout << " Valid Ids "                                << valid << std::endl;
-        std::cout << " # # # # # # # # # # # # # # # # # # # # # # # # # " << std::endl;
-        std::cout << " " << std::endl;
-      }
-
-      if (test.doRender) {
-        std::cout << "Process Id : " << myId << " Rendering" << std::endl;
-
-        // Generate vertices from the points
-        vtkSmartPointer<vtkMaskPoints> verts = vtkSmartPointer<vtkMaskPoints>::New();
-        verts->SetGenerateVertices(1);
-        verts->SetOnRatio(1);
-        verts->SetMaximumNumberOfPoints(numPoints*numProcs);
-        verts->SetInputConnection(reader->GetOutputPort());
-        verts->Update();
-
-        // Display something to see if we got a good output
-        vtkSmartPointer<vtkPolyData> polys = vtkSmartPointer<vtkPolyData>::New();
-        polys->ShallowCopy(verts->GetOutput());
-        polys->GetPointData()->SetScalars(polys->GetPointData()->GetArray("Elevation"));
-        std::cout << "Process Id : " << myId << " Created vertices : " << polys->GetNumberOfPoints() << std::endl;
-        //
-        vtkSmartPointer<vtkPolyDataMapper>       mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-        vtkSmartPointer<vtkActor>                 actor = vtkSmartPointer<vtkActor>::New();
-        vtkSmartPointer<vtkRenderer>                ren = vtkSmartPointer<vtkRenderer>::New();
-        vtkSmartPointer<vtkRenderWindow>      renWindow = vtkSmartPointer<vtkRenderWindow>::New();
-        vtkSmartPointer<vtkRenderWindowInteractor> iren = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-        iren->SetRenderWindow(renWindow);
-        ren->SetBackground(0.1, 0.1, 0.1);
-        renWindow->SetSize( 400+8, 400+8);
-        mapper->SetInputData(polys);
-        mapper->SelectColorArray("Elevation");
-        actor->SetMapper(mapper);
-        actor->GetProperty()->SetPointSize(2);
-        ren->AddActor(actor);
-        renWindow->AddRenderer(ren);
-
-        std::cout << "Process Id : " << myId << " About to Render" << std::endl;
-        renWindow->Render();
-
-        int retVal = (vtkRegressionTester::Test(argc, argv, renWindow, 10));
-
-        if ( retVal == vtkRegressionTester::DO_INTERACTOR)
-        {
-          iren->Start();
-        }
-        std::cout << "Process Id : " << myId << " Rendered" << std::endl;
-        ok = (retVal==vtkRegressionTester::PASSED);
-      }
-
       //
       // rejoin the other ranks
       //
