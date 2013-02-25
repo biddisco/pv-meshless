@@ -230,10 +230,10 @@ vtkH5PartReader::~vtkH5PartReader()
   delete [] this->StepName;
   this->StepName = NULL;
   
-  this->PointDataArraySelection->Delete();
+  this->PointDataArraySelection->FastDelete();
   this->PointDataArraySelection = 0;
 
-  this->ExtentTranslator->Delete();
+  this->ExtentTranslator->FastDelete();
 
   this->SetController(NULL);
 }
@@ -884,7 +884,7 @@ int vtkH5PartReader::RequestData(
           H5Dread(dataset, component_datatype, memspace,
             diskshape, H5P_DEFAULT, temparray->GetVoidPointer(0));
           dataarray->CopyComponent(c, temparray, c);
-          temparray->Delete();
+          temparray->FastDelete();
           }
         H5Sclose(memspace);
         H5Tclose(component_datatype);
@@ -1254,7 +1254,7 @@ int vtkH5PartReader::PartitionByExtents(vtkIdType N, std::vector<vtkIdType> &sta
   extTran->PieceToExtent();
   int PartitionExtents[6];
   extTran->GetExtent(PartitionExtents);
-  extTran->Delete();
+  extTran->FastDelete();
   startend.push_back(PartitionExtents[0]);
   startend.push_back(PartitionExtents[1]-1);
   vtkDebugMacro(<< "PartitionByExtents " << startend[0] << " : " << startend[1] << " = " << (startend[1]-startend[0]+1));

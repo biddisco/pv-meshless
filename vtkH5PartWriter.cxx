@@ -382,7 +382,7 @@ void vtkH5PartWriter::WriteDataArray(int i, vtkDataArray *indata)
         << " Name " << correctName.c_str()
         << " NumComponents " << numComponents);
       data = vtkDataArray::CreateDataArray(correctType);
-      data->Delete(); // smartpointer copied it
+      data->FastDelete(); // smartpointer copied it
       data->SetNumberOfComponents(numComponents);
       data->SetName(correctName.c_str());
     }
