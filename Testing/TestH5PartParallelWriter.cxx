@@ -83,7 +83,7 @@ int main (int argc, char* argv[])
   //--------------------------------------------------------------
   // if the output file exists already, wipe it
   //--------------------------------------------------------------
-  if (test.myRank==0 && !vtksys::SystemTools::FileExists(test.fullName.c_str())) {
+  if (test.myRank==0 && vtksys::SystemTools::FileExists(test.fullName.c_str())) {
     DisplayParameter<std::string>("Delete file", "", &test.fullName, 1, (test.myRank==0)?0:-1);
     vtksys::SystemTools::RemoveFile(test.fullName.c_str());
   }
