@@ -186,10 +186,11 @@ int main (int argc, char* argv[])
     //  char ch;  
     //  std::cin >> ch;
     //}
-
-    writer->SetTimeStep(0);
-    writer->SetTimeValue(0.5);
-    writer->Write();
+    for (int i=0; i<test.iterations; i++) {
+      writer->SetTimeStep(0);
+      writer->SetTimeValue(0.5 + i);
+      writer->Write();
+    }
     // 
     // make sure they have all finished writing before going on to the read part
     //
@@ -198,7 +199,7 @@ int main (int argc, char* argv[])
     test.controller->Barrier();
     //
     // memory usage - Ids(int) Size(double) Elevation(float) Verts(double*3)
-    double MBytes = numPoints*MBPerParticle;
+    double MBytes = numPoints*MBPerParticle*test.iterations;
     double elapsed = timer->GetElapsedTime();
     std::cout << "Process Id : " << myId << " File Written in " << elapsed << " seconds" << std::endl;
     std::cout << "Process Id : " << myId << " IO-Speed " << MBytes/timer->GetElapsedTime() << " MB/s" << std::endl;

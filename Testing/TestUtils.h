@@ -84,6 +84,7 @@ class TestStruct {
   vtkIdType   generateN;
   bool        pieceValidation;
   int         memoryMB;
+  int         iterations;
 
   //
   // H5Part Reader 

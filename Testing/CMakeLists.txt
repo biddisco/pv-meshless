@@ -189,6 +189,7 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
           ${MPIEXEC} -m${nodememory}M ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${processes}
           $<TARGET_FILE:TestH5PartParallelWriter> 
           -memoryMB ${jobmemory}
+          -iterations 5
           -pieceValidation 1
           -F temp.h5
           -D "${SLURM_TEST_PARALLEL_DIR}"
