@@ -86,7 +86,7 @@ int main (int argc, char* argv[])
   vtkTypeInt64 numProcs = test.controller->GetNumberOfProcesses();
 
   if (myId==0) {
-    std::cout << usage.c_str() << std::endl;
+//    std::cout << usage.c_str() << std::endl;
   }
   test.controller->Barrier();
 
@@ -150,20 +150,13 @@ int main (int argc, char* argv[])
     elev->SetHighPoint(offset+rows*spacing, 0.0, 0.0);
     elev->Update();
 
-    //bool collective = false;
-    //if (test->IsFlagSpecified("-C")) {
-    //  if (myId==0) {
-    //   std::cout << "Process Id : " << myId << " Collective IO requested" << std::endl;
-    //  }
-    // collective = true;
-    //}
-
+    bool collective = true;
     // Create writer
     vtkSmartPointer<vtkH5PartWriter> writer = vtkSmartPointer<vtkH5PartWriter>::New();
     writer->SetFileModeToWrite();
     writer->SetFileName(test.fullName.c_str());
     writer->SetInputConnection(elev->GetOutputPort());
-    //  writer->SetCollectiveIO(collective);
+    writer->SetCollectiveIO(collective);
     writer->SetDisableInformationGather(1);
     writer->SetVectorsWithStridedWrite(0);
 
