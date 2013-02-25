@@ -173,7 +173,7 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
     #
     # Generate the tests, loop over Nodes and ores to create a complete coverage
     #
-    set(nodes 1)
+    set(nodes 2)
     while(NOT nodes GREATER ${SLURM_JOB_NUM_NODES})
       set (cores 1)
       while(NOT cores GREATER ${SLURM_JOB_CPUS_PER_NODE})
@@ -195,9 +195,9 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
           -T "${SLURM_TEST_PARALLEL_DIR}"
           -testName ${test_name}
         )
-        math(EXPR cores "${cores} * 2")
+        math(EXPR cores "${cores} * 4")
       endwhile(NOT cores GREATER ${SLURM_JOB_CPUS_PER_NODE})
-      math(EXPR nodes "${nodes} * 2")
+      math(EXPR nodes "${nodes} * 4")
     endwhile(NOT nodes GREATER ${SLURM_JOB_NUM_NODES})
   endif (H5PART_WRITER_SYSTEM_TESTS_USING_SLURM) 
 
