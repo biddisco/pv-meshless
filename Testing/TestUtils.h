@@ -73,6 +73,7 @@ class TestStruct {
   double cameraFocus[3];
   double cameraViewUp[3];
   int    windowSize[2];
+  int    memoryMB;
   //
   std::string testName;
 

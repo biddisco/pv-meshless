@@ -90,8 +90,14 @@ int main (int argc, char* argv[])
   }
   test.controller->Barrier();
 
+  // memory usage - Ids(int) Size(double) Elevation(float) Verts(double*3)
+  double MBPerParticle = (sizeof(int) + sizeof(double) + sizeof(float) + 3*sizeof(float))/(1024.0*1024.0);
   vtkTypeInt64 numPoints = test.generateN;
-  double       rows      = ROWS;
+  if (numPoints==0 && test.memoryMB>0) {
+    numPoints = (test.memoryMB-16.0) / MBPerParticle;
+  }
+
+  double rows = ROWS;
 
   rows = floor(pow(numPoints,1.0/3.0)+0.5);
   numPoints = static_cast<vtkTypeInt64>(pow(rows,3));
@@ -199,8 +205,7 @@ int main (int argc, char* argv[])
     test.controller->Barrier();
     //
     // memory usage - Ids(int) Size(double) Elevation(float) Verts(double*3)
-    double bytes = numPoints*(sizeof(int) + sizeof(double) + sizeof(float) + 3*sizeof(float));
-    double MBytes = bytes/(1024*1024);
+    double MBytes = numPoints*MBPerParticle;
     double elapsed = timer->GetElapsedTime();
     std::cout << "Process Id : " << myId << " File Written in " << elapsed << " seconds" << std::endl;
     std::cout << "Process Id : " << myId << " IO-Speed " << MBytes/timer->GetElapsedTime() << " MB/s" << std::endl;
