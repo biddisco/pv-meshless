@@ -73,7 +73,6 @@ class TestStruct {
   double cameraFocus[3];
   double cameraViewUp[3];
   int    windowSize[2];
-  int    memoryMB;
   //
   std::string testName;
 
@@ -83,6 +82,8 @@ class TestStruct {
   // (Random) Particle Generation
   //
   vtkIdType   generateN;
+  bool        pieceValidation;
+  int         memoryMB;
 
   //
   // H5Part Reader 
