@@ -104,7 +104,8 @@ int main (int argc, char* argv[])
   }
   double memoryusedMB = numPoints*MBPerParticle; 
   double totalmemoryperIterationGB = test.numProcs*memoryusedMB/1024; 
-  double totalmemorywriteGB = test.numProcs*totalmemoryperIterationGB; 
+  double totalmemorywriteMB = numPoints*MBPerParticle*test.iterations*test.numProcs;
+  double totalmemorywriteGB = totalmemorywriteMB/1024.0; 
 
   DisplayParameter<vtkIdType>("Particles requested", "", &numPoints, 1, (test.myRank==0)?0:-1);
   DisplayParameter<double>("Memory per process ", "(MB)", &memoryusedMB, 1, (test.myRank==0)?0:-1);
@@ -203,9 +204,8 @@ int main (int argc, char* argv[])
   test.controller->Barrier();
   //
   // memory usage - Ids(int) Size(double) Elevation(float) Verts(double*3)
-  double MBytes = numPoints*MBPerParticle*test.iterations*test.numProcs;
   double elapsed = timer->GetElapsedTime();
-  double IOSpeed = MBytes/timer->GetElapsedTime();
+  double IOSpeed = totalmemorywriteMB/timer->GetElapsedTime();
   DisplayParameter<double>("File Written in", "", &elapsed, 1, (test.myRank==0)?0:-1);
   DisplayParameter<double>("IO-Speed ", "(MB/s)", &IOSpeed, 1, (test.myRank==0)?0:-1);
 
