@@ -188,6 +188,8 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
         COMMAND 
           ${MPIEXEC} -m${nodememory}M ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${processes}
           $<TARGET_FILE:TestH5PartParallelWriter> 
+          -numNodes ${nodes}
+          -processesPerNode ${cores}
           -memoryMB ${jobmemory}
           -iterations 8
           -pieceValidation 1
