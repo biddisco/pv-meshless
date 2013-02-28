@@ -90,8 +90,8 @@ int main (int argc, char* argv[])
 
   test.controller->Barrier();
 
-  // memory usage - Ids(int) Size(double) Elevation(float) Verts(double*3)
-  double MBPerParticle = (sizeof(int) + sizeof(double) + sizeof(float) + 3*sizeof(float))/(1024.0*1024.0);
+  // memory usage - Ids(vtkIdType) Size(double) Elevation(float) Verts(double*3)
+  double MBPerParticle = (sizeof(vtkIdType) + sizeof(double) + sizeof(float) + 3*sizeof(float))/(1024.0*1024.0);
   vtkTypeInt64 numPoints = test.generateN;
   double rows = ROWS;
   //
@@ -117,7 +117,7 @@ int main (int argc, char* argv[])
   vtkSmartPointer<vtkPoints>     points = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray>   verts = vtkSmartPointer<vtkCellArray>::New();
   vtkSmartPointer<vtkDoubleArray> sizes = vtkSmartPointer<vtkDoubleArray>::New();
-  vtkSmartPointer<vtkIntArray>      Ids = vtkSmartPointer<vtkIntArray>::New();
+  vtkSmartPointer<vtkIdTypeArray>   Ids = vtkSmartPointer<vtkIdTypeArray>::New();
   //
   points->SetNumberOfPoints(numPoints);
   //
@@ -209,6 +209,19 @@ int main (int argc, char* argv[])
   DisplayParameter<double>("File Written in", "", &elapsed, 1, (test.myRank==0)?0:-1);
   DisplayParameter<double>("IO-Speed ", "(MB/s)", &IOSpeed, 1, (test.myRank==0)?0:-1);
 
+
+  //
+  // Generate a 
+  //
+  std::stringstream tempdata;
+  tempdata << test.testName << "," <<  
+    test.numNodes << "," << test.processesPerNode << "," << 
+    memoryusedMB << "," << totalmemoryperIterationGB << "," <<
+    totalmemorywriteMB << "," << totalmemorywriteGB <<  "," << 
+    numPoints << "," << IOSpeed;
+  std::string infostring = tempdata.str();
+  DisplayParameter<std::string>("CSVData ", "", &infostring, 1, (test.myRank==0)?0:-1);
+
 //    std::cout << "Process Id : " << test.myRank << " File Written in " << elapsed << " seconds" << std::endl;
 //    std::cout << "Process Id : " << test.myRank << " IO-Speed " << MBytes/timer->GetElapsedTime() << " MB/s" << std::endl;
   //
@@ -242,7 +255,7 @@ int main (int argc, char* argv[])
       //
       // Validate the point Ids to make sure nothing went wrong in the writing
       //
-      vtkIntArray *pointIds = vtkIntArray::SafeDownCast(reader->GetOutput()->GetPointData()->GetArray("PointIds"));
+      vtkIdTypeArray *pointIds = vtkIdTypeArray::SafeDownCast(reader->GetOutput()->GetPointData()->GetArray("PointIds"));
       bool IdsGood = true;
       vtkTypeInt64 valid = 0;
       for (vtkTypeInt64 i=0; IdsGood && pointIds && i<ReadPoints; i++) {

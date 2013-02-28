@@ -214,6 +214,8 @@ int initTest(int argc, char* argv[], TestStruct &test)
   GetArrayParameter<double>("-peak_position", "Expected Peak Position", test.vpos, 3, argc, argv, test.myRank);
   test.imageThreshold = GetParameter<int>("-imageThreshold", "Image Threshold Pass/Fail", argc, argv, 1, test.myRank, unused);
   test.benchmarkPartition = GetParameter<bool>("-benchmarkPartition", "benchmarkPartition", argc, argv, 0, test.myRank, unused);
+  test.numNodes = GetParameter<int>("-numNodes", "Number of Nodes used (info)", argc, argv, 1, test.myRank, unused);
+  test.processesPerNode = GetParameter<int>("-processesPerNode", "Processes per node (info)", argc, argv, 1, test.myRank, unused);
 
   //
   // Window/Camera

@@ -73,6 +73,8 @@ class TestStruct {
   double cameraFocus[3];
   double cameraViewUp[3];
   int    windowSize[2];
+  int    numNodes;
+  int    processesPerNode;
   //
   std::string testName;
 
@@ -169,11 +171,11 @@ void DisplayParameter(const char *prefix1, const char *prefix2, T *data, int com
   std::stringstream temp;
   temp << prefix1 << prefix2 << std::ends;
   std::cout.width(30);
-  std::cout << temp.str().c_str() << " : {";
+  std::cout << temp.str().c_str() << " : ";
   std::cout.width(0);
   for (int i=0; i<components; i++) {
     std::cout << data[i];
-    (i==(components-1)) ? std::cout << "}" : std::cout << ",";
+    (i==(components-1)) ? std::cout : std::cout << ",";
   }
   std::cout << std::endl;
 }
