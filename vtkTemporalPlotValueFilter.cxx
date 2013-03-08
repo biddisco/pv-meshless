@@ -42,6 +42,7 @@ vtkTemporalPlotValueFilter::vtkTemporalPlotValueFilter()
   this->Points               = vtkSmartPointer<vtkPoints>::New();
   this->Values               = vtkSmartPointer<vtkPointData>::New();
   this->TimeData             = vtkSmartPointer<vtkDoubleArray>::New();
+  this->StorageSize          = 1000;
   this->TimeData->SetName("TimeData");
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1); // Lines and points
@@ -137,8 +138,16 @@ int vtkTemporalPlotValueFilter::RequestData(
     Vertices->InsertNextCell(1,&Id);
   }
 
-  //
-  //
+  if (this->StorageSize>0 && this->Values->GetNumberOfTuples()>this->StorageSize) {
+    for (int i=0; i<this->StorageSize; i++) {
+      this->Values->CopyData(this->Values, i+1, i);
+      this->TimeData->SetValue(i, this->TimeData->GetValue(i+1));
+    }
+    for (int i=0; i<this->Values->GetNumberOfArrays(); i++) {
+      this->Values->GetArray(i)->SetNumberOfTuples(this->StorageSize);
+    }
+    this->TimeData->SetNumberOfTuples(this->StorageSize);
+  }
   //
   output->GetPointData()->ShallowCopy(Values);
   output->GetPointData()->AddArray(TimeData);
