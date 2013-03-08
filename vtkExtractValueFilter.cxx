@@ -125,7 +125,7 @@ void vtkExtractValueFilter::FindMaximum(vtkDataSet *input, vtkPolyData *output, 
         imin = i;
       }
     }
-    else {
+    else if (scalars) {
       val = scalars->GetTuple1(i);
       if (val>vmax) {
         vmax = val;
@@ -136,7 +136,10 @@ void vtkExtractValueFilter::FindMaximum(vtkDataSet *input, vtkPolyData *output, 
         imin = i;
       }
     }
-
+    else {
+      val = 0.0;
+      break;
+    }
   }
   //
   // Value has been found, do parallel reduction
