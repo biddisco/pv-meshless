@@ -47,6 +47,11 @@ class VTK_EXPORT vtkTemporalPlotValueFilter : public vtkPolyDataAlgorithm {
     // whatever time step is next supplied.
     void Flush();
 
+  // Description:
+  // StorageSize controls how many steps of data are held
+  vtkSetMacro(StorageSize, int);
+  vtkGetMacro(StorageSize, int);
+
   protected:
      vtkTemporalPlotValueFilter();
     ~vtkTemporalPlotValueFilter();
@@ -68,9 +73,10 @@ class VTK_EXPORT vtkTemporalPlotValueFilter : public vtkPolyDataAlgorithm {
                             vtkInformationVector* outputVector);
 
     // internal data variables
-    int           NumberOfTimeSteps;
-    double        LatestTime;
+    int      NumberOfTimeSteps;
+    double   LatestTime;
     //
+    int      StorageSize;
 //BTX
     vtkSmartPointer<vtkCellArray>   Vertices;
     vtkSmartPointer<vtkPoints>      Points;
