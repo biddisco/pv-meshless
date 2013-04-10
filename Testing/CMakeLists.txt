@@ -173,7 +173,7 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
     #
     # Generate the tests, loop over Nodes and ores to create a complete coverage
     #
-    set(nodes 1)
+    set(nodes 128)
     while(NOT nodes GREATER ${SLURM_JOB_NUM_NODES})
       set (cores 1)
       while(NOT cores GREATER ${SLURM_JOB_CPUS_PER_NODE})
@@ -186,12 +186,13 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
         ADD_TEST(
         NAME ${test_name}
         COMMAND 
-          ${MPIEXEC} -m${nodememory}M ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${processes}
+#          ${MPIEXEC} -m${nodememory}M ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${processes}
+          ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${processes}
           $<TARGET_FILE:TestH5PartParallelWriter> 
           -numNodes ${nodes}
           -processesPerNode ${cores}
           -memoryMB ${jobmemory}
-          -iterations 8
+          -iterations 4
           -pieceValidation 1
           -F temp.h5
           -D "${SLURM_TEST_PARALLEL_DIR}"
