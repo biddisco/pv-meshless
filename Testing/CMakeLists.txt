@@ -160,10 +160,10 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
   #--------------------------------------------------
   option(H5PART_WRITER_SYSTEM_TESTS_USING_SLURM OFF)
   if (H5PART_WRITER_SYSTEM_TESTS_USING_SLURM)
-    set (SLURM_JOB_NUM_NODES     $ENV{SLURM_JOB_NUM_NODES})
-    set (SLURM_JOB_CPUS_PER_NODE $ENV{SLURM_JOB_CPUS_PER_NODE})
-    set (SLURM_MEM_PER_CPU       $ENV{SLURM_MEM_PER_CPU})
-    set (SLURM_TEST_PARALLEL_DIR "/scratch/daint/biddisco/test" CACHE PATH "testing DIr on parallel filesystem")    
+    set (SLURM_JOB_NUM_NODES     "$ENV{SLURM_JOB_NUM_NODES}"     CACHE STRING "N")
+    set (SLURM_JOB_CPUS_PER_NODE "$ENV{SLURM_JOB_CPUS_PER_NODE}" CACHE STRING "Cores per node")
+    set (SLURM_MEM_PER_CPU       "$ENV{SLURM_MEM_PER_CPU}"       CACHE STRING "Mem per CPU")
+    set (SLURM_TEST_PARALLEL_DIR "/scratch/daint/biddisco/test"  CACHE PATH   "testing dir on parallel filesystem")    
     
     # SLURM_JOB_CPUS_PER_NODE has (xN) added to it which we don't want
     string(REPLACE "(x${SLURM_JOB_NUM_NODES})" "" SLURM_JOB_CPUS_PER_NODE "${SLURM_JOB_CPUS_PER_NODE}")
@@ -564,55 +564,55 @@ ENDIF (NOT (${ZOLTAN_SUPPORT}))
 #--------------------------------------------------
 #--------------------------------------------------
 LIST(GET SC12_DATA_BOXN 0 SC12_TEST)
-IF (EXISTS ${SC12_DATA_PATH}/${SC12_DATA_FILE}${SC12_TEST}.h5part)
-  FOREACH(index 0 1)
-    SET(ncount 0)
-    FOREACH(N ${SC12_DATA_BOXN})
-      LIST(GET SC12_DATA_DX_N ${ncount} DELTAX)
-      LIST(GET SC12_DATA_DX_4 ${ncount} GST)
-      SET(TestParams 
-        -D "${SC12_DATA_PATH}"
-        -F "${SC12_DATA_FILE}${N}.h5part"
-        -T "${PLUGIN_TEST_DIR}"
-        -Xarray "X"
-        -Yarray "Y"
-        -Zarray "Z"
-        -particlesize ${DELTAX}
-        -ghost_region ${GST}
-        -ignorePartitions "${index}"
-        -randomizeExtents "${index}"
-      )
-      # remove 000 from 00032 for Nprocs etc
-      STRING(REGEX REPLACE "(^0+)" "" N "${N}")
-      #
-      SET(M ${N})
-      while (NOT ${M} LESS ${SC12_DATA_NMIN})
-        IF (NOT ${M} GREATER ${MPIEXEC_MAX_NUMPROCS})
-          SET(test_name "benchmark-PartitionBoxes-B${N}-P${M}-I${index}")
-          MATH(EXPR MPI_DEPTH "(${N}/${CORES_PER_NODE})/${M}")
-          IF (${MPI_DEPTH} GREATER 1)
-            SET (MPI_DEPTH_FLAGS -d ${MPI_DEPTH})
-          ELSE (${MPI_DEPTH} GREATER 1)
-            SET (MPI_DEPTH_FLAGS )
-          ENDIF (${MPI_DEPTH} GREATER 1)
-          IF (${MPI_DEPTH} GREATER ${CORES_PER_NODE})
-            SET (MPI_DEPTH_FLAGS -d ${CORES_PER_NODE})
-          ENDIF (${MPI_DEPTH} GREATER ${CORES_PER_NODE})
-          ADD_TEST(
-            NAME ${test_name}
-            COMMAND 
-              ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${M} ${MPI_DEPTH_FLAGS}
-              $<TARGET_FILE:TestParticlePartitionFilter> 
-              -testName ${test_name}
-              ${TestParams}
-          )
-        ENDIF (NOT ${M} GREATER ${MPIEXEC_MAX_NUMPROCS})
+IF(TARGET TestParticlePartitionFilter)
+  IF (EXISTS ${SC12_DATA_PATH}/${SC12_DATA_FILE}${SC12_TEST}.h5part)
+    FOREACH(index 0 1)
+      SET(ncount 0)
+      FOREACH(N ${SC12_DATA_BOXN})
+        LIST(GET SC12_DATA_DX_N ${ncount} DELTAX)
+        LIST(GET SC12_DATA_DX_4 ${ncount} GST)
+        SET(TestParams 
+          -D "${SC12_DATA_PATH}"
+          -F "${SC12_DATA_FILE}${N}.h5part"
+          -T "${PLUGIN_TEST_DIR}"
+          -Xarray "X"
+          -Yarray "Y"
+          -Zarray "Z"
+          -particlesize ${DELTAX}
+          -ghost_region ${GST}
+          -ignorePartitions "${index}"
+          -randomizeExtents "${index}"
+        )
+        # remove 000 from 00032 for Nprocs etc
+        STRING(REGEX REPLACE "(^0+)" "" N "${N}")
         #
-        MATH(EXPR M "${M} / 2")
-      endwhile (NOT ${M} LESS ${SC12_DATA_NMIN})
-      MATH(EXPR ncount "${ncount} + 1")
-    ENDFOREACH(N)
-  ENDFOREACH(index)
-ENDIF (EXISTS ${SC12_DATA_PATH}/${SC12_DATA_FILE}${SC12_TEST}.h5part)
-
-
+        SET(M ${N})
+        while (NOT ${M} LESS ${SC12_DATA_NMIN})
+          IF (NOT ${M} GREATER ${MPIEXEC_MAX_NUMPROCS})
+            SET(test_name "benchmark-PartitionBoxes-B${N}-P${M}-I${index}")
+            MATH(EXPR MPI_DEPTH "(${N}/${CORES_PER_NODE})/${M}")
+            IF (${MPI_DEPTH} GREATER 1)
+              SET (MPI_DEPTH_FLAGS -d ${MPI_DEPTH})
+            ELSE (${MPI_DEPTH} GREATER 1)
+              SET (MPI_DEPTH_FLAGS )
+            ENDIF (${MPI_DEPTH} GREATER 1)
+            IF (${MPI_DEPTH} GREATER ${CORES_PER_NODE})
+              SET (MPI_DEPTH_FLAGS -d ${CORES_PER_NODE})
+            ENDIF (${MPI_DEPTH} GREATER ${CORES_PER_NODE})
+            ADD_TEST(
+              NAME ${test_name}
+              COMMAND 
+                ${MPIEXEC} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} ${M} ${MPI_DEPTH_FLAGS}
+                $<TARGET_FILE:TestParticlePartitionFilter> 
+                -testName ${test_name}
+                ${TestParams}
+            )
+          ENDIF (NOT ${M} GREATER ${MPIEXEC_MAX_NUMPROCS})
+          #
+          MATH(EXPR M "${M} / 2")
+        endwhile (NOT ${M} LESS ${SC12_DATA_NMIN})
+        MATH(EXPR ncount "${ncount} + 1")
+      ENDFOREACH(N)
+    ENDFOREACH(index)
+  ENDIF (EXISTS ${SC12_DATA_PATH}/${SC12_DATA_FILE}${SC12_TEST}.h5part)
+ENDIF (TestParticlePartitionFilter)
