@@ -239,7 +239,7 @@ int main (int argc, char* argv[])
     std::cout << "Process Id : " << test.myRank << " Expected " << static_cast<vtkTypeInt64>(numPoints*test.numProcs) << std::endl;
 
     if (test.pieceValidation) {
-      // Read the file we just wrote on N processes
+      // Read just the information as we haven't enough memory to load the data
       vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
       reader->SetFileName((char*)(test.fullName.c_str()));
       reader->UpdateInformation();
