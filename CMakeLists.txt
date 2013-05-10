@@ -271,7 +271,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomBoxRepresentation.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.xml
+#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleIdFilter.xml
@@ -293,7 +293,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSMCustomBoxRepresentationProxy.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.cxx
+#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTree.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.cxx

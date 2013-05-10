@@ -30,11 +30,13 @@
 
 #include "vtkImageAlgorithm.h"
 #include "vtkSmartPointer.h"
+#include "vtkBoundingBox.h"
 
 class vtkSPHManager;
 class vtkSPHProbeFilter;
 class vtkSPHProbeProgress;
 class vtkMultiProcessController;
+class vtkBoundsExtentTranslator;
 
 class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
   public:
@@ -147,30 +149,33 @@ class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
                             vtkInformationVector**, 
                             vtkInformationVector*);
 
-    virtual int ComputeInformation(vtkInformation *,
-                                   vtkInformationVector **,
-                                   vtkInformationVector *);
+    virtual int ComputeGlobalInformation(vtkDataSet *inputData, int dimensions[3], bool inflate);
 
-    virtual void ComputeAxesFromBounds(vtkDataSet *inputData, double lengths[3], bool inflate);
+    virtual int ComputeLocalInformation(vtkBoundsExtentTranslator *bet, int localExtents[6]);
+
+    virtual void ComputeAxesFromBounds(vtkDataSet *inputData, double samplinglengths[3], double datalengths[3], bool inflate);
 
     // properties
-    double   GlobalOrigin[3];
     double   Spacing[3];
     int      Resolution[3];
     double   Delta;
 
     // internal values which may differ from above ones
-    int      WholeDimension[3];
+    int      WholeDimensionWithDelta[3];
+    int      WholeDimensionWithoutDelta[3];
+    int      LocalExtent[6];
+    int      ExtentOffset[3]; 
     double   scaling[3];
     double   spacing[3];
 
     //  
     // SPHManager
     //
-    vtkSPHManager *SPHManager;
+    vtkSPHManager                       *SPHManager;
     vtkSmartPointer<vtkSPHProbeFilter>   SPHProbe;
     vtkSmartPointer<vtkSPHProbeProgress> ProbeProgress;
     vtkMultiProcessController           *Controller;
+    vtkSmartPointer<vtkBoundsExtentTranslator>  ExtentTranslator;
     //      
     // SPH Mode
     //
@@ -184,7 +189,12 @@ class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
     //
     int                UpdatePiece;
     int                UpdateNumPieces;
-
+    //
+    vtkBoundingBox     GlobalResamplingBounds;
+    vtkBoundingBox     LocalResamplingBounds;
+    vtkBoundingBox     GlobalDataBounds;
+    double             GlobalResamplingOrigin[3];
+    double             GlobalDataOrigin[3];
 
 private:
   vtkSPHImageResampler(const vtkSPHImageResampler&);  // Not implemented.
