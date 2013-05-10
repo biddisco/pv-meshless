@@ -46,6 +46,8 @@
 vtkStandardNewMacro(vtkSPHImageResampler);
 vtkCxxSetObjectMacro(vtkSPHImageResampler, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkSPHImageResampler, SPHManager, vtkSPHManager);
+//
+#include "vtkZoltanV1PartitionFilter.h"
 //----------------------------------------------------------------------------
 #if 0
   #define OUTPUTTEXT(a) std::cout << (a);
@@ -73,7 +75,10 @@ vtkCxxSetObjectMacro(vtkSPHImageResampler, SPHManager, vtkSPHManager);
   a[2] = (s[2]*x2[2])>0 ? (z[2] - y[2])/(s[2]*x2[2]) : 0;
 // --------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-vtkSPHImageResampler::vtkSPHImageResampler(void) {
+vtkSPHImageResampler::vtkSPHImageResampler(void) 
+{
+  this->UpdatePiece             = 0;
+  this->UpdateNumPieces         = 1;
   this->GlobalOrigin[0]         = 0.0;
   this->GlobalOrigin[1]         = 0.0;
   this->GlobalOrigin[2]         = 0.0;
@@ -149,18 +154,27 @@ int vtkSPHImageResampler::RequestUpdateExtent(
   vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   //
-  int piece, numPieces, ghostLevels;
+  int ghostLevels;
   //
-  piece       = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-  numPieces   = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+  this->UpdatePiece     = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  this->UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   ghostLevels = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
   //
   // Pass the piece request through
   //
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), piece);
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
-  vtkDebugMacro( "Imagesampler (" << piece << ") set num pieces to " << numPieces );
+  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), this->UpdatePiece);
+  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), this->UpdateNumPieces);
+  vtkDebugMacro( "Imagesampler (" << this->UpdatePiece << ") set num pieces to " << this->UpdateNumPieces );
   //  
+//  outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), 
+//    0, -1, 
+//    0, -1, 
+//    0, -1 );
+  //
+//  std::cout << "vtkSPHImageResampler::RequestInformation UPDATE_EXTENT {";
+//  for (int i=0; i<3; i++) std::cout << -1 << (i<2 ? "," : "}");
+//  std::cout << std::endl;
+  //
   return 1;
 }
 
@@ -173,20 +187,39 @@ int vtkSPHImageResampler::RequestInformation(
   this->ComputeInformation(request, inputVector, outputVector);
   //
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
   //
-	int maxpieces = -1;//outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), 
-    0, this->WholeDimension[0]-1, 
-    0, this->WholeDimension[1]-1, 
-    0, this->WholeDimension[2]-1 );
-//	outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),maxpieces);
+  int maxpieces = -1;//outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+
+//  if (WholeDimension[0]>0 && WholeDimension[1]>0 && WholeDimension[2]>0) {
+    outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), 
+      0, this->WholeDimension[0]-1, 
+      0, this->WholeDimension[1]-1, 
+      0, this->WholeDimension[2]-1 );
+    //
+//    std::cout << "vtkSPHImageResampler::RequestInformation WHOLE_EXTENT {";
+//    for (int i=0; i<3; i++) std::cout << WholeDimension[i] << (i<2 ? "," : "}");
+//    std::cout << std::endl;
+//  }
+//  else {
+//    outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), 
+//      0, 1, 
+//      0, 1, 
+//      0, 1 );
+//    //
+//   std::cout << "vtkSPHImageResampler::RequestInformation WHOLE_EXTENT {";
+//    for (int i=0; i<3; i++) std::cout << -1 << (i<2 ? "," : "}");
+//    std::cout << std::endl;
+//  }
+  // outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), maxpieces);
   outInfo->Set(vtkDataObject::ORIGIN(), this->GlobalOrigin, 3);
   outInfo->Set(vtkDataObject::SPACING(), this->spacing, 3);
 
-  //
-  //vtkDebugMacro( "RI WHOLE_EXTENT {";
-  //for (int i=0; i<3; i++) std::cout << WholeDimension[i] << (i<2 ? "," : "}");
-  //std::cout << std::endl;
+  inInfo->Set(vtkZoltanV1PartitionFilter::ZOLTAN_SAMPLE_ORIGIN(), 0.0, 0.0, 0.0);
+  inInfo->Append(vtkExecutive::KEYS_TO_COPY(),vtkZoltanV1PartitionFilter::ZOLTAN_SAMPLE_ORIGIN());
+
+  std::cout << "Setting Zoltan origin request " << std::endl;
+
 
   return 1;
 }
@@ -243,6 +276,7 @@ int vtkSPHImageResampler::ComputeInformation(
       if (this->Spacing[i]<=0.0 && this->Resolution[i]>1) {
         this->scaling[i] = 1.0/(this->Resolution[i]-1);
         this->spacing[i] = lengths[i]*this->scaling[i];
+        lengths[i] = vtkMath::Round(lengths[i]/this->spacing[i] + 0.5)*this->spacing[i];
       }
       else{
         this->spacing[i] = this->Spacing[i];
@@ -255,6 +289,12 @@ int vtkSPHImageResampler::ComputeInformation(
       }
       if (this->scaling[i]>0.0 && this->spacing[i]>1E-8) {
         this->WholeDimension[i] = vtkMath::Round(1.0/this->scaling[i] + 0.5);
+        if (this->GlobalOrigin[i]>=0) {
+          this->GlobalOrigin[i] = vtkMath::Round(this->GlobalOrigin[i]/this->spacing[i] + 0.5)*this->spacing[i];
+        }
+        else {
+          this->GlobalOrigin[i] = -vtkMath::Round(-this->GlobalOrigin[i]/this->spacing[i] + 0.5)*this->spacing[i];
+        }
       }
       else {
         this->WholeDimension[i] = 1;
@@ -320,7 +360,6 @@ int vtkSPHImageResampler::RequestData(
                 1+outUpdateExt[5]-outUpdateExt[4]};
   //
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), outWholeExt, 6);
-//  outImage->SetWholeExtent(outWholeExt);
   outImage->SetExtent(outUpdateExt);
   outImage->SetOrigin(this->GlobalOrigin);
   outImage->SetSpacing(this->spacing);

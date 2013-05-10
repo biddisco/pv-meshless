@@ -181,6 +181,9 @@ class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
     int                ModifiedNumber;
     int                ComputeDensityFromNeighbourVolume;
     bool               BoundsInitialized;
+    //
+    int                UpdatePiece;
+    int                UpdateNumPieces;
 
 
 private:
