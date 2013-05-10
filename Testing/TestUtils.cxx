@@ -140,7 +140,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
   test.windowSize[0] = test.windowSize[1] = 400;
 
   // uncomment this to wait for debugger (needs to be after MPI_Init because it checks rank
-  // DEBUG_WAIT
+   DEBUG_WAIT
   //
   test.controller->Barrier();
 
@@ -224,9 +224,9 @@ int initTest(int argc, char* argv[], TestStruct &test)
   unused = GetArrayParameter<double>("-cameraFocus", "Camera Focus", test.cameraFocus, 3, argc, argv, test.myRank);
   unused = GetArrayParameter<double>("-cameraViewUp", "Camera ViewUp", test.cameraViewUp, 3, argc, argv, test.myRank);
   unused = GetArrayParameter<int>("-windowSize", "Window Size", test.windowSize, 2, argc, argv, test.myRank);
-  if (0 && unused) { // why have window sizes changed?
-    test.windowSize[0] += 8;
-    test.windowSize[1] += 8;
+  if (unused) { // why have window sizes changed?
+//    test.windowSize[0] += 8;
+//    test.windowSize[1] += 8;
   }
   // bug fix for cmd line params on windows with debugger (only first read properly)
   test.gridSpacing[2] = test.gridSpacing[1] = test.gridSpacing[0];
@@ -405,6 +405,7 @@ double TestStruct::UpdateSPHResampler()
   vtkStreamingDemandDrivenPipeline *resample_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(this->sphResampler->GetExecutive());
   testDebugMacro( "Setting resample piece information " << this->myRank << " of " << this->numProcs );
   resample_sddp->UpdateDataObject();
+  resample_sddp->SetUpdateExtent(0, this->myRank, this->numProcs, 0);
   resample_sddp->UpdateInformation();
   resample_sddp->SetUpdateExtent(0, this->myRank, this->numProcs, 0);
   resample_sddp->Update();

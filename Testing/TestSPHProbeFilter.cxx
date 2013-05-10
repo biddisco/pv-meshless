@@ -182,6 +182,7 @@ int main (int argc, char* argv[])
     // no piece info set yet, assumes info is not piece dependent
     testDebugMacro( "Setting viz piece information " << test.myRank << " of " << test.numProcs );
     vis_sddp->SetUpdateExtent(0, test.myRank, test.numProcs, 0);
+    vis_sddp->SetUpdateResolution(0, 1.0);
     testDebugMacro( "Viz UpdateInformation " );
     vis_sddp->UpdateInformation();
     testDebugMacro( "Viz Update " );
@@ -317,7 +318,7 @@ int main (int argc, char* argv[])
     DisplayParameter<vtkIdType>("Total Particles", "", &totalParticles, 1, test.myRank);
     DisplayParameter<double>("Read Time", "", &read_elapsed, 1, test.myRank);
 #ifdef PV_MESHLESS_ZOLTAN_SUPPORT
-    DisplayParameter<double>("Partition Time", "", &partition_elapsed, 1, test.myRank);
+//    DisplayParameter<double>("Partition Time", "", &partition_elapsed, 1, test.myRank);
 #endif
     DisplayParameter<double>("SPH Probe Time", "", &sph_elapsed, 1, test.myRank);
     DisplayParameter<double>("Visualization/Check Time", "", &viz_elapsed, 1, test.myRank);
