@@ -137,7 +137,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
   test.cameraViewUp[0] = 0.0;
   test.cameraViewUp[1] = 0.0;
   test.cameraViewUp[2] = 1.0;
-  test.windowSize[0] = test.windowSize[1] = 400+8;
+  test.windowSize[0] = test.windowSize[1] = 400;
 
   // uncomment this to wait for debugger (needs to be after MPI_Init because it checks rank
   // DEBUG_WAIT
@@ -224,7 +224,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
   unused = GetArrayParameter<double>("-cameraFocus", "Camera Focus", test.cameraFocus, 3, argc, argv, test.myRank);
   unused = GetArrayParameter<double>("-cameraViewUp", "Camera ViewUp", test.cameraViewUp, 3, argc, argv, test.myRank);
   unused = GetArrayParameter<int>("-windowSize", "Window Size", test.windowSize, 2, argc, argv, test.myRank);
-  if (unused) { // why have window sizes changed?
+  if (0 && unused) { // why have window sizes changed?
     test.windowSize[0] += 8;
     test.windowSize[1] += 8;
   }
