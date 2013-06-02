@@ -27,7 +27,6 @@
 #include "vtkInformationVector.h"
 #include "vtkImageData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkBoundingBox.h"
 #include "vtkMath.h"
 #include "vtkSmartPointer.h"
 #include "vtkExtentTranslator.h"
@@ -77,21 +76,21 @@ vtkCxxSetObjectMacro(vtkSPHImageResampler, SPHManager, vtkSPHManager);
 //----------------------------------------------------------------------------
 vtkSPHImageResampler::vtkSPHImageResampler(void) 
 {
-  this->UpdatePiece             = 0;
-  this->UpdateNumPieces         = 1;
-  this->GlobalOrigin[0]         = 0.0;
-  this->GlobalOrigin[1]         = 0.0;
-  this->GlobalOrigin[2]         = 0.0;
-  this->Spacing[0]              = 0.0;
-  this->Spacing[1]              = 0.0;
-  this->Spacing[2]              = 0.0;
-  this->Delta                   = 0.0;
-  this->Resolution[0]           = 0;
-  this->Resolution[1]           = 0;
-  this->Resolution[2]           = 0;
-  this->WholeDimension[0]       = 1;
-  this->WholeDimension[1]       = 1;
-  this->WholeDimension[2]       = 1;
+  this->UpdatePiece               = 0;
+  this->UpdateNumPieces           = 1;
+  this->GlobalResamplingOrigin[0] = 0.0;
+  this->GlobalResamplingOrigin[1] = 0.0;
+  this->GlobalResamplingOrigin[2] = 0.0;
+  this->Spacing[0]                = 0.0;
+  this->Spacing[1]                = 0.0;
+  this->Spacing[2]                = 0.0;
+  this->Delta                     = 0.0;
+  this->Resolution[0]             = 0;
+  this->Resolution[1]             = 0;
+  this->Resolution[2]             = 0;
+  this->WholeDimensionWithoutDelta[0] = this->WholeDimensionWithDelta[0] = 1;
+  this->WholeDimensionWithoutDelta[0] = this->WholeDimensionWithDelta[1] = 1;
+  this->WholeDimensionWithoutDelta[0] = this->WholeDimensionWithDelta[2] = 1;
   //
   this->DensityScalars              = NULL;
   this->MassScalars                 = NULL;
@@ -114,6 +113,7 @@ vtkSPHImageResampler::vtkSPHImageResampler(void)
   this->ProbeProgress->Offset = 0.0;
   this->ProbeProgress->Scale  = 1.0;
   this->SPHProbe->AddObserver(vtkCommand::ProgressEvent, this->ProbeProgress);
+  this->ExtentTranslator = vtkSmartPointer<vtkBoundsExtentTranslator>::New();
 }
 //----------------------------------------------------------------------------
 vtkSPHImageResampler::~vtkSPHImageResampler(void) 
@@ -151,7 +151,7 @@ int vtkSPHImageResampler::RequestUpdateExtent(
   vtkInformationVector* outputVector)
 {
   // get the info objects
-  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+  vtkInformation  *inInfo = inputVector[0]->GetInformationObject(0);
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   //
   int ghostLevels;
@@ -166,10 +166,10 @@ int vtkSPHImageResampler::RequestUpdateExtent(
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), this->UpdateNumPieces);
   vtkDebugMacro( "Imagesampler (" << this->UpdatePiece << ") set num pieces to " << this->UpdateNumPieces );
   //  
-//  outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), 
-//    0, -1, 
-//    0, -1, 
-//    0, -1 );
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), 
+    0, -1, 
+    0, -1, 
+    0, -1 );
   //
 //  std::cout << "vtkSPHImageResampler::RequestInformation UPDATE_EXTENT {";
 //  for (int i=0; i<3; i++) std::cout << -1 << (i<2 ? "," : "}");
@@ -184,35 +184,30 @@ int vtkSPHImageResampler::RequestInformation(
   vtkInformationVector** inputVector,
   vtkInformationVector* outputVector)
 {
-  this->ComputeInformation(request, inputVector, outputVector);
+  vtkInformation  *inInfo = inputVector[0]->GetInformationObject(0);
+  vtkInformation *outInfo = outputVector->GetInformationObject(0);
+  vtkDataSet       *input = inInfo ? vtkDataSet::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT())) : NULL;
   //
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-  vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
+  this->UpdatePiece     = this->Controller->GetLocalProcessId();
+  this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
   //
-  int maxpieces = -1;//outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
-
-//  if (WholeDimension[0]>0 && WholeDimension[1]>0 && WholeDimension[2]>0) {
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), 
-      0, this->WholeDimension[0]-1, 
-      0, this->WholeDimension[1]-1, 
-      0, this->WholeDimension[2]-1 );
-    //
-//    std::cout << "vtkSPHImageResampler::RequestInformation WHOLE_EXTENT {";
-//    for (int i=0; i<3; i++) std::cout << WholeDimension[i] << (i<2 ? "," : "}");
-//    std::cout << std::endl;
-//  }
-//  else {
-//    outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), 
-//      0, 1, 
-//      0, 1, 
-//      0, 1 );
-//    //
-//   std::cout << "vtkSPHImageResampler::RequestInformation WHOLE_EXTENT {";
-//    for (int i=0; i<3; i++) std::cout << -1 << (i<2 ? "," : "}");
-//    std::cout << std::endl;
-//  }
+  vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
+    inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR())) : NULL;
+  vtkBoundsExtentTranslator  *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
+  //
+  this->ComputeGlobalInformation(input, this->WholeDimensionWithoutDelta, false);
+  this->ComputeGlobalInformation(input, this->WholeDimensionWithDelta, true);
+  this->ComputeLocalInformation(bet, this->LocalExtent);
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), this->ExtentTranslator);
+  //
+  //int maxpieces = -1;//outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+  //
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), 
+    0, this->WholeDimensionWithDelta[0]-1, 
+    0, this->WholeDimensionWithDelta[1]-1, 
+    0, this->WholeDimensionWithDelta[2]-1 );
   // outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), maxpieces);
-  outInfo->Set(vtkDataObject::ORIGIN(), this->GlobalOrigin, 3);
+  outInfo->Set(vtkDataObject::ORIGIN(), this->GlobalResamplingOrigin, 3);
   outInfo->Set(vtkDataObject::SPACING(), this->spacing, 3);
 
   inInfo->Set(vtkZoltanV1PartitionFilter::ZOLTAN_SAMPLE_ORIGIN(), 0.0, 0.0, 0.0);
@@ -220,92 +215,144 @@ int vtkSPHImageResampler::RequestInformation(
 
   std::cout << "Setting Zoltan origin request " << std::endl;
 
-
   return 1;
 }
 //----------------------------------------------------------------------------
-void vtkSPHImageResampler::ComputeAxesFromBounds(vtkDataSet *inputData, double lengths[3], bool inflate)
+void vtkSPHImageResampler::ComputeAxesFromBounds(vtkDataSet *inputData, double samplinglengths[3], double datalengths[3], bool inflate)
 {
   //
   // Define box...
   //
-  vtkBoundingBox box;
   double bounds[6];
   inputData->GetBounds(bounds);
   this->BoundsInitialized = vtkMath::AreBoundsInitialized(bounds);
-  box.SetBounds(bounds);
+  this->GlobalResamplingBounds.SetBounds(bounds);
   //
   double bmin[3], bmn[3] = {bounds[0], bounds[2], bounds[4]};
   double bmax[3], bmx[3] = {bounds[1], bounds[3], bounds[5]};
   Controller->AllReduce(bmn, bmin, 3, vtkCommunicator::MIN_OP);
   Controller->AllReduce(bmx, bmax, 3, vtkCommunicator::MAX_OP);
-  box.SetMinPoint(bmin);
-  box.SetMaxPoint(bmax);
+  this->GlobalResamplingBounds.SetMinPoint(bmin);
+  this->GlobalResamplingBounds.SetMaxPoint(bmax);
+  this->GlobalDataBounds = this->GlobalResamplingBounds;
   if (inflate) {
-    box.Inflate(this->Delta);
+    this->GlobalResamplingBounds.Inflate(this->Delta);
   }
-  box.GetMinPoint(this->GlobalOrigin[0], this->GlobalOrigin[1], this->GlobalOrigin[2]);
-  box.GetLengths(lengths);
+  this->GlobalResamplingBounds.GetMinPoint(this->GlobalResamplingOrigin[0], this->GlobalResamplingOrigin[1], this->GlobalResamplingOrigin[2]);
+  this->GlobalResamplingBounds.GetLengths(samplinglengths);
+  this->GlobalDataBounds.GetLengths(datalengths);
 }
 //----------------------------------------------------------------------------
-int vtkSPHImageResampler::ComputeInformation(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *vtkNotUsed(outputVector))
+int vtkSPHImageResampler::ComputeGlobalInformation(vtkDataSet *input, int dimensions[3], bool inflate)
 {
-  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
-  vtkDataSet  *inputData = inInfo ? vtkDataSet::SafeDownCast
-    (inInfo->Get(vtkDataObject::DATA_OBJECT())) : NULL;
-  //
-  double lengths[3];
-  //
-  if (!inputData) {
-    return 0;
-  }
-  this->ComputeAxesFromBounds(inputData, lengths, true);
-  vtkDebugMacro( "vtkSPHImageResampler::ComputeInformation BoundsInitialized " << BoundsInitialized );
+  double samplinglengths[3], datalengths[3];
+  this->ComputeAxesFromBounds(input, samplinglengths, datalengths, inflate);
 
+  //
+  // The data will sit inside some bounding box, but the resampling operation might exist in a larger space (delta>0)
+  // so the extent we compute will not map directly to the extent of the data.
+  //
   if (this->BoundsInitialized) {
     //
     // Define sampling box...
     // This represents the complete box which may be distributed over N pieces
     // Hence we compute WholeDimension (=WholeExtent+1)
     //
-    double o2[3] = {0.0, 0.0, 0.0};
     for (int i=0; i<3; i++) {
       if (this->Spacing[i]<=0.0 && this->Resolution[i]>1) {
         this->scaling[i] = 1.0/(this->Resolution[i]-1);
-        this->spacing[i] = lengths[i]*this->scaling[i];
-        lengths[i] = vtkMath::Round(lengths[i]/this->spacing[i] + 0.5)*this->spacing[i];
+        this->spacing[i] = samplinglengths[i]*this->scaling[i];
+        samplinglengths[i] = vtkMath::Round(samplinglengths[i]/this->spacing[i] + 0.5)*this->spacing[i];
       }
       else{
         this->spacing[i] = this->Spacing[i];
-        if (lengths[i]>0.0) {
-          this->scaling[i] = this->Spacing[i]/lengths[i];
+        if (samplinglengths[i]>0.0) {
+          this->scaling[i] = this->Spacing[i]/samplinglengths[i];
         }
         else {
           this->scaling[i] = 0.0;
         }
       }
       if (this->scaling[i]>0.0 && this->spacing[i]>1E-8) {
-        this->WholeDimension[i] = vtkMath::Round(1.0/this->scaling[i] + 0.5);
-        if (this->GlobalOrigin[i]>=0) {
-          this->GlobalOrigin[i] = vtkMath::Round(this->GlobalOrigin[i]/this->spacing[i] + 0.5)*this->spacing[i];
+        dimensions[i] = vtkMath::Round(1.0/this->scaling[i] + 0.5);
+        if (this->GlobalResamplingOrigin[i]>0.0) {
+          this->GlobalResamplingOrigin[i] = vtkMath::Round(this->GlobalResamplingOrigin[i]/this->spacing[i] + 0.5)*this->spacing[i];
         }
-        else {
-          this->GlobalOrigin[i] = -vtkMath::Round(-this->GlobalOrigin[i]/this->spacing[i] + 0.5)*this->spacing[i];
+        else if (this->GlobalResamplingOrigin[i]<0.0) {
+          this->GlobalResamplingOrigin[i] = -vtkMath::Round(-this->GlobalResamplingOrigin[i]/this->spacing[i] + 0.5)*this->spacing[i];
         }
       }
       else {
-        this->WholeDimension[i] = 1;
+        dimensions[i] = 1;
       }
     }
   }
   else {
     for (int i=0; i<3; i++) {
-      this->WholeDimension[i] = this->Resolution[i];
+      dimensions[i] = this->Resolution[i];
     }
   }
+  std::stringstream temp;
+  temp << "Image sampler " << this->UpdatePiece << " set dimensions to {";
+  for (int i=0; i<3; i++) temp << dimensions[i] << (i<2 ? "," : "}");
+  vtkDebugMacro( << temp.str() );
+  return 1;
+}
+//----------------------------------------------------------------------------
+int vtkSPHImageResampler::ComputeLocalInformation(vtkBoundsExtentTranslator *bet, int localExtents[6])
+{
+  int WholeExt[6] = {
+    0, this->WholeDimensionWithDelta[0]-1, 
+    0, this->WholeDimensionWithDelta[1]-1, 
+    0, this->WholeDimensionWithDelta[2]-1 };
+  int WholeExtNoDelta[6] = {
+    0, this->WholeDimensionWithoutDelta[0]-1, 
+    0, this->WholeDimensionWithoutDelta[1]-1, 
+    0, this->WholeDimensionWithoutDelta[2]-1 };
+  //
+  // The Local Extent must be calculated carefully by taking the extent we would have
+  // if no delta had been added, then extending each piece outwards to the bounds
+  // but without extending the edges which are not exterior faces of the domain
+  //
+  // 1) get the local extent based on delta=0
+  int     localExt[6]; 
+  double *localbounds = bet->GetBoundsForPiece(this->UpdatePiece);
+  bet->BoundsToExtentThreadSafe(localbounds, WholeExtNoDelta, localExt); 
+  // 2) compare local extent for zero delta with the global extent for zero delta
+  //    any bound which is a local max/min in a dimension must be pushed to the global max/min
+  for (int i=0; i<3; i++) {
+    this->ExtentOffset[i] = (GlobalDataBounds.GetMinPoint()[i]-GlobalResamplingBounds.GetMinPoint()[i])/this->spacing[i];
+    std::cout << "Extent offset " << i << " " << this->ExtentOffset[i] << std::endl;
+    // min bound
+    if (localExt[i*2] == WholeExtNoDelta[i*2]) {
+      localExtents[i*2] = WholeExt[i*2];
+      localbounds[i*2]  = this->GlobalResamplingBounds.GetBound(i*2);
+    }
+    else localExtents[i*2] = localExt[i*2] + this->ExtentOffset[i];
+    // max bound
+    if (localExt[i*2+1] == WholeExtNoDelta[i*2+1]) {
+      localExtents[i*2+1] = WholeExt[i*2+1];
+      localbounds[i*2+1]  = this->GlobalResamplingBounds.GetBound(i*2+1);
+    }
+    else localExtents[i*2+1] = localExt[i*2+1] + this->ExtentOffset[i];
+  }
+  //
+  this->ExtentTranslator->ShallowCopy(bet);
+  if (this->Delta>0.0) {
+    int BETExtents[6];
+    this->ExtentTranslator->SetUserBoundsEnabled(1);
+    this->ExtentTranslator->SetBoundsForPiece(this->UpdatePiece,localbounds);
+    this->ExtentTranslator->ExchangeBoundsForAllProcesses(this->Controller, localbounds);
+    this->ExtentTranslator->BoundsToExtentThreadSafe(localbounds, WholeExt, BETExtents);
+    //
+    std::stringstream temp;
+    temp << "Image sampler changing local extents " << this->UpdatePiece << " from {";
+    for (int i=0; i<6; i++) temp << localExt[i] << (i<5 ? "," : "} to {");
+    for (int i=0; i<6; i++) temp << localExtents[i] << (i<5 ? "," : "} but BET produced {");
+    for (int i=0; i<6; i++) temp << BETExtents[i] << (i<5 ? "," : "}");
+    vtkDebugMacro( << temp.str() );
+  }
+
   return 1;
 }
 //----------------------------------------------------------------------------
@@ -314,55 +361,46 @@ int vtkSPHImageResampler::RequestData(
   vtkInformationVector **inputVector,
   vtkInformationVector *outputVector)
 {
-  vtkImageData *outImage = this->GetOutput();
-  vtkDataSet      *input = vtkDataSet::SafeDownCast(this->GetInput());
-  //
-  if (!this->BoundsInitialized) {
-    this->ComputeInformation(request, inputVector, outputVector);
-  }
-  vtkInformation *inInfo = inputVector[0] ? inputVector[0]->GetInformationObject(0) : NULL;
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-  //
-  int outUpdateExt[6];
-  int outWholeExt[6] = {
-    0, this->WholeDimension[0]-1, 
-    0, this->WholeDimension[1]-1, 
-    0, this->WholeDimension[2]-1 };
+  vtkInformation  *inInfo = inputVector[0]->GetInformationObject(0);
+  vtkInformation *outInfo = outputVector->GetInformationObject(0);
+  vtkDataSet       *input = vtkDataSet::SafeDownCast(this->GetInput());
+  vtkImageData  *outImage = this->GetOutput();
   //
   vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
     inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR())) : NULL;
-  vtkBoundsExtentTranslator *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
-  if (bet) {
-    int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-    double *bounds = bet->GetBoundsForPiece(updatePiece);
-    bet->BoundsToExtentThreadSafe(bounds, outWholeExt, outUpdateExt); 
-    std::stringstream temp;
-    temp << "Image sampler " << updatePiece << " Setting Extent to {";
-    for (int i=0; i<6; i++) temp << outUpdateExt[i] << (i<5 ? "," : "}");
-//    vtkDebugMacro( temp.str() );
+  vtkBoundsExtentTranslator  *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
+  //
+  if (!this->BoundsInitialized) {
+    this->ComputeGlobalInformation(input, this->WholeDimensionWithoutDelta, false);
+    this->ComputeGlobalInformation(input, this->WholeDimensionWithDelta, true);
+    this->ComputeLocalInformation(bet, this->LocalExtent);
   }
-  else {
-//    outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), outUpdateExt);
+  //
+  int outWholeExt[6] = {
+    0, this->WholeDimensionWithDelta[0]-1, 
+    0, this->WholeDimensionWithDelta[1]-1, 
+    0, this->WholeDimensionWithDelta[2]-1 };
+
+  //
+  if (!bet) {
     int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
     int updateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
     vtkSmartPointer<vtkPVExtentTranslator> translator = vtkSmartPointer<vtkPVExtentTranslator>::New();
     outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), translator);
-    translator->SetWholeExtent(0,this->WholeDimension[0]-1,0,WholeDimension[1]-1,0,WholeDimension[2]-1);
+    translator->SetWholeExtent(outWholeExt);
     translator->SetPiece(updatePiece);
     translator->SetNumberOfPieces(updateNumPieces);
     translator->SetGhostLevel(0);
     translator->PieceToExtent();
-    translator->GetExtent(outUpdateExt);
+    translator->GetExtent(this->LocalExtent);
   }
-  //
-  int dims[3]= {1+outUpdateExt[1]-outUpdateExt[0],
-                1+outUpdateExt[3]-outUpdateExt[2], 
-                1+outUpdateExt[5]-outUpdateExt[4]};
+
   //
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), outWholeExt, 6);
-  outImage->SetExtent(outUpdateExt);
-  outImage->SetOrigin(this->GlobalOrigin);
+  outImage->SetExtent(this->LocalExtent);
+  outImage->SetOrigin(this->GlobalResamplingOrigin);
   outImage->SetSpacing(this->spacing);
+
   //
   // Now resample the input data onto the generated grid
   //
@@ -377,6 +415,7 @@ int vtkSPHImageResampler::RequestData(
   this->SPHProbe->InitializeVariables(input);
   this->SPHProbe->InitializeKernelCoefficients();
   this->SPHProbe->ProbeMeshless(input, outImage, outImage);
+
   //
   return 1;
 }

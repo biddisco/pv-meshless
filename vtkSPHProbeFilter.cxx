@@ -911,7 +911,8 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
         outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
         // set our extra computed values
         GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
-        ShepardArray->SetValue(outId, this->ScaleCoefficient);
+//        ShepardArray->SetValue(outId, this->ScaleCoefficient);
+        ShepardArray->SetValue(outId, (1.0+rand()%100)/100.0);
       }
       // for astrophysics plots we might be computing a smoothed density
       if (computesmootheddensity) {
@@ -938,6 +939,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     }
     else {
       outPD->NullPoint(outId);
+        ShepardArray->SetValue(outId, (1.0+rand()%100)/100.0);
       if (!passdata) {
         ShepardArray->SetValue(outId, 0.0);
         GradArray->SetValue(outId, 0.0);

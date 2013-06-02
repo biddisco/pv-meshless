@@ -367,7 +367,7 @@ void TestStruct::CreateSPHResampler(vtkAlgorithm *input)
     else {
       sphProbe->SetResolution(32,32,32);
     }
-    sphProbe->SetDelta(this->particleSize);
+    sphProbe->SetDelta(20.0*this->gridSpacing[0]); // 15.0*this->particleSize);
     sphProbe->SetSPHManager(this->sphManager);
     if (this->massScalars.size()) {
       sphProbe->SetMassScalars(this->massScalars.c_str());

@@ -182,7 +182,7 @@ int main (int argc, char* argv[])
     // no piece info set yet, assumes info is not piece dependent
     testDebugMacro( "Setting viz piece information " << test.myRank << " of " << test.numProcs );
     vis_sddp->SetUpdateExtent(0, test.myRank, test.numProcs, 0);
-    vis_sddp->SetUpdateResolution(0, 1.0);
+//    vis_sddp->SetUpdateResolution(0, 1.0);
     testDebugMacro( "Viz UpdateInformation " );
     vis_sddp->UpdateInformation();
     testDebugMacro( "Viz Update " );
