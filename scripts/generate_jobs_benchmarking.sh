@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# This function writes a slurm script.
-# We can call it with different parameter
+# This function writes a slurm script. 
+# We can call it with different parameter 
 # settings to create different experiments
 
 function write_script
 {
 TASKS=$[${NPERNODE} * ${NODES}]
-JOB_NAME=$(printf 'hdf5-%05d-%02d-%05d-%05d-%03d' ${NODES} ${NPERNODE} ${CB_BUFSIZE} ${STRIPESIZE} ${MEMPERTASK})
+JOB_NAME=$(printf 'hdf5-%05d-%02d-%05d-%05d-%03d' ${NODES} ${NPERNODE} ${CB_BUFSIZE} ${STRIPESIZE} ${MEMPERTASK}) 
 DIR_NAME=${BASEDIR}/${JOB_NAME}
 
 if [ -f ${DIR_NAME}/slurm.out ] ; then
@@ -58,8 +58,7 @@ cd /scratch/daint/biddisco/build/pv-plugins
 # -j2 tells slurm to use 2 threads per CPU as they are hyperthreaded
 #
 
-/usr/bin/aprun -j 2 -n ${TASKS} ${EXECUTABLE} -numNodes ${NODES} -processesPerNode ${NPERNODE} -memoryMB ${MEMPERTASK} -iterations 4 -pieceValidation 1 -F temp.h5 -D ${DIR_NAME} -T ${DIR_NAME}
--testName ${JOB_NAME}
+/usr/bin/aprun -n ${TASKS} ${EXECUTABLE} -numNodes ${NODES} -processesPerNode ${NPERNODE} -memoryMB ${MEMPERTASK} -iterations 4 -pieceValidation 1 -F temp.h5 -D ${DIR_NAME} -T ${DIR_NAME} -testName ${JOB_NAME}
 
 rm -rf ${DIR_NAME}/temp.h5
 _EOF_
@@ -89,14 +88,14 @@ STRIPESIZE=
 MEMPERTASK=
 
 # Loop through all the parameter combinations generating jobs for each
-for MEMPERTASK in 32 64 128
+for MEMPERTASK in 128
 do
-    for CB_BUFSIZE in 1 4 16 64 128 
+    for CB_BUFSIZE in 4 16 64 128 
     do
-        for STRIPESIZE in 1 4 16 64 128 
+        for STRIPESIZE in 4 16 64 128 
         do  
             NPERNODE=32
-            for NODES in 64 128 256 512 1024 2048
+            for NODES in 128 256 1024 2048
             do
                 write_script
             done
@@ -104,3 +103,4 @@ do
         done
     done
 done
+
