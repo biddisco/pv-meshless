@@ -66,7 +66,8 @@ ADD_LIBRARY(H5Part STATIC
 )
 
 TARGET_LINK_LIBRARIES(H5Part
-  ${H5Part_LIBS}
+  PUBLIC
+    ${H5Part_LIBS}
 )
 
 # Make sure static lib can be linked into dynamic one
