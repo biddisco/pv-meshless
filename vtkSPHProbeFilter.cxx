@@ -1109,6 +1109,12 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
       outPD->AddArray(SmoothedRadius);
     }
   }
+  if (pd->GetScalars() && pd->GetScalars()->GetName()) {
+    outPD->SetActiveScalars(pd->GetScalars()->GetName());
+  }
+  else {
+    outPD->SetActiveAttribute(0,0);
+  }
 
   timer->StopTimer();
   double elapsed = timer->GetElapsedTime();
