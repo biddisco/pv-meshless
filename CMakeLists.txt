@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 2.8)
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 OLD)
   cmake_policy(SET CMP0017 NEW)
+  cmake_policy(SET CMP0023 OLD)
 endif(COMMAND cmake_policy)
 
 #--------------------------------------------------
@@ -75,7 +76,7 @@ if (EXISTS "${ZOLTAN_DIR}" AND IS_DIRECTORY "${ZOLTAN_DIR}")
   endif(WIN32)
   ADD_DEFINITIONS(-DPV_MESHLESS_ZOLTAN_SUPPORT)
   set(ZOLTAN_LIBS pv_zoltan)
-  message("Zoltan support enabled")
+  message("Zoltan support enabled, libs are ${ZOLTAN_LIBS}")
 endif (EXISTS "${ZOLTAN_DIR}" AND IS_DIRECTORY "${ZOLTAN_DIR}")
 
 #--------------------------------------------------
@@ -333,12 +334,14 @@ ADD_PARAVIEW_PLUGIN(
 )
 
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME}
-  ${H5PART_LIBS}
-  pv_common
-  ${ZOLTAN_LIBS}
-  vtkInteractionWidgets
-  ${TIPSY_LIB}
-  ${Trilinos_LIBRARIES}
+  PUBLIC
+    vtkFiltersFlowPaths
+    ${H5PART_LIBS}
+    pv_common
+    ${ZOLTAN_LIBS}
+    vtkInteractionWidgets
+    ${TIPSY_LIB}
+    ${Trilinos_LIBRARIES}
 )
 
 #--------------------------------------------------------
