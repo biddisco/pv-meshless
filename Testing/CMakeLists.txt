@@ -108,7 +108,7 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
     TestUtils.cxx
   )
 
-  add_subdirectory(Test_Compound)
+#  add_subdirectory(Test_Compound)
   #--------------------------------------------------
   # Parallel IO test
   #--------------------------------------------------
