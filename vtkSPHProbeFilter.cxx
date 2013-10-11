@@ -137,6 +137,7 @@ vtkSPHProbeFilter::vtkSPHProbeFilter()
   this->ParticleTree                      = NULL;
   this->UseParticleTree                   = 0;
   this->ProgressFrequency                 = 20;
+  this->AbortLongCalculations             = 1;
   //
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
@@ -864,8 +865,8 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
       this->Locator->FindPointsWithinRadius(cutoff, x, TestPoints);
 //      this->ParticleTree->FindCellsFast(x, TestPoints);
       N = TestPoints->GetNumberOfIds();
-      if (N>KERNEL_MAX_NEIGHBOURS*2) {
-        if (++abortdecision >1000) {
+      if (this->AbortLongCalculations && N>KERNEL_MAX_NEIGHBOURS*2) {
+        if (++abortdecision > 1000) {
           vtkWarningMacro(<< "Too many large neighbour searches were found and calculation has been aborted to save time");
           abort = 1;
         }

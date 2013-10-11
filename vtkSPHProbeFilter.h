@@ -130,6 +130,10 @@ public:
   vtkSetMacro(ProgressFrequency,int);
   vtkGetMacro(ProgressFrequency,int);
   
+  vtkSetMacro(AbortLongCalculations,int);
+  vtkGetMacro(AbortLongCalculations,int);
+  vtkBooleanMacro(AbortLongCalculations,int);
+
   vtkSetMacro(TraversalAlgorithm,int);
   vtkGetMacro(TraversalAlgorithm,int);
 
@@ -241,6 +245,7 @@ protected:
   vtkIdType          NumInputParticles;
   vtkIdType          NumOutputPoints;
   int                ProgressFrequency;
+  int                AbortLongCalculations;
 
   int                ModifiedNumber;
 

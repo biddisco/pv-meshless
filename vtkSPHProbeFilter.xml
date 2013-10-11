@@ -168,6 +168,14 @@
          default_values="20" >
         <IntRangeDomain name="range" min="2" max="1000"/>
       </IntVectorProperty>
+      
+      <IntVectorProperty
+         name="AbortLongCalculations"
+         command="SetAbortLongCalculations"
+         number_of_elements="1"
+         default_values="1" >
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
 
       <IntVectorProperty
          name="ModifiedNumber"

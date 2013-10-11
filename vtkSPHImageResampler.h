@@ -104,6 +104,10 @@ class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
     // overridden to handle SPHManager changes
     unsigned long GetMTime();
 
+    vtkSetMacro(AbortLongCalculations,int);
+    vtkGetMacro(AbortLongCalculations,int);
+    vtkBooleanMacro(AbortLongCalculations,int);
+
     vtkSetMacro(ModifiedNumber,int);
     vtkGetMacro(ModifiedNumber,int);
 
@@ -186,6 +190,7 @@ class VTK_EXPORT vtkSPHImageResampler : public vtkImageAlgorithm {
     int                ModifiedNumber;
     int                ComputeDensityFromNeighbourVolume;
     bool               BoundsInitialized;
+    int                AbortLongCalculations;
     //
     int                UpdatePiece;
     int                UpdateNumPieces;
