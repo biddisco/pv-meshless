@@ -58,6 +58,18 @@ IF (PARAVIEW_USE_MPI)
   INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
 ENDIF (PARAVIEW_USE_MPI)
 
+#-----------------------------------------------------------------------------
+# OpenMP
+#-----------------------------------------------------------------------------
+OPTION(PV_MESHLESS_USE_OPENMP "Compile pv-meshless with OpenMP support" ON)
+IF (PV_MESHLESS_USE_OPENMP)
+  ADD_DEFINITIONS(-DHAVE_OPENMP)
+  SET(OpenMP_CXX_FLAGS "")
+  IF (WIN32 AND MSVC) 
+    SET(OpenMP_CXX_FLAGS "/openmp")
+  ENDIF (WIN32 AND MSVC) 
+ENDIF (PV_MESHLESS_USE_OPENMP)
+
 #--------------------------------------------------
 # pv-zoltan
 #--------------------------------------------------
@@ -332,6 +344,8 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Filters.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Readers.xml
 )
+
+SET_TARGET_PROPERTIES(${PLUGIN_NAME} PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
 
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME}
   PUBLIC

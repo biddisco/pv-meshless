@@ -184,10 +184,10 @@ protected:
 //ETX
 
   void KernelCompute(double x[3], vtkDataSet *data, 
-    vtkIdList *TestPoints, vtkIdList *NearestPoints, double *gradW, double &totalmass, double &maxDistance);
+    vtkIdList *TestPoints, vtkIdList *NearestPoints, double *gradW, double &totalmass, double &maxDistance, double *weights);
 
   void ShepardCompute(double x[3], vtkDataSet *data, 
-    vtkIdList *NearestPoints, double &totalmass, double &maxDistance);
+    vtkIdList *NearestPoints, double &totalmass, double &maxDistance, double *weights);
 
   //
   // Variables
@@ -229,7 +229,6 @@ protected:
   double             DefaultParticleMass;
   double             DefaultDensity;
   double             HCoefficient;
-  double             weights[KERNEL_MAX_NEIGHBOURS];
   float             *HDataF;
   double            *HDataD;
   float             *MassDataF;
