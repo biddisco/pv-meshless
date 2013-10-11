@@ -500,7 +500,7 @@ double vtkSPHProbeFilter::GetMaxKernelCutoffDistance()
 //----------------------------------------------------------------------------
 void vtkSPHProbeFilter::KernelCompute(
   double x[3], vtkDataSet *data, vtkIdList *TestPoints, vtkIdList *NearestPoints, 
-  double *gradW, double &totalmass, double &maxDistance)
+  double *gradW, double &totalmass, double &maxDistance, double *weights)
 {
   int N = TestPoints->GetNumberOfIds();
   double *point;
@@ -560,8 +560,8 @@ void vtkSPHProbeFilter::KernelCompute(
     //
     // Weight and shepard summation
     //
-    this->weights[validpoints] = weight*volume;
-    shepard_coeff             += this->weights[validpoints];
+    weights[validpoints] = weight*volume;
+    shepard_coeff             += weights[validpoints];
     //
     // Gradient vector
     //
@@ -587,7 +587,7 @@ void vtkSPHProbeFilter::KernelCompute(
   gradW[2] = _gradW[2];
   if (this->ApplyShepardNormalization) {
     for (int i=0; i<validpoints; i++) {
-      this->weights[i] /= shepard_coeff;
+      weights[i] /= shepard_coeff;
     }
   }
   this->ScaleCoefficient  = shepard_coeff;
@@ -596,7 +596,7 @@ void vtkSPHProbeFilter::KernelCompute(
 //----------------------------------------------------------------------------
 void vtkSPHProbeFilter::ShepardCompute(
   double x[3], vtkDataSet *data, vtkIdList *NearestPoints, 
-  double &totalmass, double &maxDistance)
+  double &totalmass, double &maxDistance, double *weights)
 {
   int num_neighbors = NearestPoints->GetNumberOfIds();
   double total_w = 0.0;
@@ -610,12 +610,12 @@ void vtkSPHProbeFilter::ShepardCompute(
     double *point = data->GetPoint(index);
     double d = vtkMath::Distance2BetweenPoints(point, x);
     if (d!=0.0) {
-      this->weights[i] = 1.0 / d;
+      weights[i] = 1.0 / d;
     }
     else {
-      this->weights[i] = 1E6;
+      weights[i] = 1E6;
     }
-    total_w += this->weights[i];
+    total_w += weights[i];
     // mass sum for local density (astro)
     totalmass += FloatOrDoubleorDefault(this->MassDataF, this->MassDataD, this->DefaultParticleMass, index);
     // distance to furthest point for volume calculation
@@ -626,9 +626,9 @@ void vtkSPHProbeFilter::ShepardCompute(
   //
   for (int i=0; i<num_neighbors; i++) {
     if (total_w != 0.0)
-      this->weights[i] = this->weights[i] / total_w;
+      weights[i] = weights[i] / total_w;
     else
-      this->weights[i] = 0.0;
+      weights[i] = 0.0;
   }
   maxDistance = sqrt(maxDistance);
 }
@@ -683,7 +683,6 @@ bool vtkSPHProbeFilter::InitializeVariables(vtkDataSet *data)
 //----------------------------------------------------------------------------
 bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output)
 {
-  double x[3];
   double bounds[6], cutoff; 
   vtkPointData *pd, *outPD;
 
@@ -796,13 +795,6 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   //
 
   // Nearest Neighbours list setup
-  vtkSmartPointer<vtkIdList> TestPoints = vtkSmartPointer<vtkIdList>::New();
-  vtkSmartPointer<vtkIdList> NearestPoints = vtkSmartPointer<vtkIdList>::New();
-
-  TestPoints->Allocate(1000);
-  NearestPoints->Allocate(1000);
-
-  // Nearest Neighbours list setup
 //  vtkSmartPointer<vtkBitArray> Visited = vtkSmartPointer<vtkBitArray>::New();
 //  Visited->SetNumberOfTuples(numInputPoints);
 //  for (vtkIdType ptId=0; ptId<numInputPoints; ptId++) {
@@ -814,9 +806,6 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   //
   int abort=0, abortdecision=0;;
   vtkIdType progressInterval=this->NumOutputPoints/this->ProgressFrequency + 1;
-  vtkIdType outId = 0;
-  vtkIdType NeighbourCount= 0;
-  double grad[3] = {0,0,0}, totalmass, maxDistance;
 
   //
   // initialize locator
@@ -839,120 +828,168 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     this->Locator->SetDivisions((int)bins[0],(int)bins[1],(int)bins[2]);
     this->Locator->BuildLocator();
   }
-  for (vtkIdType ptId=0; ptId<numInputPoints && !abort; ptId++) {
-    if (ghostdata && ghostdata[ptId]>0) {
-      continue;
-    }
-    if ( !(ptId % progressInterval) ) {
-      double progress = (double)(ptId)/(double)(numInputPoints);
-/*
-      std::cout << std::setw(5) << this->UpdatePiece << " Sending Progress of "
-        << std::setw(6) << ptId << " " << std::setw(6) << numInputPoints << " " 
-        << progress << std::endl;
-*/
-      this->UpdateProgress(progress);
-      abort = GetAbortExecute();
-    }
 
-    // Get the xyz coordinate of the point in the probe dataset
-    probepts->GetPoint(ptId, x);
+  vtkIdType outIdcount = 0;
 
-    TestPoints->Reset();
-    NearestPoints->Reset();
-    vtkIdType N;
-    // get neighbours of this point
-    if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
-      this->Locator->FindPointsWithinRadius(cutoff, x, TestPoints);
-//      this->ParticleTree->FindCellsFast(x, TestPoints);
-      N = TestPoints->GetNumberOfIds();
-      if (this->AbortLongCalculations && N>KERNEL_MAX_NEIGHBOURS*2) {
-        if (++abortdecision > 1000) {
-          vtkWarningMacro(<< "Too many large neighbour searches were found and calculation has been aborted to save time");
-          abort = 1;
+#pragma omp parallel
+  {
+    vtkIdType outId = 0, NeighbourCount = 0, N;
+    std::vector<double> weights(KERNEL_MAX_NEIGHBOURS,0);
+    double grad[3] = {0,0,0}, x[3], totalmass, maxDistance;
+
+    // Nearest Neighbours list setup
+    vtkSmartPointer<vtkIdList> TestPoints = vtkSmartPointer<vtkIdList>::New();
+    vtkSmartPointer<vtkIdList> NearestPoints = vtkSmartPointer<vtkIdList>::New();
+    TestPoints->Allocate(1000);
+    NearestPoints->Allocate(1000);
+
+#pragma omp for private(x)
+    for (vtkIdType ptId=0; ptId<numInputPoints ; ptId++) {
+
+      if (ghostdata && ghostdata[ptId]>0) {
+        continue;
+      }
+
+      if ( (this->UpdatePiece==0) && !(outIdcount % progressInterval) ) {
+        double progress = (double)(outIdcount)/(double)(numInputPoints);
+        this->UpdateProgress(progress);
+        std::cout << "Progress updated " << progress << std::endl;
+        if (this->UpdatePiece==0) {
+          abort = GetAbortExecute();
         }
       }
-    }
-    else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
-      this->Locator->FindClosestNPoints(this->MaximumNeighbours, x, NearestPoints);
-      N = NearestPoints->GetNumberOfIds();
-    }
-    
-    //
-    // compute weights from neighbours
-    //
-    if (N>0) {
-      // For local density calculation we need totalmass, maxDistance
-      // For gradients we need grad
+
+      outId = ptId;
+
+      if (abort ) {
+#pragma omp critical
+        {
+          outPD->NullPoint(outId);
+        }
+        if (!passdata) {
+          ShepardArray->SetValue(outId, 0.0);
+          GradArray->SetValue(outId, 0.0);
+        }
+        if (computesmootheddensity) {
+          SmoothedDensity->SetValue(outId, 0.0);
+          if (computesmoothedradius) {
+            SmoothedRadius->SetValue(outId, 0.0);
+          }
+        }
+        continue;
+      }
+
+      // Get the xyz coordinate of the point in the probe dataset
+      probepts->GetPoint(ptId, x);
+
+      TestPoints->Reset();
+      NearestPoints->Reset();
+      // get neighbours of this point
       if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
-        // KernelCompute will reject any testpoints that were outside the kernel radius
-        // the final list is placed in NearestPoints and should be used from here on
-        this->KernelCompute(x, data, TestPoints, NearestPoints, grad, totalmass, maxDistance);
-        // prevent weights array being mangled
-        if (NearestPoints->GetNumberOfIds()>KERNEL_MAX_NEIGHBOURS) {
-          NearestPoints->SetNumberOfIds(KERNEL_MAX_NEIGHBOURS);
+        this->Locator->FindPointsWithinRadius(cutoff, x, TestPoints);
+  //      this->ParticleTree->FindCellsFast(x, TestPoints);
+        N = TestPoints->GetNumberOfIds();
+      if (this->AbortLongCalculations && N>KERNEL_MAX_NEIGHBOURS*2) {
+        if (++abortdecision > 1000) {
+            vtkWarningMacro(<< "Too many large neighbour searches were found and calculation has been aborted to save time");
+            abort = 1;
+          }
         }
       }
       else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
-        this->ShepardCompute(x, data, NearestPoints, totalmass, maxDistance);
+        this->Locator->FindClosestNPoints(this->MaximumNeighbours, x, NearestPoints);
+        N = NearestPoints->GetNumberOfIds();
       }
-    }
-    //
-    // if weights were calculated ok, do the interpolation
-    //
-    N=NearestPoints->GetNumberOfIds();
-    if (N>0) {
-      NeighbourCount += N;
-      // If we are only computing smoothed density and passing input scalars straight to output
-      if (passdata) {
-        outPD->CopyData(pd, ptId, outId);
+    
+      //
+      // compute weights from neighbours
+      //
+      if (N>0) {
+        // For local density calculation we need totalmass, maxDistance
+        // For gradients we need grad
+        if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
+          // KernelCompute will reject any testpoints that were outside the kernel radius
+          // the final list is placed in NearestPoints and should be used from here on
+          this->KernelCompute(x, data, TestPoints, NearestPoints, grad, totalmass, maxDistance, &weights[0]);
+          // prevent weights array being mangled
+          if (NearestPoints->GetNumberOfIds()>KERNEL_MAX_NEIGHBOURS) {
+            NearestPoints->SetNumberOfIds(KERNEL_MAX_NEIGHBOURS);
+          }
+        }
+        else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
+          this->ShepardCompute(x, data, NearestPoints, totalmass, maxDistance, &weights[0]);
+        }
       }
-      else {
-        double gradmag = vtkMath::Norm(grad);
-        // Interpolate the point scalar/field data
-        outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
-        // set our extra computed values
-        GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
-//        ShepardArray->SetValue(outId, this->ScaleCoefficient);
-        ShepardArray->SetValue(outId, (1.0+rand()%100)/100.0);
-      }
-      // for astrophysics plots we might be computing a smoothed density
-      if (computesmootheddensity) {
-        double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
-        if (volume>0.0) {
-          // smoothed density, using total mass in whole neighbourhood
-          double smootheddensity = totalmass/volume;
-          SmoothedDensity->SetValue(outId, smootheddensity);
-          // computed radius based on smoothed density and actual mass
-          if (computesmoothedradius) {
-            // actual mass of this particle from input data
-            double mass = FloatOrDouble(this->MassDataF,this->MassDataD, ptId);
-            double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
-            SmoothedRadius->SetValue(outId, smoothedradius);
+      //
+      // if weights were calculated ok, do the interpolation
+      //
+      N=NearestPoints->GetNumberOfIds();
+      if (N>0) {
+        NeighbourCount += N;
+        // If we are only computing smoothed density and passing input scalars straight to output
+        if (passdata) {
+#pragma omp critical
+          {
+            outPD->CopyData(pd, ptId, outId);
           }
         }
         else {
+          double gradmag = vtkMath::Norm(grad);
+#pragma omp critical
+          {
+            // Interpolate the point scalar/field data
+            outPD->InterpolatePoint(pd, outId, NearestPoints, &weights[0]);
+          }
+          // set our extra computed values
+          GradArray->SetValue(outId, gradmag/this->ScaleCoefficient);
+          ShepardArray->SetValue(outId, this->ScaleCoefficient);
+         //   ShepardArray->SetValue(outId, (1.0+rand()%100)/100.0);
+        }
+        // for astrophysics plots we might be computing a smoothed density
+        if (computesmootheddensity) {
+          double volume = (4.0/3.0)*M_PI*maxDistance*maxDistance*maxDistance;
+          if (volume>0.0) {
+            // smoothed density, using total mass in whole neighbourhood
+            double smootheddensity = totalmass/volume;
+            SmoothedDensity->SetValue(outId, smootheddensity);
+            // computed radius based on smoothed density and actual mass
+            if (computesmoothedradius) {
+              // actual mass of this particle from input data
+              double mass = FloatOrDouble(this->MassDataF,this->MassDataD, ptId);
+              double smoothedradius = pow(0.75*mass/smootheddensity,0.33333333);
+              SmoothedRadius->SetValue(outId, smoothedradius);
+            }
+          }
+          else {
+            SmoothedDensity->SetValue(outId, 0.0);
+            if (computesmoothedradius) {
+              SmoothedRadius->SetValue(outId, 0.0);
+            }
+          }
+        }
+      }
+      else {
+#pragma omp critical
+        {
+          outPD->NullPoint(outId);
+        }
+//        ShepardArray->SetValue(outId, (1.0+rand()%100)/100.0);
+        if (!passdata) {
+          ShepardArray->SetValue(outId, 0.0);
+          GradArray->SetValue(outId, 0.0);
+        }
+        if (computesmootheddensity) {
           SmoothedDensity->SetValue(outId, 0.0);
           if (computesmoothedradius) {
             SmoothedRadius->SetValue(outId, 0.0);
           }
         }
       }
+#pragma omp atomic
+      outIdcount++;
     }
-    else {
-      outPD->NullPoint(outId);
-        ShepardArray->SetValue(outId, (1.0+rand()%100)/100.0);
-      if (!passdata) {
-        ShepardArray->SetValue(outId, 0.0);
-        GradArray->SetValue(outId, 0.0);
-      }
-      if (computesmootheddensity) {
-        SmoothedDensity->SetValue(outId, 0.0);
-        if (computesmoothedradius) {
-          SmoothedRadius->SetValue(outId, 0.0);
-        }
-      }
-    }
-    outId++;
+    double averageneighbours = NeighbourCount/outIdcount;
+    vtkDebugMacro(<< "Average Neighbour count is " << averageneighbours );
   }
 
 /*
@@ -1073,31 +1110,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     }
 */
 
-  double averageneighbours = NeighbourCount/outId;
-  vtkDebugMacro(<< "Average Neighbour count is " << averageneighbours );
-
   //
   // Make sure arrays are valid if we aborted mid calculation
   //
-  if (abort) {
-    for (vtkIdType ptId=outId; ptId<numInputPoints; ptId++) {
-      if (ghostdata && ghostdata[ptId]>0) {
-        continue;
-      }
-      outPD->NullPoint(outId);
-      if (!passdata) {
-        ShepardArray->SetValue(outId, 0.0);
-        GradArray->SetValue(outId, 0.0);
-      }
-      if (computesmootheddensity) {
-        SmoothedDensity->SetValue(outId, 0.0);
-        if (computesmoothedradius) {
-          SmoothedRadius->SetValue(outId, 0.0);
-        }
-      }
-      outId++;
-    }
-  }
 
   // Add Grad and Shepard arrays
   if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
@@ -1122,7 +1137,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
 #ifdef PARAVIEW_USE_MPI
   if (com) com->Barrier();
 #endif
-  vtkDebugMacro(<< "Probe filter complete : exported N = " << outId << "\t Time : " << elapsed << " seconds" );
+  vtkDebugMacro(<< "Probe filter complete : exported N = " << outIdcount << "\t Time : " << elapsed << " seconds" );
   return 1;
 }
 
