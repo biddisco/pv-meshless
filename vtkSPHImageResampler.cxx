@@ -412,6 +412,7 @@ int vtkSPHImageResampler::RequestData(
   this->SPHProbe->SetVolumeScalars(this->VolumeScalars);
   this->SPHProbe->SetHScalars(this->HScalars);
   this->SPHProbe->SetComputeDensityFromNeighbourVolume(this->ComputeDensityFromNeighbourVolume);
+  this->SPHProbe->SetAbortLongCalculations(this->GetAbortLongCalculations());
   this->SPHProbe->InitializeVariables(input);
   this->SPHProbe->InitializeKernelCoefficients();
   this->SPHProbe->ProbeMeshless(input, outImage, outImage);
