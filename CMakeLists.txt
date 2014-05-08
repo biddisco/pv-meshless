@@ -342,13 +342,14 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Sources.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Filters.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Readers.xml
+#    ${CMAKE_CURRENT_SOURCE_DIR}/Meshless_Readers.xml
 )
 
 SET_TARGET_PROPERTIES(${PLUGIN_NAME} PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
 
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME}
   PUBLIC
+    vtksys
     vtkFiltersFlowPaths
     ${H5PART_LIBS}
     pv_common

@@ -1,12 +1,5 @@
 <ParaViewReaders>
-  <Reader name="H5Part"
-          extensions="h5part h5Part"
-          file_description="H5Part HDF5 particle files">
-  </Reader>
-  <Reader name="H5SPH"
-          extensions="h5sph"
-          file_description="H5SPH HDF5 particle files">
-  </Reader>
+<!--
   <Reader name="PTipsyReader"
 			extensions="std"
 			file_description="Tipsy Binary (Parallel)">
@@ -15,4 +8,5 @@
 			extensions="std"
 			file_description="Tipsy Binary">
   </Reader>
+  -->
 </ParaViewReaders>
