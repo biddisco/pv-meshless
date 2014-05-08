@@ -544,10 +544,12 @@ vtkDataSet *vtkTemporalParticleDataInterpolator
     output->GetCellData()->AddArray(outarray);
     outarray->FastDelete();
     }
+/*
   if (in1->GetInformation()->Has(vtkDataObject::DATA_GEOMETRY_UNMODIFIED()) &&
       in2->GetInformation()->Has(vtkDataObject::DATA_GEOMETRY_UNMODIFIED()))
     {
     output->GetInformation()->Set(vtkDataObject::DATA_GEOMETRY_UNMODIFIED(),1);
     }
+    */
   return output;
 }
