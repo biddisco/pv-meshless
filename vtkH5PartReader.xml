@@ -229,6 +229,10 @@
         </Documentation>
       </StringVectorProperty>
 
+      <Hints>
+        <ReaderFactory extensions="h5part"
+                       file_description="H5Part particle files (Plugin)" />
+      </Hints>
     </SourceProxy>
 
     <!-- ============================================================= -->
@@ -239,6 +243,10 @@
       class="vtkH5SPHReader"
       base_proxygroup="sources"
       base_proxyname="H5Part">
+      <Hints>
+        <ReaderFactory extensions="h5sph"
+                       file_description="H5SPH particle files (Plugin)" />
+      </Hints>
     </SourceProxy>
 
   </ProxyGroup>
