@@ -20,7 +20,6 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 
 // CSCS
-#include "vtkStreamOutputWindow.h"
 #include "vtkH5PartReader.h"
 #include "vtkSPHManager.h"
 #include "vtkSPHProbeFilter.h"

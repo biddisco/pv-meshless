@@ -155,9 +155,9 @@ int initTest(int argc, char* argv[], TestStruct &test)
   //
   // Force the creation of our output window object
   //
-  vtkSmartPointer<vtkStreamOutputWindow> outwin = vtkSmartPointer<vtkStreamOutputWindow>::New();
-  vtkOutputWindow::SetInstance(outwin);
-  outwin->SetOutputStream(&std::cout);
+//  vtkSmartPointer<vtkStreamOutputWindow> outwin = vtkSmartPointer<vtkStreamOutputWindow>::New();
+//  vtkOutputWindow::SetInstance(outwin);
+//  outwin->SetOutputStream(&std::cout);
 
   //
   // General test flags/info

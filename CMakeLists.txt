@@ -30,14 +30,20 @@ ELSE (ParaView_SOURCE_DIR)
 ENDIF (ParaView_SOURCE_DIR)
 
 #--------------------------------------------------
+# pv-zoltan : Required for parallel sampling
+#--------------------------------------------------
+find_package(pv_zoltan NO_MODULE)
+if(NOT pv_zoltan_FOUND)
+  message(FATAL_ERROR "pv-meshless requires pv_zoltan")
+endif()
+include_directories(${pv_zoltan_INCLUDE_DIR})
+
+#--------------------------------------------------
 # Set project include directories 
-# pv-common is assumed to be checkout out too
 #--------------------------------------------------
 INCLUDE_DIRECTORIES(
   "${PROJECT_SOURCE_DIR}"
   "${PROJECT_BINARY_DIR}"
-  "${PROJECT_SOURCE_DIR}/../pv-common"
-  "${PROJECT_BINARY_DIR}/../pv-common"
 )
 
 #--------------------------------------------------
@@ -275,7 +281,8 @@ SET(PLUGIN_NAME pv_meshless)
 ADD_PARAVIEW_PLUGIN(
   ${PLUGIN_NAME}
   "1.0" 
-  REQUIRED_PLUGINS pv_common
+  REQUIRED_PLUGINS 
+# pv_common
 
   SERVER_MANAGER_XML 
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkRegularGridSource.xml
@@ -352,7 +359,7 @@ TARGET_LINK_LIBRARIES(${PLUGIN_NAME}
     vtksys
     vtkFiltersFlowPaths
     ${H5PART_LIBS}
-    pv_common
+#    pv_common
     ${ZOLTAN_LIBS}
     vtkInteractionWidgets
     ${TIPSY_LIB}
