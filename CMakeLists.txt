@@ -102,12 +102,12 @@ ENDIF(WIN32)
 # --------------------------------------------------
 # Option to disable hdf5 readers etc
 # --------------------------------------------------
-OPTION(USE_HDF5 "Use HDF5 readers/writers" ON)
+OPTION(PV_MESHLESS_USE_HDF5 "Use HDF5 readers/writers" ON)
 
 # --------------------------------------------------
 # Configure all HDF5 options
 # --------------------------------------------------
-IF(USE_HDF5) 
+IF(PV_MESHLESS_USE_HDF5) 
   #-----------------------------------------------
   # If (paraview) using system hdf5, find it
   #-----------------------------------------------
@@ -146,7 +146,7 @@ IF(USE_HDF5)
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartReader.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartWriter.cxx
   )
-ENDIF(USE_HDF5) 
+ENDIF(PV_MESHLESS_USE_HDF5) 
   
 #--------------------------------------------------
 # Setup GUI custom Qt panel sources and wrapping

@@ -98,7 +98,7 @@ ENDFOREACH(test_name)
 #--------------------------------------------------
 # Test H5PartWriter
 #--------------------------------------------------
-IF (USE_HDF5 AND PARAVIEW_USE_MPI)
+IF (PV_MESHLESS_USE_HDF5 AND PARAVIEW_USE_MPI)
   find_package(MPI)
 
   #--------------------------------------------------
@@ -206,7 +206,7 @@ IF (USE_HDF5 AND PARAVIEW_USE_MPI)
     endwhile(NOT nodes GREATER ${SLURM_JOB_NUM_NODES})
   endif (H5PART_WRITER_SYSTEM_TESTS_USING_SLURM) 
 
-ENDIF (USE_HDF5 AND PARAVIEW_USE_MPI)
+ENDIF (PV_MESHLESS_USE_HDF5 AND PARAVIEW_USE_MPI)
 
 #--------------------------------------------------
 # Slurm job manager require "-rmk" "slurm" arguments
@@ -218,9 +218,9 @@ string(REPLACE " " ";" MPIEXEC_NUMPROC_FLAG ${MPIEXEC_NUMPROC_FLAG})
 #--------------------------------------------------
 # All tests from here on make use of HDF5 for IO
 #--------------------------------------------------
-IF (NOT USE_HDF5) 
+IF (NOT PV_MESHLESS_USE_HDF5) 
   return()
-ENDIF (NOT USE_HDF5) 
+ENDIF (NOT PV_MESHLESS_USE_HDF5) 
 
 #--------------------------------------------------
 # All tests from here on make use of MPI
