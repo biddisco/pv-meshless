@@ -187,10 +187,10 @@ _H5Part_open_file (
 			if (f->myproc == 0) {
 				_H5Part_print_info ( "Selecting MPI-POSIX VFD" );
 			}
-			if (H5Pset_fapl_mpiposix ( f->access_prop, comm, 0 ) < 0) {
-				HANDLE_H5P_SET_FAPL_ERR;
-				goto error_cleanup;
-			}
+//			if (H5Pset_fapl_mpiposix ( f->access_prop, comm, 0 ) < 0) {
+//				HANDLE_H5P_SET_FAPL_ERR;
+//				goto error_cleanup;
+//			}
 		}
 		else {
 			if (f->myproc == 0) {
