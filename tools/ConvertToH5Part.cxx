@@ -60,9 +60,8 @@
 #include "vtkXMLPImageDataReader.h"
 #include "vtkPVDReader.h"
 
-
 // CSCS
-#include "vtkStreamOutputWindow.h"
+//#include "vtkStreamOutputWindow.h"
 
 // Sys
 #include <sstream>
@@ -215,9 +214,9 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     //
     // Force the creation of our output window object
     //
-    vtkSmartPointer<vtkStreamOutputWindow> outwin = vtkSmartPointer<vtkStreamOutputWindow>::New();
-    vtkOutputWindow::SetInstance(outwin);
-    outwin->SetOutputStream(&std::cout);
+//    vtkSmartPointer<vtkStreamOutputWindow> outwin = vtkSmartPointer<vtkStreamOutputWindow>::New();
+//    vtkOutputWindow::SetInstance(outwin);
+//    outwin->SetOutputStream(&std::cout);
 
     //
     // Use utilities in vtkTesting for getting command line params

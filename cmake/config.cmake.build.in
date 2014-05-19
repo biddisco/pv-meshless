@@ -1,0 +1,73 @@
+#-----------------------------------------------------------------------------
+# Config file for compiling against build directory
+#-----------------------------------------------------------------------------
+GET_FILENAME_COMPONENT (SELF_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+#-----------------------------------------------------------------------------
+# User Options
+#-----------------------------------------------------------------------------
+set (pv_meshless_ENABLE_PARALLEL      @pv_meshless_ENABLE_PARALLEL@)
+set (pv_meshless_BUILD_FORTRAN        @pv_meshless_BUILD_FORTRAN@)
+set (pv_meshless_ENABLE_F2003         @pv_meshless_ENABLE_F2003@)
+set (pv_meshless_BUILD_CPP_LIB        @pv_meshless_BUILD_CPP_LIB@)
+set (pv_meshless_BUILD_TOOLS          @pv_meshless_BUILD_TOOLS@)
+set (pv_meshless_BUILD_HL_LIB         @pv_meshless_BUILD_HL_LIB@)
+set (pv_meshless_ENABLE_Z_LIB_SUPPORT @pv_meshless_ENABLE_Z_LIB_SUPPORT@)
+set (pv_meshless_ENABLE_SZIP_SUPPORT  @pv_meshless_ENABLE_SZIP_SUPPORT@)
+set (pv_meshless_ENABLE_SZIP_ENCODING @pv_meshless_ENABLE_SZIP_ENCODING@)
+set (pv_meshless_BUILD_SHARED_LIBS    @BUILD_SHARED_LIBS@)
+
+#-----------------------------------------------------------------------------
+# Dependencies
+#-----------------------------------------------------------------------------
+IF(pv_meshless_ENABLE_PARALLEL)
+  SET(pv_meshless_MPI_C_INCLUDE_PATH "@MPI_C_INCLUDE_PATH@")
+  SET(pv_meshless_MPI_C_LIBRARIES    "@MPI_C_LIBRARIES@")
+ENDIF(pv_meshless_ENABLE_PARALLEL)
+
+#-----------------------------------------------------------------------------
+# Directories
+#-----------------------------------------------------------------------------
+set (pv_meshless_INCLUDE_DIR "@pv_meshless_INCLUDES_BUILD_TIME@" "${pv_meshless_MPI_C_INCLUDE_PATH}" )
+
+if (pv_meshless_BUILD_FORTRAN)
+  set (pv_meshless_INCLUDE_DIR_FORTRAN "@CMAKE_Fortran_MODULE_DIRECTORY@" )
+endif (pv_meshless_BUILD_FORTRAN)
+  
+if (pv_meshless_BUILD_CPP_LIB)
+  set (pv_meshless_INCLUDE_DIR_CPP ${pv_meshless_INCLUDE_DIR} )
+endif (pv_meshless_BUILD_CPP_LIB)
+
+if (pv_meshless_BUILD_HL_LIB)
+  set (pv_meshless_INCLUDE_DIR_HL ${pv_meshless_INCLUDE_DIR} )
+endif (pv_meshless_BUILD_HL_LIB)
+
+if (pv_meshless_BUILD_HL_LIB AND pv_meshless_BUILD_CPP_LIB)
+  set (pv_meshless_INCLUDE_DIR_HL_CPP ${pv_meshless_INCLUDE_DIR} )
+endif (pv_meshless_BUILD_HL_LIB AND pv_meshless_BUILD_CPP_LIB)
+
+if (pv_meshless_BUILD_TOOLS)
+  set (pv_meshless_INCLUDE_DIR_TOOLS ${pv_meshless_INCLUDE_DIR} )
+endif (pv_meshless_BUILD_TOOLS)
+
+if (pv_meshless_BUILD_SHARED_LIBS)
+  set (H5_BUILT_AS_DYNAMIC_LIB 1 )
+else (pv_meshless_BUILD_SHARED_LIBS)
+  set (H5_BUILT_AS_STATIC_LIB 1 )
+endif (pv_meshless_BUILD_SHARED_LIBS)
+
+#-----------------------------------------------------------------------------
+# Version Strings
+#-----------------------------------------------------------------------------
+set (pv_meshless_VERSION_STRING @pv_meshless_VERSION_STRING@)
+set (pv_meshless_VERSION_MAJOR  @pv_meshless_VERSION_MAJOR@)
+set (pv_meshless_VERSION_MINOR  @pv_meshless_VERSION_MINOR@)
+
+#-----------------------------------------------------------------------------
+# Don't include targets if this file is being picked up by another
+# project which has already build hdf5 as a subproject
+#-----------------------------------------------------------------------------
+if (NOT TARGET "@pv_meshless_PACKAGE@")
+  include (${SELF_DIR}/@pv_meshless_PACKAGE@-targets.cmake)
+  set (pv_meshless_LIBRARIES "@pv_meshless_LIBRARIES_TO_EXPORT@")
+endif (NOT TARGET "@pv_meshless_PACKAGE@")

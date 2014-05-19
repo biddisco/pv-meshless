@@ -26,7 +26,7 @@
 #include "vtkAppendPolyData.h"
 #include "vtkH5PartReader.h"
 #include "vtkH5PartWriter.h"
-#include "vtkStreamOutputWindow.h"
+//#include "vtkStreamOutputWindow.h"
 #include "vtkTesting.h"
 #include "Testing/Cxx/vtkTestUtilities.h"
 
@@ -104,10 +104,10 @@ int main(int argc, char **argv)
   //
   // Force the creation of our output window object
   //
-  vtkStreamOutputWindow *outwin = vtkStreamOutputWindow::New();
-  vtkOutputWindow::SetInstance(outwin);
-  outwin->Delete();
-  outwin->SetOutputStream(&std::cout);
+  //vtkStreamOutputWindow *outwin = vtkStreamOutputWindow::New();
+  //vtkOutputWindow::SetInstance(outwin);
+  //outwin->Delete();
+  //outwin->SetOutputStream(&std::cout);
 
   //
   // From input file name, guess pattern for all time steps
