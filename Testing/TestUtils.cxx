@@ -140,7 +140,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
   test.windowSize[0] = test.windowSize[1] = 400;
 
   // uncomment this to wait for debugger (needs to be after MPI_Init because it checks rank
-   DEBUG_WAIT
+  //DEBUG_WAIT
   //
   test.controller->Barrier();
 

@@ -1,4 +1,4 @@
-PROJECT("pv-meshless")
+PROJECT("pv_meshless")
 
 #--------------------------------------------------
 # cmake old/new compatibility
@@ -10,6 +10,30 @@ if(COMMAND cmake_policy)
   cmake_policy(SET CMP0017 NEW)
   cmake_policy(SET CMP0023 OLD)
 endif(COMMAND cmake_policy)
+
+#-----------------------------------------------------------------------------
+# Basic naming/config stuff here
+#-----------------------------------------------------------------------------
+set (pv_meshless_VERS_MAJOR   0)
+set (pv_meshless_VERS_MINOR   9)
+set (pv_meshless_VERS_RELEASE 0)
+
+set (pv_meshless_PACKAGE                "pv_meshless")
+set (pv_meshless_PACKAGE_NAME           "pv_meshless")
+set (pv_meshless_PACKAGE_VERSION        "${pv_meshless_VERS_MAJOR}.${pv_meshless_VERS_MINOR}.${pv_meshless_VERS_RELEASE}")
+set (pv_meshless_PACKAGE_VERSION_MAJOR  "${pv_meshless_VERS_MAJOR}.${pv_meshless_VERS_MINOR}")
+set (pv_meshless_PACKAGE_VERSION_MINOR  "${pv_meshless_VERS_RELEASE}")
+set (pv_meshless_PACKAGE_VERSION_STRING "${pv_meshless_PACKAGE_VERSION}")
+set (pv_meshless_PACKAGE_SOVERSION      "${pv_meshless_SOVERS_MAJOR}.${pv_meshless_SOVERS_RELEASE}.${pv_meshless_SOVERS_MINOR}")
+set (pv_meshless_PACKAGE_STRING         "${pv_meshless_PACKAGE_NAME} ${pv_meshless_PACKAGE_VERSION_STRING}")
+set (pv_meshless_PACKAGE_TARNAME        "${pv_meshless_PACKAGE}")
+set (pv_meshless_PACKAGE_URL            "http://www.cscs.ch")
+set (pv_meshless_PACKAGE_BUGREPORT      "help@cscs.ch")
+
+#--------------------------------------------------
+# Location of cmake files
+#--------------------------------------------------
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 #--------------------------------------------------
 # Find and Use ParaView
@@ -79,17 +103,15 @@ ENDIF (PV_MESHLESS_USE_OPENMP)
 #--------------------------------------------------
 # pv-zoltan
 #--------------------------------------------------
-set(ZOLTAN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pv-zoltan")
-if (EXISTS "${ZOLTAN_DIR}" AND IS_DIRECTORY "${ZOLTAN_DIR}")
+find_package(pv_zoltan)
+if (pv_zoltan_FOUND)
   set(ZOLTAN_SUPPORT 1)
   include_directories(
-    ${ZOLTAN_DIR}
-    ${ZOLTAN_DIR}/trilinos/packages/zoltan/src/include
-    ${CMAKE_CURRENT_BINARY_DIR}/../pv-zoltan/trilinos/packages/zoltan/src
+    ${pv_zoltan_INCLUDE_DIR}
   )
   if(WIN32)
     include_directories(
-      ${ZOLTAN_DIR}/trilinos/cmake/tribits/common_tools/win_interface/include
+#      ${ZOLTAN_DIR}/trilinos/cmake/tribits/common_tools/win_interface/include
    )
   endif(WIN32)
   ADD_DEFINITIONS(-DPV_MESHLESS_ZOLTAN_SUPPORT)
@@ -362,16 +384,7 @@ TARGET_LINK_LIBRARIES(${PLUGIN_NAME}
 #    pv_common
     ${ZOLTAN_LIBS}
     vtkInteractionWidgets
-    ${TIPSY_LIB}
-    ${Trilinos_LIBRARIES}
 )
-
-#--------------------------------------------------------
-# Create the configuration header.
-#--------------------------------------------------------
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/pv_meshless_configure.h.in
-               ${PROJECT_BINARY_DIR}/vtkCSCSMeshlessConfigure.h
-               @ONLY IMMEDIATE)
 
 # --------------------------------------------------
 # Tools 
@@ -393,6 +406,22 @@ IF (BUILD_TESTING)
   MAKE_DIRECTORY(${PLUGIN_TEST_DIR})
   ADD_SUBDIRECTORY(Testing)
 ENDIF (BUILD_TESTING)  
+
+#--------------------------------------------------------
+# Create the configuration header.
+#--------------------------------------------------------
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/module_configure.h.in
+               ${PROJECT_BINARY_DIR}/pv_meshless_configure.h
+               @ONLY IMMEDIATE)
+
+#-----------------------------------------------------------------------------
+# Configure the project-config.cmake file for the build directory
+#-----------------------------------------------------------------------------
+set (${PROJECT_NAME}_INCLUDES_BUILD_TIME
+  "${PROJECT_SOURCE_DIR}"
+  "${PROJECT_BINARY_DIR}"
+)
+include(CMakeInstallation)
 
 #--------------------------------------------------
 # Install

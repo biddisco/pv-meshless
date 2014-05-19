@@ -1,0 +1,13 @@
+/*=========================================================================
+Standard setup for module exports 
+=========================================================================*/
+#ifndef __@PLUGIN_NAME@_Configure_h
+#define __@PLUGIN_NAME@_Configure_h
+
+#if defined(@PLUGIN_NAME@_EXPORTS)
+  #define @PLUGIN_NAME@_EXPORT VTK_ABI_EXPORT 
+#else
+  #define @PLUGIN_NAME@_EXPORT VTK_ABI_IMPORT 
+#endif
+
+#endif
