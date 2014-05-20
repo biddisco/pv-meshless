@@ -117,7 +117,7 @@ if (pv_zoltan_FOUND)
   ADD_DEFINITIONS(-DPV_MESHLESS_ZOLTAN_SUPPORT)
   set(ZOLTAN_LIBS pv_zoltan)
   message("Zoltan support enabled, libs are ${ZOLTAN_LIBS}")
-endif (EXISTS "${ZOLTAN_DIR}" AND IS_DIRECTORY "${ZOLTAN_DIR}")
+endif()
 
 #--------------------------------------------------
 # Set Definitions 

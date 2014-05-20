@@ -23,8 +23,6 @@ endif (NOT ${PROJECT_NAME}_EXTERNALLY_CONFIGURED)
 #-----------------------------------------------------------------------------
 # Configure the project-config.cmake file for the build directory
 #-----------------------------------------------------------------------------
-message("Project name is ${PROJECT_NAME}")
-
 set (${PROJECT_NAME}_VERSION_STRING @${PROJECT_NAME}_PACKAGE_VERSION@)
 set (${PROJECT_NAME}_VERSION_MAJOR  @${PROJECT_NAME}_PACKAGE_VERSION_MAJOR@)
 set (${PROJECT_NAME}_VERSION_MINOR  @${PROJECT_NAME}_PACKAGE_VERSION_MINOR@)
