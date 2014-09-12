@@ -362,7 +362,7 @@ int vtkH5PartReader::RequestInformation(
   this->UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
   this->UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   //
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
+  outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
   bool NeedToReadInformation = (FileModifiedTime>FileOpenedTime || !this->H5FileId);
 
   if (NeedToReadInformation)
@@ -455,7 +455,7 @@ int vtkH5PartReader::RequestInformation(
     vtkIdType partitions = this->IgnorePartitionBoxes ? 0 : this->ReadBoundingBoxes();
     if (partitions>0) 
       {
-      outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), this->ExtentTranslator);
+      outInfo->Set(vtkBoundsExtentTranslator::META_DATA(), this->ExtentTranslator);
       }
     else {
       this->PartitionCount.clear();

@@ -323,14 +323,17 @@ int vtkSPHProbeFilter::RequestInformation(
     outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
                probePtsInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),
                6);
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
-               probePtsInfo->Get(
-               vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()));
+
+    outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
+
+//    outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),
+//               probePtsInfo->Get(
+//               vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES()));
     outInfo->Set(vtkDataObject::ORIGIN(), probePtsInfo->Get(vtkDataObject::ORIGIN()),3);
     outInfo->Set(vtkDataObject::SPACING(), probePtsInfo->Get(vtkDataObject::SPACING()),3);
   }
   else {
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
+    outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
   }
   return 1;
 }

@@ -66,7 +66,8 @@ MACRO(add_local_test test_name)
   ADD_EXECUTABLE(${test_name} ${test_name}.cxx)
   TARGET_LINK_LIBRARIES(${test_name}
     pv_meshless 
-    )
+    vtkTestingRendering
+  )
   ADD_TEST(${test_name} ${PROJECT_BINARY_DIR}/../bin/${test_name})
 ENDMACRO(add_local_test)
 
@@ -107,6 +108,9 @@ IF (PV_MESHLESS_USE_HDF5 AND PARAVIEW_USE_MPI)
   ADD_LIBRARY(pv_meshlessTestLib STATIC
     TestUtils.cxx
   )
+  target_link_libraries(pv_meshlessTestLib 
+    vtkTestingRendering
+  )
 
 #  add_subdirectory(Test_Compound)
   #--------------------------------------------------
@@ -116,7 +120,7 @@ IF (PV_MESHLESS_USE_HDF5 AND PARAVIEW_USE_MPI)
   TARGET_LINK_LIBRARIES(TestH5PartParallelWriter
     pv_meshless 
     pv_meshlessTestLib
-    )
+  )
   FOREACH(N 1 2 3 4 8 16 32 64)
     SET(test_name "TestH5PartParallelWriter-P${N}")
       #

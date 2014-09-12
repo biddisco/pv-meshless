@@ -301,7 +301,7 @@ int vtkImageSamplerSource::RequestData(
     0, this->WholeDimension[2]-1 };
   //
   vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
-    inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR())) : NULL;
+    inInfo->Get(vtkBoundsExtentTranslator::META_DATA())) : NULL;
   vtkBoundsExtentTranslator *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
   if (bet) {
     int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());

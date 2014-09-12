@@ -213,7 +213,8 @@ int vtkRegularGridSource::RequestInformation(
     0, this->WholeDimension[0]-1, 
     0, this->WholeDimension[1]-1, 
     0, this->WholeDimension[2]-1 );
-	outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),maxpieces);
+
+  outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
   outInfo->Set(vtkDataObject::ORIGIN(), this->origin, 3);
   outInfo->Set(vtkDataObject::SPACING(), this->spacing, 3);
 
@@ -416,7 +417,7 @@ int vtkRegularGridSource::RequestData(
   //
   //
   vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
-    inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR())) : NULL;
+    inInfo->Get(vtkBoundsExtentTranslator::META_DATA())) : NULL;
   vtkBoundsExtentTranslator *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
   if (bet) {
     int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
