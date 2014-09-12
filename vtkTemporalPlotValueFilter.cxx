@@ -71,7 +71,7 @@ int vtkTemporalPlotValueFilter::RequestInformation(
   vtkInformationVector *outputVector)
 {
   vtkInformation *outInfo0 = outputVector->GetInformationObject(0);
-  outInfo0->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), -1);
+  outInfo0->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
 
   //vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
   //if (inInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS())) {

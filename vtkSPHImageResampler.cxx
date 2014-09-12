@@ -31,7 +31,6 @@
 #include "vtkSmartPointer.h"
 #include "vtkExtentTranslator.h"
 //
-#include "vtkPVExtentTranslator.h"
 #include "vtkBoundsExtentTranslator.h"
 #include "vtkSPHProbeFilter.h"
 //
@@ -192,13 +191,13 @@ int vtkSPHImageResampler::RequestInformation(
   this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
   //
   vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
-    inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR())) : NULL;
+    inInfo->Get(vtkBoundsExtentTranslator::META_DATA())) : NULL;
   vtkBoundsExtentTranslator  *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
   //
   this->ComputeGlobalInformation(input, this->WholeDimensionWithoutDelta, false);
   this->ComputeGlobalInformation(input, this->WholeDimensionWithDelta, true);
   this->ComputeLocalInformation(bet, this->LocalExtent);
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), this->ExtentTranslator);
+  outInfo->Set(vtkBoundsExtentTranslator::META_DATA(), this->ExtentTranslator);
   //
   //int maxpieces = -1;//outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   //
@@ -367,7 +366,7 @@ int vtkSPHImageResampler::RequestData(
   vtkImageData  *outImage = this->GetOutput();
   //
   vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
-    inInfo->Get(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR())) : NULL;
+    inInfo->Get(vtkBoundsExtentTranslator::META_DATA())) : NULL;
   vtkBoundsExtentTranslator  *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
   //
   if (!this->BoundsInitialized) {
@@ -385,8 +384,8 @@ int vtkSPHImageResampler::RequestData(
   if (!bet) {
     int updatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
     int updateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
-    vtkSmartPointer<vtkPVExtentTranslator> translator = vtkSmartPointer<vtkPVExtentTranslator>::New();
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::EXTENT_TRANSLATOR(), translator);
+    vtkSmartPointer<vtkExtentTranslator> translator = vtkSmartPointer<vtkExtentTranslator>::New();
+    outInfo->Set(vtkBoundsExtentTranslator::META_DATA(), translator);
     translator->SetWholeExtent(outWholeExt);
     translator->SetPiece(updatePiece);
     translator->SetNumberOfPieces(updateNumPieces);
