@@ -856,13 +856,13 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
       if ( (this->UpdatePiece==0) && !(outIdcount % progressInterval) ) {
         double progress = (double)(outIdcount)/(double)(numInputPoints);
         this->UpdateProgress(progress);
-        std::cout << "Progress updated " << progress << std::endl;
+//        std::cout << "Progress updated " << progress << std::endl;
         if (this->UpdatePiece==0) {
           abort = GetAbortExecute();
         }
       }
 
-      outId = ptId;
+      outId = outIdcount;
 
       if (abort ) {
 #pragma omp critical
