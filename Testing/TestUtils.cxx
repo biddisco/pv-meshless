@@ -17,6 +17,10 @@
 #ifdef PV_MESHLESS_ZOLTAN_SUPPORT
  #include "vtkParticlePartitionFilter.h"
 #endif
+#include "vtkInformation.h"
+#include "vtkPointData.h"
+#include "vtkDataArray.h"
+
 //
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -367,7 +371,7 @@ void TestStruct::CreateSPHResampler(vtkAlgorithm *input)
     else {
       sphProbe->SetResolution(32,32,32);
     }
-    sphProbe->SetDelta(20.0*this->gridSpacing[0]); // 15.0*this->particleSize);
+    sphProbe->SetDelta(this->particleSize);
     sphProbe->SetSPHManager(this->sphManager);
     if (this->massScalars.size()) {
       sphProbe->SetMassScalars(this->massScalars.c_str());
@@ -404,12 +408,25 @@ double TestStruct::UpdateSPHResampler()
   //
   vtkStreamingDemandDrivenPipeline *resample_sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(this->sphResampler->GetExecutive());
   testDebugMacro( "Setting resample piece information " << this->myRank << " of " << this->numProcs );
+  // make sure data output is setup
   resample_sddp->UpdateDataObject();
-  resample_sddp->SetUpdateExtent(0, this->myRank, this->numProcs, 0);
+  // make sure data extents and types are declared
   resample_sddp->UpdateInformation();
+  
+  //
+  // set extent to be updated to all with pieces
+  //
   resample_sddp->SetUpdateExtent(0, this->myRank, this->numProcs, 0);
-  resample_sddp->Update();
-  this->controller->Barrier();
+//  vtkInformation *info = resample_sddp->GetOutputInformation(0);
+//  vtkStreamingDemandDrivenPipeline::SetUpdateExtentToWholeExtent(info);
+//  info->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), this->myRank);
+//  info->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), this->numProcs);
+
+  //
+  // Update resampler
+  //
+  this->sphResampler->Update();
+  //
   sphtimer->StopTimer();
   double sph_elapsed = sphtimer->GetElapsedTime();
   testDebugMacro( "Probe completed in " << sph_elapsed << " seconds" );

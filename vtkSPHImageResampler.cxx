@@ -48,18 +48,24 @@ vtkCxxSetObjectMacro(vtkSPHImageResampler, SPHManager, vtkSPHManager);
 #include "vtkZoltanV1PartitionFilter.h"
 //----------------------------------------------------------------------------
 #if 0
-  #define OUTPUTTEXT(a) std::cout << (a);
+
+  #define OUTPUTTEXT(a) std::cout <<(a); std::cout.flush();
 
   #undef vtkDebugMacro
   #define vtkDebugMacro(a)  \
   { \
-    vtkOStreamWrapper::EndlType endl; \
-    vtkOStreamWrapper::UseEndl(endl); \
-    vtkOStrStreamWrapper vtkmsg; \
-    vtkmsg << /* this->UpdatePiece << " : " */ a << endl; \
-    OUTPUTTEXT(vtkmsg.str()); \
-    vtkmsg.rdbuf()->freeze(0); \
+    if (this->UpdatePiece>=0) { \
+      vtkOStreamWrapper::EndlType endl; \
+      vtkOStreamWrapper::UseEndl(endl); \
+      vtkOStrStreamWrapper vtkmsg; \
+      vtkmsg << this->UpdatePiece << " : " a << "\n"; \
+      OUTPUTTEXT(vtkmsg.str()); \
+      vtkmsg.rdbuf()->freeze(0); \
+    } \
   }
+
+  #undef  vtkErrorMacro
+  #define vtkErrorMacro(a) vtkDebugMacro(a)  
 #endif
 //----------------------------------------------------------------------------
 #define REGULARGRID_SAXPY(a,x,y,z) \
@@ -153,27 +159,17 @@ int vtkSPHImageResampler::RequestUpdateExtent(
   vtkInformation  *inInfo = inputVector[0]->GetInformationObject(0);
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   //
-  int ghostLevels;
-  //
   this->UpdatePiece     = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
   this->UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
-  ghostLevels = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
+/*
   //
-  // Pass the piece request through
-  //
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), this->UpdatePiece);
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), this->UpdateNumPieces);
-  vtkDebugMacro( "Imagesampler (" << this->UpdatePiece << ") set num pieces to " << this->UpdateNumPieces );
-  //  
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), 
-    0, -1, 
-    0, -1, 
-    0, -1 );
-  //
-//  std::cout << "vtkSPHImageResampler::RequestInformation UPDATE_EXTENT {";
-//  for (int i=0; i<3; i++) std::cout << -1 << (i<2 ? "," : "}");
-//  std::cout << std::endl;
-  //
+  int updateExtent[6];
+  outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), updateExtent);
+  std::stringstream temp;
+  temp << "Image sampler " << this->UpdatePiece << " UPDATE_EXTENT {";
+  for (int i=0; i<3; i++) temp << updateExtent[i*2] << "," << updateExtent[i*2+1] << (i<2 ? ":" : "}");
+  vtkDebugMacro( << temp.str() );
+*/
   return 1;
 }
 
@@ -187,17 +183,19 @@ int vtkSPHImageResampler::RequestInformation(
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   vtkDataSet       *input = inInfo ? vtkDataSet::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT())) : NULL;
   //
-  this->UpdatePiece     = this->Controller->GetLocalProcessId();
-  this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
-  //
-  vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
+  outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
+
+  // Get the extent translator from upstream, assumes data partitioned
+  vtkBoundsExtentTranslator *bet = inInfo ? vtkBoundsExtentTranslator::SafeDownCast(
     inInfo->Get(vtkBoundsExtentTranslator::META_DATA())) : NULL;
-  vtkBoundsExtentTranslator  *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
-  //
+
+  // copy the extent translator to the output for futher use downstream
+  outInfo->Set(vtkBoundsExtentTranslator::META_DATA(), this->ExtentTranslator);
+
+  // Work out how big our output will be
   this->ComputeGlobalInformation(input, this->WholeDimensionWithoutDelta, false);
   this->ComputeGlobalInformation(input, this->WholeDimensionWithDelta, true);
-  this->ComputeLocalInformation(bet, this->LocalExtent);
-  outInfo->Set(vtkBoundsExtentTranslator::META_DATA(), this->ExtentTranslator);
+
   //
   //int maxpieces = -1;//outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   //
@@ -205,7 +203,7 @@ int vtkSPHImageResampler::RequestInformation(
     0, this->WholeDimensionWithDelta[0]-1, 
     0, this->WholeDimensionWithDelta[1]-1, 
     0, this->WholeDimensionWithDelta[2]-1 );
-  // outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(), maxpieces);
+
   outInfo->Set(vtkDataObject::ORIGIN(), this->GlobalResamplingOrigin, 3);
   outInfo->Set(vtkDataObject::SPACING(), this->spacing, 3);
 
@@ -315,8 +313,12 @@ int vtkSPHImageResampler::ComputeLocalInformation(vtkBoundsExtentTranslator *bet
   //
   // 1) get the local extent based on delta=0
   int     localExt[6]; 
-  double *localbounds = bet->GetBoundsForPiece(this->UpdatePiece);
-  bet->BoundsToExtentThreadSafe(localbounds, WholeExtNoDelta, localExt); 
+  double *localbounds = NULL;
+  if (bet) {
+    localbounds = bet->GetBoundsForPiece(this->UpdatePiece);
+    bet->BoundsToExtentThreadSafe(localbounds, WholeExtNoDelta, localExt); 
+  }
+
   // 2) compare local extent for zero delta with the global extent for zero delta
   //    any bound which is a local max/min in a dimension must be pushed to the global max/min
   for (int i=0; i<3; i++) {
@@ -365,15 +367,14 @@ int vtkSPHImageResampler::RequestData(
   vtkDataSet       *input = vtkDataSet::SafeDownCast(this->GetInput());
   vtkImageData  *outImage = this->GetOutput();
   //
-  vtkExtentTranslator *translator = inInfo ? vtkExtentTranslator::SafeDownCast(
+  vtkBoundsExtentTranslator *bet = inInfo ? vtkBoundsExtentTranslator::SafeDownCast(
     inInfo->Get(vtkBoundsExtentTranslator::META_DATA())) : NULL;
-  vtkBoundsExtentTranslator  *bet = vtkBoundsExtentTranslator::SafeDownCast(translator);
   //
   if (!this->BoundsInitialized) {
     this->ComputeGlobalInformation(input, this->WholeDimensionWithoutDelta, false);
     this->ComputeGlobalInformation(input, this->WholeDimensionWithDelta, true);
-    this->ComputeLocalInformation(bet, this->LocalExtent);
   }
+  this->ComputeLocalInformation(bet, this->LocalExtent);
   //
   int outWholeExt[6] = {
     0, this->WholeDimensionWithDelta[0]-1, 
