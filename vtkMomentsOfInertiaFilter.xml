@@ -20,10 +20,6 @@
              <DataType value="vtkPointSet"/>
            </DataTypeDomain>
           <InputArrayDomain name="input_array">
-             <RequiredProperties>
-                <Property name="SelectInputArray" 
-                          function="FieldDataSelection"/>
-             </RequiredProperties>
           </InputArrayDomain>
       </InputProperty>
      <StringVectorProperty

@@ -2,8 +2,6 @@
 #define _pqSPHManagerDockWindow_h
 
 #include <QDockWidget>
-//#include "pqProxyPanel.h"
-
 #include <vtkSmartPointer.h>
 
 class QCheckBox;
