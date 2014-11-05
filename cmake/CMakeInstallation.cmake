@@ -1,24 +1,24 @@
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install for import into other projects
 #-----------------------------------------------------------------------------
-if (NOT ${PROJECT_NAME}_EXTERNALLY_CONFIGURED)
+if (NOT (${PROJECT_NAME}_EXTERNALLY_CONFIGURED OR ${PROJECT_NAME}_IS_SUBPROJECT))
   install (
       EXPORT ${${PROJECT_NAME}_EXPORTED_TARGETS}
       DESTINATION ${${PROJECT_NAME}_INSTALL_CMAKE_DIR}/${${PROJECT_NAME}_PACKAGE}
       FILE ${${PROJECT_NAME}_PACKAGE}-targets.cmake
       COMPONENT configinstall
   )
-endif (NOT ${PROJECT_NAME}_EXTERNALLY_CONFIGURED)
+endif()
 
 #-----------------------------------------------------------------------------
 # Export all exported targets to the build tree for use by parent project
 #-----------------------------------------------------------------------------
-#if (NOT ${PROJECT_NAME}_EXTERNALLY_CONFIGURED)
+if (NOT (${PROJECT_NAME}_EXTERNALLY_CONFIGURED OR ${PROJECT_NAME}_IS_SUBPROJECT))
   EXPORT (
       TARGETS ${${PROJECT_NAME}_LIBRARIES_TO_EXPORT} ${${PROJECT_NAME}_LIB_DEPENDENCIES}
       FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-targets.cmake
   )
-#endif (NOT ${PROJECT_NAME}_EXTERNALLY_CONFIGURED)
+endif()
 
 #-----------------------------------------------------------------------------
 # Configure the project-config.cmake file for the build directory

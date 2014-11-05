@@ -17,10 +17,6 @@
           <Group name="filters"/>
         </ProxyGroupDomain>
         <InputArrayDomain name="input_array">
-          <RequiredProperties>
-            <Property name="SelectInputArray"
-                      function="FieldDataSelection"/>
-          </RequiredProperties>
         </InputArrayDomain>
         <DataTypeDomain name="input_type">
           <DataType value="vtkPointSet"/>
