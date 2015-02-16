@@ -838,13 +838,13 @@ int vtkH5PartReader::RequestData(
 
     // now read the data components.
     herr_t r;
-    hsize_t count1_mem[] = { Nt*Nc };
-    hsize_t count2_mem[] = { Nt };
-    hsize_t offset_mem[] = { 0 };
-    hsize_t stride_mem[] = { Nc };
-    hsize_t     count1_dsk[] = { Nt };
-    hsize_t     offset_dsk[] = { ParticleStart };
-    hsize_t     stride_dsk[] = { 1 };
+    hsize_t count1_mem[] = { (hsize_t)(Nt*Nc) };
+    hsize_t count2_mem[] = { (hsize_t)(Nt) };
+    hsize_t offset_mem[] = { (hsize_t)(0) };
+    hsize_t stride_mem[] = { (hsize_t)(Nc) };
+    hsize_t count1_dsk[] = { (hsize_t)(Nt) };
+    hsize_t offset_dsk[] = { (hsize_t)(ParticleStart) };
+    hsize_t stride_dsk[] = { (hsize_t)(1) };
     //
     for (int c=0; c<Nc; c++)
       {

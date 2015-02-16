@@ -403,10 +403,10 @@ void vtkH5PartWriter::WriteDataArray(int i, vtkDataArray *indata)
   herr_t r=0;
   int Nt = data->GetNumberOfTuples();
   int Nc = data->GetNumberOfComponents();
-  hsize_t     count1_mem[] = { Nt*Nc };
-  hsize_t     count2_mem[] = { Nt };
-  hsize_t     offset_mem[] = { 0 };
-  hsize_t     stride_mem[] = { Nc };
+  hsize_t     count1_mem[] = { (hsize_t)(Nt*Nc) };
+  hsize_t     count2_mem[] = { (hsize_t)(Nt) };
+  hsize_t     offset_mem[] = { (hsize_t)(0) };
+  hsize_t     stride_mem[] = { (hsize_t)(Nc) };
   //
   vtkSmartPointer<vtkDataArray> component;
   if (!this->VectorsWithStridedWrite) {
