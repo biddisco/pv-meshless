@@ -187,6 +187,10 @@
          default_values="0" >
       </IntVectorProperty>
 
+      <Hints>
+        <ShowInMenu category="Meshless" />
+      </Hints>
+
       <!--
       <Hints>
         <Property name="ModifiedNumber" show="0"/>

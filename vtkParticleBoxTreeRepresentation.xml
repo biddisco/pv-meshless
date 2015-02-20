@@ -197,6 +197,9 @@
          default_values="0.001" >
       </DoubleVectorProperty>
 -->
+      <Hints>
+        <ShowInMenu category="Meshless" />
+      </Hints>
 
     </SourceProxy>
 

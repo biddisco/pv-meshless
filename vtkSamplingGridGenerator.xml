@@ -188,6 +188,9 @@
                  base_proxyname="SamplingGridSource"
                  label="Sampling Grid">
 
+      <Hints>
+        <ShowInMenu category="Meshless" />
+      </Hints>
     </SourceProxy>
 
   </ProxyGroup>

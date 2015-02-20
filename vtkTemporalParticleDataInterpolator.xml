@@ -114,6 +114,10 @@
         </Documentation>
       </StringVectorProperty>
 
+      <Hints>
+        <ShowInMenu category="Meshless" />
+      </Hints>
+
       <!-- End TemporalParticleInterpolator -->
     </SourceProxy>
       

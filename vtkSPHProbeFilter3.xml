@@ -105,6 +105,10 @@
         </Documentation>
       </DoubleVectorProperty>
 
+      <Hints>
+        <ShowInMenu category="Meshless" />
+      </Hints>
+
     </SourceProxy>
 
   </ProxyGroup>

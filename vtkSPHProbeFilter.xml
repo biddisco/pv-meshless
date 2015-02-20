@@ -226,6 +226,9 @@
           This property specifies the dataset whose geometry will be used in determining positions to probe.
         </Documentation>
       </InputProperty>
+      <Hints>
+        <ShowInMenu category="Meshless" />
+      </Hints>
     </SourceProxy>
 
     <!-- ================================================================ -->
@@ -257,6 +260,9 @@
           used in determining positions to probe.
         </Documentation>
       </InputProperty>
+      <Hints>
+        <ShowInMenu category="Meshless" />
+      </Hints>
     </SourceProxy>
 
     <!-- ================================================================ -->
@@ -293,6 +299,7 @@
         <!-- View can be used to specify the preferred view for the proxy -->
         <View type="XYChartView" />
         <Plotable />
+        <ShowInMenu category="Meshless" />
       </Hints>
     </SourceProxy>
 

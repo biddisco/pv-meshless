@@ -38,6 +38,10 @@
         </Documentation>
       </IntVectorProperty>
       
+      <Hints>
+        <ShowInMenu category="Meshless" />
+      </Hints>
+
     </SourceProxy>
 
   </ProxyGroup>
