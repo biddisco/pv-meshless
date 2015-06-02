@@ -78,4 +78,4 @@ ENDIF(BUILD_SHARED_LIBS AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILE
 #--------------------------------------------------------
 # Add H5Part conversion tools
 #--------------------------------------------------------
-#ADD_SUBDIRECTORY(tools)
+ADD_SUBDIRECTORY(tools)

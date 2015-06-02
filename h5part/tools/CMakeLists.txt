@@ -13,16 +13,16 @@ INCLUDE_DIRECTORIES(
 )
  
 SET(TOOL_VTK_LIBS
-  pv_common
+#  pv_common
   pv_meshless
-  vtkWidgets
-  vtkHybrid
-  vtkRendering
-  vtkGraphics
-  vtkImaging
-  vtkIO
-  vtkFiltering
-  vtkCommon
+  vtkIOInfovis
+  vtkTestingRendering
+#  vtkRendering
+#  vtkGraphics
+#  vtkImaging
+#  vtkIO
+#  vtkFiltering
+#  vtkCommon
   vtksys
 )
 
@@ -60,8 +60,22 @@ TARGET_LINK_LIBRARIES(
 )
 
 #-----------------------------------------------
+# Create CSV conversion utility
+#-----------------------------------------------
+ADD_EXECUTABLE( 
+  CSV2H5Part 
+  CSV2H5Part.cpp 
+)
+
+TARGET_LINK_LIBRARIES(
+  CSV2H5Part
+  ${TOOL_VTK_LIBS}
+)
+
+#-----------------------------------------------
 # Create ASCII conversion utility
 #-----------------------------------------------
+if(DO_THIS)
 ADD_EXECUTABLE( 
   Ascii2H5Part 
   vtkASCIIParticleReader.cpp
@@ -79,6 +93,7 @@ SET(TOOL_CFG_FILES
   ASCII2H5Part.manchester.cfg
   ASCII2H5Part.plymouth.cfg
 )
+endif()
 
 INSTALL(
   FILES ${TOOL_CFG_FILES}
