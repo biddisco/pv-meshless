@@ -19,7 +19,7 @@
 #include "vtkDataSet.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkCompositeDataIterator.h"
-#include "vtkStreamOutputWindow.h"
+//#include "vtkStreamOutputWindow.h"
 #include "vtkH5PartWriter.h"
 #include "vtkTesting.h"
 
@@ -47,10 +47,10 @@ int main(int argc, char **argv)
   //
   // Force the creation of our output window object
   //
-  vtkStreamOutputWindow *outwin = vtkStreamOutputWindow::New();
-  vtkOutputWindow::SetInstance(outwin);
-  outwin->Delete();
-  outwin->SetOutputStream(&std::cout);
+//  vtkStreamOutputWindow *outwin = vtkStreamOutputWindow::New();
+//  vtkOutputWindow::SetInstance(outwin);
+//  outwin->Delete();
+//  outwin->SetOutputStream(&std::cout);
 
   int DataIndex = 0;
   int LittleEndian = 0;

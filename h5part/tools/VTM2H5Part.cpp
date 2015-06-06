@@ -28,7 +28,7 @@
 #include "vtkH5PartWriter.h"
 //#include "vtkStreamOutputWindow.h"
 #include "vtkTesting.h"
-#include "Testing/Cxx/vtkTestUtilities.h"
+#include "vtkTestUtilities.h"
 
 //----------------------------------------------------------------------------
 int main(int argc, char **argv)
@@ -251,15 +251,15 @@ int main(int argc, char **argv)
         for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
         {
           vtkPolyData *polys = vtkPolyData::SafeDownCast(iter->GetCurrentDataObject());
-          if (polys) append->AddInput(polys);
+          if (polys) append->AddInputData(polys);
         }
         append->Update();
         //
-        writer->SetInputDataConnection(append->GetOutputPort());
+        writer->SetInputConnection(append->GetOutputPort());
         numParticles = append->GetOutput()->GetNumberOfCells();
       }
       else {    
-        writer->SetInputDataConnection(reader->GetOutputPort());
+        writer->SetInputConnection(reader->GetOutputPort());
         numParticles = reader->GetOutputAsDataSet()->GetNumberOfCells();
       }
       //
