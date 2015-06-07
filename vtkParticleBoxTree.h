@@ -97,7 +97,7 @@ class VTK_EXPORT vtkParticleBoxTree : public vtkModifiedBSPTree {
 //ETX
 
   // Used internally when generating representation of nodes/particles
-  void AddBox(vtkPolyData *pd, double *bounds);
+  void AddBox(vtkPolyData *pd, double *bounds, int level);
 
   double ParticleSize;
   vtkDataArray *ParticleSizeArray;

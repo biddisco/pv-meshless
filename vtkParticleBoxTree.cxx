@@ -35,6 +35,7 @@
 #include "vtkPoints.h"
 #include "vtkGenericCell.h"
 #include "vtkMath.h"
+#include "vtkPointData.h"
 //
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkParticleBoxTree);
@@ -206,10 +207,15 @@ int vtkParticleBoxTree::IntersectCellInternal(
 
 }
 //---------------------------------------------------------------------------
+// only for graphics display of tree
 class _box {
   public:
   double bounds[6];
-  _box(double *b) { for (int i=0; i<6; i++) { bounds[i] = b[i]; } };
+  int level;
+  _box(double *b, int l) {
+      for (int i=0; i<6; i++) bounds[i] = b[i];
+      level = l;
+  };
 };
 
 typedef std::vector<_box> boxlist;
@@ -226,14 +232,14 @@ void vtkParticleBoxTree::GenerateRepresentation(int level, vtkPolyData *pd)
   while (!ns.empty())  {
     node = ns.top();
     ns.pop();
-    if (node->depth==level) bl.push_back(_box(node->bounds));
+    if (node->depth==level) bl.push_back(_box(node->bounds, node->depth));
     else {
       if (node->mChild[0]) {
         ns.push(node->mChild[0]);
         if (node->mChild[1]) ns.push(node->mChild[1]);
         ns.push(node->mChild[2]);
       }
-      else if (level==-1) bl.push_back(_box(node->bounds));
+      else if (level==-1) bl.push_back(_box(node->bounds, node->depth));
     }
   }
   //
@@ -242,7 +248,7 @@ void vtkParticleBoxTree::GenerateRepresentation(int level, vtkPolyData *pd)
   // For each node, add the bbox to our polydata
   size_t s = bl.size();
   for (size_t i=0; i<s; i++) {
-    this->AddBox(pd, bl[i].bounds);
+    this->AddBox(pd, bl[i].bounds, bl[i].level);
   }
 }
 //---------------------------------------------------------------------------
@@ -289,7 +295,7 @@ void vtkParticleBoxTree::GenerateRepresentationParticles(vtkPolyData *pd)
 */
 }
 //---------------------------------------------------------------------------
-void vtkParticleBoxTree::AddBox(vtkPolyData *pd, double *bounds)
+void vtkParticleBoxTree::AddBox(vtkPolyData *pd, double *bounds, int level)
 {
   vtkPoints      *pts = pd->GetPoints();
   vtkCellArray *lines = pd->GetLines();
@@ -337,6 +343,12 @@ void vtkParticleBoxTree::AddBox(vtkPolyData *pd, double *bounds)
   lines->InsertNextCell(2,ids);
   ids[0] = cells[3]; ids[1] = cells[7];
   lines->InsertNextCell(2,ids);
+  vtkDataArray *da;
+  if (da=pd->GetPointData()->GetArray("Level")) {
+      for (int i=0; i<8; i++) {
+          da->InsertNextTuple1(level);
+      }
+  }
 }
 //---------------------------------------------------------------------------
 void vtkParticleBoxTree::PrintSelf(ostream& os, vtkIndent indent)
