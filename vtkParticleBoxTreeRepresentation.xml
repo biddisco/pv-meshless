@@ -31,6 +31,15 @@
         </Documentation>
       </InputProperty>
 
+      <IntVectorProperty name="TreeType" command="SetTreeType"
+        number_of_elements="1" default_values="0">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="vtkCellTreeLocator"/>
+          <Entry value="1" text="vtkModifiedBSPTree"/>
+          <Entry value="2" text="vtkCellLocator(OctTree)"/>
+        </EnumerationDomain>
+      </IntVectorProperty>
+      
       <IntVectorProperty
         name="Level"
         command="SetLevel"
@@ -61,6 +70,26 @@
         default_values="0.001">
       </DoubleVectorProperty>
 
+      <StringVectorProperty
+        name="ParticleSizeArray"
+        command="SetParticleSizeArray"
+        number_of_elements="1"
+        animateable="0"
+        default_values="hSmooth"
+        default_regex_delimiter=","
+        default_regex="^[hH]"
+        label="Particle size Array">
+        <ArrayListDomain
+          name="array_list"
+          attribute_type="Scalars"
+          none_string="Not available"
+          input_domain_name="input_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      
       <!--
       <IntVectorProperty
         name="KernelType"

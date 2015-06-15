@@ -37,7 +37,9 @@
 #include "vtkPolyDataAlgorithm.h"
 #include "vtkSmartPointer.h"
 
-class vtkParticleBoxTree;
+#include "vtkParticleBoxTreeBSP.h";
+#include "vtkParticleBoxTreeCell.h";
+class vtkDataArray;
 
 class VTK_EXPORT vtkParticleBoxTreeRepresentation : public vtkPolyDataAlgorithm {
   public:
@@ -48,6 +50,13 @@ class VTK_EXPORT vtkParticleBoxTreeRepresentation : public vtkPolyDataAlgorithm 
     // Description:
     // Create an instance of vtkParticleBoxTreeRepresentation
     static vtkParticleBoxTreeRepresentation *New();
+
+    // Description:
+    // Set BSP Tree type -
+    // 0 : vtkCellTreeLocator
+    // 1 : vtkModifiedBSPTree
+    vtkSetMacro(TreeType,int);
+    vtkGetMacro(TreeType,int);
 
     vtkSetMacro(Level, int);
     vtkGetMacro(Level, int);
@@ -60,6 +69,19 @@ class VTK_EXPORT vtkParticleBoxTreeRepresentation : public vtkPolyDataAlgorithm 
     
     vtkSetMacro(ParticleSize, double);
     vtkGetMacro(ParticleSize, double);    
+
+    // Description:
+    // Supply an array to be used for particle sizes.
+    // one usually specifies an 'H' smoothing length array
+    vtkSetStringMacro(ParticleSizeArray);
+    vtkGetStringMacro(ParticleSizeArray);
+
+    // Description:
+    // Supply an array of bounding boxes, one per particle
+    // this allows asymmetrical boxes to be handled.
+    // The array should have N*6 components of bounds[] entries
+    vtkSetStringMacro(ParticleBoundsArray);
+    vtkGetStringMacro(ParticleBoundsArray);
 
   protected:
      vtkParticleBoxTreeRepresentation(void);
@@ -75,12 +97,16 @@ class VTK_EXPORT vtkParticleBoxTreeRepresentation : public vtkPolyDataAlgorithm 
     //
     virtual int FillInputPortInformation(int port, vtkInformation* info);
 
+    int    TreeType;
     int    Level;
     int    MaxDepth;
     int    MaxCellsPerNode;
     double ParticleSize;
+    char  *ParticleSizeArray;
+    char  *ParticleBoundsArray;
   
-    vtkSmartPointer<vtkParticleBoxTree> BSPTree;
+    vtkSmartPointer<vtkParticleBoxTreeCell> BSPTree1;
+    vtkSmartPointer<vtkParticleBoxTreeBSP>  BSPTree2;
 
 private:
   // Not implemented.

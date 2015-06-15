@@ -71,7 +71,7 @@
 #include "vtkDoubleArray.h"
 #include "vtkSmartPointer.h"
 #include "vtkExtentTranslator.h"
-#include "vtkParticleBoxTree.h"
+#include "vtkParticleBoxTreeBSP.h"
 #include "vtkBoundingBox.h"
 #include "vtkIdListCollection.h"
 //
@@ -1375,7 +1375,7 @@ int vtkH5PartReader::PartitionByBoundingBoxes(
   poly->SetPoints(boxcentres);
   poly->SetVerts(boxcells);
   // Construct a BSP tree and set the bounding boxes to our partition extents
-  vtkSmartPointer<vtkParticleBoxTree> tree = vtkSmartPointer<vtkParticleBoxTree>::New();
+  vtkSmartPointer<vtkParticleBoxTreeBSP> tree = vtkSmartPointer<vtkParticleBoxTreeBSP>::New();
   vtkSmartPointer<vtkDoubleArray> bounds = vtkSmartPointer<vtkDoubleArray>::New();
   bounds->SetNumberOfComponents(6);
   bounds->SetNumberOfTuples(NP);

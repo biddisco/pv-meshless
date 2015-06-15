@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : pv-meshless
-  Module                  : $RCSfile: vtkParticleBoxTree.cpp,v $
+  Module                  : $RCSfile: ParticleBoxTree.cpp,v $
   Revision of last commit : $Rev: 155 $
   Author of last commit   : $Author: biddisco $
   Date of last commit     : $Date:: 2006-07-13 10:23:31 +0200 #$
@@ -29,7 +29,6 @@
 #include <vector>
 //
 #include "vtkObjectFactory.h"
-#include "vtkParticleBoxTree.h"
 #include "vtkCellArray.h"
 #include "vtkPolyData.h"
 #include "vtkPoints.h"
@@ -40,9 +39,9 @@
 #include "vtkPointData.h"
 //
 //----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkParticleBoxTree);
-vtkCxxSetObjectMacro(vtkParticleBoxTree, ParticleSizeArray, vtkDataArray);
-vtkCxxSetObjectMacro(vtkParticleBoxTree, ParticleBoundsArray, vtkDataArray);
+vtkStandardNewMacro(PARTICLE_BOX_TREE_NAME);
+vtkCxxSetObjectMacro(PARTICLE_BOX_TREE_NAME, ParticleSizeArray, vtkDataArray);
+vtkCxxSetObjectMacro(PARTICLE_BOX_TREE_NAME, ParticleBoundsArray, vtkDataArray);
 //----------------------------------------------------------------------------
 #define JB_DEBUG__
 #if defined JB_DEBUG__
@@ -67,18 +66,18 @@ vtkCxxSetObjectMacro(vtkParticleBoxTree, ParticleBoundsArray, vtkDataArray);
   #define vtkErrorMacro(a) vtkDebugMacro(a)  
 #endif
 //----------------------------------------------------------------------------
-vtkParticleBoxTree::vtkParticleBoxTree(void) {
+PARTICLE_BOX_TREE_NAME::PARTICLE_BOX_TREE_NAME(void) {
   this->ParticleSize = 0.05;
   this->ParticleSizeArray = NULL;
   this->ParticleBoundsArray = NULL;
 }
 //---------------------------------------------------------------------------
-vtkParticleBoxTree::~vtkParticleBoxTree(void) {
+PARTICLE_BOX_TREE_NAME::~PARTICLE_BOX_TREE_NAME(void) {
   this->SetParticleSizeArray(NULL);
   this->SetParticleBoundsArray(NULL);
 }
 //----------------------------------------------------------------------------
-bool vtkParticleBoxTree::StoreCellBounds()
+bool PARTICLE_BOX_TREE_NAME::StoreCellBounds()
 {
   if (this->CellBounds) return false;
   if (!this->DataSet) return false;
@@ -94,9 +93,9 @@ bool vtkParticleBoxTree::StoreCellBounds()
     }
     else {
       if (this->ParticleSizeArray) {
-        size = this->ParticleSize*sqrt(this->ParticleSizeArray->GetTuple1(j));
+        size = this->ParticleSizeArray->GetTuple1(j);
       }
-      this->DataSet->GetCellBounds(j, CellBounds[j]);
+      this->DataSet->GetCellBounds(j, this->CellBounds[j]);
       for (int i=0; i<3; i++) {
         this->CellBounds[j][i*2+0] -= size/2.0;    
         this->CellBounds[j][i*2+1] += size/2.0;    
@@ -108,7 +107,17 @@ bool vtkParticleBoxTree::StoreCellBounds()
 //----------------------------------------------------------------------------
 // this routine assumes the sphere centred at origin, 
 // so transform  ray origin before entering here.
-bool intersect_sphere(double o[3], double d[3], double r, double &t)
+#define EMPTY()
+#define DEFER(id) id EMPTY()
+#define OBSTRUCT(...) __VA_ARGS__ DEFER(EMPTY)()
+#define EXPAND(...) __VA_ARGS__
+
+#define CAT(a, ...) PRIMITIVE_CAT(a, __VA_ARGS__)
+#define PRIMITIVE_CAT(a, ...) a ## __VA_ARGS__
+
+#define fn_sphere EXPAND(CAT(PARTICLE_BOX_TREE_NAME, int_sphere))
+
+bool fn_sphere(double o[3], double d[3], double r, double &t)
 {
   // Compute A, B and C coefficients
   double a = vtkMath::Dot(d,d);
@@ -161,20 +170,20 @@ bool intersect_sphere(double o[3], double d[3], double r, double &t)
   }
 }
 //---------------------------------------------------------------------------
-int vtkParticleBoxTree::IntersectCellInternal(
+int PARTICLE_BOX_TREE_NAME::IntersectCellInternal(
   vtkIdType cell_ID, double p1[3], double p2[3], 
   double tol, double &t, double ipt[3], double pcoords[3], int &subId)
 {
   double ctmin=0, ctmax=1;
   double ray_vec[3] = { p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2] };
   // radius of sphere
-  double r = CellBounds[cell_ID][1] - CellBounds[cell_ID][0];
+  double r = this->CellBounds[cell_ID][1] - this->CellBounds[cell_ID][0];
   // shift ray because sphere eqn is expecting centre on origin
-  double mid[3] = { (CellBounds[cell_ID][0] + CellBounds[cell_ID][1])/2.0, 
-                    (CellBounds[cell_ID][2] + CellBounds[cell_ID][3])/2.0, 
-                    (CellBounds[cell_ID][4] + CellBounds[cell_ID][5])/2.0 };
+  double mid[3] = { (this->CellBounds[cell_ID][0] + this->CellBounds[cell_ID][1])/2.0,
+                    (this->CellBounds[cell_ID][2] + this->CellBounds[cell_ID][3])/2.0,
+                    (this->CellBounds[cell_ID][4] + this->CellBounds[cell_ID][5])/2.0 };
   double ray_origin[3] = { p1[0]-mid[0], p1[1]-mid[1], p1[2]-mid[2] };
-  if (intersect_sphere(ray_origin, ray_vec, r/2.0, t)) {
+  if (fn_sphere(ray_origin, ray_vec, r/2.0, t)) {
     t = vtkMath::Distance2BetweenPoints(p1, mid)/vtkMath::Distance2BetweenPoints(p1, p2);
     t = sqrt(t);
     ipt[0] = p1[0]+t*ray_vec[0];
@@ -221,7 +230,7 @@ class _box {
 typedef std::vector<_box> boxlist;
 typedef std::stack<BSPNode*, std::vector<BSPNode*> > nodestack;
 //---------------------------------------------------------------------------
-void vtkParticleBoxTree::GenerateRepresentation(int level, vtkPolyData *pd)
+void PARTICLE_BOX_TREE_NAME::GenerateRepresentation(int level, vtkPolyData *pd)
 {
   nodestack ns;
   boxlist   bl;
@@ -253,9 +262,51 @@ void vtkParticleBoxTree::GenerateRepresentation(int level, vtkPolyData *pd)
 }
 */
 //---------------------------------------------------------------------------
+void PARTICLE_BOX_TREE_NAME::GenerateRepresentationLeafs(vtkPolyData *pd)
+{
+  GenerateRepresentation(-1,pd);
+}
 //---------------------------------------------------------------------------
+void PARTICLE_BOX_TREE_NAME::GenerateRepresentationParticles(vtkPolyData *pd)
+{
+  /*
+  //
+  this->BuildLocatorIfNeeded();
+  //
+  nodestack ns;
+  BSPNode   *node;
+  ns.push(mRoot);
+  double closestPoint[3], dist2;
+  int subId;
+  //
+  while (!ns.empty())  {
+    node = ns.top();
+    ns.pop();
+    if (node->mChild[0]) { // this must be a parent node    
+      if (node->mChild[0]->Inside(x)) ns.push(node->mChild[0]);
+      if (node->mChild[1] && node->mChild[1]->Inside(x)) ns.push(node->mChild[1]);
+      if (node->mChild[2]->Inside(x)) ns.push(node->mChild[2]);
+    }
+    else { // a leaf, so test the cells
+      for (int i=0; i<node->num_cells; i++) {
+        int cell_ID = node->sorted_cell_lists[0][i];
+        //
+        if (vtkModifiedBSPTree_Inside(CellBounds[cell_ID], x)) {
+          this->DataSet->GetCell(cell_ID, cell);
+          if (cell->EvaluatePosition(x, closestPoint, subId, pcoords, dist2, weights)==1) {
+            return cell_ID;
+          }
+//          if (dist2<tol2) return cell_ID;
+        }
+      }
+    }
+  }
+  return -1;
+*/
+}
 //---------------------------------------------------------------------------
-void vtkParticleBoxTree::AddBox(vtkPolyData *pd, double *bounds, int level)
+
+void PARTICLE_BOX_TREE_NAME::AddBox(vtkPolyData *pd, double *bounds, int level)
 {
   vtkPoints      *pts = pd->GetPoints();
   vtkCellArray *lines = pd->GetLines();
@@ -312,15 +363,16 @@ void vtkParticleBoxTree::AddBox(vtkPolyData *pd, double *bounds, int level)
   }
 }
 //---------------------------------------------------------------------------
-void vtkParticleBoxTree::PrintSelf(ostream& os, vtkIndent indent)
+void PARTICLE_BOX_TREE_NAME::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 }
 //----------------------------------------------------------------------------
-void vtkParticleBoxTree::GenerateRepresentation(int level, vtkPolyData *pd)
+void PARTICLE_BOX_TREE_NAME::GenerateRepresentation(int level, vtkPolyData *pd)
 {
-  vtkCellTreeLocator::GenerateRepresentation(level, pd);
+  PARTICLE_BOX_TREE_BASE::GenerateRepresentation(level, pd);
   //
+/*
   vtkSmartPointer<vtkIdList> cells = vtkSmartPointer<vtkIdList>::New();
   double bounds[6] = {0.472, 0.48, 0.515, 0.52, 0.494, 0.50};
   this->FindCellsWithinBounds(bounds, cells);
@@ -331,4 +383,5 @@ void vtkParticleBoxTree::GenerateRepresentation(int level, vtkPolyData *pd)
     vtkIdType c = cells->GetId(i);
     AddBox(pd, this->CellBounds[c], 20);
   }
+  */
 }

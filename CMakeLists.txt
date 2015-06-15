@@ -337,7 +337,6 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter.cxx
 #    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSPHProbeFilter3.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkTemporalParticleDataInterpolator.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTree.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeRepresentation.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleIdFilter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCenterOfMassFilter.cxx
@@ -349,6 +348,8 @@ ADD_PARAVIEW_PLUGIN(
     ${HDF5_CXX}
   SERVER_SOURCES
     ${KernelFiles_SRCS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeBSP.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkParticleBoxTreeCell.cxx
   GUI_INTERFACES 
     ${MESHLESS_IFACE_W}
     ${MESHLESS_IFACE_O}

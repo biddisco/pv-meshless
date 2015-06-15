@@ -33,7 +33,6 @@
 #include "vtkCellArray.h"
 #include "vtkFloatArray.h"
 #include "vtkPolyData.h"
-#include "vtkParticleBoxTree.h"
 #include "vtkObjectFactory.h"
 #include "vtkSmartPointer.h"
 #include <cmath>
@@ -42,14 +41,20 @@ vtkStandardNewMacro(vtkParticleBoxTreeRepresentation);
 //---------------------------------------------------------------------------
 vtkParticleBoxTreeRepresentation::vtkParticleBoxTreeRepresentation(void)
 {
-  this->Level           = -1;
+  this->TreeType        = 0;
+  this->Level           =-1;
   this->ParticleSize    = 0.001;
   this->MaxDepth        = 32;
   this->MaxCellsPerNode = 32;
-  this->BSPTree = vtkSmartPointer<vtkParticleBoxTree>::New();
+  this->BSPTree1 = vtkSmartPointer<vtkParticleBoxTreeCell>::New();
+  this->BSPTree2 = vtkSmartPointer<vtkParticleBoxTreeBSP>::New();
+  this->ParticleSizeArray = NULL;
+  this->ParticleBoundsArray = NULL;
 }
 //---------------------------------------------------------------------------
 vtkParticleBoxTreeRepresentation::~vtkParticleBoxTreeRepresentation(void) {
+  this->SetParticleSizeArray(NULL);
+  this->SetParticleBoundsArray(NULL);
 }
 //----------------------------------------------------------------------------
 int vtkParticleBoxTreeRepresentation::FillInputPortInformation(int, vtkInformation *info)
@@ -81,13 +86,6 @@ int vtkParticleBoxTreeRepresentation::RequestData(vtkInformation *request,
   //
   if (input->GetNumberOfPoints()==0 || input->GetPointData()==NULL) return 0;
   //
-  BSPTree->SetDataSet(input);
-  BSPTree->SetParticleSize(this->ParticleSize);
-  BSPTree->SetNumberOfCellsPerNode(this->MaxCellsPerNode);
-  BSPTree->SetMaxLevel(this->MaxDepth);
-  BSPTree->SetCacheCellBounds(1);
-  BSPTree->BuildLocator();
-  //
   vtkSmartPointer<vtkPoints> pts = vtkSmartPointer<vtkPoints>::New();
   output->SetPoints(pts);
   vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
@@ -95,8 +93,31 @@ int vtkParticleBoxTreeRepresentation::RequestData(vtkInformation *request,
   vtkSmartPointer<vtkIntArray> levels = vtkSmartPointer<vtkIntArray>::New();
   levels->SetName("Level");
   output->GetPointData()->AddArray(levels);
+  vtkSmartPointer<vtkIntArray> counts = vtkSmartPointer<vtkIntArray>::New();
+  counts->SetName("CellCount");
+  output->GetPointData()->AddArray(counts);
   //
-  BSPTree->GenerateRepresentation(this->Level,output);
+  vtkDataArray *sizes = vtkDataArray::SafeDownCast(input->GetPointData()->GetAbstractArray(this->ParticleSizeArray));
+  if (this->TreeType==0) {
+      BSPTree1->SetDataSet(input);
+      BSPTree1->SetParticleSize(this->ParticleSize);
+      BSPTree1->SetNumberOfCellsPerNode(this->MaxCellsPerNode);
+      BSPTree1->SetMaxLevel(this->MaxDepth);
+      BSPTree1->SetCacheCellBounds(1);
+      BSPTree1->SetParticleSizeArray(sizes);
+      BSPTree1->BuildLocator();
+      BSPTree1->GenerateRepresentation(this->Level,output);
+  }
+  else if (this->TreeType==1) {
+      BSPTree2->SetDataSet(input);
+      BSPTree2->SetParticleSize(this->ParticleSize);
+      BSPTree2->SetNumberOfCellsPerNode(this->MaxCellsPerNode);
+      BSPTree2->SetMaxLevel(this->MaxDepth);
+      BSPTree2->SetCacheCellBounds(1);
+      BSPTree2->SetParticleSizeArray(sizes);
+      BSPTree2->BuildLocator();
+      BSPTree2->GenerateRepresentation(this->Level,output);
+  }
   return 1;
 }
 //---------------------------------------------------------------------------

@@ -26,22 +26,21 @@
 // volume to be assigned to each particle and permits raycasting 
 // operations to be performed on them.
 
-#ifndef _vtkParticleBoxTree_h
-#define _vtkParticleBoxTree_h
+//#ifndef _vtkParticleBoxTree_h
+//#define _vtkParticleBoxTree_h
 
-#include "vtkCellTreeLocator.h"
 class vtkDataArray;
 
-class VTK_EXPORT vtkParticleBoxTree : public vtkCellTreeLocator {
+class VTK_EXPORT PARTICLE_BOX_TREE_NAME : public PARTICLE_BOX_TREE_BASE {
   public:
     // Description:
     // Standard Type-Macro
-    vtkTypeRevisionMacro(vtkParticleBoxTree,vtkCellTreeLocator);
+    vtkTypeMacro(PARTICLE_BOX_TREE_NAME, PARTICLE_BOX_TREE_BASE);
     void PrintSelf(ostream& os, vtkIndent indent);
 
     // Description:
-    // Construct with maximum 32 cells per node. (average 16->31)
-    static vtkParticleBoxTree *New();
+    // Construct with default maximum 32 cells per node. (average 16->31)
+    static PARTICLE_BOX_TREE_NAME *New();
 
 //BTX
     using vtkAbstractCellLocator::IntersectWithLine;
@@ -82,8 +81,8 @@ class VTK_EXPORT vtkParticleBoxTree : public vtkCellTreeLocator {
     virtual void GenerateRepresentationParticles(vtkPolyData *pd);
 
   protected:
-   vtkParticleBoxTree();
-  ~vtkParticleBoxTree();
+   PARTICLE_BOX_TREE_NAME();
+  ~PARTICLE_BOX_TREE_NAME();
 
   // override the cell bounds caching so that we can add a real size to the box
   virtual bool StoreCellBounds();
@@ -104,10 +103,10 @@ class VTK_EXPORT vtkParticleBoxTree : public vtkCellTreeLocator {
   vtkDataArray *ParticleBoundsArray;
 
 private:
-  vtkParticleBoxTree(const vtkParticleBoxTree&);  // Not implemented.
-  void operator=(const vtkParticleBoxTree&);      // Not implemented.
+  PARTICLE_BOX_TREE_NAME(const PARTICLE_BOX_TREE_NAME&);  // Not implemented.
+  void operator=(const PARTICLE_BOX_TREE_NAME&);      // Not implemented.
 };
 
-#endif
+//#endif
 
 

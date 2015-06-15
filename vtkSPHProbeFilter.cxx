@@ -57,7 +57,7 @@
 #include "vtkCellArray.h"
 #include "vtkBitArray.h"
 //
-#include "vtkParticleBoxTree.h"
+#include "vtkParticleBoxTreeBSP.h"
 //
 
 #include "KernelGaussian.h"
@@ -820,7 +820,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   }
   else {
 /*
-    this->ParticleTree = vtkSmartPointer<vtkParticleBoxTree>::New();
+    this->ParticleTree = vtkSmartPointer<vtkParticleBoxTreeBSP>::New();
     this->ParticleTree->SetDataSet(data);
     this->ParticleTree->SetCacheCellBounds(1);
     this->ParticleTree->SetNumberOfCellsPerNode(8);
@@ -997,7 +997,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
 
 /*
   if (this->TraversalAlgorithm==NEIGHBOURHOOD_TILED_TRAVERSAL) {
-    this->ParticleTree = vtkSmartPointer<vtkParticleBoxTree>::New();
+    this->ParticleTree = vtkSmartPointer<vtkParticleBoxTreeBSP>::New();
     this->ParticleTree->SetDataSet(data);
     this->ParticleTree->SetCacheCellBounds(1);
     this->ParticleTree->SetNumberOfCellsPerNode(8);

@@ -35,8 +35,13 @@ class vtkDataSet;
 class vtkDataSet;
 class vtkIdList;
 class vtkTimerLog;
-class vtkParticleBoxTree;
 class vtkMultiProcessController;
+
+class vtkModifiedBSPTree;
+class vtkCellTreeLocator;
+
+class vtkParticleBoxTreeBSP;
+
 //BTX
 class Kernel;
 //ETX
@@ -257,7 +262,7 @@ protected:
   //
   // Internal optimization
   //
-  vtkSmartPointer<vtkParticleBoxTree> ParticleTree;
+  vtkSmartPointer<vtkParticleBoxTreeBSP> ParticleTree;
   int                                 UseParticleTree;
 
 //BTX
