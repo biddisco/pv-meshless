@@ -338,7 +338,7 @@ int vtkSPHImageResampler::ComputeLocalInformation(vtkBoundsExtentTranslator *bet
     else localExtents[i*2+1] = localExt[i*2+1] + this->ExtentOffset[i];
   }
   //
-  this->ExtentTranslator->ShallowCopy(bet);
+  if (bet) this->ExtentTranslator->ShallowCopy(bet);
   if (this->Delta>0.0) {
     int BETExtents[6];
     this->ExtentTranslator->SetUserBoundsEnabled(1);
