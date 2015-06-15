@@ -21,6 +21,7 @@
 #include "vtkPointData.h"
 //
 #include "vtkDummyController.h"
+#include <algorithm>
 
 enum PointsInRadiusMPIData
 {

@@ -7,6 +7,8 @@
 #include <map>
 #include <cstdlib> 
 #include <sstream>
+#include <functional>
+#include <cctype>
 #ifdef WIN32
   #include <Windows.h>
 #else
