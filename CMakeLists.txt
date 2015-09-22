@@ -180,28 +180,55 @@ ENDIF(PV_MESHLESS_USE_HDF5)
 # Setup GUI custom Qt panel sources and wrapping
 #--------------------------------------------------
 IF(PARAVIEW_BUILD_QT_GUI)
+  if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    set (Qt5_FIND_COMPONENTS Widgets)
+    include (ParaViewQt5)
 
-  #--------------------------------------------------
-  # make sure all *.ui dialogs/etc are wrapped
-  #--------------------------------------------------
-  QT4_WRAP_UI(
-    MESHLESS_UI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.ui
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.ui
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.ui
-#    ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.ui
-  )
+    #--------------------------------------------------
+    # make sure all *.ui dialogs/etc are wrapped
+    #--------------------------------------------------
+    QT5_WRAP_UI(
+      MESHLESS_UI_SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.ui
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.ui
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.ui
+      #    ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.ui
+    )
 
-  #--------------------------------------------------
-  # make sure all *.h files for ui are wrapped by moc
-  #--------------------------------------------------
-  QT4_WRAP_CPP(
-    MESHLESS_MOC_SRCS 
-      ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.h      
-      ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridFilterPanel.h
-      ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.h
-      ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.h
-  )
+    #--------------------------------------------------
+    # make sure all *.h files for ui are wrapped by moc
+    #--------------------------------------------------
+    QT5_WRAP_CPP(
+      MESHLESS_MOC_SRCS 
+        ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.h      
+        ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridFilterPanel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.h
+    )
+  else()
+    include (${QT_USE_FILE})
+    #--------------------------------------------------
+    # make sure all *.ui dialogs/etc are wrapped
+    #--------------------------------------------------
+    QT4_WRAP_UI(
+      MESHLESS_UI_SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqRegularGridSourceWidget.ui
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.ui
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.ui
+      #    ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.ui
+    )
+
+    #--------------------------------------------------
+    # make sure all *.h files for ui are wrapped by moc
+    #--------------------------------------------------
+    QT4_WRAP_CPP(
+      MESHLESS_MOC_SRCS 
+        ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridPanel.h      
+        ${CMAKE_CURRENT_SOURCE_DIR}/pqSamplingGridFilterPanel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerPanel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/pqSPHManagerDockWindow.h
+    )
+  endif()
   
   #--------------------------------------------------
   # invoke macro that adds our grid source 3D widget
