@@ -314,9 +314,14 @@ int vtkSPHImageResampler::ComputeLocalInformation(vtkBoundsExtentTranslator *bet
   // 1) get the local extent based on delta=0
   int     localExt[6]; 
   double *localbounds = NULL;
+  double  _local_bounds[6];
   if (bet) {
     localbounds = bet->GetBoundsForPiece(this->UpdatePiece);
     bet->BoundsToExtentThreadSafe(localbounds, WholeExtNoDelta, localExt); 
+  }
+  else {
+    localbounds = _local_bounds;
+    this->ExtentTranslator->SetNumberOfPieces(1);
   }
 
   // 2) compare local extent for zero delta with the global extent for zero delta
