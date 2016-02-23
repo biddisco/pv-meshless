@@ -234,6 +234,8 @@ protected:
     std::vector<vtkBoundingBox> &PieceBounds,
     std::vector<vtkBoundingBox> &PieceHaloBounds);
 
+  int SplitExtent(int piece, int numPieces, vtkIdType *ext);
+
   //
   virtual int  OpenFile();
   virtual void CloseFile();

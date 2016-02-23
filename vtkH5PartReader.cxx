@@ -1238,12 +1238,99 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
 
   return N2;
 }
+
+//----------------------------------------------------------------------------
+int vtkH5PartReader::SplitExtent(int piece, int numPieces, vtkIdType *ext)
+{
+    int numPiecesInFirstHalf;
+    unsigned long size[3];
+    int splitAxis;
+    vtkIdType mid;
+
+    if (piece >= numPieces || piece < 0)
+    {
+        return 0;
+    }
+
+    // keep splitting until we have only one piece.
+    // piece and numPieces will always be relative to the current ext.
+    int cnt = 0;
+    while (numPieces > 1)
+    {
+        // Get the dimensions for each axis.
+        size[0] = ext[1]-ext[0];
+        size[1] = ext[3]-ext[2];
+        size[2] = ext[5]-ext[4];
+        // choose the biggest axis
+        if (size[2] >= size[1] && size[2] >= size[0] && size[2]/2 >= 1)
+        {
+            splitAxis = 2;
+        }
+        else if (size[1] >= size[0] && size[1]/2 >= 1)
+        {
+            splitAxis = 1;
+        }
+        else if (size[0]/2 >= 1)
+        {
+            splitAxis = 0;
+        }
+        else
+        {
+            // signal no more splits possible
+            splitAxis = -1;
+        }
+
+        if (splitAxis == -1)
+        {
+            // can not split any more.
+            if (piece == 0)
+            {
+                // just return the remaining piece
+                numPieces = 1;
+            }
+            else
+            {
+                // the rest must be empty
+                return 0;
+            }
+        }
+        else
+        {
+            // split the chosen axis into two pieces.
+            numPiecesInFirstHalf = (numPieces / 2);
+            mid = size[splitAxis];
+            mid = (mid *  numPiecesInFirstHalf) / numPieces + ext[splitAxis*2];
+            if (piece < numPiecesInFirstHalf)
+            {
+                // piece is in the first half
+                // set extent to the first half of the previous value.
+                ext[splitAxis*2+1] = mid;
+                // piece must adjust.
+                numPieces = numPiecesInFirstHalf;
+            }
+            else
+            {
+                // piece is in the second half.
+                // set the extent to be the second half. (two halves share points)
+                ext[splitAxis*2] = mid;
+                // piece must adjust
+                numPieces = numPieces - numPiecesInFirstHalf;
+                piece -= numPiecesInFirstHalf;
+            }
+        }
+    } // end of while
+
+    return 1;
+}
+
 //----------------------------------------------------------------------------
 int vtkH5PartReader::PartitionByExtents(vtkIdType N, std::vector<vtkIdType> &startend)
 {
+  vtkIdType WholeExtent[6] = { 0, N, 0, 0, 0, 0 };
+  this->SplitExtent(this->UpdatePiece, this->UpdateNumPieces, WholeExtent);
+/*
   vtkExtentTranslator *extTran = vtkExtentTranslator::New();
   extTran->SetSplitModeToBlock();
-  int WholeExtent[6] = { 0, static_cast<int>(N), 0, 0, 0, 0 };
 #if !defined(LIMIT_PARTITIONS)
   extTran->SetNumberOfPieces(this->UpdateNumPieces);
 #else 
@@ -1255,25 +1342,26 @@ int vtkH5PartReader::PartitionByExtents(vtkIdType N, std::vector<vtkIdType> &sta
   int PartitionExtents[6];
   extTran->GetExtent(PartitionExtents);
   extTran->FastDelete();
-  startend.push_back(PartitionExtents[0]);
-  startend.push_back(PartitionExtents[1]-1);
-  vtkDebugMacro(<< "PartitionByExtents " << startend[0] << " : " << startend[1] << " = " << (startend[1]-startend[0]+1));
+*/
+  startend.push_back(WholeExtent[0]);
+  startend.push_back(WholeExtent[1]-1);
+  vtkDebugMacro(<< "PartitionByExtents (Translator) " << startend[0] << " : " << startend[1] << " = " << (startend[1]-startend[0]+1));
   return 1;
 }
 //----------------------------------------------------------------------------
 int vtkH5PartReader::PartitionByExtentsRandomized(vtkIdType N, std::vector<vtkIdType> &startend)
 {
   Random r(12345);
-  int partitionsize = N/this->UpdateNumPieces;
-  int rand_max = partitionsize/2;
-  int rand_half = partitionsize/4;
+  vtkIdType partitionsize = N/this->UpdateNumPieces;
+  vtkIdType rand_max = partitionsize/2;
+  vtkIdType rand_half = partitionsize/4;
   //
-  int epstart = 0;
-  int epend = 0;
-  int pstart = 0;
-  int pend = 0;
-  int rnddev;
-  for (int i=0; i<this->UpdateNumPieces; i++) {
+  vtkIdType epstart = 0;
+  vtkIdType epend = 0;
+  vtkIdType pstart = 0;
+  vtkIdType pend = 0;
+  vtkIdType rnddev;
+  for (vtkIdType i=0; i<this->UpdateNumPieces; i++) {
     epstart = i*partitionsize;
     epend   = (i+1)*partitionsize;
     rnddev  = (r.nextNumberInt()%rand_max) - rand_half;
@@ -1296,7 +1384,7 @@ int vtkH5PartReader::PartitionByExtentsRandomized(vtkIdType N, std::vector<vtkId
     pstart = pend+1;
   }
 
-  vtkDebugMacro(<< "PartitionByExtents " << startend[0] << " : " << startend[1] << " = " << (startend[1]-startend[0]+1));
+  vtkDebugMacro(<< "PartitionByExtents (randomized) " << startend[0] << " : " << startend[1] << " = " << (startend[1]-startend[0]+1));
   return 1;
 }
 //----------------------------------------------------------------------------
