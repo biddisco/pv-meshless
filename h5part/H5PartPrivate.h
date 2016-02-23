@@ -5,7 +5,7 @@
 #define H5_USE_16_API
 #endif
 
-#define H5PART_GROUPNAME_STEP	"Step"
+#define H5PART_GROUPNAME_STEP	 "Fluid"
 
 #define H5PART_BTREE_IK 10000
 
