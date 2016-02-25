@@ -113,12 +113,12 @@ void finalizeTest(TestStruct &test)
   vtkMultiProcessController::SetGlobalController(NULL);
 }
 //----------------------------------------------------------------------------
-int initTest(int argc, char* argv[], TestStruct &test)
+int initTest(int argc, char * argv[], TestStruct &test)
 {
-  char *empty = "";
+  const char *empty = "";
 #ifdef PARAVIEW_USE_MPI
   int dummy=0;
-//  DisplayParameter<char *>("====================", "Init MPI", &empty, 1, 0);
+//  DisplayParameter<const char *>("====================", "Init MPI", &empty, 1, 0);
   MPI_Init(&argc,&argv);
   test.controller = vtkSmartPointer<vtkMPIController>::New();
   test.controller->Initialize(&argc, &argv, 1);
@@ -166,7 +166,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
   //
   // General test flags/info
   //
-  DisplayParameter<char *>("====================", "", &empty, 1, (test.myRank==0)?0:-1);
+  DisplayParameter<const char *>("====================", "", &empty, 1, (test.myRank==0)?0:-1);
   test.testName = GetParameter<std::string>("-testName", "Test name", argc, argv, "", test.myRank, unused);
   test.doRender = GetParameter<bool>("-doRender", "Enable Render", argc, argv, 0, test.myRank, unused);
   test.keepTempFiles = GetParameter<bool>("-X", "Keep Temporary Files", argc, argv, 0, test.myRank, unused);
@@ -236,7 +236,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
   test.gridSpacing[2] = test.gridSpacing[1] = test.gridSpacing[0];
   test.gridResolution[2] = test.gridResolution[1] = test.gridResolution[0];
   //
-  DisplayParameter<char *>("--------------------", "", &empty, 1, (test.myRank==0)?0:-1);
+  DisplayParameter<const char *>("--------------------", "", &empty, 1, (test.myRank==0)?0:-1);
   //
   return 1;
 }  
@@ -244,7 +244,7 @@ int initTest(int argc, char* argv[], TestStruct &test)
 void TestStruct::CreateReader()
 {
   this->reader = vtkSmartPointer<vtkH5PartReader>::New();
-  this->reader->SetFileName((char*)(this->fullName.c_str()));
+  this->reader->SetFileName((char *)(this->fullName.c_str()));
   this->reader->SetController(this->controller);
   this->reader->SetGenerateVertexCells(1);
   if (this->Xarray.size()>0) {
