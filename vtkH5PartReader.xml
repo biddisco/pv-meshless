@@ -1,23 +1,13 @@
 <ServerManagerConfiguration>
 
   <!-- ================================================================ -->
-  <!-- Sources                                                          -->
+  <!-- Filters                                                          -->
   <!-- ================================================================ -->
-
-  <ProxyGroup name="writers">
-    <Proxy name="H5PartWriter2" class="vtkH5PartWriter">
-      <StringVectorProperty
-        name="FileName"
-        command="SetFileName"
-        number_of_elements="1">
-        <Documentation>
-          The name of the file to be written.
-        </Documentation>
-      </StringVectorProperty>
-    </Proxy>
-  </ProxyGroup>
-
   <ProxyGroup name="filters">
+
+    <!-- ================================================================ -->
+    <!-- H5PartWriter                                                     -->
+    <!-- ================================================================ -->
     <SourceProxy
      name="H5PartWriter"
      class="vtkH5PartWriter">
@@ -44,12 +34,27 @@
         <!--        <FileListDomain name="files"/> -->
       </StringVectorProperty>
 
-      <Hints>
-        <ReaderFactory extensions="h5part"
-            file_description="HDF5 particle files" />
-      </Hints>
+      <StringVectorProperty
+        name="StepName"
+        command="SetStepName"
+        number_of_elements="1">
+      </StringVectorProperty>
+
     </SourceProxy>
 
+  </ProxyGroup>
+  
+  <ProxyGroup name="writers">
+    <Proxy name="H5PartWriter2" class="vtkH5PartWriter">
+      <StringVectorProperty
+        name="FileName"
+        command="SetFileName"
+        number_of_elements="1">
+        <Documentation>
+          The name of the file to be written.
+        </Documentation>
+      </StringVectorProperty>
+    </Proxy>
   </ProxyGroup>
 
   <!-- ================================================================ -->
@@ -73,6 +78,12 @@
        command="SetFileName"
        number_of_elements="1">
         <FileListDomain name="files"/>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="StepName"
+        command="SetStepName"
+        number_of_elements="1">
       </StringVectorProperty>
 
       <IntVectorProperty

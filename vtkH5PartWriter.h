@@ -7,12 +7,12 @@
   Date of last commit     : $Date:: 2006-07-12 10:09:37 +0200 #$
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
-  You may use modify and and distribute this code freely providing 
-  1) This copyright notice appears on all copies of source code 
+  You may use modify and and distribute this code freely providing
+  1) This copyright notice appears on all copies of source code
   2) An acknowledgment appears with any substantial usage of the code
-  3) If this code is contributed to any other open source project, it 
-  must not be reformatted such that the indentation, bracketing or 
-  overall style is modified significantly. 
+  3) If this code is contributed to any other open source project, it
+  must not be reformatted such that the indentation, bracketing or
+  overall style is modified significantly.
 
   This software is distributed WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -21,7 +21,7 @@
 // .NAME vtkH5PartWriter - Write H5Part (HDF5) Particle files
 // .SECTION Description
 // vtkH5PartWriter writes compatible with H5Part : documented here
-// http://amas.web.psi.ch/docs/H5Part-doc/h5part.html 
+// http://amas.web.psi.ch/docs/H5Part-doc/h5part.html
 
 #ifndef __vtkH5PartWriter_h
 #define __vtkH5PartWriter_h
@@ -44,7 +44,7 @@ class VTK_EXPORT vtkH5PartWriter : public vtkAbstractParticleWriter
 public:
   static vtkH5PartWriter *New();
   vtkTypeMacro(vtkH5PartWriter,vtkAbstractParticleWriter);
-  void PrintSelf(ostream& os, vtkIndent indent);   
+  void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
   // Get the input to this writer.
@@ -53,12 +53,12 @@ public:
 
   // Description:
   // Quesry the file to see if a timestep was written previously
-  // this should really be part of vtkHDF5Reader, but when the 
+  // this should really be part of vtkHDF5Reader, but when the
   // Writer is used as a cache file, we need a function to check
   // if the timestep is already present
   bool IsTimeStepPresent(int timestep);
   void DeleteTimeStep(int timestep);
-  
+
   // Description:
   // Make this public so that files can be closed between time steps and
   // the file might survive an application crash.
@@ -75,7 +75,7 @@ public:
   // Description:
   // If VectorsWithStridedWrite is true, performance may be impacted
   // but no copy of {X,Y,Z] out of the triple vector into a single
-  // flat array takes place. Test show that using a strided write 
+  // flat array takes place. Test show that using a strided write
   // is terrible in parallel. Hope to fix this one day.
   vtkSetMacro(VectorsWithStridedWrite,int);
   vtkGetMacro(VectorsWithStridedWrite,int);
@@ -92,11 +92,16 @@ public:
   // Description:
   // When writing in parallel, all processes must send data to HDF...
   // if one node has no particles, it does nothing - but this causes the
-  // others to hang. We therefore gather information and write an 
+  // others to hang. We therefore gather information and write an
   // empty array of the correct type
   vtkSetMacro(DisableInformationGather,int);
   vtkGetMacro(DisableInformationGather,int);
   vtkBooleanMacro(DisableInformationGather,int);
+
+  // Description:
+  // Set/Get the name used for each time step (Usually Step#0, Step#1 etc)
+  vtkGetStringMacro(StepName);
+  vtkSetStringMacro(StepName);
 
 protected:
    vtkH5PartWriter();
@@ -123,11 +128,11 @@ protected:
   // If a certain process has zero particles, the dataarrays for
   // points and scalars will be effectivle empty, or even NULL
   // in this case, the collective parallel IO write may fail because
-  // the zero data process does not know what datatype to 'write' 
+  // the zero data process does not know what datatype to 'write'
   // or dataset names to create. We therefore provide a gather call
   // before writing to ensure that all processes 'agree' on what they are writing.
 //BTX
-  bool GatherDataArrayInfo(vtkDataArray *data, int &datatype, 
+  bool GatherDataArrayInfo(vtkDataArray *data, int &datatype,
     std::string &dataname, int &numComponents);
   bool GatherScalarInfo(vtkPointData *pd, int N, int &numScalar);
 //ETX
@@ -140,6 +145,7 @@ protected:
   int           FileMode;
   int           VectorsWithStridedWrite;
   H5PartFile   *H5FileId;
+  char         *StepName;
   //BTX
   std::vector<double>  InputTimeValues;
   //ETX

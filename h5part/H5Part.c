@@ -5,7 +5,7 @@ six dimensional phase space, generate vast amounts of data. Even
 though a subset of statistical information regarding phase space or
 analysis needs to be preserved, reading and writing such enormous
 restart files on massively parallel supercomputing systems remains
-challenging. 
+challenging.
 
 H5Part consists of Particles and Block structured Fields.
 
@@ -23,7 +23,7 @@ Developed by:
 </UL>
 
 
-Papers: 
+Papers:
 
 <UL>
 <LI> A. Adelmann, R.D. Ryne, C. Siegerist, J. Shalf,"From Visualization to Data Mining with Large Data Sets," <i>
@@ -69,7 +69,7 @@ For further information contact: <a href="mailto:h5part@lists.psi.ch">h5part</a>
  */
 /*!
   \internal
-  \defgroup h5partkernel H5Part private functions 
+  \defgroup h5partkernel H5Part private functions
  */
 
 
@@ -92,6 +92,8 @@ For further information contact: <a href="mailto:h5part@lists.psi.ch">h5part</a>
 #include "H5Part.h"
 #include "H5PartPrivate.h"
 #include "H5PartErrors.h"
+
+char H5PART_GROUPNAME_STEP[256] = "Step";
 
 /********* Global Variable Declarations *************/
 h5part_error_handler	_err_handler = H5PartReportErrorHandler;
@@ -365,10 +367,10 @@ _H5Part_open_file (
 /*!
   \ingroup h5part_open
 
-  Opens file with specified filename. 
+  Opens file with specified filename.
 
   If you open with flag \c H5PART_WRITE, it will truncate any
-  file with the specified filename and start writing to it. If 
+  file with the specified filename and start writing to it. If
   you open with \c H5PART_APPEND, then you can append new timesteps.
   If you open with \c H5PART_READ, then it will open the file
   readonly.
@@ -377,7 +379,7 @@ _H5Part_open_file (
 
   H5PartFile should be treated as an essentially opaque
   datastructure.  It acts as the file handle, but internally
-  it maintains several key state variables associated with 
+  it maintains several key state variables associated with
   the file.
 
   \return	File handle or \c NULL
@@ -424,10 +426,10 @@ H5PartOpenFileParallelAlign (
 /*!
   \ingroup  h5part_open
 
-  Opens file with specified filename. 
+  Opens file with specified filename.
 
   If you open with flag \c H5PART_WRITE, it will truncate any
-  file with the specified filename and start writing to it. If 
+  file with the specified filename and start writing to it. If
   you open with \c H5PART_APPEND, then you can append new timesteps.
   If you open with \c H5PART_READ, then it will open the file
   readonly.
@@ -436,7 +438,7 @@ H5PartOpenFileParallelAlign (
 
   H5PartFile should be treated as an essentially opaque
   datastructure.  It acts as the file handle, but internally
-  it maintains several key state variables associated with 
+  it maintains several key state variables associated with
   the file.
 
   \return	File handle or \c NULL
@@ -746,7 +748,7 @@ _set_num_particles (
 	  data structure the same way we do for the serial case.  But
 	  then we must have additional "DataSpace" structures to define
 	  our in-memory layout of our domain-decomposed portion of the particle
-	  list as well as a "selection" of a subset of the on-disk 
+	  list as well as a "selection" of a subset of the on-disk
 	  data layout that will be written in parallel to mutually exclusive
 	  regions by all of the processors during a parallel I/O operation.
 	  These are f->shape, f->memshape and f->diskshape respectively.
@@ -815,7 +817,7 @@ _set_num_particles (
   \ingroup h5part_model
 
   Set the number of particles for the current time-step.
-  After you call this subroutine, all subsequent 
+  After you call this subroutine, all subsequent
   operations will assume this number of particles will be written.
 
   For the parallel library, the \c nparticles value is the number of
@@ -860,7 +862,7 @@ H5PartSetNumParticles (
   \ingroup h5part_model
 
   Set the number of particles for the current time-step.
-  After you call this subroutine, all subsequent 
+  After you call this subroutine, all subsequent
   operations will assume this number of particles will be written.
 
   For the parallel library, the \c nparticles value is the number of
@@ -1470,7 +1472,7 @@ _H5Part_get_attrib_info (
   Writes an attribute \c name with the string \c value to
   the file root ("/").
 
-  \return	\c H5PART_SUCCESS or error code   
+  \return	\c H5PART_SUCCESS or error code
  */
 h5part_int64_t
 H5PartWriteFileAttribString (
@@ -1501,7 +1503,7 @@ H5PartWriteFileAttribString (
   Writes an attribute \c name with the string \c value to
   the current timestep.
 
-  \return	\c H5PART_SUCCESS or error code   
+  \return	\c H5PART_SUCCESS or error code
  */
 h5part_int64_t
 H5PartWriteStepAttribString (
@@ -1543,7 +1545,7 @@ H5PartWriteStepAttribString (
   - \c H5PART_CHAR (for \c char)
   - \c H5PART_STRING (for \c char*)
 
-  \return	\c H5PART_SUCCESS or error code   
+  \return	\c H5PART_SUCCESS or error code
  */
 h5part_int64_t
 H5PartWriteStepAttrib (
@@ -1588,7 +1590,7 @@ H5PartWriteStepAttrib (
   - \c H5PART_CHAR (for \c char)
   - \c H5PART_STRING (for \c char*)
 
-  \return	\c H5PART_SUCCESS or error code   
+  \return	\c H5PART_SUCCESS or error code
  */
 h5part_int64_t
 H5PartWriteFileAttrib (
@@ -1685,7 +1687,7 @@ H5PartGetNumFileAttribs (
   time-step can be queried by calling the function
   \c H5PartGetNumStepAttribs().
 
-  \return	\c H5PART_SUCCESS or error code 
+  \return	\c H5PART_SUCCESS or error code
  */
 h5part_int64_t
 H5PartGetStepAttribInfo (
@@ -1727,7 +1729,7 @@ H5PartGetStepAttribInfo (
   one.  The number of attributes bound to file \c f can be queried
   by calling the function \c H5PartGetNumFileAttribs().
 
-  \return	\c H5PART_SUCCESS or error code 
+  \return	\c H5PART_SUCCESS or error code
  */
 
 h5part_int64_t
@@ -1776,7 +1778,7 @@ H5PartGetFileAttribInfo (
 
   Reads an attribute bound to current time-step.
 
-  \return \c H5PART_SUCCESS or error code 
+  \return \c H5PART_SUCCESS or error code
  */
 h5part_int64_t
 H5PartReadStepAttrib (
@@ -1801,10 +1803,10 @@ H5PartReadStepAttrib (
 
   Reads an attribute bound to file \c f.
 
-  \return \c H5PART_SUCCESS or error code 
+  \return \c H5PART_SUCCESS or error code
  */
 h5part_int64_t
-H5PartReadFileAttrib ( 
+H5PartReadFileAttrib (
     H5PartFile *f,
     const char *attrib_name,
     void *attrib_value
@@ -1915,7 +1917,7 @@ _H5Part_set_step (
   In read-mode you can use this function to random-access the file for a
   particular timestep.
 
-  \return \c H5PART_SUCCESS or error code 
+  \return \c H5PART_SUCCESS or error code
  */
 h5part_int64_t
 H5PartSetStep (
@@ -2665,7 +2667,7 @@ _set_view (
 	  View has been reset so H5PartGetNumParticles will tell
 	  us the total number of particles.
 
-	  For now, we interpret start=-1 to mean 0 and 
+	  For now, we interpret start=-1 to mean 0 and
 	  end==-1 to mean end of file
      */
     total = (hsize_t) _H5Part_get_num_particles ( f );
@@ -2747,7 +2749,7 @@ _set_view_indices (
 	  View has been reset so H5PartGetNumParticles will tell
 	  us the total number of particles.
 
-	  For now, we interpret start=-1 to mean 0 and 
+	  For now, we interpret start=-1 to mean 0 and
 	  end==-1 to mean end of file
      */
     total = (hsize_t) _H5Part_get_num_particles ( f );

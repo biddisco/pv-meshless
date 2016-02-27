@@ -18,8 +18,8 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-// For PARAVIEW_USE_MPI 
-#include "vtkPVConfig.h"     
+// For PARAVIEW_USE_MPI
+#include "vtkPVConfig.h"
 #ifdef PARAVIEW_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
@@ -83,6 +83,8 @@
 #include "vtkBoundsExtentTranslator.h"
 //
 #include "Testing/TestUtils.h" // random class
+//----------------------------------------------------------------------------
+extern char H5PART_GROUPNAME_STEP[256];
 //----------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkH5PartReader, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
@@ -167,7 +169,7 @@ hid_t H5PartGetDiskShape(H5PartFile *f, hid_t dataset)
     }
 
   #undef vtkErrorMacro
-  #define vtkErrorMacro(a) vtkDebugMacro(a)  
+  #define vtkErrorMacro(a) vtkDebugMacro(a)
 #endif
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkH5PartReader);
@@ -229,7 +231,7 @@ vtkH5PartReader::~vtkH5PartReader()
 
   delete [] this->StepName;
   this->StepName = NULL;
-  
+
   this->PointDataArraySelection->FastDelete();
   this->PointDataArraySelection = 0;
 
@@ -281,7 +283,7 @@ void vtkH5PartReader::SetFileModified()
 //----------------------------------------------------------------------------
 void vtkH5PartReader::CloseFile()
 {
-  
+
   if (this->H5FileId != NULL)
     {
     H5PartCloseFile(this->H5FileId);
@@ -295,6 +297,9 @@ void vtkH5PartReader::CloseFileIntermediate()
 //----------------------------------------------------------------------------
 int vtkH5PartReader::OpenFile()
 {
+  if (this->StepName != NULL) {
+      strcpy(H5PART_GROUPNAME_STEP, this->StepName);
+  }
   if (!this->FileName)
     {
     vtkErrorMacro(<<"FileName must be specified.");
@@ -453,7 +458,7 @@ int vtkH5PartReader::RequestInformation(
     // If the file has bounding box partition support
     //
     vtkIdType partitions = this->IgnorePartitionBoxes ? 0 : this->ReadBoundingBoxes();
-    if (partitions>0) 
+    if (partitions>0)
       {
       outInfo->Set(vtkBoundsExtentTranslator::META_DATA(), this->ExtentTranslator);
       }
@@ -467,7 +472,7 @@ int vtkH5PartReader::RequestInformation(
   }
 
   this->CloseFileIntermediate();
-                                                       
+
   return 1;
 }
 //----------------------------------------------------------------------------
@@ -731,7 +736,7 @@ int vtkH5PartReader::RequestData(
     double requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
     this->ActualTimeStep = std::find_if(
       this->TimeStepValues.begin(), this->TimeStepValues.end(),
-      std::bind2nd( H5PartToleranceCheck( 
+      std::bind2nd( H5PartToleranceCheck(
           this->IntegerTimeStepValues ? 0.5 : this->TimeStepTolerance ), requestedTimeValue ))
       - this->TimeStepValues.begin();
     //
@@ -854,7 +859,7 @@ int vtkH5PartReader::RequestData(
       /* parallel read needs hyperslab for disk */
       r = H5Sselect_hyperslab(diskshape, H5S_SELECT_SET,
         offset_dsk, stride_dsk, count1_dsk, NULL);
-      if (Nc==1 || this->UseStridedMultiComponentRead) 
+      if (Nc==1 || this->UseStridedMultiComponentRead)
         {
         hid_t memspace = H5Screate_simple(1, count1_mem, NULL);
         hid_t component_datatype = H5PartGetNativeDatasetType(H5FileId, name);
@@ -888,8 +893,8 @@ int vtkH5PartReader::RequestData(
           }
         H5Sclose(memspace);
         H5Tclose(component_datatype);
-        }      
-      else 
+        }
+      else
         {
         vtkSmartPointer<vtkDataArray> onearray = NULL;
         onearray.TakeReference(vtkDataArray::CreateDataArray(vtk_datatype));
@@ -909,11 +914,11 @@ int vtkH5PartReader::RequestData(
           H5Dread(dataset, datatype, memspace,
             diskshape, H5P_DEFAULT, onearray->GetVoidPointer(0));
           }
-        else 
+        else
           {
           vtkErrorMacro("H5Part : Unhandled type change condition")
           }
-        switch (dataarray->GetDataType()) 
+        switch (dataarray->GetDataType())
           {
           case VTK_FLOAT:
             this->CopyIntoVector<float>(c,onearray,dataarray);
@@ -1040,10 +1045,10 @@ vtkIdType vtkH5PartReader::ReadBoundingBoxes()
 	hid_t dataset_id = (partitiongroup>0) ? H5Dopen ( partitiongroup, "Box") : -1;
 #endif
   // Replace normal error handler
-  H5Eset_auto(H5E_DEFAULT, errfunc, errdata); 
+  H5Eset_auto(H5E_DEFAULT, errfunc, errdata);
 
   // if all was ok, go ahead and read the data
-  if (partitiongroup>0 && dataset_id>0) { 
+  if (partitiongroup>0 && dataset_id>0) {
     hid_t diskshape = H5PartGetDiskShape(H5FileId, dataset_id);
     hsize_t dims[2], maxdims[2];
     herr_t err = H5Sget_simple_extent_dims(diskshape, dims, maxdims);
@@ -1094,7 +1099,7 @@ vtkIdType vtkH5PartReader::ReadBoundingBoxes()
 }
 //----------------------------------------------------------------------------
 vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyData *output, vtkIdType extent0, vtkIdType extent1)
-{ 
+{
   vtkIdType partitions = this->DisplayPartitionBoxes ? this->PartitionCount.size() : 0;
   vtkIdType pieces = this->DisplayPieceBoxes ? this->PieceBounds.size() : 0;
   vtkIdType newBoxes = partitions + pieces;
@@ -1162,7 +1167,7 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
     polys->AddInputData(cube2->GetOutput());
   }
   //
-  // generate boxes, 2 per piece 
+  // generate boxes, 2 per piece
   //
   for (vtkIdType i=0; i<pieces; i++) {
     vtkSmartPointer<vtkOutlineSource> cube1 = vtkSmartPointer<vtkOutlineSource>::New();
@@ -1191,10 +1196,10 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyDat
   //
   // Copy lines to output, but add N1 to the point ID of each line vertex
   //
-  output->SetLines(polys->GetOutput()->GetLines()); 
+  output->SetLines(polys->GetOutput()->GetLines());
   vtkIdType L = output->GetLines()->GetNumberOfCells();
   vtkIdTypeArray *linedata = output->GetLines()->GetData();
-  // lines stored as : {2, p1, p2}, {2, p1, p2}, ... 
+  // lines stored as : {2, p1, p2}, {2, p1, p2}, ...
   for (vtkIdType B=0; B<L; B++) {
     linedata->SetValue(B*3+1, N1 + linedata->GetValue(B*3+1));
     linedata->SetValue(B*3+2, N1 + linedata->GetValue(B*3+2));
@@ -1333,7 +1338,7 @@ int vtkH5PartReader::PartitionByExtents(vtkIdType N, std::vector<vtkIdType> &sta
   extTran->SetSplitModeToBlock();
 #if !defined(LIMIT_PARTITIONS)
   extTran->SetNumberOfPieces(this->UpdateNumPieces);
-#else 
+#else
   extTran->SetNumberOfPieces(LIMIT_PARTITIONS);
 #endif
   extTran->SetPiece(this->UpdatePiece);
@@ -1398,8 +1403,8 @@ unsigned int mylog2(unsigned int val) {
 }
 //----------------------------------------------------------------------------
 int vtkH5PartReader::PartitionByBoundingBoxes(
-  std::vector<vtkIdType> &minIds, 
-  std::vector<vtkIdType> &maxIds, 
+  std::vector<vtkIdType> &minIds,
+  std::vector<vtkIdType> &maxIds,
   std::vector<vtkBoundingBox> &PieceBounds,
   std::vector<vtkBoundingBox> &PieceHaloBounds)
 {
@@ -1411,9 +1416,9 @@ int vtkH5PartReader::PartitionByBoundingBoxes(
   vtkIdType  N = NP/NR;
   vtkIdType  D = NP % NR;
   //
-  if (NR==1 || N<1 || D>0) { 
+  if (NR==1 || N<1 || D>0) {
 //    std::cout << "H5Part partitioning : Box method unavailable " << NP << ":" << NR << " % " << D << std::endl;
-    return 0; 
+    return 0;
   }
 //  std::cout << "H5Part partitioning : Using " << N << " Boxes per rank " << std::endl;
   //

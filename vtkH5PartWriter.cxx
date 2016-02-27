@@ -7,12 +7,12 @@
   Date of last commit     : $Date:: 2006-07-12 10:09:37 +0200 #$
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
-  You may use modify and and distribute this code freely providing 
-  1) This copyright notice appears on all copies of source code 
+  You may use modify and and distribute this code freely providing
+  1) This copyright notice appears on all copies of source code
   2) An acknowledgment appears with any substantial usage of the code
-  3) If this code is contributed to any other open source project, it 
-  must not be reformatted such that the indentation, bracketing or 
-  overall style is modified significantly. 
+  3) If this code is contributed to any other open source project, it
+  must not be reformatted such that the indentation, bracketing or
+  overall style is modified significantly.
 
   This software is distributed WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -42,8 +42,8 @@
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
 //
-// For PARAVIEW_USE_MPI 
-#include "vtkPVConfig.h"     
+// For PARAVIEW_USE_MPI
+#include "vtkPVConfig.h"
 #ifdef PARAVIEW_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
@@ -59,6 +59,8 @@
 // vtksys
 //
 #include <vtksys/SystemTools.hxx>
+//----------------------------------------------------------------------------
+extern char H5PART_GROUPNAME_STEP[256];
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkH5PartWriter);
 vtkCxxSetObjectMacro(vtkH5PartWriter, Controller, vtkMultiProcessController);
@@ -82,10 +84,10 @@ vtkCxxSetObjectMacro(vtkH5PartWriter, Controller, vtkMultiProcessController);
     }
 
   #undef vtkErrorMacro
-  #define vtkErrorMacro(a) vtkDebugMacro(a)  
+  #define vtkErrorMacro(a) vtkDebugMacro(a)
 #endif
 //----------------------------------------------------------------------------
-vtkH5PartWriter::vtkH5PartWriter() 
+vtkH5PartWriter::vtkH5PartWriter()
 {
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
@@ -101,6 +103,7 @@ vtkH5PartWriter::vtkH5PartWriter()
   this->UpdateNumPieces           = -1;
   this->VectorsWithStridedWrite   = 0;
   this->DisableInformationGather  = 0;
+  this->StepName                  = NULL;
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
   if (this->Controller == NULL) {
@@ -109,9 +112,12 @@ vtkH5PartWriter::vtkH5PartWriter()
 }
 //----------------------------------------------------------------------------
 vtkH5PartWriter::~vtkH5PartWriter()
-{ 
+{
   this->CloseFile();
   this->SetController(NULL);
+  //
+  delete [] this->StepName;
+  this->StepName = NULL;
 }
 //----------------------------------------------------------------------------
 int vtkH5PartWriter::FillInputPortInformation(int, vtkInformation *info)
@@ -137,12 +143,12 @@ int vtkH5PartWriter::RequestInformation(
 
   if (inInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS()) )
     {
-    int NumberOfInputTimeSteps = inInfo->Length( 
+    int NumberOfInputTimeSteps = inInfo->Length(
       vtkStreamingDemandDrivenPipeline::TIME_STEPS() );
     //
     // Get list of input time step values
     this->InputTimeValues.resize(NumberOfInputTimeSteps);
-    inInfo->Get( vtkStreamingDemandDrivenPipeline::TIME_STEPS(), 
+    inInfo->Get( vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
       &this->InputTimeValues[0] );
   }
   return 1;
@@ -158,14 +164,14 @@ vtkPointSet* vtkH5PartWriter::GetInput(int port)
   return vtkPointSet::SafeDownCast(vtkAbstractParticleWriter::GetInput(port));
 }
 //----------------------------------------------------------------------------
-void vtkH5PartWriter::SetFileModeToWrite() 
-{ 
-  this->SetFileMode(H5PART_WRITE); 
+void vtkH5PartWriter::SetFileModeToWrite()
+{
+  this->SetFileMode(H5PART_WRITE);
 }
 //----------------------------------------------------------------------------
-void vtkH5PartWriter::SetFileModeToReadWrite() 
-{ 
-  this->SetFileMode(H5PART_APPEND); 
+void vtkH5PartWriter::SetFileModeToReadWrite()
+{
+  this->SetFileMode(H5PART_APPEND);
 }
 //----------------------------------------------------------------------------
 void vtkH5PartWriter::CloseFile()
@@ -184,6 +190,9 @@ int vtkH5PartWriter::OpenFile()
     vtkErrorMacro(<<"FileName must be specified.");
     return 0;
   }
+  if (this->StepName != NULL) {
+      strcpy(H5PART_GROUPNAME_STEP, this->StepName);
+  }
   // if file doesn't exists already, make sure mode is write to force a create
   int actualMode = this->FileMode;
   if (this->FileMode==H5PART_APPEND && !vtksys::SystemTools::FileExists(this->FileName))
@@ -197,7 +206,7 @@ int vtkH5PartWriter::OpenFile()
   if (!this->H5FileId) {
 #ifdef PARALLEL_IO
     if (this->Controller && this->UpdateNumPieces>1) {
-      vtkMPICommunicator *vtkComm = 
+      vtkMPICommunicator *vtkComm =
         vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
       MPI_Comm *handle = vtkComm->GetMPIComm()->GetHandle();
 
@@ -218,7 +227,7 @@ int vtkH5PartWriter::OpenFile()
     }
 #else
       this->H5FileId = H5PartOpenFile(this->FileName, this->FileMode);
-#endif  
+#endif
   }
   if (!this->H5FileId) {
     vtkErrorMacro(<< "Initialize: Could not open file " << this->FileName);
@@ -234,7 +243,7 @@ struct vtkH5PW_datainfo {
   vtkH5PW_datainfo() : datatype(-1), numC(-1) {};
 };
 //----------------------------------------------------------------------------
-bool vtkH5PartWriter::GatherDataArrayInfo(vtkDataArray *data, 
+bool vtkH5PartWriter::GatherDataArrayInfo(vtkDataArray *data,
   int &datatype, std::string &dataname, int &numComponents)
 {
 #ifdef PARAVIEW_USE_MPI
@@ -245,7 +254,7 @@ bool vtkH5PartWriter::GatherDataArrayInfo(vtkDataArray *data,
     strncpy(((vtkH5PW_datainfo*)&datatypes[this->UpdatePiece])->name, data->GetName(), 64);
   }
   vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(
-    this->Controller->GetCommunicator()); 
+    this->Controller->GetCommunicator());
   int result = com->AllGather((char*)MPI_IN_PLACE, (char*)&datatypes[0], sizeof(vtkH5PW_datainfo));
   for (int i=0; i<this->UpdateNumPieces; i++) {
     vtkH5PW_datainfo &newdata = datatypes[i];
@@ -268,7 +277,7 @@ bool vtkH5PartWriter::GatherScalarInfo(vtkPointData *pd, int N, int &numScalar)
   std::vector<int> numScalars(this->UpdateNumPieces, 0);
   if (pd) numScalars[this->UpdatePiece] = pd->GetNumberOfArrays();
   vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(
-    this->Controller->GetCommunicator()); 
+    this->Controller->GetCommunicator());
   int result = com->AllGather((const int *)MPI_IN_PLACE, &numScalars[0], 1);
   for (int i=0; i<this->UpdateNumPieces; i++) {
     if (numScalars[i]>0) numScalar = numScalars[i];
@@ -293,7 +302,7 @@ void CopyFromVector_T(int offset, vtkDataArray *source, vtkDataArray *dest)
 //----------------------------------------------------------------------------
 void vtkH5PartWriter::CopyFromVector(int offset, vtkDataArray *source, vtkDataArray *dest)
 {
-  switch (source->GetDataType()) 
+  switch (source->GetDataType())
   {
     case VTK_CHAR:
     case VTK_SIGNED_CHAR:
@@ -363,13 +372,13 @@ void vtkH5PartWriter::CopyFromVector(int offset, vtkDataArray *source, vtkDataAr
     dataptr = dataptr ? dataptr : &buffer[0]; \
     r = H5Dwrite(dataset, T2, memshape, diskshape, H5P_DEFAULT, dataptr); \
   } \
-  H5Dclose(dataset);  
+  H5Dclose(dataset);
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 void vtkH5PartWriter::WriteDataArray(int i, vtkDataArray *indata)
 {
   // if a process has zero points/scalars, then this routine is entered with
-  // a null pointer, we must find out what the other processes are sending 
+  // a null pointer, we must find out what the other processes are sending
   // and do an empty send with the same type etc.
   vtkSmartPointer<vtkDataArray> data;
   if (this->UpdateNumPieces>1 && !this->DisableInformationGather) {
@@ -377,7 +386,7 @@ void vtkH5PartWriter::WriteDataArray(int i, vtkDataArray *indata)
     std::string correctName;
     GatherDataArrayInfo(indata, correctType, correctName, numComponents);
     if (!indata) {
-      vtkDebugMacro(<<"NULL data found, used MPI_Gather to find :" 
+      vtkDebugMacro(<<"NULL data found, used MPI_Gather to find :"
         << " DataType " << correctType
         << " Name " << correctName.c_str()
         << " NumComponents " << numComponents);
@@ -430,7 +439,7 @@ void vtkH5PartWriter::WriteDataArray(int i, vtkDataArray *indata)
     char *tempname = const_cast<char *>(name.c_str());
     name = vtksys::SystemTools::ReplaceChars(tempname, BadChars, '_');
     // shape
-    memshape = H5Screate_simple(1, count1_mem, NULL);   
+    memshape = H5Screate_simple(1, count1_mem, NULL);
     // single vector write or component by component
     vtkSmartPointer<vtkDataArray> finalData = data;
     if (Nc>1) {
@@ -447,7 +456,7 @@ void vtkH5PartWriter::WriteDataArray(int i, vtkDataArray *indata)
       }
     }
     else {
-      // we don't need a hyperslab here because we're writing 
+      // we don't need a hyperslab here because we're writing
       // a contiguous block from mem to disk with the same flat shape
     }
     //
@@ -497,7 +506,7 @@ void vtkH5PartWriter::WriteDataArray(int i, vtkDataArray *indata)
         H5PartWriteDataArray(,H5T_NATIVE_ULLONG, this->H5FileId, name, finalData);
         break;
       case VTK_ID_TYPE:
-        if (VTK_SIZEOF_ID_TYPE==8) { 
+        if (VTK_SIZEOF_ID_TYPE==8) {
           H5PartWriteDataArray(,H5T_NATIVE_LLONG, this->H5FileId, name, finalData);
         }
         else if (VTK_SIZEOF_ID_TYPE==4) {
@@ -514,9 +523,9 @@ void vtkH5PartWriter::WriteDataArray(int i, vtkDataArray *indata)
     if (dataset>=0 && r<0) {
       vtkErrorMacro(<<"Array write failed for name "
         << name.c_str() << " Timestep " << this->H5FileId->timestep);
-    } 
+    }
     else if (dataset>=0 && r>=0) {
-      vtkDebugMacro(<<"Wrote " << name.c_str() << " " << Nt << " " << Nc << " " << typestring); 
+      vtkDebugMacro(<<"Wrote " << name.c_str() << " " << Nt << " " << Nc << " " << typestring);
     }
   }
 }
@@ -560,8 +569,8 @@ void vtkH5PartWriter::WriteData()
     {
     this->TimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
     this->ActualTimeStep = std::find_if(
-      this->InputTimeValues.begin(), this->InputTimeValues.end(), 
-      std::bind2nd( H5PartWriterToleranceCheck( 1E-6 ), this->TimeValue)) 
+      this->InputTimeValues.begin(), this->InputTimeValues.end(),
+      std::bind2nd( H5PartWriterToleranceCheck( 1E-6 ), this->TimeValue))
       - this->InputTimeValues.begin();
     //
   }
@@ -571,7 +580,7 @@ void vtkH5PartWriter::WriteData()
   //
   if (0 && H5PartHasStep(this->H5FileId, this->ActualTimeStep))
   {
-    vtkErrorMacro(<<"Time Step already present in file. Aborting " 
+    vtkErrorMacro(<<"Time Step already present in file. Aborting "
       << this->FileName << " Step " << this->ActualTimeStep);
     return;
   }
@@ -630,7 +639,7 @@ void vtkH5PartWriter::WriteData()
   //
   // We are done.
   //
-  vtkDebugMacro(<<"Time Step written " << this->FileName 
+  vtkDebugMacro(<<"Time Step written " << this->FileName
     << " Step " << this->ActualTimeStep
     << " Time " << this->TimeValue);
 }
