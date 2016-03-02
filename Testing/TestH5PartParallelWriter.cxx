@@ -72,7 +72,7 @@ std::string usage = "\n"\
 int main (int argc, char* argv[])
 {
   bool ok = true;
-  char *empty = "";
+  const char *empty = "";
 
   //--------------------------------------------------------------
   // Setup Test Params

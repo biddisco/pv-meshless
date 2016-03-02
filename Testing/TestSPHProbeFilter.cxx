@@ -42,7 +42,7 @@ static const int CONTOURDATA_TAG=301;
 int main (int argc, char* argv[])
 {
   int retVal = 1;
-  char *empty = "";
+  const char *empty = "";
 
   //--------------------------------------------------------------
   // Setup Test Params
@@ -138,7 +138,7 @@ int main (int argc, char* argv[])
       double tol_max = std::fabs(test.vminmax[1]/1000.0);
       if (std::fabs(test.vminmax[0]-scalar_range_global[0])>tol_min || std::fabs(test.vminmax[1]-scalar_range_global[1])>tol_max) {
         ok = false;
-        DisplayParameter<char *>("++++++++++++++++++++", "", &empty, 1, (test.myRank==0)?0:-1);
+        DisplayParameter<const char *>("++++++++++++++++++++", "", &empty, 1, (test.myRank==0)?0:-1);
         std::cout << "min/max check failed " << std::endl;
         std::cout << "expected {" << test.vminmax[0] << ',' << test.vminmax[1] << "}" << std::endl;
         std::cout << "got {" << scalar_range_global[0] << ',' << scalar_range_global[1] << "}" << std::endl;
@@ -149,7 +149,7 @@ int main (int argc, char* argv[])
           std::fabs(test.vpos[2]-scalar_pos[2])>1E-5)
       {
         ok = false;
-        DisplayParameter<char *>("++++++++++++++++++++", "", &empty, 1, (test.myRank==0)?0:-1);
+        DisplayParameter<const char *>("++++++++++++++++++++", "", &empty, 1, (test.myRank==0)?0:-1);
         std::cout << "position check failed " << std::endl;
         std::cout << "expected {" << test.vpos[0] << "," << test.vpos[1] << ',' << test.vpos[2] << "}" << std::endl;
         std::cout << "got {" << scalar_pos[0] << "," << scalar_pos[1] << ',' << scalar_pos[2] << "}" << std::endl;
@@ -327,7 +327,7 @@ int main (int argc, char* argv[])
       vtkIdType voxels = (1+wholeExtent[1]-wholeExtent[0])*(1+wholeExtent[3]-wholeExtent[2])*(1+wholeExtent[5]-wholeExtent[4]);
       DisplayParameter<vtkIdType>("Voxels", "", &voxels, 1, test.myRank);
     }
-    DisplayParameter<char *>("====================", "", &empty, 1, test.myRank);
+    DisplayParameter<const char *>("====================", "", &empty, 1, test.myRank);
   }
   
   test.controller->Finalize();
