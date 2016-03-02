@@ -296,7 +296,7 @@ void TestStruct::CreatePartitioner()
   if (this->reader) {
     this->partitioner->SetInputConnection(this->reader->GetOutputPort());
   }
-  this->partitioner->SetGhostCellOverlap(this->ghostOverlap);
+  this->partitioner->SetGhostHaloSize(this->ghostOverlap);
   this->partitioner->SetController(this->controller);
 #endif
 }
