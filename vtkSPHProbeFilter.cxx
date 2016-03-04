@@ -12,8 +12,8 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// For PARAVIEW_USE_MPI 
-#include "vtkPVConfig.h"     
+// For PARAVIEW_USE_MPI
+#include "vtkPVConfig.h"
 #ifdef PARAVIEW_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
@@ -88,7 +88,7 @@ vtkCxxSetObjectMacro(vtkSPHProbeFilter, Controller, vtkMultiProcessController);
   }
 
   #undef  vtkErrorMacro
-  #define vtkErrorMacro(a) vtkDebugMacro(a)  
+  #define vtkErrorMacro(a) vtkDebugMacro(a)
 #endif
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -198,7 +198,7 @@ vtkDataObject *vtkSPHProbeFilter::GetProbe()
   if (this->GetNumberOfInputConnections(1) < 1) {
     return NULL;
   }
-  
+
   return this->GetExecutive()->GetInputData(1, 0);
 }
 //----------------------------------------------------------------------------
@@ -244,24 +244,24 @@ void vtkSPHProbeFilter::InitializeKernelCoefficients()
   };
 }
 //----------------------------------------------------------------------------
-int vtkSPHProbeFilter::OutputType(vtkDataSet *probepts) 
+int vtkSPHProbeFilter::OutputType(vtkDataSet *probepts)
 {
   int outputType = probepts->GetDataObjectType();
   return probepts->GetDataObjectType();
 }
 //----------------------------------------------------------------------------
-vtkSmartPointer<vtkDataSet> vtkSPHProbeFilter::NewOutput(vtkDataSet *probepts) 
+vtkSmartPointer<vtkDataSet> vtkSPHProbeFilter::NewOutput(vtkDataSet *probepts)
 {
   int outputType = this->OutputType(probepts);
-  vtkSmartPointer<vtkDataSet> newoutput = 
+  vtkSmartPointer<vtkDataSet> newoutput =
     vtkDataSet::SafeDownCast(vtkDataObjectTypes::NewDataObject(outputType));
   newoutput->FastDelete(); // dec ref count
   return newoutput;
 }
 //----------------------------------------------------------------------------
 int vtkSPHProbeFilter::RequestDataObject(
-  vtkInformation *, 
-  vtkInformationVector  **inputVector, 
+  vtkInformation *,
+  vtkInformationVector  **inputVector,
   vtkInformationVector *outputVector)
 {
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
@@ -279,7 +279,7 @@ int vtkSPHProbeFilter::RequestDataObject(
       probePtsInfo->Get(vtkDataObject::DATA_OBJECT()));
   }
   //
-  int outputType = -1; 
+  int outputType = -1;
   if (probepts) {
     outputType = this->OutputType(probepts);
   }
@@ -353,7 +353,7 @@ int vtkSPHProbeFilter::RequestUpdateExtent(
   piece       = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
   numPieces   = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   ghostLevels = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
-  
+
   if (this->GetNumberOfInputPorts()>1 && this->GetNumberOfInputConnections(1)>0) {
     probePtsInfo = inputVector[1]->GetInformationObject(0);
   }
@@ -502,7 +502,7 @@ double vtkSPHProbeFilter::GetMaxKernelCutoffDistance()
 }
 //----------------------------------------------------------------------------
 void vtkSPHProbeFilter::KernelCompute(
-  double x[3], vtkDataSet *data, vtkIdList *TestPoints, vtkIdList *NearestPoints, 
+  double x[3], vtkDataSet *data, vtkIdList *TestPoints, vtkIdList *NearestPoints,
   double *gradW, double &totalmass, double &maxDistance, double *weights)
 {
   int N = TestPoints->GetNumberOfIds();
@@ -557,7 +557,7 @@ void vtkSPHProbeFilter::KernelCompute(
       volume = mass/rho;
     }
     //
-    // Mass sum for local density 
+    // Mass sum for local density
     //
     totalmass += mass;
     //
@@ -578,13 +578,13 @@ void vtkSPHProbeFilter::KernelCompute(
     }
     //
     // Stop if we are using too many points
-    // 
-    NearestPoints->SetId(validpoints, index); 
+    //
+    NearestPoints->SetId(validpoints, index);
     if ((++validpoints)>=KERNEL_MAX_NEIGHBOURS) {
       i=N;
     }
   }
-  NearestPoints->SetNumberOfIds(validpoints); 
+  NearestPoints->SetNumberOfIds(validpoints);
   gradW[0] = _gradW[0];
   gradW[1] = _gradW[1];
   gradW[2] = _gradW[2];
@@ -598,7 +598,7 @@ void vtkSPHProbeFilter::KernelCompute(
 }
 //----------------------------------------------------------------------------
 void vtkSPHProbeFilter::ShepardCompute(
-  double x[3], vtkDataSet *data, vtkIdList *NearestPoints, 
+  double x[3], vtkDataSet *data, vtkIdList *NearestPoints,
   double &totalmass, double &maxDistance, double *weights)
 {
   int num_neighbors = NearestPoints->GetNumberOfIds();
@@ -652,7 +652,7 @@ bool vtkSPHProbeFilter::InitializeVariables(vtkDataSet *data)
   Vector::dim = this->KernelDimension;
 
   this->NumInputParticles = data->GetNumberOfPoints();
-  // 
+  //
   // Find the arrays to be used for Mass/Density
   // if not present, we will use default values based on particle size
   //
@@ -665,7 +665,7 @@ bool vtkSPHProbeFilter::InitializeVariables(vtkDataSet *data)
   this->HDataF       = NULL;
   this->HDataD       = NULL;
   //
-  vtkDataArray *MassArray = this->MassScalars ? 
+  vtkDataArray *MassArray = this->MassScalars ?
     data->GetPointData()->GetArray(this->MassScalars) : NULL;
   FloatOrDoubleArrayPointer(MassArray, this->MassDataF, this->MassDataD);
   //
@@ -686,7 +686,7 @@ bool vtkSPHProbeFilter::InitializeVariables(vtkDataSet *data)
 //----------------------------------------------------------------------------
 bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vtkDataSet *output)
 {
-  double bounds[6], cutoff; 
+  double bounds[6], cutoff;
   vtkPointData *pd, *outPD;
 
   vtkDebugMacro(<<"Probing data");
@@ -699,14 +699,14 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   //
   double bins[3] = {50, 50, 50};
   if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_KERNEL) {
-    cutoff = this->GetMaxKernelCutoffDistance(); 
+    cutoff = this->GetMaxKernelCutoffDistance();
     data->GetBounds(bounds);
     bins[0] = (bounds[1]-bounds[0])/cutoff;
     bins[1] = (bounds[3]-bounds[2])/cutoff;
     bins[2] = (bounds[5]-bounds[4])/cutoff;
   }
   double total=bins[0]*bins[1]*bins[2];
-  for (int i=0; i<3; i++) { 
+  for (int i=0; i<3; i++) {
     if (total>50E6 && bins[i]>100) bins[i]=100;
   }
   vtkDebugMacro(<<"Bins are  " << (int)bins[0] << " " << (int)bins[1] << " " << (int)bins[2]);
@@ -723,7 +723,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
     this->UpdateNumPieces = com ? com->GetNumberOfProcesses() : 1;
   }
 #endif
-  
+
   //
   // ghost cell stuff
   //
@@ -733,7 +733,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   vtkDataArray* ghostarray = 0;
   vtkIdType G = 0, nonGhost = 0;
   if (probepts->GetPointData()) {
-    ghostarray = probepts->GetPointData()->GetArray("vtkGhostLevels");
+    ghostarray = probepts->GetPointData()->GetArray("vtkGhostType");
   }
   // we don't need this check, we'll take any datatype for ghost flags
   if ( (!ghostarray) || (ghostarray->GetDataType() != VTK_UNSIGNED_CHAR) || (ghostarray->GetNumberOfComponents() != 1)) {
@@ -750,9 +750,9 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
   vtkDebugMacro(<< "Non ghost N = " << nonGhost << " from total " << G);
 #endif
 
-  // 
+  //
   // setup output dataset
-  // 
+  //
   this->NumOutputPoints = (nonGhost==0) ? probepts->GetNumberOfPoints() : nonGhost;
   vtkIdType numInputPoints = probepts->GetNumberOfPoints();
   //
@@ -903,7 +903,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
         this->Locator->FindClosestNPoints(this->MaximumNeighbours, x, NearestPoints);
         N = NearestPoints->GetNumberOfIds();
       }
-    
+
       //
       // compute weights from neighbours
       //
@@ -1022,16 +1022,16 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
 
       // Get the xyz coordinate of the point in the probe dataset
       probepts->GetPoint(ptId, x);
-      
+
       //
       // NB. Inflate extends box on both sides, so we use 1/2
       //
 //      double *bounds = this->ParticleTree->GetCellBounds(ptId);
 //      vtkBoundingBox box(bounds);
-//      box.Inflate(cutoff*0.5); 
+//      box.Inflate(cutoff*0.5);
       SecondPoints->Reset();
       NearestPoints->Reset();
-//      this->ParticleTree->FindCellsWithinBounds(box, NearestPoints); 
+//      this->ParticleTree->FindCellsWithinBounds(box, NearestPoints);
       this->ParticleTree->FindCellsFast(x, NearestPoints);
       this->Locator->FindPointsWithinRadius(cutoff, x, SecondPoints);
 
@@ -1049,7 +1049,7 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
           // also sum masses and find radius of neighbourhood
           double grad[3], totalmass, maxDistance;
           this->KernelCompute(x, data, SecondPoints, grad, totalmass, maxDistance, N);
-        
+
           // If we are passing input scalars straight to output
           if (passdata) {
             outPD->CopyData(pd, ptId, outId);
@@ -1084,14 +1084,14 @@ bool vtkSPHProbeFilter::ProbeMeshless(vtkDataSet *data, vtkDataSet *probepts, vt
           }
         }
         else if (this->InterpolationMethod==vtkSPHManager::POINT_INTERPOLATION_SHEPARD) {
-          // if Cal_Interpolation_ShepardMethod_All is called, 
+          // if Cal_Interpolation_ShepardMethod_All is called,
           // then please comment out outPD->InterpolatePoint(pd, ptId, NearestPoints, weights);
-          // because Cal_Interpolation_ShepardMethod_All calcualtes interpolations.       
+          // because Cal_Interpolation_ShepardMethod_All calcualtes interpolations.
           //int inside = Cal_Interpolation_ShepardMethod_All(data, false, x, N, NearestPoints, ptId, outPD);
           Cal_Weights_ShepardMethod(x, data, NearestPoints, this->weights);
           ShepardArray->SetValue(outId, 0.0);
           GradArray->SetValue(outId, 0.0);
-          // need to call this interpolation function 
+          // need to call this interpolation function
           // because Cal_Weights_ShepardMethod only calculates weights.
           outPD->InterpolatePoint(pd, outId, NearestPoints, weights);
           if (computesmootheddensity) {
@@ -1153,7 +1153,7 @@ bool vtkSPHProbeFilter::InitOutput(vtkDataSet *data, vtkDataSet *probepts, vtkDa
   vtkDataArray* ghostarray = 0;
   vtkIdType G = 0, nonGhost = 0;
   if (probepts->GetPointData()) {
-    ghostarray = probepts->GetPointData()->GetArray("vtkGhostLevels");
+    ghostarray = probepts->GetPointData()->GetArray("vtkGhostType");
   }
   // we don't need this check, we'll take any datatype for ghost flags
   if ( (!ghostarray) || (ghostarray->GetDataType() != VTK_UNSIGNED_CHAR) || (ghostarray->GetNumberOfComponents() != 1)) {

@@ -1,10 +1,10 @@
 // mpishim : C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\Remote Debugger\x64\mpishim100.exe
-// mpiexec : C:\Program Files\MPICH2\bin\mpiexec.exe 
+// mpiexec : C:\Program Files\MPICH2\bin\mpiexec.exe
 // mpiargs : -localonly -n 2 -env PATH C:\cmakebuild\pv-meshless\bin\debug;c:\bin
 
 #ifdef _WIN32
   #include <windows.h>
-#else 
+#else
   #include <sys/time.h>
 #endif
 
@@ -12,8 +12,8 @@
 #include <math.h>
 //
 //
-// For PARAVIEW_USE_MPI 
-#include "vtkPVConfig.h"     
+// For PARAVIEW_USE_MPI
+#include "vtkPVConfig.h"
 #ifdef PARAVIEW_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
@@ -81,7 +81,7 @@ int main (int argc, char* argv[])
   // if testing partition from file
   double read_elapsed = 0.0;
   double partition_elapsed = 0.0;
-  vtkSmartPointer<vtkAlgorithm> data_algorithm; 
+  vtkSmartPointer<vtkAlgorithm> data_algorithm;
   vtkIdType totalParticles = 0;
   if (vtksys::SystemTools::FileExists(test.fullName.c_str())) {
     //--------------------------------------------------------------
@@ -89,7 +89,7 @@ int main (int argc, char* argv[])
     //--------------------------------------------------------------
     test.CreateReader();
     read_elapsed = test.UpdateReader();
-    data_algorithm = test.reader; 
+    data_algorithm = test.reader;
     //
     vtkIdType localParticles = test.reader->GetOutput()->GetNumberOfPoints();
     test.controller->AllReduce(&localParticles, &totalParticles, 1, vtkCommunicator::SUM_OP);
@@ -121,12 +121,12 @@ int main (int argc, char* argv[])
     Ids->SetNumberOfTuples(test.generateN);
     Ids->SetNumberOfComponents(1);
     Ids->SetName("PointIds");
-    Sprites->GetPointData()->AddArray(Ids);  
+    Sprites->GetPointData()->AddArray(Ids);
     //
     Ranks->SetNumberOfTuples(test.generateN);
     Ranks->SetNumberOfComponents(1);
     Ranks->SetName("Rank");
-    Sprites->GetPointData()->AddArray(Ranks);  
+    Sprites->GetPointData()->AddArray(Ranks);
     //
     //--------------------------------------------------------------
     // Create default scalar arrays
@@ -134,7 +134,7 @@ int main (int argc, char* argv[])
     double radius  = 500.0;
     const double a = 0.9;
     test.ghostOverlap = radius*0.1; // ghost_region
-  
+
     known_seed();
     SpherePoints(test.generateN, radius*(1.5+test.myRank)/(test.numProcs+0.5), vtkFloatArray::SafeDownCast(points->GetData())->GetPointer(0));
     for (vtkIdType Id=0; Id<test.generateN; Id++) {
@@ -149,7 +149,7 @@ int main (int argc, char* argv[])
       test.generateN = 0;
       Sprites = vtkSmartPointer<vtkPolyData>::New();
     }
-*/  
+*/
     //--------------------------------------------------------------
     // Parallel partition
     //--------------------------------------------------------------
@@ -238,7 +238,7 @@ int main (int argc, char* argv[])
           mapper2->SetUseLookupTableScalarRange(0);
           mapper2->SetScalarRange(0,1);
           mapper2->SetInterpolateScalarsBeforeMapping(0);
-          mapper2->SelectColorArray("vtkGhostLevels");
+          mapper2->SelectColorArray("vtkGhostType");
           actor2->SetMapper(mapper2);
           actor2->GetProperty()->SetPointSize(2);
           actor2->SetPosition(2.0*radius, 0.0, 0.0);
@@ -259,7 +259,7 @@ int main (int argc, char* argv[])
           bactor->SetMapper(bmapper);
           ren->AddActor(bactor);
         }
-      
+
         ren->GetActiveCamera()->SetPosition(0,4*radius,0);
         ren->GetActiveCamera()->SetFocalPoint(0,0,0);
         ren->GetActiveCamera()->SetViewUp(0,0,-1);
