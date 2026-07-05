@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : pv-meshless
-  Module                  : vtkH5PartReader.h
+  Module                  : vtkH5PartReaderV2.h
   Revision of last commit : $Rev: 754 $
   Author of last commit   : $Author: biddisco $
   Date of last commit     : $Date:: 2009-01-09 13:40:38 +0100 #$
@@ -18,13 +18,13 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-// .NAME vtkH5PartReader - Write H5Part (HDF5) Particle files
+// .NAME vtkH5PartReaderV2 - Write H5Part (HDF5) Particle files
 // .SECTION Description
-// vtkH5PartReader reads compatible with H5Part : documented here
+// vtkH5PartReaderV2 reads compatible with H5Part : documented here
 // http://amas.web.psi.ch/docs/H5Part-doc/h5part.html
 
-#ifndef __vtkH5PartReader_h
-#define __vtkH5PartReader_h
+#ifndef __vtkH5PartReaderV2_h
+#define __vtkH5PartReaderV2_h
 
 #include "vtkBoundingBox.h"
 #include "vtkPolyDataAlgorithm.h"
@@ -36,10 +36,10 @@ class vtkDataArraySelection;
 class vtkMultiProcessController;
 class vtkBoundsExtentTranslator;
 
-class VTK_EXPORT vtkH5PartReader : public vtkPolyDataAlgorithm {
+class VTK_EXPORT vtkH5PartReaderV2 : public vtkPolyDataAlgorithm {
 public:
-  static vtkH5PartReader *New();
-  vtkTypeMacro(vtkH5PartReader, vtkPolyDataAlgorithm);
+  static vtkH5PartReaderV2 *New();
+  vtkTypeMacro(vtkH5PartReaderV2, vtkPolyDataAlgorithm);
   void PrintSelf(ostream &os, vtkIndent indent);
 
   // Description:
@@ -216,8 +216,8 @@ public:
   void SetFileModified();
 
 protected:
-  vtkH5PartReader();
-  ~vtkH5PartReader();
+  vtkH5PartReaderV2();
+  ~vtkH5PartReaderV2();
   //
   int RequestInformation(vtkInformation *, vtkInformationVector **,
                          vtkInformationVector *);
@@ -327,8 +327,8 @@ protected:
   vtkMultiProcessController *Controller;
 
 private:
-  vtkH5PartReader(const vtkH5PartReader &); // Not implemented.
-  void operator=(const vtkH5PartReader &);  // Not implemented.
+  vtkH5PartReaderV2(const vtkH5PartReaderV2 &); // Not implemented.
+  void operator=(const vtkH5PartReaderV2 &);  // Not implemented.
 };
 
 #endif

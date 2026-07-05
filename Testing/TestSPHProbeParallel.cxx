@@ -37,7 +37,7 @@
 #include "vtkDebugLeaks.h"
 #include "vtkElevationFilter.h"
 #include "vtkH5PartWriter.h"
-#include "vtkH5PartReader.h"
+#include "vtkH5PartReaderV2.h"
 #include "vtkMaskPoints.h"
 #include "vtkProperty.h"
 #include "vtkPointData.h"
@@ -205,7 +205,7 @@ int main (int argc, char* argv[])
   //--------------------------------------------------------------
   // Test
   //--------------------------------------------------------------
-  vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
+  vtkSmartPointer<vtkH5PartReaderV2> reader = vtkSmartPointer<vtkH5PartReaderV2>::New();
   reader->SetFileName(fullname);
   reader->SetController(controller);
   reader->SetGenerateVertexCells(1);

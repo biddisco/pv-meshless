@@ -14,7 +14,7 @@
 #include "vtkTimerLog.h"
 
 // CSCS
-#include "vtkH5PartReader.h"
+#include "vtkH5PartReaderV2.h"
 //----------------------------------------------------------------------------
 #if 0
 #define OUTPUTTEXT(a) std::cout << (a);
@@ -42,7 +42,7 @@ class TestStruct {
 public:
   //
   vtkSmartPointer<vtkMultiProcessController> controller;
-  vtkSmartPointer<vtkH5PartReader> reader;
+  vtkSmartPointer<vtkH5PartReaderV2> reader;
   //
   vtkTypeInt64 myRank;
   vtkTypeInt64 numProcs;

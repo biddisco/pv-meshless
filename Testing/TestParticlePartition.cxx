@@ -32,7 +32,7 @@
 #include "vtkDebugLeaks.h"
 #include "vtkElevationFilter.h"
 #include "vtkH5PartWriter.h"
-#include "vtkH5PartReader.h"
+#include "vtkH5PartReaderV2.h"
 #include "vtkMaskPoints.h"
 #include "vtkProperty.h"
 #include "vtkPointData.h"
@@ -593,7 +593,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     std::cout << "Process Id : " << myId << " Expected " << static_cast<vtkTypeInt64>(numPoints*numProcs) << std::endl;
 
     // Read the file we just wrote on N processes
-    vtkSmartPointer<vtkH5PartReader> reader = vtkSmartPointer<vtkH5PartReader>::New();
+    vtkSmartPointer<vtkH5PartReaderV2> reader = vtkSmartPointer<vtkH5PartReaderV2>::New();
     // we want to read all the particles on this node, so don't use MPI/Parallel
     reader->SetController(NULL);
     reader->SetFileName(fullname);

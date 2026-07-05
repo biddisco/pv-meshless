@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : pv-meshless
-  Module                  : vtkH5SPHReader.h
+  Module                  : vtkH5SPHReaderV2.h
   Revision of last commit : $Rev: 501 $
   Author of last commit   : $Author: biddisco $
   Date of last commit     : $Date:: 2008-03-11 20:17:29 +0100 #$
@@ -18,15 +18,15 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-// .NAME vtkH5SPHReader - Write H5Part (HDF5) Particle files
+// .NAME vtkH5SPHReaderV2 - Write H5Part (HDF5) Particle files
 // .SECTION Description
-// vtkH5SPHReader reads compatible with H5Part : documented here
+// vtkH5SPHReaderV2 reads compatible with H5Part : documented here
 // http://amas.web.psi.ch/docs/H5Part-doc/h5part.html 
 
-#ifndef __vtkH5SPHReader_h
-#define __vtkH5SPHReader_h
+#ifndef __vtkH5SPHReaderV2_h
+#define __vtkH5SPHReaderV2_h
 
-#include "vtkH5PartReader.h"
+#include "vtkH5PartReaderV2.h"
 #include "vtkH5hutHelper.h"
 #include <string>
 #include <vector>
@@ -64,7 +64,7 @@ class compound_info {
 };
 //ETX
 
-class VTK_EXPORT vtkH5SPHReader : public vtkH5PartReader
+class VTK_EXPORT vtkH5SPHReaderV2 : public vtkH5PartReaderV2
 {
 public:
 //BTX
@@ -73,8 +73,8 @@ public:
   typedef std::map<std::string, compound_info>  CompoundInfo;
 //ETX
 
-  static vtkH5SPHReader *New();
-  vtkTypeMacro(vtkH5SPHReader,vtkH5PartReader);
+  static vtkH5SPHReaderV2 *New();
+  vtkTypeMacro(vtkH5SPHReaderV2,vtkH5PartReaderV2);
   void PrintSelf(ostream& os, vtkIndent indent);   
 
   // Description:
@@ -114,8 +114,8 @@ public:
   bool HasStep(int Step);
 
 protected:
-   vtkH5SPHReader();
-  ~vtkH5SPHReader();
+   vtkH5SPHReaderV2();
+  ~vtkH5SPHReaderV2();
   //
   int   RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   int   RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
@@ -145,8 +145,8 @@ protected:
   //ETX
 
 private:
-  vtkH5SPHReader(const vtkH5SPHReader&);  // Not implemented.
-  void operator=(const vtkH5SPHReader&);  // Not implemented.
+  vtkH5SPHReaderV2(const vtkH5SPHReaderV2&);  // Not implemented.
+  void operator=(const vtkH5SPHReaderV2&);  // Not implemented.
 };
 
 #endif

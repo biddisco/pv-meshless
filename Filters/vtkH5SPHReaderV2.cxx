@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : pv-meshless
-  Module                  : vtkH5SPHReader.h
+  Module                  : vtkH5SPHReaderV2.h
   Revision of last commit : $Rev: 501 $
   Author of last commit   : $Author: biddisco $
   Date of last commit     : $Date:: 2008-03-11 20:17:29 +0100 #$
@@ -18,7 +18,7 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-#include "vtkH5SPHReader.h"
+#include "vtkH5SPHReaderV2.h"
 //
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -95,7 +95,7 @@
   #define vtkErrorMacro(a) vtkDebugMacro(a)  
 #endif
 //----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkH5SPHReader);
+vtkStandardNewMacro(vtkH5SPHReaderV2);
 //----------------------------------------------------------------------------
 int H5DataTypeToVTKType(hid_t dataset_type)
 {
@@ -147,7 +147,7 @@ int H5DataTypeToVTKType(hid_t dataset_type)
   return vtktype;
 }
 //----------------------------------------------------------------------------
-vtkH5SPHReader::vtkH5SPHReader() 
+vtkH5SPHReaderV2::vtkH5SPHReaderV2() 
 {
   this->FileNamePattern         = NULL;
   this->StepNamePrefix          = NULL;
@@ -157,7 +157,7 @@ vtkH5SPHReader::vtkH5SPHReader()
   this->SetFileNamePattern("PREFIX TIME TEXT0 EXT");
 }
 //----------------------------------------------------------------------------
-vtkH5SPHReader::~vtkH5SPHReader()
+vtkH5SPHReaderV2::~vtkH5SPHReaderV2()
 { 
   this->CloseFile(); 
   if (this->FileNamePattern) {
@@ -166,7 +166,7 @@ vtkH5SPHReader::~vtkH5SPHReader()
   }
 }
 //----------------------------------------------------------------------------
-bool vtkH5SPHReader::HasStep(int Step)
+bool vtkH5SPHReaderV2::HasStep(int Step)
 {
   if (!this->OpenFile()) return false;
   //
@@ -177,12 +177,12 @@ bool vtkH5SPHReader::HasStep(int Step)
   return ( herr >= 0 );
 }
 //----------------------------------------------------------------------------
-void vtkH5SPHReader::CloseFile()
+void vtkH5SPHReaderV2::CloseFile()
 {
   this->Superclass::CloseFile();
 }
 //----------------------------------------------------------------------------
-int vtkH5SPHReader::OpenFile()
+int vtkH5SPHReaderV2::OpenFile()
 {
   this->FileNameInternal = this->Finder->GenerateFileName(this->ActualTimeStep, 0, 0);
   //
@@ -214,7 +214,7 @@ int vtkH5SPHReader::OpenFile()
   return 1;
 }
 //----------------------------------------------------------------------------
-vtkIdType vtkH5SPHReader::GetNumberOfParticles()
+vtkIdType vtkH5SPHReaderV2::GetNumberOfParticles()
 {
 #if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
 	hid_t dataset_id = H5Dopen ( this->H5RawFile, this->CompoundName.c_str(), H5P_DEFAULT );
@@ -242,12 +242,12 @@ struct _iter_op_data {
         char         *name;
         size_t        len;
         char         *pattern;
-        vtkH5SPHReader::CompoundInfo *compounddata;
+        vtkH5SPHReaderV2::CompoundInfo *compounddata;
         std::string               *compundname;
         int                          *compoundsize;
 };
 //----------------------------------------------------------------------------
-int vtkH5SPHReader::ScanCompoundType(hid_t loc_id, const char *name, void *opdata)
+int vtkH5SPHReaderV2::ScanCompoundType(hid_t loc_id, const char *name, void *opdata)
 {
   H5G_stat_t     statbuf;
   H5T_class_t    classtype;
@@ -295,7 +295,7 @@ int vtkH5SPHReader::ScanCompoundType(hid_t loc_id, const char *name, void *opdat
   return 0;
 }
 //----------------------------------------------------------------------------
-int vtkH5SPHReader::FindCompoundDataSet(
+int vtkH5SPHReaderV2::FindCompoundDataSet(
   hid_t group_id, const char *group_name, const hid_t type, char * const pattern) 
 {
   struct _iter_op_data data;
@@ -312,7 +312,7 @@ int vtkH5SPHReader::FindCompoundDataSet(
   return data.count;
 }
 //----------------------------------------------------------------------------
-int vtkH5SPHReader::RequestInformation(
+int vtkH5SPHReaderV2::RequestInformation(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **vtkNotUsed(inputVector),
   vtkInformationVector *outputVector)
@@ -365,7 +365,7 @@ int vtkH5SPHReader::RequestInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
-//int vtkH5SPHReader::ReadArrayFromCompound(
+//int vtkH5SPHReaderV2::ReadArrayFromCompound(
 //  hid_t loc_id, vtkDataArray *data, hid_t h5type, char *name)
 //{ 
 //}
@@ -383,7 +383,7 @@ public:
     }
 };
 //----------------------------------------------------------------------------
-int vtkH5SPHReader::RequestData(
+int vtkH5SPHReaderV2::RequestData(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **vtkNotUsed(inputVector),
   vtkInformationVector *outputVector)
@@ -662,7 +662,7 @@ int vtkH5SPHReader::RequestData(
   return 1;
 }
 //----------------------------------------------------------------------------
-void vtkH5SPHReader::PrintSelf(ostream& os, vtkIndent indent)
+void vtkH5SPHReaderV2::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 }

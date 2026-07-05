@@ -26,7 +26,7 @@
 #include "vtkDoubleArray.h"
 #include "vtkElevationFilter.h"
 #include "vtkFloatArray.h"
-#include "vtkH5PartReader.h"
+#include "vtkH5PartReaderV2.h"
 #include "vtkH5PartWriter.h"
 #include "vtkInformation.h"
 #include "vtkMPIController.h"
@@ -258,8 +258,8 @@ int main(int argc, char *argv[]) {
 
   // All ranks must participate in the collective MPI-IO read.
   {
-    vtkSmartPointer<vtkH5PartReader> reader =
-        vtkSmartPointer<vtkH5PartReader>::New();
+    vtkSmartPointer<vtkH5PartReaderV2> reader =
+        vtkSmartPointer<vtkH5PartReaderV2>::New();
     reader->SetFileName((char *)(test.fullName.c_str()));
     if (test.pieceValidation) {
       reader->UpdateInformation();

@@ -15,7 +15,7 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkInformation.h"
 #include "vtkDebugLeaks.h"
-#include "vtkH5PartReader.h"
+#include "vtkH5PartReaderV2.h"
 #include "vtkProperty.h"
 #include "vtkPointData.h"
 #include "vtkDoubleArray.h"

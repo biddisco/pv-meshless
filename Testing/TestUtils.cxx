@@ -287,7 +287,7 @@ int initTest(int argc, char *argv[], TestStruct &test) {
 }
 //----------------------------------------------------------------------------
 void TestStruct::CreateReader() {
-  this->reader = vtkSmartPointer<vtkH5PartReader>::New();
+  this->reader = vtkSmartPointer<vtkH5PartReaderV2>::New();
   this->reader->SetFileName((char *)(this->fullName.c_str()));
   this->reader->SetController(this->controller);
   this->reader->SetGenerateVertexCells(1);

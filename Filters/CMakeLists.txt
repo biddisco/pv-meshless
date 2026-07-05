@@ -1,6 +1,6 @@
-set(sources vtkH5PartReader.cxx vtkH5PartWriter.cxx)
+set(sources vtkH5PartReaderV2.cxx vtkH5PartWriter.cxx)
 
-set(headers vtkH5PartReader.h vtkH5PartWriter.h)
+set(headers vtkH5PartReaderV2.h vtkH5PartWriter.h)
 
 vtk_module_add_module(pvMeshlessFilters SOURCES ${sources} HEADERS ${headers})
 

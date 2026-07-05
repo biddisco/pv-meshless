@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : pv-meshless
-  Module                  : vtkH5PartReader.cxx
+  Module                  : vtkH5PartReaderV2.cxx
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
 
 =========================================================================*/
@@ -14,7 +14,7 @@
 #endif
 #include "vtkDummyController.h"
 //
-#include "vtkH5PartReader.h"
+#include "vtkH5PartReaderV2.h"
 #include "vtkH5hutHelper.h"
 //
 #include "vtkDataArray.h"
@@ -59,7 +59,7 @@
 //
 #include "vtkBoundsExtentTranslator.h"
 //----------------------------------------------------------------------------
-vtkCxxSetObjectMacro(vtkH5PartReader, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkH5PartReaderV2, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
 #ifdef JB_DEBUG__
 #define OUTPUTTEXT(a)                                                          \
@@ -83,9 +83,9 @@ vtkCxxSetObjectMacro(vtkH5PartReader, Controller, vtkMultiProcessController);
 #define vtkErrorMacro(a) vtkDebugMacro(a)
 #endif
 //----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkH5PartReader);
+vtkStandardNewMacro(vtkH5PartReaderV2);
 //----------------------------------------------------------------------------
-vtkH5PartReader::vtkH5PartReader() {
+vtkH5PartReaderV2::vtkH5PartReaderV2() {
   this->SetNumberOfInputPorts(0);
   //
   this->NumberOfTimeSteps = 0;
@@ -125,7 +125,7 @@ vtkH5PartReader::vtkH5PartReader() {
   }
 }
 //----------------------------------------------------------------------------
-vtkH5PartReader::~vtkH5PartReader() {
+vtkH5PartReaderV2::~vtkH5PartReaderV2() {
   this->CloseFile();
   delete[] this->FileName;
   this->FileName = NULL;
@@ -150,14 +150,14 @@ vtkH5PartReader::~vtkH5PartReader() {
   this->SetController(NULL);
 }
 //----------------------------------------------------------------------------
-bool vtkH5PartReader::HasStep(int Step) {
+bool vtkH5PartReaderV2::HasStep(int Step) {
   if (!this->OpenFile()) {
     return false;
   }
   return (Step >= 0 && Step < this->NumberOfTimeSteps);
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::SetFileName(char *filename) {
+void vtkH5PartReaderV2::SetFileName(char *filename) {
   if (this->FileName == NULL && filename == NULL) {
     return;
   }
@@ -174,12 +174,12 @@ void vtkH5PartReader::SetFileName(char *filename) {
   this->Modified();
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::SetFileModified() {
+void vtkH5PartReaderV2::SetFileModified() {
   this->FileModifiedTime.Modified();
   this->Modified();
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::CloseFile() {
+void vtkH5PartReaderV2::CloseFile() {
   H5hutCloseFile(this->H5FileId);
   if (this->H5RawFile >= 0) {
     H5Fclose(static_cast<hid_t>(this->H5RawFile));
@@ -187,9 +187,9 @@ void vtkH5PartReader::CloseFile() {
   }
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::CloseFileIntermediate() {}
+void vtkH5PartReaderV2::CloseFileIntermediate() {}
 //----------------------------------------------------------------------------
-int vtkH5PartReader::OpenFile() {
+int vtkH5PartReaderV2::OpenFile() {
   if (!this->FileName) {
     vtkErrorMacro(<< "FileName must be specified.");
     return 0;
@@ -218,7 +218,7 @@ int vtkH5PartReader::OpenFile() {
   return 1;
 }
 //----------------------------------------------------------------------------
-int vtkH5PartReader::IndexOfVectorComponent(const char *name) {
+int vtkH5PartReaderV2::IndexOfVectorComponent(const char *name) {
   if (!this->CombineVectorComponents) {
     return 0;
   }
@@ -231,7 +231,7 @@ int vtkH5PartReader::IndexOfVectorComponent(const char *name) {
   return 0;
 }
 //----------------------------------------------------------------------------
-std::string vtkH5PartReader::NameOfVectorComponent(const char *name) {
+std::string vtkH5PartReaderV2::NameOfVectorComponent(const char *name) {
   if (!this->CombineVectorComponents) {
     return name;
   }
@@ -243,7 +243,7 @@ std::string vtkH5PartReader::NameOfVectorComponent(const char *name) {
   return name;
 }
 //----------------------------------------------------------------------------
-int vtkH5PartReader::RequestInformation(
+int vtkH5PartReaderV2::RequestInformation(
     vtkInformation *vtkNotUsed(request),
     vtkInformationVector **vtkNotUsed(inputVector),
     vtkInformationVector *outputVector) {
@@ -355,7 +355,7 @@ void CopyIntoTuple(int offset, vtkDataArray *source, vtkDataArray *dest) {
 }
 //----------------------------------------------------------------------------
 template <class T2>
-void vtkH5PartReader::CopyIntoVector(int offset, vtkDataArray *source,
+void vtkH5PartReaderV2::CopyIntoVector(int offset, vtkDataArray *source,
                                      vtkDataArray *dest) {
   switch (source->GetDataType()) {
   case VTK_CHAR:
@@ -412,7 +412,7 @@ public:
   }
 };
 //----------------------------------------------------------------------------
-int vtkH5PartReader::RequestData(vtkInformation *vtkNotUsed(request),
+int vtkH5PartReaderV2::RequestData(vtkInformation *vtkNotUsed(request),
                                  vtkInformationVector **vtkNotUsed(inputVector),
                                  vtkInformationVector *outputVector) {
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
@@ -736,7 +736,7 @@ int vtkH5PartReader::RequestData(vtkInformation *vtkNotUsed(request),
   return 1;
 }
 //----------------------------------------------------------------------------
-vtkIdType vtkH5PartReader::ReadBoundingBoxes() {
+vtkIdType vtkH5PartReaderV2::ReadBoundingBoxes() {
   vtkIdType partitions = 0;
 
   // @TODO, use group/name string passed into reader ...
@@ -808,7 +808,7 @@ vtkIdType vtkH5PartReader::ReadBoundingBoxes() {
   return partitions;
 }
 //----------------------------------------------------------------------------
-vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords,
+vtkIdType vtkH5PartReaderV2::DisplayBoundingBoxes(vtkDataArray *coords,
                                                 vtkPolyData *output,
                                                 vtkIdType extent0,
                                                 vtkIdType extent1) {
@@ -976,7 +976,7 @@ vtkIdType vtkH5PartReader::DisplayBoundingBoxes(vtkDataArray *coords,
 }
 
 //----------------------------------------------------------------------------
-int vtkH5PartReader::SplitExtent(int piece, int numPieces, vtkIdType *ext) {
+int vtkH5PartReaderV2::SplitExtent(int piece, int numPieces, vtkIdType *ext) {
   int numPiecesInFirstHalf;
   unsigned long size[3];
   int splitAxis;
@@ -1041,7 +1041,7 @@ int vtkH5PartReader::SplitExtent(int piece, int numPieces, vtkIdType *ext) {
 }
 
 //----------------------------------------------------------------------------
-int vtkH5PartReader::PartitionByExtents(vtkIdType N,
+int vtkH5PartReaderV2::PartitionByExtents(vtkIdType N,
                                         std::vector<vtkIdType> &startend) {
   vtkIdType WholeExtent[6] = {0, N, 0, 0, 0, 0};
   this->SplitExtent(this->UpdatePiece, this->UpdateNumPieces, WholeExtent);
@@ -1052,7 +1052,7 @@ int vtkH5PartReader::PartitionByExtents(vtkIdType N,
   return 1;
 }
 //----------------------------------------------------------------------------
-int vtkH5PartReader::PartitionByExtentsRandomized(
+int vtkH5PartReaderV2::PartitionByExtentsRandomized(
     vtkIdType N, std::vector<vtkIdType> &startend) {
   Random r(12345);
   vtkIdType partitionsize = N / this->UpdateNumPieces;
@@ -1092,7 +1092,7 @@ int vtkH5PartReader::PartitionByExtentsRandomized(
   return 1;
 }
 //----------------------------------------------------------------------------
-int vtkH5PartReader::PartitionByBoundingBoxes(
+int vtkH5PartReaderV2::PartitionByBoundingBoxes(
     std::vector<vtkIdType> &minIds, std::vector<vtkIdType> &maxIds,
     std::vector<vtkBoundingBox> &PieceBounds,
     std::vector<vtkBoundingBox> &PieceHaloBounds) {
@@ -1129,11 +1129,11 @@ int vtkH5PartReader::PartitionByBoundingBoxes(
   return 0;
 }
 //----------------------------------------------------------------------------
-int vtkH5PartReader::GetCoordinateArrayStatus(const char *name) {
+int vtkH5PartReaderV2::GetCoordinateArrayStatus(const char *name) {
   return this->PointDataArraySelection->ArrayIsEnabled(name);
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::SetCoordinateArrayStatus(const char *name, int status) {
+void vtkH5PartReaderV2::SetCoordinateArrayStatus(const char *name, int status) {
   if (status) {
     this->PointDataArraySelection->EnableArray(name);
   } else {
@@ -1142,15 +1142,15 @@ void vtkH5PartReader::SetCoordinateArrayStatus(const char *name, int status) {
 }
 
 //----------------------------------------------------------------------------
-const char *vtkH5PartReader::GetPointArrayName(int index) {
+const char *vtkH5PartReaderV2::GetPointArrayName(int index) {
   return this->PointDataArraySelection->GetArrayName(index);
 }
 //----------------------------------------------------------------------------
-int vtkH5PartReader::GetPointArrayStatus(const char *name) {
+int vtkH5PartReaderV2::GetPointArrayStatus(const char *name) {
   return this->PointDataArraySelection->ArrayIsEnabled(name);
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::SetPointArrayStatus(const char *name, int status) {
+void vtkH5PartReaderV2::SetPointArrayStatus(const char *name, int status) {
   if (status != this->GetPointArrayStatus(name)) {
     if (status) {
       this->PointDataArraySelection->EnableArray(name);
@@ -1161,23 +1161,23 @@ void vtkH5PartReader::SetPointArrayStatus(const char *name, int status) {
   }
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::Enable(const char *name) {
+void vtkH5PartReaderV2::Enable(const char *name) {
   this->SetPointArrayStatus(name, 1);
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::Disable(const char *name) {
+void vtkH5PartReaderV2::Disable(const char *name) {
   this->SetPointArrayStatus(name, 0);
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::EnableAll() {
+void vtkH5PartReaderV2::EnableAll() {
   this->PointDataArraySelection->EnableAllArrays();
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::DisableAll() {
+void vtkH5PartReaderV2::DisableAll() {
   this->PointDataArraySelection->DisableAllArrays();
 }
 //----------------------------------------------------------------------------
-void vtkH5PartReader::PrintSelf(ostream &os, vtkIndent indent) {
+void vtkH5PartReaderV2::PrintSelf(ostream &os, vtkIndent indent) {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "FileName: " << (this->FileName ? this->FileName : "(none)")
      << "\n";
