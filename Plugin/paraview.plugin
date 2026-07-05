@@ -1,0 +1,16 @@
+NAME
+  pv_meshless
+DESCRIPTION
+  H5Part/HDF5 particle reader and writer plugin for ParaView
+REQUIRES_MODULES
+  VTK::CommonCore
+  VTK::CommonDataModel
+  VTK::CommonExecutionModel
+  VTK::FiltersCore
+  VTK::FiltersGeneral
+  VTK::FiltersSources
+  VTK::IOCore
+  VTK::ParallelCore
+  VTK::ParallelMPI
+  ParaView::RemotingCore
+  ParaView::RemotingViews

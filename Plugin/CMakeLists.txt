@@ -1,0 +1,10 @@
+paraview_add_plugin(
+  pv_meshless
+  VERSION
+  "1.0"
+  MODULES
+  pvMeshlessFilters
+  MODULE_FILES
+  "${CMAKE_CURRENT_SOURCE_DIR}/../Filters/vtk.module"
+  XML_DOCUMENTATION
+  OFF)

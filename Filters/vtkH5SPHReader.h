@@ -27,16 +27,15 @@
 #define __vtkH5SPHReader_h
 
 #include "vtkH5PartReader.h"
+#include "vtkH5hutHelper.h"
 #include <string>
 #include <vector>
 #include <hdf5.h>
-#include "H5Part.h"
 #include <map>
 
 class vtkMultiProcessController;
 
 //BTX
-struct H5PartFile;
 class  FileSeriesFinder;
 
 class compound_info {

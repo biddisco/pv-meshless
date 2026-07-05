@@ -1,0 +1,22 @@
+NAME
+  pvMeshlessFilters
+LIBRARY_NAME
+  vtkPVMeshlessFilters
+SPDX_LICENSE_IDENTIFIER
+  LicenseRef-CSCS
+SPDX_COPYRIGHT_TEXT
+  Copyright (C) CSCS - Swiss National Supercomputing Centre
+DEPENDS
+  VTK::CommonCore
+  VTK::CommonDataModel
+  VTK::CommonExecutionModel
+  VTK::FiltersCore
+  VTK::FiltersGeneral
+  VTK::FiltersSources
+  VTK::IOCore
+  VTK::ParallelCore
+  VTK::ParallelMPI
+  ParaView::RemotingCore
+  ParaView::RemotingViews
+PRIVATE_DEPENDS
+  VTK::hdf5

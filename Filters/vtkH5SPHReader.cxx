@@ -64,6 +64,7 @@
 #include "vtkExtentTranslator.h"
 //
 #include "FileSeriesFinder.h"
+#include "vtkH5hutHelper.h"
 //
 #include "vtkMultiProcessController.h"
 
@@ -71,10 +72,6 @@
 
 #pragma warning( disable : 4996)
 
-extern "C" hid_t h5tools_get_native_type(hid_t type);
-
-//----------------------------------------------------------------------------
-extern hid_t H5PartGetDiskShape(H5PartFile *f, hid_t dataset);
 //----------------------------------------------------------------------------
 #if 1 // def JB_DEBUG__
   #ifdef WIN32
@@ -103,7 +100,7 @@ vtkStandardNewMacro(vtkH5SPHReader);
 int H5DataTypeToVTKType(hid_t dataset_type)
 {
   int vtktype = VTK_VOID;
-  hid_t native_type = h5tools_get_native_type(dataset_type);
+  hid_t native_type = H5Tget_native_type(dataset_type, H5T_DIR_DEFAULT);
   //
   if (H5Tequal(native_type,H5T_NATIVE_FLOAT)) {
     vtktype = VTK_FLOAT;
@@ -176,16 +173,13 @@ bool vtkH5SPHReader::HasStep(int Step)
   char name[128];
   sprintf( name, "%s#%0*lld", this->StepNamePrefix, this->StepNameWidth, (long long) Step ); 
   // 1.8.0 herr_t herr = H5Oget_info_by_name(this->H5FileId, name, NULL, NULL);
-  herr_t herr = H5Gget_objinfo( H5FileId->file, name, 1, NULL );
+  herr_t herr = H5Gget_objinfo( H5RawFile, name, 1, NULL );
   return ( herr >= 0 );
 }
 //----------------------------------------------------------------------------
 void vtkH5SPHReader::CloseFile()
 {
-  if (this->H5FileId) {
-    H5PartCloseFile(this->H5FileId);
-    this->H5FileId = NULL;
-  }
+  this->Superclass::CloseFile();
 }
 //----------------------------------------------------------------------------
 int vtkH5SPHReader::OpenFile()
@@ -203,9 +197,14 @@ int vtkH5SPHReader::OpenFile()
   }
 
   if (!this->H5FileId) {
-    this->H5FileId = H5PartOpenFile(this->FileNameInternal.c_str(), H5PART_READ);
+    this->H5FileId = H5hutOpenFile(this->FileNameInternal.c_str(), H5_O_RDONLY, this->Controller);
     this->FileOpenedTime.Modified();
   }
+
+  if (this->H5FileId && this->H5RawFile < 0)
+    {
+    this->H5RawFile = H5Fopen(this->FileNameInternal.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    }
 
   if (!this->H5FileId) {
     vtkErrorMacro(<< "Initialize: Could not open file " << this->FileNameInternal);
@@ -218,9 +217,9 @@ int vtkH5SPHReader::OpenFile()
 vtkIdType vtkH5SPHReader::GetNumberOfParticles()
 {
 #if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
-	hid_t dataset_id = H5Dopen ( this->H5FileId->file, this->CompoundName.c_str(), H5P_DEFAULT );
+	hid_t dataset_id = H5Dopen ( this->H5RawFile, this->CompoundName.c_str(), H5P_DEFAULT );
 #else
-	hid_t dataset_id = H5Dopen ( this->H5FileId->file, this->CompoundName.c_str());
+	hid_t dataset_id = H5Dopen ( this->H5RawFile, this->CompoundName.c_str());
 #endif
   if ( dataset_id < 0 ) return -1;
 
@@ -308,7 +307,7 @@ int vtkH5SPHReader::FindCompoundDataSet(
   data.compundname  = &this->CompoundName;
   data.compoundsize = &this->CompoundSize;
   //
-  h5part_int64_t herr = H5Giterate( group_id, group_name, &idx, ScanCompoundType, &data );
+  h5_err_t herr = H5Giterate( group_id, group_name, &idx, ScanCompoundType, &data );
   if (herr<0) return herr;
   return data.count;
 }
@@ -346,7 +345,7 @@ int vtkH5SPHReader::RequestInformation(
   }
 
   if (1 || NeedToReadInformation) {
-    int nds = FindCompoundDataSet(this->H5FileId->file, "/", H5G_DATASET, NULL);
+    int nds = FindCompoundDataSet(this->H5RawFile, "/", H5G_DATASET, NULL);
     for (CompoundInfo::iterator it=this->CompoundData.begin(); it!=this->CompoundData.end(); ++it) {
       this->PointDataArraySelection->AddArray(it->first.c_str());
     }
@@ -554,9 +553,9 @@ int vtkH5SPHReader::RequestData(
   //
   //
 #if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
-	hid_t dataset_id = H5Dopen (this->H5FileId->file, this->CompoundName.c_str(), H5P_DEFAULT);
+	hid_t dataset_id = H5Dopen (this->H5RawFile, this->CompoundName.c_str(), H5P_DEFAULT);
 #else
-	hid_t dataset_id = H5Dopen (this->H5FileId->file, this->CompoundName.c_str());
+	hid_t dataset_id = H5Dopen (this->H5RawFile, this->CompoundName.c_str());
 #endif
 
   // Setup arrays for reading data
@@ -602,7 +601,7 @@ int vtkH5SPHReader::RequestData(
 
     // the disk space is more complicated. We must read Nt from the 
     // part of the file offset by ParticleStart 
-    hid_t diskshape = H5PartGetDiskShape(H5FileId, dataset_id);
+    hid_t diskshape = H5Dget_space(dataset_id);
 
     offset_mem[0] = ParticleStart;
     herr_t err = H5Sselect_hyperslab(diskshape, H5S_SELECT_SET,
@@ -622,7 +621,7 @@ int vtkH5SPHReader::RequestData(
     }
     H5Tclose(struct_id);
 /*
-      hid_t diskshape = H5PartGetDiskShape(H5FileId,dataset_id);   
+      hid_t diskshape = H5Dget_space(dataset_id);   
       hid_t memspace  = H5Screate_simple(1, count1_mem, NULL);   
       offset_mem[0] = c;                                        
       r = H5Sselect_hyperslab(                                  

@@ -26,30 +26,28 @@
 #ifndef __vtkH5PartWriter_h
 #define __vtkH5PartWriter_h
 
-#include "vtkSmartPointer.h" // For vtkSmartPointer
-#include <string>     // for strings
-#include <vector>     // for vectors
 #include "vtkAbstractParticleWriter.h"
+#include "vtkSmartPointer.h" // For vtkSmartPointer
+#include <cstdint>
+#include <string> // for strings
+#include <vector> // for vectors
 //
 class vtkMultiProcessController;
 //
-
-struct H5PartFile;
 class vtkPointSet;
 class vtkDataArray;
 class vtkPointData;
 
-class VTK_EXPORT vtkH5PartWriter : public vtkAbstractParticleWriter
-{
+class VTK_EXPORT vtkH5PartWriter : public vtkAbstractParticleWriter {
 public:
   static vtkH5PartWriter *New();
-  vtkTypeMacro(vtkH5PartWriter,vtkAbstractParticleWriter);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkH5PartWriter, vtkAbstractParticleWriter);
+  void PrintSelf(ostream &os, vtkIndent indent);
 
   // Description:
   // Get the input to this writer.
-  vtkPointSet* GetInput();
-  vtkPointSet* GetInput(int port);
+  vtkPointSet *GetInput();
+  vtkPointSet *GetInput(int port);
 
   // Description:
   // Quesry the file to see if a timestep was written previously
@@ -67,8 +65,8 @@ public:
   // Description:
   // Usually, we want to open the file in WRITE mode, but when being used
   // as a file cache, we want to write and read so use READWRITE mode
-  vtkSetMacro(FileMode,int);
-  vtkGetMacro(FileMode,int);
+  vtkSetMacro(FileMode, int);
+  vtkGetMacro(FileMode, int);
   void SetFileModeToWrite();
   void SetFileModeToReadWrite();
 
@@ -77,16 +75,16 @@ public:
   // but no copy of {X,Y,Z] out of the triple vector into a single
   // flat array takes place. Test show that using a strided write
   // is terrible in parallel. Hope to fix this one day.
-  vtkSetMacro(VectorsWithStridedWrite,int);
-  vtkGetMacro(VectorsWithStridedWrite,int);
-  vtkBooleanMacro(VectorsWithStridedWrite,int);
+  vtkSetMacro(VectorsWithStridedWrite, int);
+  vtkGetMacro(VectorsWithStridedWrite, int);
+  vtkBooleanMacro(VectorsWithStridedWrite, int);
 
   // Description:
   // Set/Get the controller used for coordinating parallel writing
   // (set to the global controller by default)
   // If not using the default, this must be called before any
   // other methods.
-  virtual void SetController(vtkMultiProcessController* controller);
+  virtual void SetController(vtkMultiProcessController *controller);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
 
   // Description:
@@ -94,9 +92,9 @@ public:
   // if one node has no particles, it does nothing - but this causes the
   // others to hang. We therefore gather information and write an
   // empty array of the correct type
-  vtkSetMacro(DisableInformationGather,int);
-  vtkGetMacro(DisableInformationGather,int);
-  vtkBooleanMacro(DisableInformationGather,int);
+  vtkSetMacro(DisableInformationGather, int);
+  vtkGetMacro(DisableInformationGather, int);
+  vtkBooleanMacro(DisableInformationGather, int);
 
   // Description:
   // Set/Get the name used for each time step (Usually Step#0, Step#1 etc)
@@ -104,25 +102,25 @@ public:
   vtkSetStringMacro(StepName);
 
 protected:
-   vtkH5PartWriter();
+  vtkH5PartWriter();
   ~vtkH5PartWriter();
   //
-  int   OpenFile();
+  int OpenFile();
 
   // Override superclass' Write method
-  virtual void WriteData();
+  bool WriteDataAndReturn() override;
 
   void CopyFromVector(int offset, vtkDataArray *source, vtkDataArray *dest);
   void WriteDataArray(int i, vtkDataArray *array);
 
   // Overide information to only permit PolyData as input
   virtual int FillInputPortInformation(int, vtkInformation *info);
-  virtual int FillOutputPortInformation(int, vtkInformation* info);
+  virtual int FillOutputPortInformation(int, vtkInformation *info);
 
   // Description:
-  virtual int RequestInformation(vtkInformation* request,
-                                vtkInformationVector** inputVector,
-                                vtkInformationVector* outputVector);
+  virtual int RequestInformation(vtkInformation *request,
+                                 vtkInformationVector **inputVector,
+                                 vtkInformationVector *outputVector);
 
   // Description:
   // If a certain process has zero particles, the dataarrays for
@@ -130,37 +128,38 @@ protected:
   // in this case, the collective parallel IO write may fail because
   // the zero data process does not know what datatype to 'write'
   // or dataset names to create. We therefore provide a gather call
-  // before writing to ensure that all processes 'agree' on what they are writing.
-//BTX
+  // before writing to ensure that all processes 'agree' on what they are
+  // writing.
+  // BTX
   bool GatherDataArrayInfo(vtkDataArray *data, int &datatype,
-    std::string &dataname, int &numComponents);
+                           std::string &dataname, int &numComponents);
   bool GatherScalarInfo(vtkPointData *pd, int N, int &numScalar);
-//ETX
+  // ETX
 
   //
   // Internal Variables
   //
-  int           NumberOfTimeSteps;
-  long long     NumberOfParticles;
-  int           FileMode;
-  int           VectorsWithStridedWrite;
-  H5PartFile   *H5FileId;
-  char         *StepName;
-  //BTX
-  std::vector<double>  InputTimeValues;
-  //ETX
-  int           ActualTimeStep;
+  int NumberOfTimeSteps;
+  long long NumberOfParticles;
+  int FileMode;
+  int VectorsWithStridedWrite;
+  std::uintptr_t H5FileId;
+  char *StepName;
+  // BTX
+  std::vector<double> InputTimeValues;
+  // ETX
+  int ActualTimeStep;
 
   // Used for Parallel write
-  int     UpdatePiece;
-  int     UpdateNumPieces;
-  int     DisableInformationGather;
+  int UpdatePiece;
+  int UpdateNumPieces;
+  int DisableInformationGather;
 
-  vtkMultiProcessController* Controller;
+  vtkMultiProcessController *Controller;
 
 private:
-  vtkH5PartWriter(const vtkH5PartWriter&);  // Not implemented.
-  void operator=(const vtkH5PartWriter&);  // Not implemented.
+  vtkH5PartWriter(const vtkH5PartWriter &); // Not implemented.
+  void operator=(const vtkH5PartWriter &);  // Not implemented.
 };
 
 #endif
