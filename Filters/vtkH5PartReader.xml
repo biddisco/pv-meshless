@@ -68,7 +68,7 @@
     <!-- H5Part                                                        -->
     <!-- ============================================================= -->
     <SourceProxy
-     name="H5Part"
+     name="H5PartReader-v2"
      class="vtkH5PartReader">
       <Documentation>
         Reader for H5Part (HDF5) particle files.
@@ -252,10 +252,10 @@
     <!-- H5SPH                                                         -->
     <!-- ============================================================= -->
     <SourceProxy
-      name="H5SPH"
+      name="H5SPHReader-v2"
       class="vtkH5SPHReader"
       base_proxygroup="sources"
-      base_proxyname="H5Part">
+      base_proxyname="H5PartReader-v2">
       <Hints>
         <ReaderFactory extensions="h5sph"
                        file_description="H5SPH particle files (Plugin)" />
