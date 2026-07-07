@@ -1142,6 +1142,10 @@ void vtkH5PartReaderV2::SetCoordinateArrayStatus(const char *name, int status) {
 }
 
 //----------------------------------------------------------------------------
+int vtkH5PartReaderV2::GetNumberOfPointArrays() {
+  return this->PointDataArraySelection->GetNumberOfArrays();
+}
+//----------------------------------------------------------------------------
 const char *vtkH5PartReaderV2::GetPointArrayName(int index) {
   return this->PointDataArraySelection->GetArrayName(index);
 }
