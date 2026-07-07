@@ -47,6 +47,7 @@
 #include <vtksys/SystemTools.hxx>
 
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include <iostream>
 #include <numeric>
@@ -426,21 +427,50 @@ int vtkH5PartReaderV2::RequestData(
   if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP())) {
     double requestedTimeValue =
         outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-    this->ActualTimeStep = static_cast<int>(
-        std::find_if(this->TimeStepValues.begin(), this->TimeStepValues.end(),
-                     [this, &requestedTimeValue](double timeStepValue) {
-                       return vtkMathUtilities::FuzzyCompare(
-                           timeStepValue, requestedTimeValue,
-                           this->TimeStepTolerance);
-                     }) -
-        this->TimeStepValues.begin());
+
+    // Prefer an exact match, otherwise clamp to the nearest valid time step.
+    auto exact = std::find_if(
+        this->TimeStepValues.begin(), this->TimeStepValues.end(),
+        [this, &requestedTimeValue](double timeStepValue) {
+          return vtkMathUtilities::FuzzyCompare(timeStepValue, requestedTimeValue,
+                                                this->TimeStepTolerance);
+        });
+    if (exact != this->TimeStepValues.end()) {
+      this->ActualTimeStep =
+          static_cast<int>(exact - this->TimeStepValues.begin());
+    } else if (requestedTimeValue <= this->TimeStepValues.front()) {
+      this->ActualTimeStep = 0;
+    } else if (requestedTimeValue >= this->TimeStepValues.back()) {
+      this->ActualTimeStep = static_cast<int>(this->TimeStepValues.size()) - 1;
+    } else {
+      auto lower = std::lower_bound(this->TimeStepValues.begin(),
+                                    this->TimeStepValues.end(),
+                                    requestedTimeValue);
+      if (lower == this->TimeStepValues.begin()) {
+        this->ActualTimeStep = 0;
+      } else if (lower == this->TimeStepValues.end()) {
+        this->ActualTimeStep =
+            static_cast<int>(this->TimeStepValues.size()) - 1;
+      } else {
+        auto prev = lower - 1;
+        if (std::abs(*prev - requestedTimeValue) <=
+            std::abs(*lower - requestedTimeValue)) {
+          this->ActualTimeStep =
+              static_cast<int>(prev - this->TimeStepValues.begin());
+        } else {
+          this->ActualTimeStep =
+              static_cast<int>(lower - this->TimeStepValues.begin());
+        }
+      }
+    }
 
     if (requestedTimeValue < this->TimeStepValues.front() ||
         requestedTimeValue > this->TimeStepValues.back()) {
       this->TimeOutOfRange = 1;
     }
-    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(),
-                                  requestedTimeValue);
+    output->GetInformation()->Set(
+        vtkDataObject::DATA_TIME_STEP(),
+        this->TimeStepValues[this->ActualTimeStep]);
   } else {
     double timevalue[1];
     unsigned int index = this->ActualTimeStep;
@@ -452,6 +482,10 @@ int vtkH5PartReaderV2::RequestData(
     output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(),
                                   timevalue[0]);
   }
+
+  this->ActualTimeStep = std::max(
+      0, std::min(this->ActualTimeStep,
+                  static_cast<int>(this->TimeStepValues.size()) - 1));
 
   if (this->TimeOutOfRange && this->MaskOutOfTimeRangeOutput) {
     return 1;
