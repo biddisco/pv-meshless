@@ -1,4 +1,4 @@
-set(sources vtkH5PartReaderV2.cxx vtkH5PartWriter.cxx)
+set(sources vtkH5PartReaderV2.cxx vtkH5PartWriter.cxx vtkH5hutFileId.c)
 
 set(headers vtkH5PartReaderV2.h vtkH5PartWriter.h)
 

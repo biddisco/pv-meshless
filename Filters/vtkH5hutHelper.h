@@ -12,6 +12,10 @@
 #include "H5hut.h"
 
 #include "vtkCellType.h"
+
+extern "C" {
+hid_t vtkH5hutGetHDF5FileId(h5_file_t f);
+}
 #include "vtkCharArray.h"
 #include "vtkDataArray.h"
 #include "vtkDoubleArray.h"
