@@ -166,6 +166,19 @@
         <BooleanDomain name="bool"/>
       </IntVectorProperty>
 
+      <IntVectorProperty
+         name="MaxParticlesPerRank"
+         command="SetMaxParticlesPerRank"
+         number_of_elements="1"
+         default_values="0" >
+        <Documentation>Maximum number of particles to read per rank.
+          0 means unlimited (read the full partition).  When > 0, each
+          rank reads only the first MaxParticlesPerRank particles from
+          its partition, providing a spatially distributed sample of
+          the full dataset for interactive exploration of very large
+          files.</Documentation>
+      </IntVectorProperty>
+
       <StringVectorProperty
          name="Xarray"
          command="SetXarray"

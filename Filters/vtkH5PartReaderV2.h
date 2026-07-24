@@ -165,6 +165,18 @@ public:
 
   ///@{
   /**
+   * Maximum number of particles to read per rank.  0 means unlimited
+   * (read the full partition).  When > 0, each rank reads only the
+   * first MaxParticlesPerRank particles from its partition, providing
+   * a spatially distributed sample of the full dataset for interactive
+   * exploration of very large files.
+   */
+  vtkSetMacro(MaxParticlesPerRank, vtkIdType);
+  vtkGetMacro(MaxParticlesPerRank, vtkIdType);
+  ///@}
+
+  ///@{
+  /**
    * Return true if the requested step exists in the file.
    */
   bool HasStep(int step);
@@ -273,6 +285,7 @@ protected:
   int CombineVectorComponents;
   int MultiComponentArraysAsFieldData;
   int UseStridedMultiComponentRead;
+  vtkIdType MaxParticlesPerRank;
   int GenerateVertexCells;
   uintptr_t H5FileId;
   vtkTimeStamp FileModifiedTime;

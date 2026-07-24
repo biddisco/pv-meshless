@@ -102,6 +102,7 @@ vtkH5PartReaderV2::vtkH5PartReaderV2() {
   this->CombineVectorComponents = 1;
   this->MultiComponentArraysAsFieldData = 0;
   this->UseStridedMultiComponentRead = 0;
+  this->MaxParticlesPerRank = 0;
   this->GenerateVertexCells = 0;
   this->FileName = nullptr;
   this->H5FileId = 0;
@@ -590,6 +591,18 @@ int vtkH5PartReaderV2::RequestData(
   }
 
   vtkIdType Nt = particleEnd - particleStart + 1;
+
+  // If MaxParticlesPerRank is set, clamp the read to the first
+  // MaxParticlesPerRank particles of this rank's partition.  This
+  // provides a spatially distributed sample of the full dataset
+  // (each rank reads from a different region) for interactive
+  // exploration of very large files.
+  if (this->MaxParticlesPerRank > 0 && Nt > this->MaxParticlesPerRank)
+  {
+    particleEnd = particleStart + this->MaxParticlesPerRank - 1;
+    Nt = this->MaxParticlesPerRank;
+  }
+
   if (Nt > 0) {
     H5PartSetView(this->H5FileId, particleStart, particleEnd);
   } else {
