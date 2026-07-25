@@ -103,6 +103,7 @@ vtkH5PartReaderV2::vtkH5PartReaderV2() {
   this->MultiComponentArraysAsFieldData = 0;
   this->UseStridedMultiComponentRead = 0;
   this->MaxParticlesPerRank = 0;
+  this->UseStridedMaxParticlesPerRank = 0;
   this->GenerateVertexCells = 0;
   this->FileName = nullptr;
   this->H5FileId = 0;
@@ -591,20 +592,45 @@ int vtkH5PartReaderV2::RequestData(
   }
 
   vtkIdType Nt = particleEnd - particleStart + 1;
+  bool viewIsIndexed = false;
 
-  // If MaxParticlesPerRank is set, clamp the read to the first
-  // MaxParticlesPerRank particles of this rank's partition.  This
-  // provides a spatially distributed sample of the full dataset
-  // (each rank reads from a different region) for interactive
-  // exploration of very large files.
+  // If MaxParticlesPerRank is set, clamp the read to
+  // MaxParticlesPerRank particles of this rank's partition.  By
+  // default this reads the first N contiguous particles; when
+  // UseStridedMaxParticlesPerRank is on, the N particles are spread
+  // evenly across the partition, sampling its full spatial extent.
   if (this->MaxParticlesPerRank > 0 && Nt > this->MaxParticlesPerRank)
   {
-    particleEnd = particleStart + this->MaxParticlesPerRank - 1;
-    Nt = this->MaxParticlesPerRank;
+    if (this->UseStridedMaxParticlesPerRank)
+    {
+      std::vector<h5_size_t> indices;
+      indices.reserve(this->MaxParticlesPerRank);
+      vtkIdType stride = Nt / this->MaxParticlesPerRank;
+      if (stride < 1)
+      {
+        stride = 1;
+      }
+      for (vtkIdType i = 0; i < this->MaxParticlesPerRank; ++i)
+      {
+        indices.push_back(
+            static_cast<h5_size_t>(particleStart + i * stride));
+      }
+      H5PartSetViewIndices(this->H5FileId, indices.data(), indices.size());
+      Nt = static_cast<vtkIdType>(indices.size());
+      viewIsIndexed = true;
+    }
+    else
+    {
+      particleEnd = particleStart + this->MaxParticlesPerRank - 1;
+      Nt = this->MaxParticlesPerRank;
+    }
   }
 
   if (Nt > 0) {
-    H5PartSetView(this->H5FileId, particleStart, particleEnd);
+    if (!viewIsIndexed)
+    {
+      H5PartSetView(this->H5FileId, particleStart, particleEnd);
+    }
   } else {
     H5PartSetView(this->H5FileId, -1, -1);
     Nt = 0;

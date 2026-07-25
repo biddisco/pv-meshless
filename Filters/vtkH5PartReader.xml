@@ -173,10 +173,25 @@
          default_values="0" >
         <Documentation>Maximum number of particles to read per rank.
           0 means unlimited (read the full partition).  When > 0, each
-          rank reads only the first MaxParticlesPerRank particles from
-          its partition, providing a spatially distributed sample of
-          the full dataset for interactive exploration of very large
-          files.</Documentation>
+          rank reads at most MaxParticlesPerRank particles from its
+          partition, providing a spatially distributed sample of the
+          full dataset for interactive exploration of very large
+          files.  Use UseStridedMaxParticlesPerRank to choose between
+          contiguous and strided sampling.</Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="UseStridedMaxParticlesPerRank"
+         command="SetUseStridedMaxParticlesPerRank"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>When enabled (and MaxParticlesPerRank &gt; 0),
+          each rank reads MaxParticlesPerRank particles spread evenly
+          across its partition instead of the first
+          MaxParticlesPerRank contiguous particles.  This samples the
+          full spatial extent of the partition but may increase I/O
+          cost.</Documentation>
       </IntVectorProperty>
 
       <StringVectorProperty

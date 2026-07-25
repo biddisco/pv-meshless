@@ -166,13 +166,26 @@ public:
   ///@{
   /**
    * Maximum number of particles to read per rank.  0 means unlimited
-   * (read the full partition).  When > 0, each rank reads only the
-   * first MaxParticlesPerRank particles from its partition, providing
+   * (read the full partition).  When > 0, each rank reads only
+   * MaxParticlesPerRank particles from its partition, providing
    * a spatially distributed sample of the full dataset for interactive
    * exploration of very large files.
    */
   vtkSetMacro(MaxParticlesPerRank, vtkIdType);
   vtkGetMacro(MaxParticlesPerRank, vtkIdType);
+  ///@}
+
+  ///@{
+  /**
+   * When on (and MaxParticlesPerRank > 0), each rank reads
+   * MaxParticlesPerRank particles spread evenly across its partition
+   * instead of the first MaxParticlesPerRank contiguous particles.
+   * This samples the full spatial extent of the partition but may
+   * increase I/O cost.  Off by default.
+   */
+  vtkSetMacro(UseStridedMaxParticlesPerRank, int);
+  vtkGetMacro(UseStridedMaxParticlesPerRank, int);
+  vtkBooleanMacro(UseStridedMaxParticlesPerRank, int);
   ///@}
 
   ///@{
@@ -286,6 +299,7 @@ protected:
   int MultiComponentArraysAsFieldData;
   int UseStridedMultiComponentRead;
   vtkIdType MaxParticlesPerRank;
+  int UseStridedMaxParticlesPerRank;
   int GenerateVertexCells;
   uintptr_t H5FileId;
   vtkTimeStamp FileModifiedTime;
