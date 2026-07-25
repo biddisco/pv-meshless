@@ -15,6 +15,7 @@
 
 extern "C" {
 hid_t vtkH5hutGetHDF5FileId(h5_file_t f);
+hid_t vtkH5hutGetHDF5IterationGroupId(h5_file_t f);
 }
 #include "vtkCharArray.h"
 #include "vtkDataArray.h"
@@ -191,6 +192,42 @@ inline h5_err_t H5hutWriteDataArray(h5_file_t f, const char *name,
 }
 
 //----------------------------------------------------------------------------
+// Map a VTK data type to the corresponding HDF5 native type.
+inline hid_t VTKTypeToHDF5NativeType(int vtkType) {
+  switch (vtkType) {
+  case VTK_CHAR:
+  case VTK_SIGNED_CHAR:
+    return H5T_NATIVE_CHAR;
+  case VTK_UNSIGNED_CHAR:
+    return H5T_NATIVE_UCHAR;
+  case VTK_SHORT:
+    return H5T_NATIVE_SHORT;
+  case VTK_UNSIGNED_SHORT:
+    return H5T_NATIVE_USHORT;
+  case VTK_INT:
+    return H5T_NATIVE_INT;
+  case VTK_UNSIGNED_INT:
+    return H5T_NATIVE_UINT;
+  case VTK_LONG:
+    return H5T_NATIVE_LONG;
+  case VTK_UNSIGNED_LONG:
+    return H5T_NATIVE_ULONG;
+  case VTK_LONG_LONG:
+    return H5T_NATIVE_LLONG;
+  case VTK_UNSIGNED_LONG_LONG:
+    return H5T_NATIVE_ULLONG;
+  case VTK_FLOAT:
+    return H5T_NATIVE_FLOAT;
+  case VTK_DOUBLE:
+    return H5T_NATIVE_DOUBLE;
+  case VTK_ID_TYPE:
+    return (sizeof(vtkIdType) == 8 ? H5T_NATIVE_INT64 : H5T_NATIVE_INT32);
+  default:
+    return H5I_INVALID_HID;
+  }
+}
+
+//----------------------------------------------------------------------------
 // Read a 1D data array from the current step/view into the supplied array.
 inline h5_err_t H5hutReadDataArray(h5_file_t f, const char *name,
                                    vtkDataArray *data) {
@@ -203,6 +240,70 @@ inline h5_err_t H5hutReadDataArray(h5_file_t f, const char *name,
   }
   return h5u_read_dataset(f, name, data->GetVoidPointer(0),
                           static_cast<h5_types_t>(type));
+}
+
+//----------------------------------------------------------------------------
+// Read a 1D data array using an HDF5 strided hyperslab selection.
+// This bypasses H5PartSetViewIndices(), which constructs a slow HDF5
+// point selection for strided access.
+inline h5_err_t H5hutReadDataArrayStrided(h5_file_t f, const char *name,
+                                          vtkDataArray *data,
+                                          h5_size_t start, h5_size_t stride,
+                                          h5_size_t count) {
+  if (!f || !name || !data || count == 0) {
+    return H5_FAILURE;
+  }
+
+  hid_t mem_type = VTKTypeToHDF5NativeType(data->GetDataType());
+  if (mem_type == H5I_INVALID_HID) {
+    return H5_FAILURE;
+  }
+
+  // Use H5hut's current iteration group directly so we do not have to
+  // know the step-name formatting used in the file.
+  hid_t groupId = vtkH5hutGetHDF5IterationGroupId(f);
+  if (groupId < 0) {
+    return H5_FAILURE;
+  }
+
+  hid_t datasetId = H5Dopen2(groupId, name, H5P_DEFAULT);
+  if (datasetId < 0) {
+    return H5_FAILURE;
+  }
+
+  hid_t fileSpaceId = H5Dget_space(datasetId);
+  if (fileSpaceId < 0) {
+    H5Dclose(datasetId);
+    return H5_FAILURE;
+  }
+
+  hsize_t hstart = static_cast<hsize_t>(start);
+  hsize_t hstride = static_cast<hsize_t>(stride);
+  hsize_t hcount = static_cast<hsize_t>(count);
+  herr_t status = H5Sselect_hyperslab(fileSpaceId, H5S_SELECT_SET, &hstart,
+                                      &hstride, &hcount, nullptr);
+  if (status < 0) {
+    H5Sclose(fileSpaceId);
+    H5Dclose(datasetId);
+    return H5_FAILURE;
+  }
+
+  hsize_t memDim = hcount;
+  hid_t memSpaceId = H5Screate_simple(1, &memDim, nullptr);
+  if (memSpaceId < 0) {
+    H5Sclose(fileSpaceId);
+    H5Dclose(datasetId);
+    return H5_FAILURE;
+  }
+
+  status = H5Dread(datasetId, mem_type, memSpaceId, fileSpaceId, H5P_DEFAULT,
+                   data->GetVoidPointer(0));
+
+  H5Sclose(memSpaceId);
+  H5Sclose(fileSpaceId);
+  H5Dclose(datasetId);
+
+  return status >= 0 ? H5_SUCCESS : H5_FAILURE;
 }
 
 #endif

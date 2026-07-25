@@ -190,8 +190,8 @@
           each rank reads MaxParticlesPerRank particles spread evenly
           across its partition instead of the first
           MaxParticlesPerRank contiguous particles.  This samples the
-          full spatial extent of the partition but may increase I/O
-          cost.</Documentation>
+          full spatial extent of the partition.  The read is implemented
+          with an efficient HDF5 strided hyperslab selection.</Documentation>
       </IntVectorProperty>
 
       <StringVectorProperty

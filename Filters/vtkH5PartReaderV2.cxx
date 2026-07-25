@@ -592,32 +592,28 @@ int vtkH5PartReaderV2::RequestData(
   }
 
   vtkIdType Nt = particleEnd - particleStart + 1;
-  bool viewIsIndexed = false;
+  bool useStridedHyperslab = false;
+  h5_size_t stridedStride = 0;
 
   // If MaxParticlesPerRank is set, clamp the read to
   // MaxParticlesPerRank particles of this rank's partition.  By
   // default this reads the first N contiguous particles; when
   // UseStridedMaxParticlesPerRank is on, the N particles are spread
   // evenly across the partition, sampling its full spatial extent.
+  // The strided path uses a direct HDF5 hyperslab read instead of
+  // H5PartSetViewIndices(), which builds an inefficient point selection.
   if (this->MaxParticlesPerRank > 0 && Nt > this->MaxParticlesPerRank)
   {
     if (this->UseStridedMaxParticlesPerRank)
     {
-      std::vector<h5_size_t> indices;
-      indices.reserve(this->MaxParticlesPerRank);
-      vtkIdType stride = Nt / this->MaxParticlesPerRank;
-      if (stride < 1)
+      stridedStride = static_cast<h5_size_t>(
+          Nt / this->MaxParticlesPerRank);
+      if (stridedStride < 1)
       {
-        stride = 1;
+        stridedStride = 1;
       }
-      for (vtkIdType i = 0; i < this->MaxParticlesPerRank; ++i)
-      {
-        indices.push_back(
-            static_cast<h5_size_t>(particleStart + i * stride));
-      }
-      H5PartSetViewIndices(this->H5FileId, indices.data(), indices.size());
-      Nt = static_cast<vtkIdType>(indices.size());
-      viewIsIndexed = true;
+      Nt = this->MaxParticlesPerRank;
+      useStridedHyperslab = true;
     }
     else
     {
@@ -627,7 +623,7 @@ int vtkH5PartReaderV2::RequestData(
   }
 
   if (Nt > 0) {
-    if (!viewIsIndexed)
+    if (!useStridedHyperslab)
     {
       H5PartSetView(this->H5FileId, particleStart, particleEnd);
     }
@@ -680,10 +676,21 @@ int vtkH5PartReaderV2::RequestData(
         component->SetNumberOfComponents(1);
         component->SetNumberOfTuples(Nt);
         component->SetName(name_comp);
-        if (H5hutReadDataArray(this->H5FileId, name_comp, component) !=
-            H5_SUCCESS) {
-          vtkErrorMacro("Failed to read component " << name_comp);
-          return 0;
+        if (useStridedHyperslab) {
+          if (H5hutReadDataArrayStrided(this->H5FileId, name_comp, component,
+                                        static_cast<h5_size_t>(particleStart),
+                                        stridedStride,
+                                        static_cast<h5_size_t>(Nt)) !=
+              H5_SUCCESS) {
+            vtkErrorMacro("Failed to read component " << name_comp);
+            return 0;
+          }
+        } else {
+          if (H5hutReadDataArray(this->H5FileId, name_comp, component) !=
+              H5_SUCCESS) {
+            vtkErrorMacro("Failed to read component " << name_comp);
+            return 0;
+          }
         }
 
         if (Nc == 1) {
@@ -795,8 +802,19 @@ int vtkH5PartReaderV2::GetPointArrayStatus(const char *name) {
 
 //----------------------------------------------------------------------------
 void vtkH5PartReaderV2::SetPointArrayStatus(const char *name, int status) {
-  if (status != this->GetPointArrayStatus(name)) {
-    if (status) {
+  // If the array has not been discovered yet (e.g. during state-file
+  // loading), ArrayIsEnabled returns UnknownArraySetting (0).  A request
+  // to disable the array would then compare equal to 0 and be ignored,
+  // leaving the array with the default enabled state once RequestInformation
+  // later calls AddArray().  Explicitly add the array with the requested
+  // state when it does not yet exist.
+  bool exists = this->PointDataArraySelection->ArrayExists(name) != 0;
+  bool requested = status != 0;
+  if (!exists) {
+    this->PointDataArraySelection->AddArray(name, requested);
+    this->Modified();
+  } else if (requested != (this->GetPointArrayStatus(name) != 0)) {
+    if (requested) {
       this->PointDataArraySelection->EnableArray(name);
     } else {
       this->PointDataArraySelection->DisableArray(name);
