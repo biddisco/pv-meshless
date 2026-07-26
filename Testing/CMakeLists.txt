@@ -32,6 +32,8 @@ set_property(TARGET TestH5PartParallelWriter APPEND PROPERTY BUILD_RPATH
   "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
 set_property(TARGET TestH5PartParallelWriter APPEND PROPERTY INSTALL_RPATH
   "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
+set_property(TARGET TestH5PartParallelWriter PROPERTY BUILD_RPATH_USE_LINK_PATH TRUE)
+set_property(TARGET TestH5PartParallelWriter PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 foreach(N 1 2 3 4)
   set(test_name "TestH5PartParallelWriter-P${N}")
@@ -81,6 +83,8 @@ set_property(TARGET TestH5PartReaderV2Partitioning APPEND PROPERTY BUILD_RPATH
   "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
 set_property(TARGET TestH5PartReaderV2Partitioning APPEND PROPERTY INSTALL_RPATH
   "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
+set_property(TARGET TestH5PartReaderV2Partitioning PROPERTY BUILD_RPATH_USE_LINK_PATH TRUE)
+set_property(TARGET TestH5PartReaderV2Partitioning PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 foreach(N 1 2 4)
   set(test_name "TestH5PartReaderV2Partitioning-P${N}")
@@ -127,6 +131,8 @@ set_property(TARGET TestH5PartReaderV2StridedSampling APPEND PROPERTY BUILD_RPAT
   "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
 set_property(TARGET TestH5PartReaderV2StridedSampling APPEND PROPERTY INSTALL_RPATH
   "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
+set_property(TARGET TestH5PartReaderV2StridedSampling PROPERTY BUILD_RPATH_USE_LINK_PATH TRUE)
+set_property(TARGET TestH5PartReaderV2StridedSampling PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 foreach(N 1 4)
   set(test_name "TestH5PartReaderV2StridedSampling-P${N}")
