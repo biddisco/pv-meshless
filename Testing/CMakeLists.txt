@@ -28,9 +28,14 @@ target_link_libraries(
                                    VTK::TestingRendering MPI::MPI_CXX)
 vtk_module_autoinit(TARGETS TestH5PartParallelWriter MODULES pvMeshlessFilters
                     VTK::TestingRendering)
+set_property(TARGET TestH5PartParallelWriter APPEND PROPERTY BUILD_RPATH
+  "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
+set_property(TARGET TestH5PartParallelWriter APPEND PROPERTY INSTALL_RPATH
+  "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
 
 foreach(N 1 2 3 4)
   set(test_name "TestH5PartParallelWriter-P${N}")
+  set(test_added FALSE)
   if(N EQUAL 1)
     add_test(
       NAME ${test_name}
@@ -38,6 +43,7 @@ foreach(N 1 2 3 4)
         $<TARGET_FILE:TestH5PartParallelWriter> -generateParticles 1000000 -F
         temp.h5 -D ${PLUGIN_TEST_DIR} -T "${PLUGIN_TEST_DIR}" -testName
         ${test_name})
+    set(test_added TRUE)
   else()
     if(MPIEXEC_MAX_NUMPROCS GREATER_EQUAL ${N})
       add_test(
@@ -47,7 +53,12 @@ foreach(N 1 2 3 4)
           $<TARGET_FILE:TestH5PartParallelWriter> -generateParticles 1000000 -F
           temp.h5 -D ${PLUGIN_TEST_DIR} -T "${PLUGIN_TEST_DIR}" -testName
           ${test_name})
+      set(test_added TRUE)
     endif()
+  endif()
+  if(test_added)
+    set_tests_properties(${test_name} PROPERTIES
+      ENVIRONMENT "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:pvMeshlessFilters>:$ENV{LD_LIBRARY_PATH}")
   endif()
 endforeach()
 
@@ -66,14 +77,20 @@ target_link_libraries(
           ${HDF5_LIBRARIES})
 vtk_module_autoinit(TARGETS TestH5PartReaderV2Partitioning MODULES
                     pvMeshlessFilters VTK::TestingRendering)
+set_property(TARGET TestH5PartReaderV2Partitioning APPEND PROPERTY BUILD_RPATH
+  "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
+set_property(TARGET TestH5PartReaderV2Partitioning APPEND PROPERTY INSTALL_RPATH
+  "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
 
 foreach(N 1 2 4)
   set(test_name "TestH5PartReaderV2Partitioning-P${N}")
+  set(test_added FALSE)
   if(N EQUAL 1)
     add_test(
       NAME ${test_name}
       COMMAND $<TARGET_FILE:TestH5PartReaderV2Partitioning> -T
               "${PLUGIN_TEST_DIR}")
+    set(test_added TRUE)
   else()
     if(MPIEXEC_MAX_NUMPROCS GREATER_EQUAL ${N})
       add_test(
@@ -81,7 +98,12 @@ foreach(N 1 2 4)
         COMMAND
           ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${N}
           $<TARGET_FILE:TestH5PartReaderV2Partitioning> -T "${PLUGIN_TEST_DIR}")
+      set(test_added TRUE)
     endif()
+  endif()
+  if(test_added)
+    set_tests_properties(${test_name} PROPERTIES
+      ENVIRONMENT "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:pvMeshlessFilters>:$ENV{LD_LIBRARY_PATH}")
   endif()
 endforeach()
 
@@ -101,14 +123,20 @@ target_link_libraries(
           ${HDF5_LIBRARIES})
 vtk_module_autoinit(TARGETS TestH5PartReaderV2StridedSampling MODULES
                     pvMeshlessFilters VTK::TestingRendering)
+set_property(TARGET TestH5PartReaderV2StridedSampling APPEND PROPERTY BUILD_RPATH
+  "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
+set_property(TARGET TestH5PartReaderV2StridedSampling APPEND PROPERTY INSTALL_RPATH
+  "$ORIGIN/../../lib/paraview-6.1/plugins/pv_meshless")
 
 foreach(N 1 4)
   set(test_name "TestH5PartReaderV2StridedSampling-P${N}")
+  set(test_added FALSE)
   if(N EQUAL 1)
     add_test(
       NAME ${test_name}
       COMMAND $<TARGET_FILE:TestH5PartReaderV2StridedSampling> -T
               "${PLUGIN_TEST_DIR}")
+    set(test_added TRUE)
   else()
     if(MPIEXEC_MAX_NUMPROCS GREATER_EQUAL ${N})
       add_test(
@@ -117,6 +145,11 @@ foreach(N 1 4)
           ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${N}
           $<TARGET_FILE:TestH5PartReaderV2StridedSampling> -T
           "${PLUGIN_TEST_DIR}")
+      set(test_added TRUE)
     endif()
+  endif()
+  if(test_added)
+    set_tests_properties(${test_name} PROPERTIES
+      ENVIRONMENT "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:pvMeshlessFilters>:$ENV{LD_LIBRARY_PATH}")
   endif()
 endforeach()
