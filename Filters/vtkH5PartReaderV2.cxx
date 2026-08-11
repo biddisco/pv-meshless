@@ -47,6 +47,7 @@
 #include <vtksys/SystemTools.hxx>
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -60,14 +61,18 @@ vtkStandardNewMacro(vtkH5PartReaderV2);
 static void vtkPickArray(char *&arrayPtr,
                          const std::initializer_list<const char *> &values,
                          vtkDataArraySelection *selection) {
-  if (arrayPtr != nullptr && arrayPtr[0] != '\0') {
+  // If already set and the array exists in the file, keep it.
+  if (arrayPtr != nullptr && arrayPtr[0] != '\0' &&
+      selection->ArrayExists(arrayPtr)) {
     return;
   }
-
-  for (int cc = 0, max = selection->GetNumberOfArrays(); cc < max; ++cc) {
-    const char *aname = selection->GetArrayName(cc);
-    for (const char *value : values) {
+  // Auto-detect: iterate desired values in priority order so that the
+  // first matching array in the file is selected.
+  for (const char *value : values) {
+    for (int cc = 0, max = selection->GetNumberOfArrays(); cc < max; ++cc) {
+      const char *aname = selection->GetArrayName(cc);
       if (vtksys::SystemTools::Strucmp(aname, value) == 0) {
+        delete[] arrayPtr;
         arrayPtr = vtksys::SystemTools::DuplicateString(aname);
         return;
       }
@@ -100,6 +105,7 @@ vtkH5PartReaderV2::vtkH5PartReaderV2() {
   this->ActualTimeStep = 0;
   this->TimeStepTolerance = 1E-6;
   this->CombineVectorComponents = 1;
+  this->ExportVectorComponentsMagnitude = 0;
   this->MultiComponentArraysAsFieldData = 0;
   this->UseStridedMultiComponentRead = 0;
   this->MaxParticlesPerRank = 0;
@@ -121,9 +127,9 @@ vtkH5PartReaderV2::vtkH5PartReaderV2() {
   this->RandomizePartitionExtents = 0;
   this->PointDataArraySelection = vtkDataArraySelection::New();
   this->ExtentTranslator = vtkBoundsExtentTranslator::New();
-  this->SetXarray("Coords_0");
-  this->SetYarray("Coords_1");
-  this->SetZarray("Coords_2");
+  // Xarray/Yarray/Zarray are left null here so that RequestInformation
+  // can auto-detect the coordinate arrays from the file contents
+  // (Coords_0, coords_x, x, X, etc.).
   this->Controller = nullptr;
   this->SetController(vtkMultiProcessController::GetGlobalController());
   if (this->Controller == nullptr) {
@@ -224,10 +230,26 @@ int vtkH5PartReaderV2::IndexOfVectorComponent(const char *name) {
   if (!this->CombineVectorComponents) {
     return 0;
   }
-  vtksys::RegularExpression re1(".*_([0-9]+)");
-  if (re1.find(name)) {
-    int index = std::stoi(re1.match(1));
+  // Numeric suffix: name_0, name_1, name_2, ...
+  vtksys::RegularExpression reNum(".*_([0-9]+)$");
+  if (reNum.find(name)) {
+    int index = std::stoi(reNum.match(1));
     return index + 1;
+  }
+  // Alphabetic suffix: _x _y _z, _i _j _k, _u _v _w (case-insensitive)
+  vtksys::RegularExpression reAlpha(".*_([xXyYzZiIjJkKuUvVwW])$");
+  if (reAlpha.find(name)) {
+    std::string suffix = reAlpha.match(1);
+    std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::tolower);
+    if (suffix == "x" || suffix == "i" || suffix == "u") {
+      return 1;
+    }
+    if (suffix == "y" || suffix == "j" || suffix == "v") {
+      return 2;
+    }
+    if (suffix == "z" || suffix == "k" || suffix == "w") {
+      return 3;
+    }
   }
   return 0;
 }
@@ -237,9 +259,15 @@ std::string vtkH5PartReaderV2::NameOfVectorComponent(const char *name) {
   if (!this->CombineVectorComponents) {
     return name;
   }
-  vtksys::RegularExpression re1("(.*)_[0-9]+");
-  if (re1.find(name)) {
-    return re1.match(1);
+  // Strip numeric suffix: name_0 -> name
+  vtksys::RegularExpression reNum("(.*)_([0-9]+)$");
+  if (reNum.find(name)) {
+    return reNum.match(1);
+  }
+  // Strip alphabetic suffix: name_x -> name
+  vtksys::RegularExpression reAlpha("(.*)_([xXyYzZiIjJkKuUvVwW])$");
+  if (reAlpha.find(name)) {
+    return reAlpha.match(1);
   }
   return name;
 }
@@ -266,12 +294,13 @@ int vtkH5PartReaderV2::RequestInformation(
   }
 
   // If the coordinate arrays are not present under the default names,
-  // try to auto-detect common alternatives.
-  vtkPickArray(this->Xarray, {"x", "X", "Coords_0"},
+  // try to auto-detect common alternatives.  Bare x/y/z are preferred
+  // over coords_x/y/z, which are preferred over Coords_0/1/2.
+  vtkPickArray(this->Xarray, {"x", "coords_x", "Coords_0"},
                this->PointDataArraySelection);
-  vtkPickArray(this->Yarray, {"y", "Y", "Coords_1"},
+  vtkPickArray(this->Yarray, {"y", "coords_y", "Coords_1"},
                this->PointDataArraySelection);
-  vtkPickArray(this->Zarray, {"z", "Z", "Coords_2"},
+  vtkPickArray(this->Zarray, {"z", "coords_z", "Coords_2"},
                this->PointDataArraySelection);
 
   this->TimeStepValues.assign(this->NumberOfTimeSteps, 0.0);
@@ -529,10 +558,10 @@ int vtkH5PartReaderV2::RequestData(
 
     int vectorcomponent = this->IndexOfVectorComponent(name);
     if (vectorcomponent > 0) {
-      std::string vectorname = this->NameOfVectorComponent(name) + "_v";
+      std::string vectorname = this->NameOfVectorComponent(name);
       FieldMap::iterator pos = scalarFields.find(vectorname);
       if (pos == scalarFields.end()) {
-        std::vector<std::string> arraylist(1, name);
+        std::vector<std::string> arraylist(vectorcomponent, name);
         scalarFields.insert(FieldMap::value_type(vectorname, arraylist));
       } else {
         pos->second.reserve(vectorcomponent);
@@ -560,6 +589,15 @@ int vtkH5PartReaderV2::RequestData(
   }
   if (coordvector == scalarFields.end()) {
     scalarFields.insert(FieldMap::value_type("Coords", coordarrays));
+  }
+
+  // Remove individual coordinate arrays from scalarFields so they are
+  // not duplicated as separate point-data scalars — they are already
+  // represented in the "Coords" entry above.
+  for (int i = 0; i < 3; ++i) {
+    if (!coordarrays[i].empty() && coordarrays[i] != "Coords") {
+      scalarFields.erase(coordarrays[i]);
+    }
   }
 
   // Determine the range of particles to read on this piece.
@@ -747,6 +785,23 @@ int vtkH5PartReaderV2::RequestData(
         output->GetPointData()->AddArray(dataArray);
         if (!output->GetPointData()->GetScalars()) {
           output->GetPointData()->SetActiveScalars(dataArray->GetName());
+        }
+        if (Nc > 1 && this->ExportVectorComponentsMagnitude) {
+          vtkSmartPointer<vtkDoubleArray> magnitude =
+              vtkSmartPointer<vtkDoubleArray>::New();
+          magnitude->SetNumberOfComponents(1);
+          magnitude->SetNumberOfTuples(Nt);
+          magnitude->SetName((rootname + "_magnitude").c_str());
+          std::vector<double> tuple(Nc);
+          for (vtkIdType i = 0; i < Nt; ++i) {
+            dataArray->GetTuple(i, tuple.data());
+            double sum = 0.0;
+            for (int c = 0; c < Nc; ++c) {
+              sum += tuple[c] * tuple[c];
+            }
+            magnitude->SetTuple1(i, std::sqrt(sum));
+          }
+          output->GetPointData()->AddArray(magnitude);
         }
       }
     }

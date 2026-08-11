@@ -79,13 +79,17 @@
        command="SetFileName"
        number_of_elements="1">
         <FileListDomain name="files"/>
+        <Documentation>The H5Part (HDF5) particle file to read.</Documentation>
       </StringVectorProperty>
 
       <StringVectorProperty
-        name="StepName"
-        command="SetStepName"
-        default_values="Step"
-        number_of_elements="1">
+       name="StepName"
+       command="SetStepName"
+       default_values="Step"
+       number_of_elements="1">
+        <Documentation>Prefix used for each time-step group in the
+          file (usually "Step").  Groups are named Step#0, Step#1,
+          etc.</Documentation>
       </StringVectorProperty>
 
       <IntVectorProperty
@@ -94,6 +98,10 @@
          number_of_elements="1"
          default_values="1" >
         <BooleanDomain name="bool"/>
+        <Documentation>When on (default), a vertex cell is generated
+          for each particle so the dataset can be rendered as
+          points.  Turn off if only point coordinates and data arrays
+          are needed.</Documentation>
       </IntVectorProperty>
 
       <IntVectorProperty
@@ -102,6 +110,9 @@
          number_of_elements="1"
          default_values="0" >
         <BooleanDomain name="bool"/>
+        <Documentation>When on, time values are reported as
+          0, 1, ... N-1 regardless of the real time values stored
+          in the file.</Documentation>
       </IntVectorProperty>
 
       <IntVectorProperty
@@ -110,6 +121,9 @@
          number_of_elements="1"
          default_values="0" >
         <BooleanDomain name="bool"/>
+        <Documentation>When on, a request for a time outside the
+          file's time range returns an empty dataset instead of
+          clamping to the nearest valid step.</Documentation>
       </IntVectorProperty>
 
       <IntVectorProperty
@@ -118,6 +132,9 @@
          number_of_elements="1"
          default_values="0" >
         <BooleanDomain name="bool"/>
+        <Documentation>When on, bounding boxes of each parallel
+          partition found in the file are rendered as wireframe
+          outlines alongside the particles.</Documentation>
       </IntVectorProperty>
 
       <IntVectorProperty
@@ -126,6 +143,9 @@
          number_of_elements="1"
          default_values="0" >
         <BooleanDomain name="bool"/>
+        <Documentation>When on, bounding boxes of each piece assigned
+          to this rank are rendered as wireframe outlines alongside
+          the particles.</Documentation>
       </IntVectorProperty>
 
       <IntVectorProperty
@@ -134,6 +154,10 @@
          number_of_elements="1"
          default_values="0" >
         <BooleanDomain name="bool"/>
+        <Documentation>When on, partition boxes stored in the file are
+          ignored and a simple contiguous extent split is used
+          instead.  Display of partition/piece boxes is also
+          disabled.</Documentation>
       </IntVectorProperty>
 
       <IntVectorProperty
@@ -142,6 +166,9 @@
          number_of_elements="1"
          default_values="0" >
         <BooleanDomain name="bool"/>
+        <Documentation>When on (testing only), partition extents are
+          randomly perturbed so that piece boundaries do not fall on
+          exact multiples of the partition size.</Documentation>
       </IntVectorProperty>
 
       <DoubleVectorProperty
@@ -151,11 +178,51 @@
       </DoubleVectorProperty>
 
       <IntVectorProperty
+         name="CombineVectorComponents"
+         command="SetCombineVectorComponents"
+         number_of_elements="1"
+         default_values="1" >
+        <BooleanDomain name="bool"/>
+        <Documentation>When on (default), scalar arrays whose names
+          end with a recognised component suffix are automatically
+          combined into a single multi-component vector field instead
+          of being loaded as individual scalars.  Recognised suffixes
+          (case-insensitive, after an underscore) are:
+
+          _0 _1 _2 ...   (numeric, component index = N)
+          _x _y _z       (Cartesian, components 1 2 3)
+          _i _j _k       (alternative Cartesian)
+          _u _v _w       (alternative Cartesian)
+
+          For example E_x, E_y, E_z are combined into a 3-component
+          vector named "E"; FLUID_velocity_0, FLUID_velocity_1,
+          FLUID_velocity_2 are combined into "FLUID_velocity".  The
+          original component arrays are not exported
+          separately.  When off, every array is loaded as an
+          independent scalar.</Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="ExportVectorComponentsMagnitude"
+         command="SetExportVectorComponentsMagnitude"
+         number_of_elements="1"
+         default_values="0" >
+        <BooleanDomain name="bool"/>
+        <Documentation>When on (requires CombineVectorComponents),
+          an additional single-component array named
+          "&lt;vector&gt;_magnitude" is exported for every combined
+          multi-component vector.  The magnitude is computed as
+          sqrt(sum of squared components).  Off by default.</Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
          name="MultiComponentArraysAsFieldData"
          command="SetMultiComponentArraysAsFieldData"
          number_of_elements="1"
          default_values="0" >
         <BooleanDomain name="bool"/>
+        <Documentation>(Not currently implemented.)  Reserved for
+          future use.</Documentation>
       </IntVectorProperty>
 
       <IntVectorProperty
@@ -164,6 +231,9 @@
          number_of_elements="1"
          default_values="0" >
         <BooleanDomain name="bool"/>
+        <Documentation>When on, use a strided HDF5 hyperslab to read
+          an array such as "X" directly into a coordinate array.
+          Off by default.</Documentation>
       </IntVectorProperty>
 
       <IntVectorProperty
@@ -199,11 +269,11 @@
          command="SetXarray"
          default_values="Coords_0"
          default_regex_delimiter=","
-         default_regex=".*oords_0,^[Xx]$,.*[Xx]$"
+         default_regex="^[Xx]$,.*[Cc]oords_[Xx],.*[Cc]oords_0"
          number_of_elements="1">
-        <Documentation>
-          This property lists which point array to use for coordinates.
-        </Documentation>
+        <Documentation>The array to use for the X coordinate.
+          Auto-detected from the file with priority: bare x/X,
+          coords_x, then Coords_0.</Documentation>
         <StringListDomain name="array_list">
           <RequiredProperties>
             <Property name="PointArrayInfo" function="ArrayList" />
@@ -216,11 +286,11 @@
          command="SetYarray"
          default_values="Coords_1"
          default_regex_delimiter=","
-         default_regex=".*oords_1,^[Yy]$,.*[Yy]$"
+         default_regex="^[Yy]$,.*[Cc]oords_[Yy],.*[Cc]oords_1"
          number_of_elements="1">
-        <Documentation>
-          This property lists which point array to use for coordinates.
-        </Documentation>
+        <Documentation>The array to use for the Y coordinate.
+          Auto-detected from the file with priority: bare y/Y,
+          coords_y, then Coords_1.</Documentation>
         <StringListDomain name="array_list">
           <RequiredProperties>
             <Property name="PointArrayInfo" function="ArrayList" />
@@ -233,11 +303,11 @@
          command="SetZarray"
          default_values="Coords_2"
          default_regex_delimiter=","
-         default_regex=".*oords_2,^[Zz]$,.*[Zz]$"
+         default_regex="^[Zz]$,.*[Cc]oords_[Zz],.*[Cc]oords_2"
          number_of_elements="1">
-        <Documentation>
-          This property lists which point array to use for coordinates.
-        </Documentation>
+        <Documentation>The array to use for the Z coordinate.
+          Auto-detected from the file with priority: bare z/Z,
+          coords_z, then Coords_2.</Documentation>
         <StringListDomain name="array_list">
           <RequiredProperties>
             <Property name="PointArrayInfo" function="ArrayList" />

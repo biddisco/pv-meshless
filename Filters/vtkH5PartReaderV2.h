@@ -135,12 +135,39 @@ public:
 
   ///@{
   /**
-   * When set, scalar fields with names scalar_0, scalar_1, scalar_2
-   * will be combined into a single vector field.
+   * When set (default on), scalar arrays whose names end with a
+   * recognised component suffix are combined into a single
+   * multi-component vector field instead of being loaded as
+   * individual scalars.
+   *
+   * Recognised suffixes (case-insensitive, matched at the end of the
+   * array name after an underscore):
+   *
+   *   Numeric:  _0  _1  _2  ...   (component index = N)
+   *   Cartesian:_x _y _z           (components 1, 2, 3)
+   *   ijk:      _i _j _k           (components 1, 2, 3)
+   *   uvw:      _u _v _w           (components 1, 2, 3)
+   *
+   * For example E_x, E_y, E_z are combined into a 3-component vector
+   * named "E"; FLUID_velocity_0, FLUID_velocity_1, FLUID_velocity_2
+   * are combined into "FLUID_velocity".  The original component
+   * arrays are not exported as separate point-data scalars.
    */
   vtkSetMacro(CombineVectorComponents, int);
   vtkGetMacro(CombineVectorComponents, int);
   vtkBooleanMacro(CombineVectorComponents, int);
+  ///@}
+
+  ///@{
+  /**
+   * When set (requires CombineVectorComponents), an additional
+   * single-component array named "<vector>_magnitude" is exported
+   * for every combined multi-component vector.  The magnitude is
+   * computed as sqrt(sum of squared components).
+   */
+  vtkSetMacro(ExportVectorComponentsMagnitude, int);
+  vtkGetMacro(ExportVectorComponentsMagnitude, int);
+  vtkBooleanMacro(ExportVectorComponentsMagnitude, int);
   ///@}
 
   ///@{
@@ -296,6 +323,7 @@ protected:
   int ActualTimeStep;
   double TimeStepTolerance;
   int CombineVectorComponents;
+  int ExportVectorComponentsMagnitude;
   int MultiComponentArraysAsFieldData;
   int UseStridedMultiComponentRead;
   vtkIdType MaxParticlesPerRank;
